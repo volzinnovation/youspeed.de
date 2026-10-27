@@ -16,8 +16,9 @@ Karlsruhe alias, while both releases retain separate size-comparison rows.
 
 Comparisons count the source SQLite versus context+geometry+generic-node bytes,
 and their database/runtime transport bytes. Coverage, penalty and report files
-are excluded consistently. BW's upgraded full source and its previous published
-source are separate baselines. Percent changes are (packed/source-1)*100.
+are excluded consistently. BW and the explicit canonical-region-alias refresh
+retain their previous published sources as separate baselines. Percent changes
+are (packed/source-1)*100.
 """
 
 import argparse
@@ -36,7 +37,7 @@ SHA256 = re.compile(r'[0-9a-f]{64}')
 IDENTITY = re.compile(r'[a-z0-9][a-z0-9._-]*')
 CSV_FIELDS = [
     'region', 'country_code', 'source_release_tag', 'release_tag', 'bundle_version',
-    'catalog_selected', 'local_source_upgrade', 'node_count',
+    'catalog_selected', 'local_source_upgrade', 'source_upgrade_kind', 'converted_source_release_tag', 'node_count',
     'source_installed_bytes', 'packed_installed_bytes', 'installed_delta_bytes', 'installed_change_percent',
     'source_download_bytes', 'packed_download_bytes', 'download_delta_bytes', 'download_change_percent',
     'previous_published_installed_bytes', 'previous_published_installed_delta_bytes', 'previous_published_installed_change_percent',
@@ -117,8 +118,22 @@ def validate_release(result_path, repo, entries):
     require(type(result.get('local_source_upgrade')) is bool, 'Source upgrade status missing')
     upgraded = result['local_source_upgrade']
     require(not upgraded or result['region'] == 'baden-wuerttemberg', 'Unplanned local source upgrade')
-    source_manifest = entry['source_manifest_document']
-    require(upgraded or result.get('source_bundle_version') == entry.get('source_bundle_version'),
+    converted_source = result.get('converted_source_release_tag')
+    upgrade_kind = result.get('source_upgrade_kind')
+    actual_entry = entry
+    if converted_source is not None or upgrade_kind == 'canonical-region-alias':
+        require(not upgraded and upgrade_kind == 'canonical-region-alias' and source != entry['region']
+                and converted_source == entry['region'] and converted_source in entries,
+                'Unplanned canonical alias substitution')
+        actual_entry = entries[converted_source]
+        require(actual_entry['source_release_tag'] == actual_entry['region'] == entry['region']
+                and actual_entry['country_code'] == entry['country_code'], 'Alias replacement belongs to another region')
+    else:
+        require(upgrade_kind in [None, 'local-full-bw', 'unchanged'], 'Unknown source upgrade kind')
+        require(upgrade_kind != 'local-full-bw' or upgraded, 'False local source upgrade label')
+        require(not upgraded or upgrade_kind in [None, 'local-full-bw'], 'False unchanged source label')
+    source_manifest = actual_entry['source_manifest_document']
+    require(upgraded or result.get('source_bundle_version') == actual_entry.get('source_bundle_version'),
             'Source bundle version changed')
     source_hash = result.get('source_sqlite_sha256', '')
     require(isinstance(source_hash, str) and SHA256.fullmatch(source_hash), 'Invalid source SQLite hash')
@@ -161,6 +176,8 @@ def validate_release(result_path, repo, entries):
     row = {key: result[key] for key in ['region', 'source_release_tag', 'release_tag', 'bundle_version', 'local_source_upgrade']}
     row['country_code'] = entry['country_code']
     row['catalog_selected'] = source == result['region']
+    row['source_upgrade_kind'] = upgrade_kind or ('local-full-bw' if upgraded else 'unchanged')
+    row['converted_source_release_tag'] = converted_source
     row['node_count'] = integer(result.get('node_count'), 'generic node count', minimum=0)
     for key in ['source_installed_bytes', 'packed_installed_bytes', 'source_download_bytes', 'packed_download_bytes', 'previous_published_download_bytes']:
         row[key] = integer(result.get(key), key)
@@ -168,13 +185,17 @@ def validate_release(result_path, repo, entries):
     require(row['previous_published_download_bytes'] == previous_download, 'Previous published download bytes differ from pinned assets')
     if not upgraded:
         require(row['source_download_bytes'] == original.get('bytes'), 'Source transport differs from published manifest')
-    previous_installed = original.get('uncompressed_bytes')
-    if previous_installed is None and not compressed:
-        previous_installed = original.get('bytes')
+    actual_installed = original.get('uncompressed_bytes')
+    if actual_installed is None and not compressed:
+        actual_installed = original.get('bytes')
+    if not upgraded and actual_installed is not None:
+        require(row['source_installed_bytes'] == actual_installed, 'Source installed bytes differ from published manifest')
+    previous = entry['source_manifest_document'].get('db', {})
+    previous_installed = previous.get('uncompressed_bytes')
+    if previous_installed is None and previous.get('compression') in [None, '', 'none', 'identity']:
+        previous_installed = previous.get('bytes')
     if previous_installed is not None:
         integer(previous_installed, 'previous published installed bytes')
-        if not upgraded:
-            require(row['source_installed_bytes'] == previous_installed, 'Source installed bytes differ from published manifest')
     row['previous_published_installed_bytes'] = previous_installed
     for prefix, packed_key, source_key in [
         ('installed', 'packed_installed_bytes', 'source_installed_bytes'),
@@ -230,7 +251,7 @@ def documents(plan, result_paths, require_complete=False):
         'format': 'youspeed.v4.size-comparison', 'schema_version': 1, 'units': 'bytes',
         'release_count': len(rows), 'catalog_region_count': len(selected),
         'runtime_scope': 'context + exact geometry + generic speed-sign nodes; excludes coverage, penalty and report files',
-        'source_scope': 'source SQLite and its transport; full-BW upgraded source and previous published source are separate baselines',
+        'source_scope': 'source SQLite and its transport; full-BW and canonical-region-alias upgrades retain their separate previous published baselines',
         'percent_formula': '(packed / source - 1) * 100; negative values indicate a reduction',
         'catalog_region_totals': totals, 'bundles': rows,
     }

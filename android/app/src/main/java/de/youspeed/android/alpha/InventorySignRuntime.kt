@@ -516,25 +516,29 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
 
 /** Named optional columns only; old and non-BW databases have no side effects. */
 internal class InventorySignDatabase(private val path: String,
-    private val amendmentStore:MapDataAmendmentStore?=MapDataAmendmentStore.applicationStore()) : Closeable {
+    private val amendmentStore:MapDataAmendmentStore?=MapDataAmendmentStore.applicationStore(),
+    baseIdentityOverride:String?=null) : Closeable {
     private val runtimeDatabase = RuntimeMapDatabase.open(path)
     private val db = runtimeDatabase.database
     private val genericNodes=RuntimeGenericSpeedNodes.openForDatabase(path)
-    private val generation=runCatching {db.rawQuery("SELECT value FROM metadata WHERE key='packed_generation'",null)
-        .use{if(it.moveToFirst())it.getString(0) else null}}.getOrNull()
+    private val generation=baseIdentityOverride?:db.amendmentBaseIdentity
     private val sourceFilter = if (InventorySignSourceScope.allowsMobiData(db, path)) "" else " AND s.source_id <> 'mobidata-bw-vzk'"
     private val supported = runCatching { db.rawQuery("SELECT value FROM traffic_sign_capability WHERE key='version'", null).use { it.moveToFirst() && it.getString(0) == "1" } }.getOrDefault(false)
-    private fun amendmentNode(record:MapDataAmendment)=
-        (if(record.sourceNamespace=="osm")genericNodes?.node(record.sourceId) else null)?:record.nodeJSON?.let{org.json.JSONObject(it)}
+    private fun amendmentNode(record:MapDataAmendment):org.json.JSONObject? {
+        val current=if(record.sourceNamespace=="osm")genericNodes?.sourceJSON(record.sourceId) else record.nodeJSON
+        if(record.sourceRevision.startsWith("node-json-sha256:")&&
+            (current==null||record.sourceRevision!="node-json-sha256:"+MapDataAmendmentStore.sourceSHA256(current)))return null
+        return (current?:record.nodeJSON)?.let{org.json.JSONObject(it)}
+    }
     fun read(latitude: Double, longitude: Double, wayId: String?, direction: Int): InventorySignSnapshot {
         val amendments=if(wayId!=null&&generation!=null)amendmentStore?.confirmedNodeAmendments(wayId,generation).orEmpty() else emptyList()
         if (!supported&&amendments.isEmpty()) return InventorySignSnapshot()
         val signs = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ?" + sourceFilter,
             arrayOf((latitude - .00065).toString(), (latitude + .00065).toString(), (longitude - .001).toString(), (longitude + .001).toString())).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.sign()) } }
-        if (wayId == null || direction == 0) return InventorySignSnapshot(true, signs)
-        val rules = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,r.rule_id,r.way_id,r.direction,r.start_chainage_m,r.end_chainage_m,r.station_chainage_m,r.local_heading_deg,r.speed_kmh,r.inside_city FROM traffic_sign_way_rule r JOIN traffic_sign_runtime s ON s.sign_id=r.sign_id LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE r.way_id=? AND r.direction=? AND r.association_status='accepted' AND r.lane_scope='all' AND a.status='accepted'" + sourceFilter,
+        if (wayId == null) return InventorySignSnapshot(true, signs)
+        val rules = if(!supported||direction==0)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,r.rule_id,r.way_id,r.direction,r.start_chainage_m,r.end_chainage_m,r.station_chainage_m,r.local_heading_deg,r.speed_kmh,r.inside_city FROM traffic_sign_way_rule r JOIN traffic_sign_runtime s ON s.sign_id=r.sign_id LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE r.way_id=? AND r.direction=? AND r.association_status='accepted' AND r.lane_scope='all' AND a.status='accepted'" + sourceFilter,
             arrayOf(wayId, direction.toString())).use { cursor -> buildList { while (cursor.moveToNext()) add(InventoryWayRule(cursor.string("rule_id"), cursor.sign(), cursor.string("way_id"), cursor.int("direction"), cursor.double("start_chainage_m"), cursor.double("end_chainage_m"), cursor.double("station_chainage_m"), cursor.double("local_heading_deg"), cursor.nullInt("speed_kmh"), cursor.nullInt("inside_city")?.let { it != 0 })) } }
-        val boundaryStations = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,a.way_id,a.direction,a.station_chainage_m,a.local_heading_deg FROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id WHERE a.way_id=? AND a.direction=? AND a.status='accepted' AND (s.kind IN ('settlement_boundary','speed_limit_end') OR s.sign_code='DE:282')" + sourceFilter,
+        val boundaryStations = if(!supported||direction==0)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,a.way_id,a.direction,a.station_chainage_m,a.local_heading_deg FROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id WHERE a.way_id=? AND a.direction=? AND a.status='accepted' AND (s.kind IN ('settlement_boundary','speed_limit_end') OR s.sign_code='DE:282')" + sourceFilter,
             arrayOf(wayId, direction.toString())).use { cursor -> buildList { while (cursor.moveToNext()) {
                 val sign = cursor.sign(); val station = cursor.double("station_chainage_m")
                 add(InventoryWayRule("boundary:${sign.id}", sign, wayId, direction, station, station, station,
@@ -572,11 +576,15 @@ internal class InventorySignDatabase(private val path: String,
         // The independent government/inventory producer keeps its existing priority.
         if(result.bundleSpeedProvenance?.kind?.startsWith("inventory")==true||generation==null||decision.passedAmendedNodeIds.isEmpty())return result
         val store=amendmentStore?:return result
+        val sourceWayRules=runCatching {db.rawQuery("SELECT rules_json FROM road_speed_rule_set WHERE way_id=?",arrayOf(way)).use {
+            if(it.moveToFirst())it.getString(0) else null
+        }}.getOrNull()
         val offer=store.resolve(way,generation,fix.direction.takeIf{it!=0},
             ConditionalSpeedRules.Context(atMs,countryCode=country,direction=fix.direction.takeIf{it!=0}),
             result.speedLimitKmh,result.isUnlimitedSpeedLimit,decision.passedAmendedNodeIds,
             baselineResult=ConditionalSpeedRules.Result(result.speedLimitKmh,result.isUnlimitedSpeedLimit,
-                result.speedLimitKmh==null&&!result.isUnlimitedSpeedLimit,"map_baseline_unresolved",result.conditionalRuleContext))?:return result
+                result.speedLimitKmh==null&&!result.isUnlimitedSpeedLimit,"map_baseline_unresolved",result.conditionalRuleContext),
+            sourceWayRulesJSON=sourceWayRules)?:return result
         val rule=offer.reevaluation
         return result.copy(speedLimitKmh=offer.kmh,isUnlimitedSpeedLimit=offer.unlimited,conditionalRuleContext=rule)
     }

@@ -24,6 +24,7 @@ final class PackedBundleRuntimeTests: XCTestCase {
         defer { sqlite3_close(source) }
         let packed = try PackedBundleRuntime.openReadOnly(path: fixture("fixture.context.yspc").path)
         defer { sqlite3_close(packed) }
+        XCTAssertNil(PackedBundleRuntime.amendmentBaseIdentity(database: packed), "An unactivated pack has no verified correction base identity")
         for id in ["10", "20", "9007199254740993"] {
             let sql = "SELECT points_json FROM way_geom WHERE way_id=\(id)"
             XCTAssertEqual(try text(source, sql), try text(packed, sql))
@@ -89,6 +90,55 @@ final class PackedBundleRuntimeTests: XCTestCase {
         XCTAssertEqual(try source.nearby(lat: node.latitude, lon: node.longitude, radiusM: 1).map(\.osmNodeID), [2532969814])
     }
 
+    func testAmendmentsBindCompleteSourceAcrossOverlappingSameVersionRegions() throws {
+        let root = try fixture("source.sqlite").deletingLastPathComponent()
+        let paths = ["overlap-a", "overlap-b", "overlap-nodes"].map { root.appendingPathComponent($0 + "/context.yspc") }
+        var databases: [OpaquePointer] = []
+        defer { for db in databases { sqlite3_close(db) } }
+        for path in paths { databases.append(try PackedBundleRuntime.openReadOnly(path: path.path)) }
+        let a = databases[0], b = databases[1], nodes = databases[2]
+        for db in databases {
+            XCTAssertEqual(PackedBundleRuntime.metadata("packed_generation", database: db), "overlap-shared-v1")
+            XCTAssertEqual(try text(db, "SELECT way_id FROM ways"), "10")
+        }
+        let identities = try databases.map { try XCTUnwrap(PackedBundleRuntime.amendmentBaseIdentity(database: $0)) }
+        XCTAssertEqual(Set(identities).count, 3, "Context and node-only changes both invalidate source authority")
+        XCTAssertTrue(identities.allSatisfy(MapDataAmendmentStore.isCanonicalBaseIdentity))
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = MapDataAmendmentStore(directory: directory)
+        let sourceA = try text(a, "SELECT rules_json FROM road_speed_rule_set WHERE way_id=10")
+        let sourceB = try text(b, "SELECT rules_json FROM road_speed_rule_set WHERE way_id=10")
+        var rules = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(sourceA.utf8)) as? [String: Any])
+        var tags = try XCTUnwrap(rules["tags"] as? [[String: Any]])
+        var clauses = try XCTUnwrap(tags[0]["clauses"] as? [[String: Any]])
+        clauses[0]["limit"] = ["kind": "numeric", "kmh": 30]; tags[0]["clauses"] = clauses; rules["tags"] = tags
+        let amended = String(data: try JSONSerialization.data(withJSONObject: rules), encoding: .utf8)!
+        var record = MapDataAmendment(id: "way:10", sourceNamespace: "osm", entity: "way", sourceID: "10",
+            basisBundle: identities[0], originalBundle: "overlap-shared-v1",
+            sourceRevision: MapDataAmendmentStore.waySourceRevision(rulesJSON: sourceA), rulesJSON: amended,
+            rawSourceTags: ["maxspeed": "50"], author: "reviewer", evidenceID: "source-review")
+        _ = try store.put(record, expectedRevision: 0)
+        func speed(_ db: OpaquePointer) -> Int? {
+            ConditionalSpeedRules.resolve(db: db, wayID: "10", direction: 1, baseKmh: 50,
+                baseUnlimited: false, countryCode: "DEU", amendmentStore: store)?.kmh
+        }
+        XCTAssertEqual(speed(a), 30)
+        XCTAssertEqual(speed(b), 60, "Same way/version in a different source must retain its own rules")
+        XCTAssertEqual(speed(nodes), 50, "A node-only source change requires a reviewed rebase")
+        record.basisBundle = identities[1]
+        _ = try store.put(record, expectedRevision: 1)
+        XCTAssertEqual(speed(b), 60, "Changing the base alone cannot authorize a stale typed source revision")
+        record.sourceRevision = MapDataAmendmentStore.waySourceRevision(rulesJSON: sourceB)
+        _ = try store.put(record, expectedRevision: 2)
+        XCTAssertEqual(speed(b), 30)
+        XCTAssertEqual(speed(a), 50)
+        record.basisBundle = "overlap-shared-v1"
+        _ = try store.put(record, expectedRevision: 3)
+        XCTAssertEqual(speed(a), 50, "Historical version-only records remain stored but cannot apply")
+        XCTAssertEqual(try store.history(record.id).count, 4)
+    }
+
     func testPackedManifestCompatibilityAndCatalogValidation() throws {
         let hash = String(repeating: "a", count: 64)
         let artifact = BundleArtifact(file: "context.yspc", bytes: 100, sha256: hash, url: nil)
@@ -152,6 +202,12 @@ final class PackedBundleRuntimeTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: installed), context)
         XCTAssertEqual(try Data(contentsOf: installed.deletingLastPathComponent().appendingPathComponent("manager.ways.yspg")), geometry)
         XCTAssertEqual(try Data(contentsOf: installed.deletingLastPathComponent().appendingPathComponent("fixture.nodes.yspn")), nodes)
+        do {
+            let db = try PackedBundleRuntime.openReadOnly(path: installed.path)
+            defer { sqlite3_close(db) }
+            XCTAssertEqual(PackedBundleRuntime.amendmentBaseIdentity(database: db),
+                "ysp-base-v1:\(sha(context)):\(sha(geometry)):\(sha(nodes))", "Identity uses installed bytes rather than gzip transport hashes")
+        }
         let installedBundles = try await manager.listDownloadedBundles()
         XCTAssertEqual(installedBundles.first?.installedBytes, Int64(context.count + geometry.count + nodes.count))
         let previousState = try Data(contentsOf: support.appendingPathComponent("active_bundle.json"))

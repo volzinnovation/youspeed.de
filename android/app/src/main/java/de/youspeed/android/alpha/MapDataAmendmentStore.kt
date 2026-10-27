@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.Cursor
 import java.io.File
 import java.util.UUID
+import java.security.MessageDigest
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -163,6 +164,10 @@ class MapDataAmendmentStore(directory: File) {
             (r.nodeJSON?.toByteArray()?.size?:0)<=262144) { "Oversized amendment payload" }
         val rules=JSONObject(r.rulesJSON);val tags=rules.optJSONArray("tags")
         require(rules.optInt("version")==1&&rules.optString("grammar")=="youspeed-osm-speed-1"&&tags!=null&&tags.length() in 1..128) { "Unsupported conditional grammar" }
+        if(r.sourceRevision.startsWith("node-json-sha256:"))require(r.entity=="node"&&r.nodeJSON!=null&&
+            r.sourceRevision=="node-json-sha256:"+sourceSHA256(r.nodeJSON)) {"Node source revision differs from saved source snapshot"}
+        if(r.sourceRevision.startsWith("way-rule-set-sha256:"))require(r.entity=="way"&&
+            r.sourceRevision.removePrefix("way-rule-set-sha256:").matches(Regex("[0-9a-f]{64}"))) {"Invalid way source revision scheme"}
         for(at in listOfNotNull(r.validFromUTC,r.validUntilUTC))require(at.isFinite()&&at>=0) { "Invalid amendment validity" }
         require(r.validFromUTC==null||r.validUntilUTC==null||r.validFromUTC<r.validUntilUTC) { "Empty amendment validity" }
         if(r.entity!="way"&&r.bindingVerified)require((r.boundWayId?.toLongOrNull()?:0)>0&&r.direction in setOf(-1,1)&&!r.passageEvidenceId.isNullOrEmpty()) { "Node edit lacks verified directed passage evidence" }
@@ -182,7 +187,7 @@ class MapDataAmendmentStore(directory: File) {
         }
     }
     internal fun confirmedNodeAmendments(wayId:String,bundle:String):List<MapDataAmendment> =
-        if(!file.isFile)emptyList() else database(false) { db ->
+        if(!PackedAmendmentBaseIdentity.isCanonical(bundle)||!file.isFile)emptyList() else database(false) { db ->
             val boundFilter=if(hasBindingColumn(db))" AND r.bound_way_id=?" else ""
             db.rawQuery("SELECT r.* FROM revisions r WHERE r.entity='node'"+boundFilter+" AND r.revision="+
                 "(SELECT MAX(n.revision) FROM revisions n WHERE n.id=r.id) ORDER BY r.id",if(boundFilter.isEmpty())null else arrayOf(wayId)).use { rows ->
@@ -197,8 +202,8 @@ class MapDataAmendmentStore(directory: File) {
         }
     fun resolve(wayId:String,bundle:String,direction:Int?,context:ConditionalSpeedRules.Context,
         baseKmh:Int?,baseUnlimited:Boolean,passedNodeIds:Set<String> = emptySet(),
-        baselineResult:ConditionalSpeedRules.Result?=null):ConditionalSpeedRules.Result? {
-        if(!file.isFile)return null
+        baselineResult:ConditionalSpeedRules.Result?=null,sourceWayRulesJSON:String?=null):ConditionalSpeedRules.Result? {
+        if(!PackedAmendmentBaseIdentity.isCanonical(bundle)||!file.isFile)return null
         return database(false) { db ->
             val boundFilter=if(hasBindingColumn(db))" AND r.bound_way_id=?" else ""
             db.rawQuery("SELECT r.* FROM revisions r WHERE r.revision=(SELECT MAX(n.revision) FROM revisions n WHERE n.id=r.id) "+
@@ -208,6 +213,8 @@ class MapDataAmendmentStore(directory: File) {
                 while(rows.moveToNext()) {
                     val r=decodeRow(rows)
                     if(r.operation!="upsert"||r.sourceNamespace !in setOf("osm","local"))continue
+                    if(r.entity=="way"&&r.sourceRevision.startsWith("way-rule-set-sha256:")&&
+                        (sourceWayRulesJSON==null||r.sourceRevision!="way-rule-set-sha256:"+sourceSHA256(sourceWayRulesJSON)))continue
                     if(r.sourceNamespace=="local"&&(r.entity!="node"||r.stationChainageM==null||r.scopeStartM==null||r.scopeEndM==null))continue
                     if(r.entity!="way"&&(r.boundWayId!=wayId||!r.bindingVerified||r.passageEvidenceId.isNullOrEmpty()||r.sourceId !in passedNodeIds))continue
                     if(r.reviewState!="confirmed"||r.basisBundle!=bundle)continue
@@ -241,5 +248,9 @@ class MapDataAmendmentStore(directory: File) {
         fun applicationStore():MapDataAmendmentStore?=directory?.let(::MapDataAmendmentStore)
         fun newLocalNodeSourceId():String="local-node:"+UUID.randomUUID().toString()
         internal fun isLocalNodeSourceId(id:String):Boolean=id.matches(Regex("local-node:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}"))
+        internal fun sourceSHA256(raw:String)=MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.UTF_8))
+            .joinToString(""){"%02x".format(it.toInt() and 255)}
+        fun waySourceRevision(rulesJSON:String)="way-rule-set-sha256:"+sourceSHA256(rulesJSON)
+        fun nodeSourceRevision(sourceJSON:String)="node-json-sha256:"+sourceSHA256(sourceJSON)
     }
 }

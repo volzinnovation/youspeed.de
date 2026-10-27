@@ -110,6 +110,7 @@ internal class V3SpeedLimitLookup(
     private val wayCandidateSql = mutableMapOf<WayQueryShape, String>()
     private val settlementContextResolver = SettlementContextResolver(db)
     private val upcomingSpeedLimitReader = UpcomingSpeedLimitReader(db, InventorySignSourceScope.allowsMobiData(db, dbPath, this.countryCode))
+    fun amendmentBaseIdentity():String?=db.amendmentBaseIdentity
     private val hasWaysTable = tableExists("ways")
     private val hasAreasTable = tableExists("areas")
     private val hasCityBoundaryTable = tableExists("city_boundary")

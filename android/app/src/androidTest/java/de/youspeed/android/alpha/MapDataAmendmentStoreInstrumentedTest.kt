@@ -13,9 +13,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MapDataAmendmentStoreInstrumentedTest {
     private val night="""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"key":"maxspeed:conditional","raw":"30 @ (22:00-06:00)","role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","clauses":[{"limit":{"kind":"numeric","kmh":30},"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}"""
+    private val baseIdentity="ysp-base-v1:"+"a".repeat(64)+":"+"b".repeat(64)+":"+"c".repeat(64)
     private val atNight=Instant.parse("2026-10-27T22:30:00Z").toEpochMilli()
     private fun record(id:String="way:10",entity:String="way",source:String="10")=MapDataAmendment(
-        id,"osm",entity,source,"fixture-1","fixture-1","source-fingerprint-1",night,
+        id,"osm",entity,source,baseIdentity,baseIdentity,"source-fingerprint-1",night,
         mapOf("maxspeed" to "50","maxspeed:conditional" to "30 @ (22:00-06:00)"),"instrumented-test","source-evidence")
     private fun directory()=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,
         "amendment-test-${System.nanoTime()}").apply{check(mkdirs())}
@@ -33,14 +34,14 @@ class MapDataAmendmentStoreInstrumentedTest {
             assertEquals(oldCondition.toString(),newCondition.toString())
             assertEquals(record().rawSourceTags,saved.rawSourceTags)
             val nightContext=ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1)
-            assertEquals(25,reopened.resolve("10","fixture-1",1,nightContext,50,false)?.kmh)
+            assertEquals(25,reopened.resolve("10",baseIdentity,1,nightContext,50,false)?.kmh)
             val day=nightContext.copy(atMs=Instant.parse("2026-10-27T12:00:00Z").toEpochMilli())
-            assertEquals(50,reopened.resolve("10","fixture-1",1,day,50,false)?.kmh)
+            assertEquals(50,reopened.resolve("10",baseIdentity,1,day,50,false)?.kmh)
             assertNull(reopened.resolve("10","new-generation",1,nightContext,50,false))
             val conflict=assertThrows(MapDataAmendmentStore.Conflict::class.java){reopened.put(saved,1)}
             assertEquals(2L,conflict.actualRevision)
             reopened.tombstone("way:10",2)
-            assertNull(MapDataAmendmentStore(directory).resolve("10","fixture-1",1,nightContext,50,false))
+            assertNull(MapDataAmendmentStore(directory).resolve("10",baseIdentity,1,nightContext,50,false))
             assertEquals(listOf(1L,2L,3L),reopened.history("way:10").map{it.revision})
         } finally {directory.deleteRecursively()}
     }
@@ -51,10 +52,10 @@ class MapDataAmendmentStoreInstrumentedTest {
             store.put(record("node:$source","node",source).copy(direction=1,boundWayId="10",bindingVerified=true,
                 passageEvidenceId="historical-passage",nodeJSON="{\"osm_node_id\":9007199254740993}"),0)
             val context=ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1)
-            assertNull(store.resolve("10","fixture-1",1,context,50,false))
-            assertNull(store.resolve("20","fixture-1",1,context,50,false,setOf(source)))
-            assertEquals(30,store.resolve("10","fixture-1",1,context,50,false,setOf(source))?.kmh)
-            assertTrue(store.resolve("10","fixture-1",null,context,50,false,setOf(source))?.unresolved==true)
+            assertNull(store.resolve("10",baseIdentity,1,context,50,false))
+            assertNull(store.resolve("20",baseIdentity,1,context,50,false,setOf(source)))
+            assertEquals(30,store.resolve("10",baseIdentity,1,context,50,false,setOf(source))?.kmh)
+            assertTrue(store.resolve("10",baseIdentity,null,context,50,false,setOf(source))?.unresolved==true)
             assertEquals(source,MapDataAmendmentStore(directory).latest("node:$source")?.sourceId)
         } finally {directory.deleteRecursively()}
     }
@@ -72,10 +73,10 @@ class MapDataAmendmentStoreInstrumentedTest {
                 db.execSQL("CREATE TABLE way_geom(way_id INTEGER PRIMARY KEY,points_json TEXT)")
                 db.execSQL("INSERT INTO way_geom VALUES(10,'[[0,0],[0,0.003]]')")
             }
-            InventorySignDatabase(file.path,store).use {database->
+            InventorySignDatabase(file.path,store,baseIdentity).use {database->
                 val runtime=InventorySignRuntime{}
                 fun fix(lon:Double,seconds:Long,direction:Int=1,heading:Double=90.0)=InventorySignFix(0.0,lon,
-                    Instant.ofEpochMilli(atNight+seconds*1000),5.0,"10",direction,true,"fixture-1",heading,5.0)
+                    Instant.ofEpochMilli(atNight+seconds*1000),5.0,"10",direction,true,baseIdentity,heading,5.0)
                 fun evaluate(fix:InventorySignFix)=runtime.evaluate(database.read(fix.latitude,fix.longitude,fix.wayId,fix.direction),
                     fix,fix.at,false,false)
                 val before=fix(.0008,0);assertTrue(evaluate(before).passedAmendedNodeIds.isEmpty())
@@ -88,14 +89,14 @@ class MapDataAmendmentStoreInstrumentedTest {
                 assertEquals(30,amended.speedLimitKmh);assertNotNull(amended.conditionalRuleContext)
                 val inventory=base.copy(speedLimitKmh=70,bundleSpeedProvenance=BundleSpeedProvenance("inventory_sign","mobidata-bw-vzk"))
                 assertEquals(inventory,database.applyNodeAmendments(inventory,crossed,decision,"DEU",atNight))
-                assertEquals(30,store.resolve("10","fixture-1",1,ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1),
+                assertEquals(30,store.resolve("10",baseIdentity,1,ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1),
                     50,false,decision.passedAmendedNodeIds)?.kmh)
                 assertEquals(setOf(source),evaluate(fix(.00099,2)).passedAmendedNodeIds)
                 assertEquals(setOf(source),evaluate(fix(.002,2)).passedAmendedNodeIds)
                 val uncertain=fix(.002,3,direction=0,heading=Double.NaN)
                 val held=evaluate(uncertain).passedAmendedNodeIds
                 assertEquals(setOf(source),held)
-                assertTrue(store.resolve("10","fixture-1",null,ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU"),
+                assertTrue(store.resolve("10",baseIdentity,null,ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU"),
                     50,false,held)?.unresolved==true)
                 assertTrue(evaluate(fix(.0023,4)).passedAmendedNodeIds.isEmpty())
                 runtime.finish(Instant.ofEpochMilli(atNight+5000))
@@ -103,6 +104,14 @@ class MapDataAmendmentStoreInstrumentedTest {
                 runtime.finish(Instant.ofEpochMilli(atNight+6500))
                 val initialize=fix(.0011,7);assertEquals(setOf(source),evaluate(initialize).passedAmendedNodeIds)
                 assertTrue(evaluate(fix(.0011,8,direction=-1,heading=270.0)).passedAmendedNodeIds.isEmpty())
+                runtime.finish(Instant.ofEpochMilli(atNight+8500))
+                assertEquals(setOf(source),evaluate(fix(.0011,9)).passedAmendedNodeIds)
+                val edited=requireNotNull(store.latest("node:$source"))
+                store.amendNumericLimit(edited.id,edited.revision,"maxspeed:conditional",0,25)
+                assertEquals(setOf(source),evaluate(fix(.0011,10,direction=0,heading=Double.NaN)).passedAmendedNodeIds)
+                val rulesOnly=requireNotNull(store.latest(edited.id))
+                store.put(rulesOnly.copy(passageEvidenceId="new-reviewed-binding"),rulesOnly.revision)
+                assertTrue(evaluate(fix(.0011,11,direction=0,heading=Double.NaN)).passedAmendedNodeIds.isEmpty())
             }
         } finally {directory.deleteRecursively()}
     }
@@ -124,12 +133,12 @@ class MapDataAmendmentStoreInstrumentedTest {
                     }
                 }.toString()
                 db.execSQL("INSERT INTO road_speed_rule_set VALUES(10,?)",arrayOf(baseline))
-                val result=ConditionalSpeedRules.resolve(db,"10",1,50,false,atNight,"Europe/Berlin","DEU",store)
+                val result=ConditionalSpeedRules.resolve(db,"10",1,50,false,atNight,"Europe/Berlin","DEU",store,baseIdentity)
                 assertEquals(30,result?.kmh)
                 assertEquals(50,result?.reevaluation?.evaluate(atNight+61000)?.kmh)
             }
             val untrusted=ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1,clockTrusted=false)
-            assertTrue(store.resolve("10","fixture-1",1,untrusted,50,false)?.unresolved==true)
+            assertTrue(store.resolve("10",baseIdentity,1,untrusted,50,false)?.unresolved==true)
         } finally {directory.deleteRecursively()}
     }
     @Test fun inactiveNodeClauseReevaluatesTheUnderlyingConditionalAtEveryClockTick() {
@@ -148,7 +157,7 @@ class MapDataAmendmentStoreInstrumentedTest {
             val baseline=ConditionalSpeedRules.Reevaluation(original,50,false,1,"DEU","Europe/Berlin")
             val initial=baseline.evaluate(ten).copy(reevaluation=baseline)
             assertEquals(40,initial.kmh)
-            val amended=store.resolve("10","fixture-1",1,ConditionalSpeedRules.Context(ten,"Europe/Berlin","DEU",1),
+            val amended=store.resolve("10",baseIdentity,1,ConditionalSpeedRules.Context(ten,"Europe/Berlin","DEU",1),
                 initial.kmh,false,setOf(source),baselineResult=initial)
             assertEquals(40,amended?.kmh)
             assertEquals(50,amended?.reevaluation?.evaluate(ten+3600000)?.kmh)
@@ -158,14 +167,14 @@ class MapDataAmendmentStoreInstrumentedTest {
             assertTrue(malformed.evaluate(ten).unresolved)
             assertEquals("map_amendment_reevaluation_depth",malformed.evaluate(ten).reason)
             val unknownBase=ConditionalSpeedRules.Result(null,false,true,"electronic_sign_state_unknown")
-            val unknown=store.resolve("10","fixture-1",1,ConditionalSpeedRules.Context(ten,"Europe/Berlin","DEU",1),
+            val unknown=store.resolve("10",baseIdentity,1,ConditionalSpeedRules.Context(ten,"Europe/Berlin","DEU",1),
                 50,false,setOf(source),baselineResult=unknownBase)
             assertTrue(unknown?.unresolved==true)
             assertTrue(unknown?.reevaluation?.evaluate(ten+3600000)?.unresolved==true)
             val expiry=unknown?.reevaluation?.copy(validUntilUTC=ten/1000.0+60)?.evaluate(ten+61000)
             assertTrue(expiry?.unresolved==true);assertEquals("electronic_sign_state_unknown",expiry?.reason)
             store.put(record(),0)
-            assertTrue(store.resolve("10","fixture-1",1,ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1),
+            assertTrue(store.resolve("10",baseIdentity,1,ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1),
                 50,false,setOf(source),baselineResult=initial)?.unresolved==true)
         } finally {directory.deleteRecursively()}
     }
@@ -184,7 +193,7 @@ class MapDataAmendmentStoreInstrumentedTest {
             assertEquals(source,reopened.latest(source)?.sourceId)
             assertFalse(JSONObject(requireNotNull(reopened.latest(source)?.nodeJSON)).has("osm_node_id"))
             val context=ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1)
-            assertNull(reopened.resolve("10","fixture-1",1,context,50,false,setOf(source)))
+            assertNull(reopened.resolve("10",baseIdentity,1,context,50,false,setOf(source)))
             val bound=reopened.put(requireNotNull(reopened.latest(source)).copy(direction=1,boundWayId="10",bindingVerified=true,
                 passageEvidenceId="reviewed-local-binding",stationChainageM=100.0,scopeStartM=100.0,scopeEndM=200.0),1)
             val amended=reopened.amendNumericLimit(source,bound.revision,"maxspeed:conditional",0,25)
@@ -192,19 +201,56 @@ class MapDataAmendmentStoreInstrumentedTest {
             val station=requireNotNull(AmendedNodePassageRuntime.station(amended,null,300.0))
             val passages=AmendedNodePassageRuntime()
             fun fix(chainage:Double,seconds:Long)=InventorySignFix(0.0,.001,Instant.ofEpochMilli(atNight+seconds*1000),
-                5.0,"10",1,true,"fixture-1",90.0,5.0) to chainage
+                5.0,"10",1,true,baseIdentity,90.0,5.0) to chainage
             val before=fix(90.0,0);assertTrue(passages.evaluate(listOf(station),before.first,before.first.at,before.second,90.0).isEmpty())
             val crossed=fix(110.0,1);val proof=passages.evaluate(listOf(station),crossed.first,crossed.first.at,crossed.second,90.0)
             assertEquals(setOf(source),proof)
-            assertEquals(25,reopened.resolve("10","fixture-1",1,context,50,false,proof)?.kmh)
+            assertEquals(25,reopened.resolve("10",baseIdentity,1,context,50,false,proof)?.kmh)
             val day=context.copy(atMs=Instant.parse("2026-10-27T12:00:00Z").toEpochMilli())
-            assertEquals(50,reopened.resolve("10","fixture-1",1,day,50,false,proof)?.kmh)
+            assertEquals(50,reopened.resolve("10",baseIdentity,1,day,50,false,proof)?.kmh)
             val end=fix(200.0,2);assertTrue(passages.evaluate(listOf(station),end.first,end.first.at,end.second,90.0).isEmpty())
             reopened.tombstone(source,amended.revision)
-            assertNull(MapDataAmendmentStore(directory).resolve("10","fixture-1",1,context,50,false,proof))
-            val created=reopened.createLocalNode(0.0,.002,initial.rawSourceTags,night,"fixture-1","test","survey")
+            assertNull(MapDataAmendmentStore(directory).resolve("10",baseIdentity,1,context,50,false,proof))
+            val created=reopened.createLocalNode(0.0,.002,initial.rawSourceTags,night,baseIdentity,"test","survey")
             assertTrue(MapDataAmendmentStore.isLocalNodeSourceId(created.sourceId));assertEquals(1L,created.revision)
             assertFalse(created.bindingVerified)
+        } finally {directory.deleteRecursively()}
+    }
+    @Test fun sameVersionOverlappingRegionAndChangedNodesCannotReuseReviewedAmendments() {
+        val directory=directory()
+        try {
+            val store=MapDataAmendmentStore(directory)
+            store.put(record(),0)
+            val context=ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1)
+            val otherContext="ysp-base-v1:"+"d".repeat(64)+":"+"b".repeat(64)+":"+"c".repeat(64)
+            val otherNodes="ysp-base-v1:"+"a".repeat(64)+":"+"b".repeat(64)+":"+"e".repeat(64)
+            assertEquals(30,store.resolve("10",baseIdentity,1,context,50,false)?.kmh)
+            assertNull(store.resolve("10",otherContext,1,context,50,false))
+            assertNull(store.resolve("10",otherNodes,1,context,50,false))
+            val legacy=record("legacy:10").copy(basisBundle="2026-10-27-packed-v1",originalBundle="2026-10-27-packed-v1")
+            store.put(legacy,0)
+            assertNull(store.resolve("10","2026-10-27-packed-v1",1,context,50,false))
+            assertEquals("2026-10-27-packed-v1",store.latest(legacy.id)?.basisBundle)
+            store.tombstone("way:10",1)
+            assertNull(store.resolve("10",baseIdentity,1,context,50,false))
+            store.put(requireNotNull(store.latest(legacy.id)).copy(basisBundle=baseIdentity),1)
+            assertEquals(30,store.resolve("10",baseIdentity,1,context,50,false)?.kmh)
+        } finally {directory.deleteRecursively()}
+    }
+    @Test fun knownSourceRevisionSchemesRejectMismatchedSourceSnapshots() {
+        val directory=directory()
+        try {
+            val store=MapDataAmendmentStore(directory)
+            store.put(record().copy(sourceRevision="way-rule-set-sha256:"+MapDataAmendmentStore.sourceSHA256(night)),0)
+            val context=ConditionalSpeedRules.Context(atNight,"Europe/Berlin","DEU",1)
+            assertNull(store.resolve("10",baseIdentity,1,context,50,false))
+            assertNull(store.resolve("10",baseIdentity,1,context,50,false,sourceWayRulesJSON="{}"))
+            assertEquals(30,store.resolve("10",baseIdentity,1,context,50,false,sourceWayRulesJSON=night)?.kmh)
+            val node="{\"osm_node_id\":9007199254740993}"
+            val row=record("node:9007199254740993","node","9007199254740993").copy(nodeJSON=node,
+                sourceRevision="node-json-sha256:"+MapDataAmendmentStore.sourceSHA256(node))
+            store.put(row,0)
+            assertThrows(IllegalArgumentException::class.java){store.put(row.copy(nodeJSON="{}"),1)}
         } finally {directory.deleteRecursively()}
     }
 }

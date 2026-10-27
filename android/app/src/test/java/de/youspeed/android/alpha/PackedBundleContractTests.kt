@@ -24,6 +24,20 @@ class PackedBundleContractTests {
         assertThrows(IllegalArgumentException::class.java){parsed.copy(packedBase=base.copy(
             roads=base.roads.copy(uncompressedSha256=null))).validateLaunchContract("1.6")}
     }
+    @Test fun amendmentBaseIdentitySeparatesOverlappingSourcesAtTheSameDisplayVersion() {
+        val f=Fixture(temporary.newFolder())
+        val first=ContractJson.decodeBundleManifest(f.manifest()).copy(region="baden-wuerttemberg",bundleVersion="2026-10-27-packed-v1")
+        val identity=PackedAmendmentBaseIdentity.fromManifest(first)
+        assertTrue(PackedAmendmentBaseIdentity.isCanonical(identity))
+        assertFalse(PackedAmendmentBaseIdentity.isCanonical(first.bundleVersion))
+        val overlapping=first.copy(region="karlsruhe-regbez",db=first.db.copy(sha256="f".repeat(64)))
+        assertNotEquals(identity,PackedAmendmentBaseIdentity.fromManifest(overlapping))
+        val base=requireNotNull(first.packedBase);val nodes=requireNotNull(base.nodes)
+        assertNotEquals(identity,PackedAmendmentBaseIdentity.fromManifest(first.copy(packedBase=base.copy(
+            nodes=nodes.copy(uncompressedSha256="e".repeat(64))))))
+        assertEquals(identity,PackedAmendmentBaseIdentity.fromManifest(first.copy(packedBase=base.copy(
+            roads=base.roads.copy(sha256="d".repeat(64)))))) // gzip wire identity is not installed identity.
+    }
     @Test fun verifiedCatalogSelectsImmutableManifestAndInflatesBothCompanions() {
         val f=Fixture(temporary.newFolder());f.publishCatalog()
         val result=f.manager.syncFromManifestUrl(f.legacy)

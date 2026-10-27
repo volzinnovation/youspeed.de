@@ -88,6 +88,28 @@ class PackedCatalogTests(unittest.TestCase):
         self.assertEqual(csv_rows[0]['source_installed_bytes'], '2000')
         self.assertEqual(csv_rows[0]['previous_published_installed_bytes'], '1000')
 
+    def test_only_planned_same_region_alias_can_use_canonical_source(self):
+        canonical = self.add('karlsruhe-regbez')
+        alias = self.add('karlsruhe-regbez', 'deu-v3-data-karlsruhe-latest')
+        # The obsolete alias has a smaller and different original source.
+        old = self.plan['bundles'][1]
+        old['database_assets'][0]['size'] = 100
+        old['source_manifest_document']['db'].update(bytes=100, uncompressed_bytes=200, uncompressed_sha256='f' * 64)
+        result = json.loads(alias.read_text())
+        result.update(converted_source_release_tag='karlsruhe-regbez', source_upgrade_kind='canonical-region-alias',
+                      previous_published_download_bytes=100)
+        self.write(alias, result)
+        document, comparison = catalog.documents(self.plan, [canonical, alias], require_complete=True)
+        self.assertEqual(len(document['bundles']), 1)
+        row = next(row for row in comparison['bundles'] if not row['catalog_selected'])
+        self.assertEqual(row['source_installed_bytes'], 1000)
+        self.assertEqual(row['previous_published_installed_bytes'], 200)
+        self.assertEqual(row['previous_published_download_change_percent'], 200)
+        self.assertEqual(row['source_upgrade_kind'], 'canonical-region-alias')
+        for value in ['monaco', 'deu-v3-data-karlsruhe-latest']:
+            changed = dict(result, converted_source_release_tag=value); self.write(alias, changed)
+            with self.assertRaisesRegex(ValueError, 'Unplanned canonical alias'): catalog.documents(self.plan, [canonical, alias])
+
     def test_drafts_and_unverified_or_mismatched_server_receipts_fail_closed(self):
         path = self.add('monaco')
         receipt_path = path.with_name('github-verified.json')

@@ -1,0 +1,96 @@
+{
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "created_at_utc": "2026-10-27T10:34:47.675414+00:00",
+  "device": {
+    "abi": "arm64-v8a",
+    "model": "moto g86 5G",
+    "sdk": "36"
+  },
+  "format": "youspeed.packed-runtime.android-physical-validation",
+  "generic_nodes": {
+    "full_metadata_validated": true,
+    "nodes": 73991,
+    "semantic_fnv1a64": "d68039707ce2c166"
+  },
+  "isolated_benchmark_only": true,
+  "normal_app_updated": false,
+  "notes": [
+    "All 586 queries / 8,163 rows match original source SQL, with identical results on every retained reader.",
+    "Native8-readerRSS gate is56MiB, leaving8MiB relative to64MiB storage delta criterion; this is not a whole-app RSS cap.",
+    "Node roundtrip validates all73,991 full source records, preserving restrictions/raw tags/memberships; it does not make unverified node bindings authoritative.",
+    "Physical production JNI/correction integration suite is reported separately by the Android platform owner.",
+    "iPhone evidence remains pending; this receipt does not authorize rollout."
+  ],
+  "on_device_sha256": {
+    "/data/local/tmp/youspeed-packed-runtime/bw.context.yspc": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5",
+    "/data/local/tmp/youspeed-packed-runtime/bw.nodes.yspn": "1d56425b5628ce037e8e5a7e8b81e884adcc51f6af549c0b60aee3c3860358ec",
+    "/data/local/tmp/youspeed-packed-runtime/bw.ways.yspg": "14ebf59778ecaff7e5cd270363b97091a4f691ccac6083d438c2108090ca0f9e",
+    "/data/local/tmp/youspeed-packed-runtime/nodebench": "b9d13fb55ac8e6bd1dcf8a3abd63985da922b415edd6e2e76361dd17f2417838",
+    "/data/local/tmp/youspeed-packed-runtime/packed-runtime-bench": "4ba2d7254e198e217232f62e9a76d5ff417cd94aea03da91557adf5a31c6d97e"
+  },
+  "original_source_sql_report_sha256": "97c5b0f2d4c14e2bea184857fa3fc4824a4dedb2dd74acaf7ad9420c873d7f39",
+  "physical_device_evidence": {
+    "lookup_results_identical": true,
+    "mapped_payload_bytes": 0,
+    "observed_incremental_rss_bytes": 7692288,
+    "pool_lookup_results_identical": true,
+    "pool_observed_incremental_rss_bytes": 50262016,
+    "pool_report_sha256": "f95c3eefca86d7f65055d303e01818b601bd33bdbc4d0310816fcecdd59fd20b",
+    "report_sha256": "22ede459008663e64ada9026b73e5f5fb079495d67dca8bd6725754ec5dfb563",
+    "retained_reader_count": 8
+  },
+  "reports": {
+    "nodes_benchmark": {
+      "path": "benchmarks/packed-runtime/results/android-bw-nodes-benchmark-2026-10-27.json",
+      "sha256": "aa047ca57f7667efd70d8bc93d981854d47b2f46750705853e1df75b73b298a1"
+    },
+    "nodes_roundtrip": {
+      "path": "benchmarks/packed-runtime/results/android-bw-nodes-roundtrip-2026-10-27.json",
+      "sha256": "b2dad425a1d682671bd7b126530b9028608036487c1f2d874778418a77b8cb9d"
+    },
+    "pool8": {
+      "path": "benchmarks/packed-runtime/results/android-bw-pool8-2026-10-27.json",
+      "sha256": "f95c3eefca86d7f65055d303e01818b601bd33bdbc4d0310816fcecdd59fd20b"
+    },
+    "single": {
+      "path": "benchmarks/packed-runtime/results/android-bw-context-2026-10-27.json",
+      "sha256": "22ede459008663e64ada9026b73e5f5fb079495d67dca8bd6725754ec5dfb563"
+    }
+  },
+  "runtime_source_sha256": {
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp": "6b49421783d7667bd377af0280e130e7a5c6377f24e72223c72d97e658b43eb9",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt": "18ee5c1bfc193b9ce84639858cffe065d604ba19eae9c62e19e30452b7c6e9a0",
+    "iphone/SpeedConsumerApp/PackedBundleRuntime.swift": "83acb5e6f54112821a415b324f17296ff3d56a168bcda27900b97be0dbcf521d",
+    "shared/runtime-sign-nodes-prototype/packed_nodes.h": "c66f7d78fe5fbf3e1ade6fb3c65002cc4b4dda7f3071deb175f2a00e424dd0a2",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "cf7be70c6c4b8d948ad32d764152a4e83963bd4c9eb2d34ff0c0992d5f169fef",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.h": "887323b28596b39347fd73b085237309d059bb17d518523146b6b9432b7239e0",
+    "shared/runtime-storage-prototype/bounded_file.h": "c33d6475718326a337c9273b51e61d90a4e2df57e92c602b310aa070778dfc31",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/runtime_storage.cpp": "a6930f324aa1d7877c1d5b17df45af77e5bb7f4472dd4a891ca2407892e1632d",
+    "shared/runtime-storage-prototype/runtime_storage.h": "b4c47464ba0c3d18d21df0c05e7c4ef90b69ce648ef0c8d3b38e536098161eb6",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  },
+  "schema_version": 1,
+  "source_commit": "a4d95ff16d83e1b5c67ee71c2b9106f41f53e352",
+  "tested_bw_artifacts": {
+    "context": {
+      "bytes": 804040013,
+      "sha256": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5"
+    },
+    "nodes": {
+      "bytes": 21205532,
+      "sha256": "1d56425b5628ce037e8e5a7e8b81e884adcc51f6af549c0b60aee3c3860358ec"
+    },
+    "roads": {
+      "bytes": 60413284,
+      "sha256": "14ebf59778ecaff7e5cd270363b97091a4f691ccac6083d438c2108090ca0f9e"
+    }
+  }
+}

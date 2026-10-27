@@ -3,11 +3,12 @@ import SQLite3
 @testable import SpeedConsumer
 
 final class MapDataAmendmentStoreTests: XCTestCase {
+    private let baseIdentity = "ysp-base-v1:" + String(repeating: "a", count: 64) + ":" + String(repeating: "b", count: 64) + ":" + String(repeating: "c", count: 64)
     private let rules = #"{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"key":"maxspeed","raw":"50","role":"speed","vehicle":"all","direction":0,"priority":0,"conditional":false,"status":"supported","clauses":[{"limit":{"kind":"numeric","kmh":50},"condition":{"kind":"true"}}]},{"key":"maxspeed:conditional","raw":"30 @ (wet)","role":"speed","vehicle":"all","direction":0,"priority":0,"conditional":true,"status":"supported","clauses":[{"limit":{"kind":"numeric","kmh":30},"condition":{"kind":"context","field":"wet"}}]}]}"#
 
     private func record(id: String = "source:10") -> MapDataAmendment {
         MapDataAmendment(id: id, sourceNamespace: "osm", entity: "way", sourceID: "10",
-            basisBundle: "fixture-v1", originalBundle: "fixture-v1", sourceRevision: "source:10:revision:7",
+            basisBundle: baseIdentity, originalBundle: baseIdentity, sourceRevision: "source:10:revision:7",
             rulesJSON: rules, rawSourceTags: ["maxspeed": "50", "maxspeed:conditional": "30 @ (wet)"],
             author: "unit-test", evidenceID: "review:1")
     }
@@ -22,7 +23,7 @@ final class MapDataAmendmentStoreTests: XCTestCase {
                          at: Double = 150, passed: Set<String> = []) throws -> ConditionalSpeedRules.Result? {
         var context = ConditionalSpeedRules.Context(at: Date(timeIntervalSince1970: at), direction: direction)
         if let wet { context.facts["wet"] = wet }
-        return try store.resolve(wayID: "10", bundle: "fixture-v1", direction: direction,
+        return try store.resolve(wayID: "10", bundle: baseIdentity, direction: direction,
             context: context, baseKmh: 50, baseUnlimited: false, passedNodeIDs: passed)
     }
 
@@ -67,7 +68,7 @@ final class MapDataAmendmentStoreTests: XCTestCase {
     func testNodeNeedsCurrentDrivePassageInAdditionToHistoricalEvidence() throws {
         try run { store, _ in
             var value = MapDataAmendment(id: "node:9007199254740993", sourceNamespace: "osm", entity: "node",
-                sourceID: "9007199254740993", direction: 1, basisBundle: "fixture-v1", originalBundle: "fixture-v1",
+                sourceID: "9007199254740993", direction: 1, basisBundle: baseIdentity, originalBundle: baseIdentity,
                 sourceRevision: "node:original", rulesJSON: rules, rawSourceTags: ["traffic_sign": "maxspeed"],
                 author: "test", evidenceID: "review", boundWayID: "10", bindingVerified: true, passageEvidenceID: "previous-drive")
             _ = try store.put(value, expectedRevision: 0)
@@ -105,7 +106,7 @@ final class MapDataAmendmentStoreTests: XCTestCase {
                 author: "test", evidenceID: "review", boundWayID: "10", bindingVerified: true, passageEvidenceID: "drive")
             _ = try store.put(value, expectedRevision: 0)
             let context = ConditionalSpeedRules.Context(at: day.addingTimeInterval(7*3600), timeZoneID: "UTC", direction: 1)
-            let result = try XCTUnwrap(store.resolve(wayID: "10", bundle: "fixture-v1", direction: 1,
+            let result = try XCTUnwrap(store.resolve(wayID: "10", bundle: baseIdentity, direction: 1,
                 context: context, baseKmh: 50, baseUnlimited: false, passedNodeIDs: ["123"], baselineResult: baseline))
             XCTAssertEqual(result.kmh, 25)
             let reevaluation = try XCTUnwrap(result.reevaluation)
@@ -115,7 +116,7 @@ final class MapDataAmendmentStoreTests: XCTestCase {
             XCTAssertEqual(decoded.evaluate(at: day.addingTimeInterval(11*3600)).kmh, 30)
             let unresolvedBaseline = ConditionalSpeedRules.Result(kmh: nil, unlimited: false, unresolved: true, reason: "electronic_sign_state_unknown")
             let laterContext = ConditionalSpeedRules.Context(at: day.addingTimeInterval(11*3600), timeZoneID: "UTC", direction: 1)
-            let unresolved = try XCTUnwrap(store.resolve(wayID: "10", bundle: "fixture-v1", direction: 1,
+            let unresolved = try XCTUnwrap(store.resolve(wayID: "10", bundle: baseIdentity, direction: 1,
                 context: laterContext, baseKmh: 50, baseUnlimited: false, passedNodeIDs: ["123"], baselineResult: unresolvedBaseline))
             XCTAssertTrue(unresolved.unresolved)
             XCTAssertTrue(try XCTUnwrap(unresolved.reevaluation).evaluate(at: day.addingTimeInterval(11*3600)).unresolved)
@@ -131,7 +132,7 @@ final class MapDataAmendmentStoreTests: XCTestCase {
             var value = record(); value.basisBundle = "different-generation"
             _ = try store.put(value, expectedRevision: 0)
             XCTAssertNil(try resolve(store))
-            value.basisBundle = "fixture-v1"; value.reviewState = "needs_review"
+            value.basisBundle = baseIdentity; value.reviewState = "needs_review"
             _ = try store.put(value, expectedRevision: 1)
             XCTAssertNil(try resolve(store))
             value.reviewState = "confirmed"; _ = try store.put(value, expectedRevision: 2)
@@ -167,17 +168,17 @@ final class MapDataAmendmentStoreTests: XCTestCase {
                     "chainage_m": 111.195, "direction": "unknown", "proof": "explicit_source_way_node_membership"]]]
             let nodeJSON = String(data: try JSONSerialization.data(withJSONObject: node, options: [.sortedKeys]), encoding: .utf8)!
             let record = MapDataAmendment(id: "node:123456", sourceNamespace: "osm", entity: "node", sourceID: "123456",
-                direction: 1, basisBundle: "fixture-v1", originalBundle: "fixture-v1", sourceRevision: "source-node:1",
+                direction: 1, basisBundle: baseIdentity, originalBundle: baseIdentity, sourceRevision: "source-node:1",
                 rulesJSON: rules, rawSourceTags: ["maxspeed:conditional": "30 @ (wet)"], author: "reviewer", evidenceID: "review:1",
                 nodeJSON: nodeJSON, boundWayID: "10", bindingVerified: true, passageEvidenceID: "reviewed-directed-association")
             _ = try store.put(record, expectedRevision: 0)
             let now = Date()
-            let records = try store.nodePassageCandidates(wayID: "10", bundle: "fixture-v1", at: now)
+            let records = try store.nodePassageCandidates(wayID: "10", bundle: baseIdentity, at: now)
             var runtime = MapDataNodePassageRuntime()
             let points = [(48.0,9.0),(48.002,9.0)]
             let length = InventorySignBundle.distance(48,9,48.002,9) * (6_371_000.0/6_371_008.8)
             func consume(_ latitude: Double, offset: Double, accuracy: Double = 5, heading: Double = 0) -> Set<String> {
-                runtime.consume(records: records, bundle: "fixture-v1", wayID: "10", points: points,
+                runtime.consume(records: records, bundle: baseIdentity, wayID: "10", points: points,
                     wayLengthM: length, lat: latitude, lon: 9, heading: heading, headingAccuracy: 5,
                     accuracy: accuracy, matchStable: true, at: now.addingTimeInterval(offset), now: now.addingTimeInterval(offset))
             }
@@ -188,8 +189,19 @@ final class MapDataAmendmentStoreTests: XCTestCase {
             let heldDuringGap = consume(48.0016, offset: 3, accuracy: 100)
             XCTAssertEqual(heldDuringGap, ["123456"])
             var context = ConditionalSpeedRules.Context(direction: 1); context.facts["wet"] = true
-            XCTAssertEqual(try store.resolve(wayID: "10", bundle: "fixture-v1", direction: 1,
+            XCTAssertEqual(try store.resolve(wayID: "10", bundle: baseIdentity, direction: 1,
                 context: context, baseKmh: 50, baseUnlimited: false, passedNodeIDs: heldDuringGap)?.kmh, 30)
+            var numericEdit = records[0]
+            numericEdit.rulesJSON = numericEdit.rulesJSON.replacingOccurrences(of: #""kmh":30"#, with: #""kmh":25"#)
+            numericEdit.revision += 1
+            func invalidFix(_ candidate: MapDataAmendment, offset: Double) -> Set<String> {
+                runtime.consume(records: [candidate], bundle: baseIdentity, wayID: "10", points: points,
+                    wayLengthM: length, lat: 48.0016, lon: 9, heading: nil, headingAccuracy: nil,
+                    accuracy: 100, matchStable: true, at: now.addingTimeInterval(offset), now: now.addingTimeInterval(offset))
+            }
+            XCTAssertEqual(invalidFix(numericEdit, offset: 3.2), ["123456"], "Changing a numeric clause retains the same passage proof")
+            var rebound = numericEdit; rebound.passageEvidenceID = "different-reviewed-binding"
+            XCTAssertTrue(invalidFix(rebound, offset: 3.4).isEmpty, "A new binding cannot borrow proof during a GPS/heading gap")
             XCTAssertTrue(consume(48.0021, offset: 4).isEmpty)
             runtime.reset()
             XCTAssertTrue(consume(48.0017, offset: 5).isEmpty, "A new drive cannot borrow the previous passage")
@@ -201,7 +213,7 @@ final class MapDataAmendmentStoreTests: XCTestCase {
         try run { store, directory in
             let created = try store.createLocalNode(latitude: 48.001, longitude: 9,
                 tags: ["traffic_sign": "maxspeed", "maxspeed": "50", "maxspeed:conditional": "30 @ (wet)"],
-                rulesJSON: rules, bundle: "fixture-v1", author: "surveyor", evidenceID: "survey:1")
+                rulesJSON: rules, bundle: baseIdentity, author: "surveyor", evidenceID: "survey:1")
             XCTAssertTrue(created.sourceID.hasPrefix("local-node:"))
             let reopened = MapDataAmendmentStore(directory: directory)
             var saved = try XCTUnwrap(reopened.latest(created.id))
@@ -217,10 +229,10 @@ final class MapDataAmendmentStoreTests: XCTestCase {
             saved.scopeStartM = 111.195; saved.scopeEndM = 180
             saved = try reopened.put(saved, expectedRevision: 2)
             let now = Date()
-            let records = try reopened.nodePassageCandidates(wayID: "10", bundle: "fixture-v1", at: now)
+            let records = try reopened.nodePassageCandidates(wayID: "10", bundle: baseIdentity, at: now)
             var runtime = MapDataNodePassageRuntime()
             func consume(_ latitude: Double, offset: Double, records: [MapDataAmendment]) -> Set<String> {
-                runtime.consume(records: records, bundle: "fixture-v1", wayID: "10", points: [(48,9),(48.002,9)],
+                runtime.consume(records: records, bundle: baseIdentity, wayID: "10", points: [(48,9),(48.002,9)],
                     wayLengthM: 222.3898532891175, lat: latitude, lon: 9, heading: 0, headingAccuracy: 5,
                     accuracy: 5, matchStable: true, at: now.addingTimeInterval(offset), now: now.addingTimeInterval(offset))
             }
@@ -237,6 +249,21 @@ final class MapDataAmendmentStoreTests: XCTestCase {
             let final = MapDataAmendmentStore(directory: directory)
             XCTAssertNil(try resolve(final, passed: passed))
             XCTAssertEqual(try final.history(saved.id).map(\.operation), ["upsert", "upsert", "upsert", "tombstone"])
+        }
+    }
+
+    func testKnownNodeRevisionIsByteBoundAndLegacyIncomingVersionIsInert() throws {
+        let original = #"{"osm_node_id":123,"source_id":"osm-node:123","latitude":48,"longitude":9,"tags":{"maxspeed":"50"},"memberships":[],"binding_status":"unresolved_direction"}"#
+        let changed = original.replacingOccurrences(of: #""maxspeed":"50""#, with: #""maxspeed":"60""#)
+        let revision = MapDataAmendmentStore.nodeSourceRevision(json: original)
+        XCTAssertTrue(MapDataAmendmentStore.matchesNodeSourceRevision(revision, json: original))
+        XCTAssertFalse(MapDataAmendmentStore.matchesNodeSourceRevision(revision, json: changed))
+        XCTAssertFalse(MapDataAmendmentStore.matchesNodeSourceRevision(revision, json: nil))
+        try run { store, _ in
+            var value = record(); value.basisBundle = "shared-version"
+            _ = try store.put(value, expectedRevision: 0)
+            XCTAssertNil(try store.resolve(wayID: "10", bundle: "shared-version", direction: 1,
+                context: .init(direction: 1), baseKmh: 50, baseUnlimited: false))
         }
     }
 }

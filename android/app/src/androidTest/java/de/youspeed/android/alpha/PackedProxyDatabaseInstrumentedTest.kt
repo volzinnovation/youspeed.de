@@ -22,6 +22,42 @@ import org.junit.runner.RunWith
 /** Packed native VFS compatibility and the retained failed ProxyFD architecture probe. */
 @RunWith(AndroidJUnit4::class)
 class PackedProxyDatabaseInstrumentedTest {
+    @Test fun completeBaseAndKnownWayRevisionSeparateSameVersionOverlappingRegions() {
+        val instrumentation=InstrumentationRegistry.getInstrumentation()
+        val root=File(instrumentation.targetContext.cacheDir,"overlap-bindings-${System.nanoTime()}").apply{check(mkdirs())}
+        val databases=mutableListOf<RuntimeMapDatabase>()
+        try {
+            val contexts=listOf("overlap-a","overlap-b","overlap-nodes").map { name ->
+                val directory=File(root,name).apply{check(mkdirs())}
+                for(file in requireNotNull(instrumentation.context.assets.list(name))) {
+                    instrumentation.context.assets.open("$name/$file").use {input->File(directory,file).outputStream().use{input.copyTo(it)}}
+                }
+                RuntimeMapDatabase.open(File(directory,"context.yspc").path).also{databases+=it}
+            }
+            val identities=contexts.map{requireNotNull(it.database.amendmentBaseIdentity)}
+            assertEquals(3,identities.toSet().size)
+            val store=MapDataAmendmentStore(File(root,"edits"))
+            fun text(index:Int,sql:String)=contexts[index].database.rawQuery(sql,null).use{check(it.moveToFirst());it.getString(0)}
+            val sourceA=text(0,"SELECT rules_json FROM road_speed_rule_set WHERE way_id=10")
+            val sourceB=text(1,"SELECT rules_json FROM road_speed_rule_set WHERE way_id=10")
+            val rules=org.json.JSONObject(sourceA).apply {
+                getJSONArray("tags").getJSONObject(0).getJSONArray("clauses").getJSONObject(0)
+                    .put("limit",org.json.JSONObject().put("kind","numeric").put("kmh",30))
+            }.toString()
+            var row=MapDataAmendment("way:10","osm","way","10",identities[0],"overlap-shared-v1",
+                MapDataAmendmentStore.waySourceRevision(sourceA),rules,mapOf("maxspeed" to "50"),"reviewer","source-review")
+            store.put(row,0)
+            fun speed(index:Int)=ConditionalSpeedRules.resolve(contexts[index].database,"10",1,50,false,
+                countryCode="DEU",amendmentStore=store)?.kmh
+            assertEquals(30,speed(0));assertEquals(60,speed(1));assertEquals(50,speed(2))
+            row=row.copy(basisBundle=identities[1]);store.put(row,1)
+            assertEquals(60,speed(1))
+            row=row.copy(sourceRevision=MapDataAmendmentStore.waySourceRevision(sourceB));store.put(row,2)
+            assertEquals(30,speed(1));assertEquals(50,speed(0))
+            store.put(row.copy(basisBundle="overlap-shared-v1"),3)
+            assertEquals(50,speed(0));assertEquals(60,speed(1));assertEquals(4,store.history(row.id).size)
+        } finally {databases.forEach{it.close()};root.deleteRecursively()}
+    }
     @Test fun nativeCursorPreservesBindingsTypesUnicodeMovementAndOwnerLifetime() {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val file=File.createTempFile("packed-cursor-", ".sqlite",context.cacheDir)

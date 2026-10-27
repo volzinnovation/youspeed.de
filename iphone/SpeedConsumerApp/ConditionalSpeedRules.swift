@@ -75,16 +75,18 @@ enum ConditionalSpeedRules {
 
     static func resolve(db: OpaquePointer, wayID: String, direction: Int?, baseKmh: Int?, baseUnlimited: Bool,
                         at: Date = Date(), timeZoneID: String? = nil, countryCode: String? = nil,
-                        amendmentStore: MapDataAmendmentStore? = nil, passedNodeIDs: Set<String> = []) -> Result? {
+                        amendmentStore: MapDataAmendmentStore? = nil, passedNodeIDs: Set<String> = [],
+                        amendmentBaseIdentity: String? = nil) -> Result? {
         let baseline = resolveBundle(db: db, wayID: wayID, direction: direction, baseKmh: baseKmh,
             baseUnlimited: baseUnlimited, at: at, timeZoneID: timeZoneID, countryCode: countryCode)
-        guard let generation = PackedBundleRuntime.metadata("packed_generation", database: db), !generation.isEmpty,
+        guard let generation = amendmentBaseIdentity ?? PackedBundleRuntime.amendmentBaseIdentity(database: db),
+              MapDataAmendmentStore.isCanonicalBaseIdentity(generation),
               let store = amendmentStore ?? MapDataAmendmentStore.applicationStore() else { return baseline }
         do {
             guard var result = try store.resolve(wayID: wayID, bundle: generation, direction: direction,
                 context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction),
                 baseKmh: baseKmh, baseUnlimited: baseUnlimited, passedNodeIDs: passedNodeIDs,
-                baselineResult: baseline) else { return baseline }
+                baselineResult: baseline, sourceWayRulesJSON: baseline?.reevaluation?.rulesJSON) else { return baseline }
             result.reevaluation?.fallbackReevaluations = baseline?.reevaluation.map { [$0] }
             result.reevaluation?.fallbackRulesJSON = baseline?.reevaluation?.rulesJSON
             result.reevaluation?.fallbackUnresolved = baseline?.unresolved

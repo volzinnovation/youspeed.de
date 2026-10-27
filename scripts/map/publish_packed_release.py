@@ -16,7 +16,9 @@ def run(args,**options):return subprocess.run(['gh',*args],check=True,**options)
 def validate_qa(qa,result,manifest,source_commit):
     require(qa.get('format')=='youspeed.packed-runtime.rollout-qa' and qa.get('schema_version')==1,'Unknown QA report')
     require(qa.get('ready_for_rollout') is True and set(qa.get('physical_devices_passed',[]))=={'iphone','android'},'Both physical phones must pass')
-    require(qa.get('source_commit')==source_commit,'QA belongs to another source commit')
+    approved=qa.get('approved_data_source_commits',[qa.get('source_commit')])
+    require(isinstance(approved,list) and all(isinstance(value,str) and re.fullmatch('[0-9a-f]{40}',value) for value in approved)
+            and qa.get('source_commit') in approved and source_commit in approved,'QA belongs to another source commit')
     require(qa.get('mapped_payload_bytes')==0 and qa.get('observed_incremental_rss_gate_bytes')==64*1024*1024,'Low-RSS gate missing')
     require(qa.get('builder_files_sha256')==result['builder_files_sha256'],'Untested builder recipe')
     require(manifest['source']['packed_storage']['context_codec']=='zstd-15-independent-256KiB-frames','Untested context codec')
@@ -26,13 +28,30 @@ def validate_qa(qa,result,manifest,source_commit):
               'shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp',
               'android/app/src/main/cpp/packed_sqlite_jni.cpp',
               'android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt',
+              'android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt',
+              'android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt',
+              'android/app/src/main/java/de/youspeed/android/alpha/ConditionalSpeedRules.kt',
+              'android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt',
+              'android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt',
+              'iphone/SpeedConsumerApp/MapDataAmendmentStore.swift',
+              'iphone/SpeedConsumerApp/ConditionalSpeedRules.swift',
+              'iphone/SpeedConsumerApp/V3LookupResources.swift',
+              'iphone/SpeedConsumerApp/V3SpeedLimitService.swift',
               'iphone/SpeedConsumerApp/PackedBundleRuntime.swift'}
     sources=qa.get('runtime_source_sha256',{})
     require(required<=set(sources),'QA omits production runtime sources')
-    for path,expected in {**sources,**qa['builder_files_sha256']}.items():
+    runtime_commit=qa.get('runtime_source_commit')
+    require(isinstance(runtime_commit,str) and re.fullmatch('[0-9a-f]{40}',runtime_commit),'Runtime QA commit must be pinned')
+    # Immutable data and the client consuming it have independent releases.
+    # A client-only fix must not force republishing identical verified data.
+    for path,expected in sources.items():
         require(not Path(path).is_absolute() and '..' not in Path(path).parts,'Unsafe QA source path')
-        raw=subprocess.check_output(['git','show',source_commit+':'+path])
+        raw=subprocess.check_output(['git','show',runtime_commit+':'+path])
         require(hashlib.sha256(raw).hexdigest()==expected,'QA source hash differs: '+path)
+    for path,expected in qa['builder_files_sha256'].items():
+        require(not Path(path).is_absolute() and '..' not in Path(path).parts,'Unsafe QA builder path')
+        raw=subprocess.check_output(['git','show',source_commit+':'+path])
+        require(hashlib.sha256(raw).hexdigest()==expected,'QA builder hash differs: '+path)
     tested=qa.get('tested_bw_artifacts',{})
     require(set(tested)=={'context','roads','nodes'},'QA omits tested BW generation')
     if result['region']=='baden-wuerttemberg':
@@ -102,6 +121,17 @@ def main():
     require(all(result['verification'].get(key) is True for key in
             ['all_original_logical_table_counts_preserved','original_metadata_values_preserved','every_original_geometry_text_exact']),
             'Original-source verification incomplete')
+    if result.get('source_upgrade_kind')=='canonical-region-alias':
+        refresh=manifest['source'].get('alias_refresh')
+        require(isinstance(refresh,dict) and refresh==result.get('alias_refresh') and refresh.get('data_bytes_reused_identically') is True,
+                'Alias refresh provenance differs')
+        require(result['converted_source_release_tag']==result['region']==refresh['canonical']['source_release_tag'] and
+                result['source_release_tag']==refresh['legacy']['release_tag']!=result['region'],
+                'Alias must refresh from its own canonical region')
+        recipe=refresh['repackager']
+        require(recipe['file']=='scripts/map/refresh_packed_alias.py','Unknown alias repackager')
+        raw=subprocess.check_output(['git','show',a.source_commit+':'+recipe['file']])
+        require(hashlib.sha256(raw).hexdigest()==recipe['sha256'],'Alias repackager differs from release commit')
     assets={item['file']:item for item in result['release_files']}
     require(len(assets)==len(result['release_files']) and manifest_name in assets,'Duplicate/missing release assets')
     for name,item in assets.items():
@@ -119,7 +149,8 @@ def main():
         require(assets[name]['bytes']==item['bytes'] and assets[name]['sha256']==item['sha256'],'Runtime manifest/asset mismatch')
     if a.publish:
         require(a.qa_report is not None,'Publication requires completed physical-device QA')
-        validate_qa(json.loads(a.qa_report.read_text()),result,manifest,a.source_commit)
+        qa=json.loads(a.qa_report.read_text())
+        validate_qa(qa,result,manifest,a.source_commit)
     response=subprocess.run(['gh','release','view',tag,'--repo',a.repo,'--json','isDraft,url,targetCommitish'],capture_output=True,text=True)
     existed=response.returncode==0
     require(existed or not a.publish_staged,'Staged release is unavailable; refusing to create a replacement')
@@ -129,11 +160,16 @@ def main():
         require(tag_commit(a.repo,tag) in (None,a.source_commit),'Existing draft tag belongs to another builder commit')
     notes=a.result.parent/'release-notes.txt'
     status='Physical-device integration and bounded-RSS gates passed.' if a.publish else 'Staged draft; physical-device rollout gates are pending.'
+    runtime_note=f' Accepted client commit: {qa.get("runtime_source_commit",a.source_commit)}.' if a.publish else ''
     notes.write_text(f"Packed immutable runtime for {result['region']}; requires YouSpeed 1.6 or newer.\n\n"
         f"Context, exact source geometry and generic sign nodes are verified before activation. Corrections remain in a separate writable store.\n\n"
         f"Installed runtime: {result['packed_installed_bytes']:,} bytes (source {result['source_installed_bytes']:,}). "
         f"Runtime download: {result['packed_download_bytes']:,} bytes (source {result['source_download_bytes']:,}).\n\n"
-        f"Builder commit: {a.source_commit}. Legacy V3 release is preserved. {status}\n")
+        f"Builder commit: {a.source_commit}.{runtime_note} Legacy V3 release is preserved. {status}\n")
+    if result.get('source_upgrade_kind')=='canonical-region-alias':
+        with notes.open('a') as stream:
+            stream.write('\nThe obsolete row-id based alias is refreshed from the canonical region dataset. '
+                         'Compression comparisons use that actual converted source; previous-published alias bytes are a separate content-upgrade baseline.\n')
     if not existed:
         run(['release','create',tag,'--repo',a.repo,'--target',a.source_commit,'--draft','--latest=false',
              '--title',result['region']+' packed runtime '+result['bundle_version'],'--notes-file',str(notes)])
@@ -152,6 +188,7 @@ def main():
         require(remote['draft'] is False and remote['tag_name']==tag,'Publication status not confirmed')
     receipt={'release_tag':tag,'url':remote['html_url'],'source_commit':a.source_commit,
              'all_asset_hashes_verified':True,'asset_count':len(assets),'published':a.publish}
+    if a.publish:receipt['runtime_source_commit']=qa.get('runtime_source_commit',a.source_commit)
     (a.result.parent/'github-verified.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(json.dumps(receipt,indent=2))
 

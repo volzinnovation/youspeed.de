@@ -16,7 +16,7 @@ def require(condition,detail):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--device',required=True);p.add_argument('--workspace',type=Path,required=True)
-    p.add_argument('--mode',choices=['legacy-packed','legacy-sqlite','context-packed','pool-context-packed'],required=True)
+    p.add_argument('--mode',choices=['legacy-packed','legacy-sqlite','context-packed','pool-context-packed','nodes-packed'],required=True)
     p.add_argument('--pool-readers',type=int,default=8)
     p.add_argument('--database',required=True,help='Path inside Documents; old prototype normally data/runtime.pack or data/runtime.sqlite')
     p.add_argument('--geometry',default='-');p.add_argument('--queries',default='data/queries.csv')
@@ -44,8 +44,13 @@ def main():
             if report.get('configuration',{}).get('run_id')==nonce:
                 if not report.get('overall_success'):raise RuntimeError(json.dumps(report))
                 if a.reference:
-                    reference=json.loads(a.reference.read_text());require(report['query_results']==reference['query_results'],'Original source SQL result mismatch')
-                    require(report['result_fnv1a64']==reference['result_fnv1a64'],'Source result digest mismatch')
+                    reference=json.loads(a.reference.read_text())
+                    if a.mode=='nodes-packed':require(report['node_roundtrip']==reference,'Original source node metadata mismatch')
+                    else:
+                        require(report['query_results']==reference['query_results'],'Original source SQL result mismatch')
+                        require(report['result_fnv1a64']==reference['result_fnv1a64'],'Source result digest mismatch')
+                if a.mode=='nodes-packed':
+                    print(json.dumps({'report':str(report_path),'mode':a.mode,'node_roundtrip':report['node_roundtrip']},indent=2));return
                 print(json.dumps({'report':str(report_path),'mode':a.mode,'memory_gate_pass':report['memory_gate_pass'],'observed_incremental_rss_bytes':report['observed_snapshot_incremental_rss_bytes']},indent=2));return
         time.sleep(2)
     subprocess.run(base+['device','copy','from',*domain,'--source','Documents/packed-runtime-progress.json','--destination',str(results/(prefix+'-progress.json'))],timeout=75)

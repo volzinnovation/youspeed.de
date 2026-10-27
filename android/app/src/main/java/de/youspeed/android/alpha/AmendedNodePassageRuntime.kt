@@ -6,7 +6,8 @@ import kotlin.math.abs
 import org.json.JSONObject
 
 internal data class AmendedNodeStation(val sourceId:String,val wayId:String,val direction:Int,
-    val latitude:Double,val longitude:Double,val station:Double,val start:Double,val end:Double,val radius:Double,val recordId:String="")
+    val latitude:Double,val longitude:Double,val station:Double,val start:Double,val end:Double,val radius:Double,val recordId:String="",
+    val bindingIdentity:String="")
 
 /** A map-data producer using the existing inventory's directed station passage
  * gates. Historical edits and undirected OSM memberships never count as passage. */
@@ -23,6 +24,11 @@ internal class AmendedNodePassageRuntime {
     fun evaluate(stations:List<AmendedNodeStation>,fix:InventorySignFix,now:Instant,
         chainage:Double?,localHeading:Double?):Set<String> {
         if(bundle!=fix.bundle){reset();bundle=fix.bundle}
+        if(way!=null&&way==fix.wayId&&direction!=0) {
+            val current=stations.filter{it.wayId==way&&it.direction==direction}
+                .sortedWith(compareBy<AmendedNodeStation>{it.recordId}.thenBy{it.sourceId})
+            if(current!=associationSignature){admitted.clear();activated.clear();priorChainage=null;priorAt=null;associationSignature=current}
+        }
         val age=Duration.between(fix.at,now).toMillis()
         val usable=fix.latitude.isFinite()&&fix.latitude in -90.0..90.0&&fix.longitude.isFinite()&&fix.longitude in -180.0..180.0&&
             fix.accuracy.isFinite()&&fix.accuracy in 0.0..25.0&&age in -1000..3000
@@ -80,8 +86,10 @@ internal class AmendedNodePassageRuntime {
             val start=record.scopeStartM?:if(record.direction>0)station else 0.0
             val end=record.scopeEndM?:if(record.direction>0)wayLength else station
             if(station !in 0.0..wayLength||start<0||end>wayLength||start>=end)return null
+            val binding=org.json.JSONArray(listOf(record.sourceNamespace,record.basisBundle,record.sourceRevision,
+                record.nodeJSON,record.passageEvidenceId,record.reviewState,record.bindingVerified,record.operation)).toString()
             return AmendedNodeStation(record.sourceId,record.boundWayId?:return null,record.direction,
-                lat,lon,station,start,end,record.displayRadiusM?:30.0,record.id)
+                lat,lon,station,start,end,record.displayRadiusM?:30.0,record.id,MapDataAmendmentStore.sourceSHA256(binding))
         }
     }
 }

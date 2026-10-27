@@ -12,6 +12,7 @@ import java.io.Closeable
 interface RuntimeSqlDatabase : Closeable {
     fun rawQuery(sql:String,args:Array<out String?>?):Cursor
     val isOpen:Boolean
+    val amendmentBaseIdentity:String? get()=null
 }
 
 internal class FrameworkRuntimeSqlDatabase(private val database:SQLiteDatabase) : RuntimeSqlDatabase {
@@ -26,6 +27,9 @@ internal class FrameworkRuntimeSqlDatabase(private val database:SQLiteDatabase) 
 internal class NativeRuntimeSqlDatabase(path:String,packed:Boolean) : RuntimeSqlDatabase {
     private var handle=RuntimePackedNative.sqlOpen(path.toByteArray(Charsets.UTF_8),packed)
     private val cursors=mutableSetOf<NativeCursor>()
+    override val amendmentBaseIdentity:String? by lazy {
+        if(packed)PackedAmendmentBaseIdentity.forDatabase(path,this) else null
+    }
     override val isOpen:Boolean @Synchronized get()=handle!=0L
     @Synchronized override fun rawQuery(sql:String,args:Array<out String?>?):Cursor {
         check(handle!=0L){"Packed SQL database is closed"}

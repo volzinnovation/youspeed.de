@@ -108,3 +108,13 @@ revision history and tombstones. Unknown bindings/conditions remain unresolved;
 new node events require existing directed-association and passage checks. Use
 the existing conditional evaluator and producer admission, not a new priority
 or reference-policy rule.
+
+The correction basis is
+`ysp-base-v1:<installed context SHA-256>:<installed geometry SHA-256>:<installed node SHA-256 or absent>`.
+Digests are lowercase and come from the saved, verified generation manifest.
+Read that small manifest once per resource generation; do not hash the full
+payload on lookup. A shared display version is insufficient for overlapping
+extracts. Missing identity evidence and old version-only records cannot
+authorize an override; retain their history for explicit compare-and-swap
+rebase. Recognized `node-json-sha256:` and `way-rule-set-sha256:` revisions must
+also match the current underlying source bytes.

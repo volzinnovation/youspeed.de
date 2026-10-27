@@ -114,7 +114,7 @@ android {
     }
 
     sourceSets {
-        getByName("androidTest") { assets.srcDirs("../../tests/fixtures") }
+        getByName("androidTest") { assets.srcDirs("../../tests/fixtures", "../../iphone/SpeedConsumerApp/TestFixtures/packed-runtime-v1") }
         getByName("main") {
             assets.srcDirs("src/main/assets", "../../shared")
         }

@@ -271,12 +271,20 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "mapdata/build/packed-rollout/$TARGET"
-          python3 scripts/map/build_packed_release.py \
-            --plan shared/packed-runtime/releases/source-plan-2026-10-27.json \
-            --workspace mapdata/build/packed-rollout \
-            --target "$TARGET" \
-            --published-source-only \
-            2>&1 | tee "mapdata/build/packed-rollout/$TARGET/build.log"
+          if [[ "$TARGET" == "deu-v3-data-karlsruhe-latest" ]]; then
+            python3 scripts/map/refresh_packed_alias.py \
+              --plan shared/packed-runtime/releases/source-plan-2026-10-27.json \
+              --workspace mapdata/build/packed-rollout \
+              --target "$TARGET" \
+              2>&1 | tee "mapdata/build/packed-rollout/$TARGET/build.log"
+          else
+            python3 scripts/map/build_packed_release.py \
+              --plan shared/packed-runtime/releases/source-plan-2026-10-27.json \
+              --workspace mapdata/build/packed-rollout \
+              --target "$TARGET" \
+              --published-source-only \
+              2>&1 | tee "mapdata/build/packed-rollout/$TARGET/build.log"
+          fi
       - name: Stage verified draft release
         run: |
           set -euo pipefail

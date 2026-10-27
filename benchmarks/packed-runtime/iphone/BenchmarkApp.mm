@@ -1,6 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #include "packed_benchmark.h"
+#include "runtime_sign_nodes.h"
 
 static NSString* argument(NSString* name,NSString* fallback){NSArray* args=NSProcessInfo.processInfo.arguments;NSUInteger index=[args indexOfObject:name];return index!=NSNotFound&&index+1<args.count?args[index+1]:fallback;}
 static NSString* resolve(NSString* documents,NSString* path){return path.isAbsolutePath?path:[documents stringByAppendingPathComponent:path];}
@@ -29,6 +30,17 @@ static NSString* resolve(NSString* documents,NSString* path){return path.isAbsol
     [self progress:@"configuration-loaded" documents:documents configuration:configuration?:@{}];
     NSDate* started=NSDate.date;NSProcessInfoThermalState before=NSProcessInfo.processInfo.thermalState;NSMutableDictionary* report=[NSMutableDictionary new];
     if(!configuration){report[@"error"]=error.localizedDescription?:@"Missing configuration";report[@"overall_success"]=@NO;}
+    else if([configuration[@"mode"] isEqualToString:@"nodes-packed"]) {
+        [self progress:@"native-node-roundtrip" documents:documents configuration:configuration];
+        NSString* path=resolve(documents,configuration[@"database"]?:@"");
+        char* native=storage_nodes_roundtrip_json("packed",path.UTF8String);
+        NSData* bytes=native?[[NSString stringWithUTF8String:native]dataUsingEncoding:NSUTF8StringEncoding]:nil;
+        id parsed=bytes?[NSJSONSerialization JSONObjectWithData:bytes options:0 error:&error]:nil;
+        storage_nodes_free(native);
+        if([parsed isKindOfClass:NSDictionary.class]&&[parsed[@"full_metadata_validated"] boolValue]) {
+            report[@"node_roundtrip"]=parsed;report[@"overall_success"]=@YES;
+        } else {report[@"error"]=error.localizedDescription?:@"Full node roundtrip failed";report[@"node_roundtrip"]=parsed?:@{};report[@"overall_success"]=@NO;}
+    }
     else {
         NSString* database=resolve(documents,configuration[@"database"]?:@"");NSString* geometry=resolve(documents,configuration[@"geometry"]?:@"-");NSString* csvPath=resolve(documents,configuration[@"queries"]?:@"data/queries.csv");
         NSString* csv=[NSString stringWithContentsOfFile:csvPath encoding:NSUTF8StringEncoding error:&error];

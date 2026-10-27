@@ -893,6 +893,12 @@ final class V3SpeedLimitService: @unchecked Sendable {
         return try resources.genericSpeedSignSourceJSON(nodeID: nodeID)
     }
 
+    func amendmentBaseIdentity() throws -> String? {
+        let db = try acquireDatabase()
+        defer { resources.releaseSession() }
+        return resources.amendmentBaseIdentity(database: db)
+    }
+
     /// Exercises the production surface-network admission query before matcher scoring.
     func admittedWayIDsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int) throws -> [String] {
         let db = try acquireDatabase()
@@ -1210,7 +1216,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
                         accuracy: headingAccuracyDeg, speedKmh: speedKmh, localHeading: finalSelected?.localHeadingDeg),
                     baseKmh: settlementSpeedLimit(candidate: finalSelected, settlement: settlement),
                     baseUnlimited: finalSelected?.isUnlimitedSpeedLimit == true,
-                    countryCode: countryCode, amendmentStore: mapAmendments, passedNodeIDs: nodeAmendmentProof.ids)
+                    countryCode: countryCode, amendmentStore: mapAmendments, passedNodeIDs: nodeAmendmentProof.ids,
+                    amendmentBaseIdentity: resources.amendmentBaseIdentity(database: db))
             }
             let effectiveSpeed: Int?
             if let inventoryOffer { effectiveSpeed = inventoryOffer.speedKmh }
@@ -1847,7 +1854,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
                         accuracy: headingAccuracyDeg, speedKmh: speedKmh, localHeading: finalSelected?.localHeadingDeg),
                     baseKmh: settlementSpeedLimit(candidate: finalSelected, settlement: settlement),
                     baseUnlimited: finalSelected?.isUnlimitedSpeedLimit == true,
-                    countryCode: countryCode, amendmentStore: mapAmendments, passedNodeIDs: nodeAmendmentProof.ids)
+                    countryCode: countryCode, amendmentStore: mapAmendments, passedNodeIDs: nodeAmendmentProof.ids,
+                    amendmentBaseIdentity: resources.amendmentBaseIdentity(database: db))
             }
             let effectiveSpeed: Int?
             if let inventoryOffer { effectiveSpeed = inventoryOffer.speedKmh }
@@ -2301,7 +2309,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
     private func reviewedNodeAmendmentProof(db: OpaquePointer, selected: WayCandidate?, lat: Double, lon: Double,
                                            heading: Double?, headingAccuracy: Double?, accuracy: Double,
                                            stable: Bool, timestamp: Date?) -> (ids: Set<String>, lookup: InventorySignLookup?) {
-        guard let store = mapAmendments, let generation = PackedBundleRuntime.metadata("packed_generation", database: db) else { return ([], nil) }
+        guard let store = mapAmendments, let generation = resources.amendmentBaseIdentity(database: db) else { return ([], nil) }
         let stored = selected?.wayID.flatMap { try? store.nodePassageCandidates(wayID: $0, bundle: generation, at: Date()) } ?? []
         let records = stored.compactMap { record -> MapDataAmendment? in
             var current = record
@@ -2309,8 +2317,10 @@ final class V3SpeedLimitService: @unchecked Sendable {
                 // Same-generation canonical source coordinates/memberships take
                 // precedence over a saved review snapshot. This does not infer
                 // a directed binding from source membership.
-                if record.sourceNamespace == "osm", let canonical = try resources.genericSpeedSignSourceJSON(nodeID: record.sourceID) {
-                    current.nodeJSON = canonical
+                if record.sourceNamespace == "osm" {
+                    let canonical = try resources.genericSpeedSignSourceJSON(nodeID: record.sourceID)
+                    guard MapDataAmendmentStore.matchesNodeSourceRevision(record.sourceRevision, json: canonical) else { return nil }
+                    if let canonical { current.nodeJSON = canonical }
                 }
             } catch { return nil }
             return current

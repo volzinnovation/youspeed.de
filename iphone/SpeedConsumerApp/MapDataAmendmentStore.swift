@@ -1,5 +1,6 @@
 import Foundation
 import SQLite3
+import CryptoKit
 
 /// A data correction to an immutable bundle, separate from voice/camera offers.
 /// Rules use the existing bundle conditional grammar, including unsupported AST
@@ -83,11 +84,24 @@ private struct MapDataAmendmentNode: Decodable {
 /// predicate. A temporary fix gap ends interpolation, not an admitted scope.
 struct MapDataNodePassageRuntime {
     private struct Scope: Equatable { let bundle: String; let way: String; let direction: Int }
+    private struct Association: Equatable {
+        let id: String, sourceID: String, basis: String, sourceRevision: String, reviewState: String, operation: String
+        let direction: Int
+        let verified: Bool
+        let boundWay: String?, passageEvidence: String?, nodeJSON: String?
+        let station: Double?, start: Double?, end: Double?, radius: Double?
+        init(_ record: MapDataAmendment) {
+            id = record.id; sourceID = record.sourceID; basis = record.basisBundle; sourceRevision = record.sourceRevision
+            reviewState = record.reviewState; operation = record.operation; verified = record.bindingVerified
+            direction = record.direction; boundWay = record.boundWayID; passageEvidence = record.passageEvidenceID; nodeJSON = record.nodeJSON
+            station = record.stationChainageM; start = record.scopeStartM; end = record.scopeEndM; radius = record.displayRadiusM
+        }
+    }
     private var scope: Scope?
     private var tracker = InventoryBoundaryPassageTracker()
     private var admitted = Set<String>()
     private var activatedScopes = Set<String>()
-    private var associationSignature: [String] = []
+    private var associationSignature: [Association] = []
     private(set) var observations: [InventoryTrafficSign] = []
     private(set) var observationLookup: InventorySignLookup?
     mutating func reset() { scope = nil; tracker.reset(); admitted = []; activatedScopes = []; associationSignature = []; observations = []; observationLookup = nil }
@@ -100,6 +114,12 @@ struct MapDataNodePassageRuntime {
             if scope?.way == wayID || matchStable { reset() }
             return []
         }
+        let currentAssociations = records.map(Association.init).sorted { $0.id < $1.id }
+        // Review changes revoke physical proof even when the current fix is
+        // unusable. Numeric rule edits leave the directed association intact.
+        if associationSignature != currentAssociations {
+            tracker.reset(); admitted = []; activatedScopes = []; associationSignature = currentAssociations
+        }
         let fresh = at.map { $0 <= now.addingTimeInterval(1) && now.timeIntervalSince($0) <= 3 } == true
         let usable = accuracy.isFinite && (0...25).contains(accuracy)
         let projection = usable ? InventorySignBundle.projection(lat: lat, lon: lon, points: points) : nil
@@ -111,12 +131,11 @@ struct MapDataNodePassageRuntime {
             return scope?.way == wayID ? activatedScopes : []
         }
         let current = Scope(bundle: bundle, way: wayID, direction: direction)
-        if scope != current { reset(); scope = current }
+        if scope != current { reset(); scope = current; associationSignature = currentAssociations }
         let length = wayLengthM ?? zip(points,points.dropFirst()).reduce(0) {
             $0 + InventorySignBundle.distance($1.0.0,$1.0.1,$1.1.0,$1.1.1) * (6_371_000.0/6_371_008.8)
         }
         var rules: [InventoryTrafficRule] = []
-        var signatures: [String] = []
         var signs: [InventoryTrafficSign] = []
         for record in records {
             guard record.operation == "upsert", record.reviewState == "confirmed", record.basisBundle == bundle,
@@ -142,7 +161,6 @@ struct MapDataNodePassageRuntime {
                 direction: direction, stationM: station, startM: start, endM: end, speedKmh: nil, insideCity: nil,
                 distanceM: distance, radiusM: radius, sourceLatitude: node.latitude, sourceLongitude: node.longitude,
                 sourceID: "local-map-amendment", snapshotSHA256: record.sourceRevision))
-            signatures.append("\(record.id)|\(station)|\(start)|\(end)|\(node.latitude)|\(node.longitude)|\(radius)")
             if distance <= radius {
                 signs.append(InventoryTrafficSign(signID: record.sourceID, sourceID: "local-map-amendment", recordKey: record.id,
                     snapshotSHA256: record.sourceRevision, code: code, kind: "speed_limit",
@@ -152,8 +170,6 @@ struct MapDataNodePassageRuntime {
                     associationStatus: "accepted", associatedHeadingDeg: projection.heading))
             }
         }
-        signatures.sort()
-        if associationSignature != signatures { tracker.reset(); admitted = []; activatedScopes = []; associationSignature = signatures }
         let lookup = InventorySignLookup(signs: signs, activeRule: nil, wayID: wayID, direction: direction,
             chainageM: projection.chainage, boundaries: rules)
         let crossed = tracker.consume(lookup, bundle: bundle, at: at, latitude: lat, longitude: lon)
@@ -191,6 +207,21 @@ final class MapDataAmendmentStore: @unchecked Sendable {
         return MapDataAmendmentStore(directory: base.appendingPathComponent("SpeedConsumer", isDirectory: true))
     }()
     static func applicationStore() -> MapDataAmendmentStore? { defaultStore }
+
+    static func isCanonicalBaseIdentity(_ value: String) -> Bool {
+        value.range(of: "^ysp-base-v1:[0-9a-f]{64}:[0-9a-f]{64}:([0-9a-f]{64}|absent)$", options: .regularExpression) != nil
+    }
+
+    static func nodeSourceRevision(json: String) -> String { "node-json-sha256:" + sourceHash(json) }
+    static func waySourceRevision(rulesJSON: String) -> String { "way-rule-set-sha256:" + sourceHash(rulesJSON) }
+    private static func sourceHash(_ value: String) -> String {
+        SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func matchesNodeSourceRevision(_ revision: String, json: String?) -> Bool {
+        guard revision.hasPrefix("node-json-sha256:") else { return true }
+        return json.map { nodeSourceRevision(json: $0) == revision } ?? false
+    }
 
     /// Persists a new, initially unbound survey record. Applying it requires a
     /// separate reviewed directed association and the ordinary drive passage.
@@ -403,6 +434,15 @@ final class MapDataAmendmentStore: @unchecked Sendable {
         } else {
             guard let sourceID = Int64(record.sourceID), sourceID > 0 else { throw StoreError.invalid("Invalid source identifier") }
         }
+        for (prefix, entity) in [("node-json-sha256:", "node"), ("way-rule-set-sha256:", "way")] where record.sourceRevision.hasPrefix(prefix) {
+            guard record.entity == entity,
+                  String(record.sourceRevision.dropFirst(prefix.count)).range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil else {
+                throw StoreError.invalid("Invalid typed source revision")
+            }
+        }
+        if record.entity == "node", !Self.matchesNodeSourceRevision(record.sourceRevision, json: record.nodeJSON) {
+            throw StoreError.invalid("Node source snapshot differs from its typed revision")
+        }
         for instant in [record.validFromUTC, record.validUntilUTC].compactMap({ $0 }) {
             guard instant.isFinite, instant >= 0 else { throw StoreError.invalid("Invalid amendment validity") }
         }
@@ -421,6 +461,7 @@ final class MapDataAmendmentStore: @unchecked Sendable {
     }
 
     func nodePassageCandidates(wayID: String, bundle: String, at: Date) throws -> [MapDataAmendment] {
+        guard Self.isCanonicalBaseIdentity(bundle) else { return [] }
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }
         return try database(write: false) { db in
             var statement: OpaquePointer?
@@ -457,7 +498,9 @@ final class MapDataAmendmentStore: @unchecked Sendable {
     /// be promoted by nearest-road matching.
     func resolve(wayID: String, bundle: String, direction: Int?, context: ConditionalSpeedRules.Context,
                  baseKmh: Int?, baseUnlimited: Bool, passedNodeIDs: Set<String> = [],
-                 baselineResult: ConditionalSpeedRules.Result? = nil) throws -> ConditionalSpeedRules.Result? {
+                 baselineResult: ConditionalSpeedRules.Result? = nil,
+                 sourceWayRulesJSON: String? = nil) throws -> ConditionalSpeedRules.Result? {
+        guard Self.isCanonicalBaseIdentity(bundle) else { return nil }
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         return try database(write: false) { db in
             var statement: OpaquePointer?
@@ -493,6 +536,10 @@ final class MapDataAmendmentStore: @unchecked Sendable {
                           passedNodeIDs.contains(record.sourceID) else { continue }
                 }
                 guard record.reviewState == "confirmed", record.basisBundle == bundle else { continue }
+                if record.entity == "way", record.sourceRevision.hasPrefix("way-rule-set-sha256:") {
+                    guard sourceWayRulesJSON.map({ Self.waySourceRevision(rulesJSON: $0) == record.sourceRevision }) == true else { continue }
+                }
+                if record.entity == "node", !Self.matchesNodeSourceRevision(record.sourceRevision, json: record.nodeJSON) { continue }
                 if record.direction != 0 {
                     guard let direction, record.direction != 2 else {
                         return ConditionalSpeedRules.Result(kmh: nil, unlimited: false, unresolved: true, reason: "map_amendment_direction_unresolved")

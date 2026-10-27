@@ -67,6 +67,44 @@ enum PackedBundleRuntime {
         return String(cString: value)
     }
 
+    /// Identity of the complete installed immutable generation. Human bundle
+    /// versions are shared across regions and cannot authorize corrections.
+    /// The installer has verified these installed hashes before activation.
+    static func amendmentBaseIdentity(database: OpaquePointer) -> String? {
+        guard let generation = metadata("packed_generation", database: database),
+              let rawPath = sqlite3_db_filename(database, "main") else { return nil }
+        let context = URL(fileURLWithPath: String(cString: rawPath))
+        guard (try? isPackedContext(at: context)) == true else { return nil }
+        let manifest = context.deletingLastPathComponent().appendingPathComponent("bundle-manifest.v3.json")
+        guard let size = try? manifest.resourceValues(forKeys: [.fileSizeKey]).fileSize,
+              size > 0, size <= 1024 * 1024,
+              let data = try? Data(contentsOf: manifest),
+              let document = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              document["format"] as? String == "youspeed.v4.bundle.manifest",
+              document["schema_version"] as? Int == 1, document["variant"] as? String == "v4",
+              document["bundle_version"] as? String == generation,
+              let db = document["db"] as? [String: Any], db["file"] as? String == context.lastPathComponent,
+              let base = document["packed_base"] as? [String: Any], base["version"] as? Int == 1,
+              let roads = base["roads"] as? [String: Any],
+              roads["file"] as? String == metadata("packed_geometry_file", database: database) else { return nil }
+        func installedHash(_ artifact: [String: Any]) -> String? {
+            let compression = (artifact["compression"] as? String ?? "").lowercased()
+            guard ["", "none", "identity", "gzip"].contains(compression),
+                  let raw = artifact[compression == "gzip" ? "uncompressed_sha256" : "sha256"] as? String,
+                  raw.range(of: "^[0-9a-fA-F]{64}$", options: .regularExpression) != nil else { return nil }
+            return raw.lowercased()
+        }
+        guard let contextHash = installedHash(db), let roadsHash = installedHash(roads),
+              roadsHash == metadata("packed_geometry_sha256", database: database)?.lowercased() else { return nil }
+        let nodesHash: String
+        if let nodes = base["nodes"] as? [String: Any] {
+            guard let hash = installedHash(nodes) else { return nil }
+            nodesHash = hash
+        } else if base["nodes"] == nil { nodesHash = "absent" }
+        else { return nil }
+        return "ysp-base-v1:\(contextHash):\(roadsHash):\(nodesHash)"
+    }
+
     private static func registerGeometry(on database: OpaquePointer, contextURL: URL, required: Bool) throws {
         let version = metadata("packed_geometry_version", database: database)
         guard required || version != nil else { return }

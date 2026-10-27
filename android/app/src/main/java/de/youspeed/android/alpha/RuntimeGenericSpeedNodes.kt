@@ -9,10 +9,11 @@ import org.json.JSONObject
  * never grants a node legal direction, passage, or speed-reference authority. */
 internal class RuntimeGenericSpeedNodes private constructor(path: String) : Closeable {
     private var handle = RuntimePackedNative.nodesOpen(path)
-    @Synchronized fun node(decimalNodeId: String): JSONObject? {
+    @Synchronized fun sourceJSON(decimalNodeId:String):String? {
         check(handle != 0L) { "Generic speed nodes are closed" }
-        return RuntimePackedNative.nodeJson(handle, decimalNodeId)?.toString(Charsets.UTF_8)?.let(::JSONObject)
+        return RuntimePackedNative.nodeJson(handle, decimalNodeId)?.toString(Charsets.UTF_8)
     }
+    @Synchronized fun node(decimalNodeId: String): JSONObject? = sourceJSON(decimalNodeId)?.let(::JSONObject)
     @Synchronized fun nearby(latitude: Double, longitude: Double, radiusM: Double): List<JSONObject> {
         check(handle != 0L) { "Generic speed nodes are closed" }
         val raw = RuntimePackedNative.nodesQueryJson(handle, latitude, longitude, radiusM)

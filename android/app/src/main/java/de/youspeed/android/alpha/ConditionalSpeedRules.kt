@@ -45,20 +45,19 @@ object ConditionalSpeedRules {
 
     fun resolve(db: SQLiteDatabase, wayId:String,direction:Int?,baseKmh:Int?,baseUnlimited:Boolean,
                 atMs:Long=System.currentTimeMillis(),timeZoneId:String?=null,countryCode:String?=null,
-                amendmentStore:MapDataAmendmentStore?=null):Result? =
-        resolve(FrameworkRuntimeSqlDatabase(db),wayId,direction,baseKmh,baseUnlimited,atMs,timeZoneId,countryCode,amendmentStore)
+                amendmentStore:MapDataAmendmentStore?=null,amendmentBaseIdentity:String?=null):Result? =
+        resolve(FrameworkRuntimeSqlDatabase(db),wayId,direction,baseKmh,baseUnlimited,atMs,timeZoneId,countryCode,amendmentStore,amendmentBaseIdentity)
 
     fun resolve(db: RuntimeSqlDatabase, wayId: String, direction: Int?, baseKmh: Int?, baseUnlimited: Boolean,
                 atMs: Long = System.currentTimeMillis(), timeZoneId: String? = null, countryCode: String? = null,
-                amendmentStore:MapDataAmendmentStore?=null): Result? {
+                amendmentStore:MapDataAmendmentStore?=null,amendmentBaseIdentity:String?=null): Result? {
         val baseline=resolveBundle(db,wayId,direction,baseKmh,baseUnlimited,atMs,timeZoneId,countryCode)
-        val generation=try {db.rawQuery("SELECT value FROM metadata WHERE key='packed_generation'",null).use {if(it.moveToFirst())it.getString(0) else null}}
-            catch(_:android.database.sqlite.SQLiteException){null}
-        if(generation.isNullOrEmpty())return baseline
+        val generation=amendmentBaseIdentity?:db.amendmentBaseIdentity
+        if(!PackedAmendmentBaseIdentity.isCanonical(generation))return baseline
         val store=amendmentStore?:MapDataAmendmentStore.applicationStore()?:return baseline
         return try {
-            val result=store.resolve(wayId,generation,direction,Context(atMs,timeZoneId,countryCode,direction),baseKmh,baseUnlimited,
-                baselineResult=baseline)?:return baseline
+            val result=store.resolve(wayId,requireNotNull(generation),direction,Context(atMs,timeZoneId,countryCode,direction),baseKmh,baseUnlimited,
+                baselineResult=baseline,sourceWayRulesJSON=baseline?.reevaluation?.rulesJSON)?:return baseline
             result.copy(reevaluation=result.reevaluation?.copy(fallbackRulesJSON=baseline?.reevaluation?.rulesJSON,
                 fallbackUnresolved=baseline?.unresolved,fallbackReason=baseline?.reason,
                 fallbackReevaluations=baseline?.reevaluation?.let{listOf(it)}))

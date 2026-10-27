@@ -134,6 +134,15 @@ class PackedStagedPublicationTests(unittest.TestCase):
             'shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp',
             'android/app/src/main/cpp/packed_sqlite_jni.cpp',
             'android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt',
+            'android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt',
+            'android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt',
+            'android/app/src/main/java/de/youspeed/android/alpha/ConditionalSpeedRules.kt',
+            'android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt',
+            'android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt',
+            'iphone/SpeedConsumerApp/MapDataAmendmentStore.swift',
+            'iphone/SpeedConsumerApp/ConditionalSpeedRules.swift',
+            'iphone/SpeedConsumerApp/V3LookupResources.swift',
+            'iphone/SpeedConsumerApp/V3SpeedLimitService.swift',
             'iphone/SpeedConsumerApp/PackedBundleRuntime.swift']
         content = {name: name.encode() for name in required + list(self.recipe)}
         hashes = {name: hashlib.sha256(raw).hexdigest() for name, raw in content.items()}
@@ -149,6 +158,7 @@ class PackedStagedPublicationTests(unittest.TestCase):
                     'pool_report_sha256': 'f' * 64}
         qa = {'format': 'youspeed.packed-runtime.rollout-qa', 'schema_version': 1, 'ready_for_rollout': True,
             'physical_devices_passed': ['iphone', 'android'], 'source_commit': self.commit,
+            'runtime_source_commit': self.commit,
             'mapped_payload_bytes': 0, 'observed_incremental_rss_gate_bytes': 64 * 1024 * 1024,
             'builder_files_sha256': recipe, 'runtime_source_sha256': {name: hashes[name] for name in required},
             'tested_bw_artifacts': {name: {'bytes': item.get('uncompressed_bytes', item['bytes']),
@@ -161,6 +171,8 @@ class PackedStagedPublicationTests(unittest.TestCase):
             return content[name]
         with patch.object(publisher.subprocess, 'check_output', side_effect=git):
             publisher.validate_qa(qa, result, manifest, self.commit)
+            changed = copy.deepcopy(qa); changed.pop('runtime_source_commit')
+            with self.assertRaisesRegex(ValueError, 'Runtime QA commit must be pinned'): publisher.validate_qa(changed, result, manifest, self.commit)
             changed = copy.deepcopy(qa); changed['tested_bw_artifacts']['context']['bytes'] += 1
             with self.assertRaisesRegex(ValueError, 'differs from tested phone data'): publisher.validate_qa(changed, result, manifest, self.commit)
             changed = copy.deepcopy(qa); changed['builder_files_sha256'] = {}
@@ -171,6 +183,21 @@ class PackedStagedPublicationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Invalid physical-device evidence'): publisher.validate_qa(changed, result, manifest, self.commit)
             changed = copy.deepcopy(qa); changed['physical_device_evidence']['iphone']['pool_observed_incremental_rss_bytes'] = 56 * 1024 * 1024
             with self.assertRaisesRegex(ValueError, 'Invalid physical-device evidence'): publisher.validate_qa(changed, result, manifest, self.commit)
+        runtime_qa=copy.deepcopy(qa); runtime_qa['runtime_source_commit']='d'*40
+        def independent_commits(args):
+            revision,name=args[2].split(':',1)
+            self.assertEqual(revision, runtime_qa['runtime_source_commit'] if name in required else self.commit)
+            return content[name]
+        with patch.object(publisher.subprocess,'check_output',side_effect=independent_commits):
+            publisher.validate_qa(runtime_qa,result,manifest,self.commit)
+        alias_qa=copy.deepcopy(runtime_qa);alias_commit='e'*40
+        alias_qa['approved_data_source_commits']=[self.commit,alias_commit]
+        def approved_alias_commits(args):
+            revision,name=args[2].split(':',1)
+            self.assertEqual(revision,alias_qa['runtime_source_commit'] if name in required else alias_commit)
+            return content[name]
+        with patch.object(publisher.subprocess,'check_output',side_effect=approved_alias_commits):
+            publisher.validate_qa(alias_qa,result,manifest,alias_commit)
 
 
 if __name__ == '__main__':

@@ -61,3 +61,9 @@ The production format and pinned decoder sources are documented in
 the official BSD-licensed Zstandard 1.5.7 decompressor, with one independent
 frame per block, no dictionary, exact declared raw size, and at most 256 KiB
 frame windows. Node packs remain zlib.
+
+The iPhone-only `nodes-packed` mode reads every full sign-node record through
+the committed native node reader and compares its count and complete semantic
+digest against the host `nodebench roundtrip packed` result. Run it separately
+after timing measurements; it has no RSS or latency acceptance claim. Its
+optional harness addition does not modify production runtime sources.

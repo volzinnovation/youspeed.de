@@ -74,6 +74,8 @@ final class V3LookupResources: @unchecked Sendable {
     private var capabilities: [String: Bool] = [:]
     private var genericSignSource: PackedGenericSpeedSignSource?
     private var genericSignSourceLoaded = false
+    private var cachedAmendmentBaseIdentity: String?
+    private var amendmentBaseIdentityLoaded = false
 
     init(path: String, statementLimit: Int = 48, geometryLimit: Int = 512,
          geometryByteLimit: Int = 1 * 1024 * 1024, capabilityLimit: Int = 128) {
@@ -232,6 +234,15 @@ final class V3LookupResources: @unchecked Sendable {
         return try genericSignSource?.sourceJSON(nodeID: nodeID)
     }
 
+    func amendmentBaseIdentity(database: OpaquePointer) -> String? {
+        precondition(depth > 0)
+        if !amendmentBaseIdentityLoaded {
+            cachedAmendmentBaseIdentity = PackedBundleRuntime.amendmentBaseIdentity(database: database)
+            amendmentBaseIdentityLoaded = true
+        }
+        return cachedAmendmentBaseIdentity
+    }
+
     private func closeLocked() {
         precondition(leased.isEmpty, "Lookup statement outlived its session")
         for statement in statements.values { sqlite3_finalize(statement.pointer); counts.finalizes += 1 }
@@ -240,6 +251,8 @@ final class V3LookupResources: @unchecked Sendable {
         capabilities.removeAll()
         genericSignSource = nil
         genericSignSourceLoaded = false
+        cachedAmendmentBaseIdentity = nil
+        amendmentBaseIdentityLoaded = false
         counts.geometryBytes = 0
         if let db { sqlite3_close(db); counts.closes += 1 }
         db = nil
