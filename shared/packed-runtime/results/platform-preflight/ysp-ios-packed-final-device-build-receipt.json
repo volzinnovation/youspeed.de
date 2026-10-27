@@ -1,0 +1,11 @@
+{
+  "suite": "production-iPhone-packed-final-device-build",
+  "configuration": "Debug",
+  "platform": "iphoneos",
+  "code_signing_allowed": false,
+  "build_passed": true,
+  "marketing_version": "1.6",
+  "build_version": "10074",
+  "app_path": "/private/tmp/ysp-ios-packed-device-build/Build/Products/Debug-iphoneos/SpeedConsumer.app",
+  "log": "/private/tmp/ysp-ios-packed-device-frozen-build.log"
+}

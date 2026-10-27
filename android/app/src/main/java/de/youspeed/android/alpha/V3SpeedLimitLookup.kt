@@ -97,11 +97,12 @@ internal class V3SpeedLimitLookup(
     }
 
     private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
-    private val db: SQLiteDatabase = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READONLY)
+    private val runtimeDatabase = RuntimeMapDatabase.open(dbPath)
+    private val db: RuntimeSqlDatabase = runtimeDatabase.database
     private val tablePresence = mutableMapOf<String, Boolean>()
     private val tableColumns = mutableMapOf<String, Set<String>>()
-    private val wayGeometry = DecodedGeometryCache<String, LatLonPoint>(2048, 32_768)
-    private val ringGeometry = DecodedGeometryCache<String, LonLatPoint>(256, 16_384)
+    private val wayGeometry = DecodedGeometryCache<String, LatLonPoint>(1024, 16_384)
+    private val ringGeometry = DecodedGeometryCache<String, LonLatPoint>(128, 8_192)
     private var schemaQueryCount = 0L
     private var spatialIndexNodeReads = 0L
     private data class WayQueryShape(val network: CandidateNetwork, val networkRtree: Boolean,
@@ -636,7 +637,7 @@ internal class V3SpeedLimitLookup(
         ringGeometry.clear()
         wayCandidateSql.clear()
         if (db.isOpen) {
-            db.close()
+            runtimeDatabase.close()
         }
     }
 
@@ -6396,7 +6397,7 @@ internal class V3SpeedLimitLookup(
     private fun tableExists(name: String): Boolean = tablePresence.getOrPut(name) {
         schemaQueryCount++
         db.rawQuery(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ? LIMIT 1",
+            "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name = ? LIMIT 1",
             arrayOf(name),
         ).use { cursor ->
             cursor.moveToFirst()

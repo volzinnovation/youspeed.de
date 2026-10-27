@@ -7,13 +7,17 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.10"
-    CURRENT_PROJECT_VERSION: 10056
-    MARKETING_VERSION: "1.4"
+    CURRENT_PROJECT_VERSION: 10074
+    MARKETING_VERSION: "1.6"
 targets:
   SpeedConsumer:
     type: application
     platform: iOS
     sources:
+      - path: ../shared/runtime-storage-prototype/packed_runtime.cpp
+      - path: ../shared/runtime-storage-prototype/packed_sqlite_vfs.cpp
+      - path: ../shared/runtime-storage-prototype/zstd_decoder.c
+      - path: ../shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp
       - path: SpeedConsumerApp
         includes:
           - "*.swift"
@@ -86,6 +90,8 @@ targets:
         "SWIFT_OPTIMIZATION_LEVEL[sdk=iphoneos*]": "-O"
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer$(YOUSPEED_TEST_BUNDLE_SUFFIX)
         PRODUCT_NAME: SpeedConsumer
+        CLANG_CXX_LANGUAGE_STANDARD: c++17
+        GCC_PREPROCESSOR_DEFINITIONS: ["$(inherited)", "YSP_NODES_PACKED_ONLY=1"]
         INFOPLIST_FILE: SpeedConsumerApp/Info.plist
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -95,6 +101,8 @@ targets:
         OTHER_LDFLAGS:
           - "$(inherited)"
           - "-lsqlite3"
+          - "-lz"
+          - "-lc++"
     scheme:
       testTargets:
         - SpeedConsumerTests
@@ -113,6 +121,13 @@ targets:
           - "README.md"
       - path: SpeedConsumerApp/V3SpeedLimitService.swift
       - path: SpeedConsumerApp/V3LookupResources.swift
+      - path: SpeedConsumerApp/PackedBundleRuntime.swift
+      - path: SpeedConsumerApp/PackedGenericSpeedSigns.swift
+      - path: SpeedConsumerApp/MapDataAmendmentStore.swift
+      - path: ../shared/runtime-storage-prototype/packed_runtime.cpp
+      - path: ../shared/runtime-storage-prototype/packed_sqlite_vfs.cpp
+      - path: ../shared/runtime-storage-prototype/zstd_decoder.c
+      - path: ../shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp
       - path: SpeedConsumerApp/MatcherCoreModels.swift
       - path: SpeedConsumerApp/ConditionalSpeedRules.swift
       - path: SpeedConsumerApp/InventorySignRuntime.swift
@@ -125,6 +140,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedDBBench
         PRODUCT_NAME: SpeedDBBench
+        CLANG_CXX_LANGUAGE_STANDARD: c++17
+        GCC_PREPROCESSOR_DEFINITIONS: ["$(inherited)", "YSP_NODES_PACKED_ONLY=1"]
         INFOPLIST_KEY_CFBundleDisplayName: SpeedDBBench
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
@@ -137,6 +154,8 @@ targets:
         OTHER_LDFLAGS:
           - "$(inherited)"
           - "-lsqlite3"
+          - "-lz"
+          - "-lc++"
     scheme:
       testTargets:
         - SpeedDBBenchTests

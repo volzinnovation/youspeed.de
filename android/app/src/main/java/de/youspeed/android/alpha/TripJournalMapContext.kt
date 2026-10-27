@@ -9,14 +9,15 @@ import java.io.File
 internal object TripJournalMapContext {
     data class Road(val name:String,val highway:String,val points:List<Pair<Double,Double>>)
     data class Result(val roads:List<Road>,val limited:Boolean=false)
-    fun load(path:String?,events:List<JSONObject>):Result {
+    @Synchronized fun load(path:String?,events:List<JSONObject>):Result {
         if(path.isNullOrBlank() || !File(path).isFile) return Result(emptyList())
         val points=events.filter {it.optString("kind")=="gps"}.map(TripJournalProjection::payload).filter {TripJournalProjection.trackEligible(it)}
         if(points.isEmpty())return Result(emptyList())
         val minLat=points.minOf {it.optDouble("latitude")};val maxLat=points.maxOf {it.optDouble("latitude")}
         val minLon=points.minOf {it.optDouble("longitude")};val maxLon=points.maxOf {it.optDouble("longitude")}
         val latitudePad=maxOf((maxLat-minLat)*0.1,0.001);val longitudePad=maxOf((maxLon-minLon)*0.1,0.001)
-        return SQLiteDatabase.openDatabase(path,null,SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS).use { db ->
+        return RuntimeMapDatabase.open(path,SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS).use { runtime ->
+            val db = runtime.database
             val args=arrayOf((maxLon+longitudePad).toString(),(minLon-longitudePad).toString(),(maxLat+latitudePad).toString(),(minLat-latitudePad).toString())
             val fields=db.rawQuery("PRAGMA table_info(ways)",null).use {c ->buildSet {while(c.moveToNext())add(c.getString(1))}}
             val name=if("street_name" in fields) "w.street_name" else "NULL"

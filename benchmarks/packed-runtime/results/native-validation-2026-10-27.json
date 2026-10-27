@@ -1,0 +1,190 @@
+{
+  "base_commit_at_measurement": "818893687e2ed58de3e85a319d22448c9a0f4795",
+  "builder_files_sha256": {
+    "scripts/map/build_packed_release.py": "e75f945ba835412b08453f6754b8a06615425559e089452d97bd7d96c860331d",
+    "scripts/map/extract_packed_sign_nodes.py": "132262ed671daeb82ab4804d82152c236cd454222e845b631f5d78a83bdb7a8a",
+    "scripts/map/pack_sign_nodes.py": "d23dde83c8a0cdc74133d1a2e52ac5ff056ceb85d750e736fe0324b5a87d3e4d",
+    "scripts/map/packed_runtime.py": "b106546e36bfe0298f16e4ccecbb21f96624d541ee213c2b0914f0b054c7daa8"
+  },
+  "builds": {
+    "android_arm64": {
+      "binary": {
+        "bytes": 14635424,
+        "sha256": "4ba2d7254e198e217232f62e9a76d5ff417cd94aea03da91557adf5a31c6d97e"
+      },
+      "installed": false,
+      "ndk": "30.0.16248370",
+      "platform_api": 26,
+      "sqlite_source": {
+        "sqlite3_c_sha256": "dc58f0b5b74e8416cc29b49163a00d6b8bf08a24dd4127652beaaae307bd1839",
+        "url": "https://www.sqlite.org/2025/sqlite-amalgamation-3510000.zip",
+        "version": "3.51.0",
+        "zip_sha256": "1caf7116f2910600d04473ad69d37ec538fa62fa36adccd37b5e0e43647c98be"
+      },
+      "success": true
+    },
+    "host": {
+      "architecture": "arm64",
+      "binary": {
+        "bytes": 269720,
+        "sha256": "36e66cec7fbfd04822276fc26bd1dc4f4869634334b3d9e5f2431c7b7e0da2dc"
+      },
+      "sqlite_version": "3.51.0",
+      "success": true
+    },
+    "iphone_arm64": {
+      "binary": {
+        "bytes": 352736,
+        "sha256": "f08202b015a9d5c1ed611916deb79732b42dda73f034a451b37bc8d06a3be803"
+      },
+      "installed": false,
+      "signed": true,
+      "success": true,
+      "system_sqlite_runtime_version": "pending physical device execution"
+    }
+  },
+  "created_at_utc": "2026-10-27T10:25:06.594868+00:00",
+  "final_cache_budgets": {
+    "context_block_bytes": 2097152,
+    "geometry_block_bytes": 524288,
+    "index_page_bytes_per_handle": 524288,
+    "node_index_page_bytes": 524288,
+    "sqlite_page_kib": 1536
+  },
+  "format": "youspeed.packed-runtime.native-validation",
+  "format_document_sha256": "cb49500801412772e82b42f7bab8670599556a64a450b6bbc718ca0d6dbccc07",
+  "harness_source_sha256": {
+    "benchmarks/packed-runtime/CMakeLists.txt": "248f9db70075a768070dd66b06af28ca72a08030da82bd9d42bd72bc5c964337",
+    "benchmarks/packed-runtime/README.md": "0c39b14e4f7cfa7dc7402c0e1b077c2f7cfcf8152f87c7ec56283399c9360057",
+    "benchmarks/packed-runtime/build_iphone.py": "0d6a0f85528c0fa23c9ccb317a212505df81b102686bb422b5f2a2664cbabd93",
+    "benchmarks/packed-runtime/iphone/BenchmarkApp.mm": "271e891a93fdd3513d2dddb1e233aa650d53a39fd406a993485755fe6efbdd7f",
+    "benchmarks/packed-runtime/main.cpp": "b89955518b72438c5f8313c791304a3f860d089d06bcb7005abc564189918fa2",
+    "benchmarks/packed-runtime/packed_benchmark.cpp": "0e23583eaa18dc15e13b20e47acef2d814bb12fff8214c0f485936f50f070378",
+    "benchmarks/packed-runtime/packed_benchmark.h": "720b01f4da759bf7827a539e2e4533df6ec87dea53b3f4a69389023954083cd0",
+    "benchmarks/packed-runtime/run_android.py": "339f9c14dc1db2df540522469ee3226df3871f70360d1fe80e67b16bacca6d63",
+    "benchmarks/packed-runtime/run_iphone.py": "6a16566ba7edab03ad9b2fe365123c987a5292eefb1532309e93a251ad6b4610",
+    "benchmarks/packed-runtime/verify_geometry.py": "f288226ed3c5595dab23cabb1c3225489f5c686c6387022c664a7e4eba6554be"
+  },
+  "limitations": [
+    "Host first-pass I/O is process-first, not OS-cold; timing was measured on a shared build host.",
+    "Pool stress retains eight independent native SQLite connections and geometry handles, excluding Swift/Kotlin decoded geometry LRUs and other app allocations.",
+    "The 56 MiB native pool gate leaves 8 MiB relative to the 64 MiB storage delta criterion; it is not a whole-app memory cap.",
+    "Exact SQL candidate results and source records are verified; this is not a complete driving matcher/state-policy benchmark.",
+    "Both physical-phone measurements and production platform integration memory/latency gates remain required before rollout.",
+    "Source commit binding will be supplied after the frozen source is committed; hashes bind the currently tested working-tree files."
+  ],
+  "native_source_frozen": true,
+  "physical_devices": {
+    "android": {
+      "emulator_present": true,
+      "physical_device_count": 0,
+      "status": "unavailable"
+    },
+    "iphone": {
+      "model": "iPhone 14 Pro",
+      "paired": true,
+      "status": "unavailable",
+      "tunnel": "unavailable"
+    }
+  },
+  "query_corpus": {
+    "bytes": 14572,
+    "sha256": "a6ecfd03afdcc5085efdf40bb60d0219a80379c97a3a4e7aee7b86d08a38722a"
+  },
+  "reports": {
+    "context": {
+      "bytes": 41800,
+      "sha256": "dc0b0bfd2d29d8c2a46d35b50ffa42b0b4b5d7bd2a5ee66d854ba9128b1797b2"
+    },
+    "geometry": {
+      "bytes": 1510,
+      "sha256": "7a78f460cec038fa210b4c3a1ba1cae58d71ced3b296b997ccc64219388ea042"
+    },
+    "nodes": {
+      "bytes": 988,
+      "sha256": "99c7aefffa9fcea594eb03127150c4d8da63944dbf15060b6535107033c5b73f"
+    },
+    "pool8": {
+      "bytes": 54479,
+      "sha256": "9f125d0c775c600001ded8e6dde8fa843de89ac0ec8b9119936c37b3f3dd7050"
+    },
+    "source": {
+      "bytes": 40369,
+      "sha256": "97c5b0f2d4c14e2bea184857fa3fc4824a4dedb2dd74acaf7ad9420c873d7f39"
+    }
+  },
+  "runtime_source_sha256": {
+    "shared/runtime-sign-nodes-prototype/packed_nodes.h": "c66f7d78fe5fbf3e1ade6fb3c65002cc4b4dda7f3071deb175f2a00e424dd0a2",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp": "cf7be70c6c4b8d948ad32d764152a4e83963bd4c9eb2d34ff0c0992d5f169fef",
+    "shared/runtime-sign-nodes-prototype/runtime_sign_nodes.h": "887323b28596b39347fd73b085237309d059bb17d518523146b6b9432b7239e0",
+    "shared/runtime-storage-prototype/bounded_file.h": "c33d6475718326a337c9273b51e61d90a4e2df57e92c602b310aa070778dfc31",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/runtime_storage.cpp": "a6930f324aa1d7877c1d5b17df45af77e5bb7f4472dd4a891ca2407892e1632d",
+    "shared/runtime-storage-prototype/runtime_storage.h": "b4c47464ba0c3d18d21df0c05e7c4ef90b69ce648ef0c8d3b38e536098161eb6",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  },
+  "schema_version": 1,
+  "source_commit": null,
+  "source_sqlite": {
+    "bytes": 3185627136,
+    "sha256": "e973d279de2803b13037b9e87132be72f28a22d8f9c9bbef79d73093772b1849"
+  },
+  "tested_bw_artifacts": {
+    "context": {
+      "bytes": 804040013,
+      "sha256": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5"
+    },
+    "nodes": {
+      "bytes": 21205532,
+      "sha256": "1d56425b5628ce037e8e5a7e8b81e884adcc51f6af549c0b60aee3c3860358ec"
+    },
+    "roads": {
+      "bytes": 60413284,
+      "sha256": "14ebf59778ecaff7e5cd270363b97091a4f691ccac6083d438c2108090ca0f9e"
+    }
+  },
+  "tests": {
+    "all_generic_node_records": 73991,
+    "all_geometry_records": 1085790,
+    "all_source_lookup_queries": 586,
+    "all_source_lookup_rows": 8163,
+    "asan_ubsan_cases": 11,
+    "asan_ubsan_passed": true,
+    "eight_reader_count": 8,
+    "eight_reader_incremental_rss_bytes": 51462144,
+    "eight_reader_lookup_results_identical": true,
+    "eight_reader_memory_gate_passed": true,
+    "eight_reader_rss_gate_bytes": 58720256,
+    "leak_detection_enabled": false,
+    "normal_cases": 11,
+    "normal_passed": true,
+    "python_optimized_driver_rejection_passed": true,
+    "source_lookup_results_identical": true
+  },
+  "total_packed_installed_bytes": 885658829,
+  "zstd_source_receipt": {
+    "archive_sha256": "71bf8072ac109e90d9e48a939546a84d3eac33e7e8d4156b826f455de3122b67",
+    "files": {
+      "LICENSE": "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+      "zstd.h": "9b4bc8245565c98ccfc61c07749928b57e7c0f6fddb0530c4f6aa1971893d88b",
+      "zstd_errors.h": "66a8c3f71d12ea6e797e4f622f31f3f8f81c41b36f48cad4f5de7d8bfb6aac0a",
+      "zstddeclib.c": "5eb38abe0a7eea13674b312a006df72002d4192f0f0b4d09e6f03fb927a1f3d0"
+    },
+    "generation_command": "python3 combine.py -r ../../lib -x legacy/zstd_legacy.h -o zstddeclib.c zstddeclib-in.c",
+    "license": "BSD-3-Clause option from upstream dual BSD/GPLv2 distribution",
+    "repository": "https://github.com/facebook/zstd",
+    "tag": "v1.5.7",
+    "tag_ref": {
+      "node_id": "MDM6UmVmMjk3NTk3MTU6cmVmcy90YWdzL3YxLjUuNw==",
+      "object": {
+        "sha": "ac66b19e6bd6b83238bf008eecc1298105298532",
+        "type": "tag",
+        "url": "https://api.github.com/repos/facebook/zstd/git/tags/ac66b19e6bd6b83238bf008eecc1298105298532"
+      },
+      "ref": "refs/tags/v1.5.7",
+      "url": "https://api.github.com/repos/facebook/zstd/git/refs/tags/v1.5.7"
+    }
+  }
+}

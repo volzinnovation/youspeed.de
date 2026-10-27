@@ -31,6 +31,12 @@ data class BundleCoverage(
     val poly: BundleArtifact?,
 )
 
+data class PackedBundleBase(
+    val version: Int,
+    val roads: BundleArtifact,
+    val nodes: BundleArtifact? = null,
+)
+
 data class V3BundleManifest(
     val format: String,
     val schemaVersion: Int,
@@ -45,14 +51,34 @@ data class V3BundleManifest(
     val deltaIndex: BundleArtifact?,
     val penaltyRules: BundleArtifact?,
     val coverage: BundleCoverage?,
+    val packedBase: PackedBundleBase? = null,
 ) {
     fun validateLaunchContract(currentAppVersion: String = BuildConfig.MAP_COMPATIBILITY_APP_VERSION) {
-        require(format == "youspeed.v3.bundle.manifest") { "Unexpected manifest format: $format" }
-        require(variant == "v3") { "Unexpected manifest variant: $variant" }
+        val packed = format == "youspeed.v4.bundle.manifest"
+        require(packed || format == "youspeed.v3.bundle.manifest") { "Unexpected manifest format: $format" }
+        require(variant == if (packed) "v4" else "v3") { "Unexpected manifest variant: $variant" }
         require(schemaVersion == 1) { "Unsupported manifest schema version: $schemaVersion" }
         require(BundleAppVersion.isAtLeast(currentAppVersion, minAppVersion)) {
             "Bundle requires app $minAppVersion; current app is $currentAppVersion"
         }
+        if (packed) {
+            require(BundleAppVersion.isAtLeast(minAppVersion, "1.6")) { "Packed bundles require app 1.6 or later" }
+            val base = requireNotNull(packedBase) { "Packed base is missing" }
+            require(base.version == 1) { "Unsupported packed base version" }
+            require(deltaIndex == null) { "SQL deltas cannot mutate packed generations" }
+            require(dbParts.isNullOrEmpty()) { "Packed contexts require a single independently compressed artifact" }
+            val artifacts = listOfNotNull(db, base.roads, base.nodes)
+            require(artifacts.map { it.file }.distinct().size == artifacts.size) { "Packed artifact file names must be distinct" }
+            artifacts.forEach { artifact ->
+                require(artifact.file.isNotBlank() && artifact.file != "." && artifact.file != ".." &&
+                    '/' !in artifact.file && '\\' !in artifact.file) { "Packed artifacts require local file names" }
+                require(artifact.bytes > 0 && artifact.sha256.matches(Regex("[0-9a-fA-F]{64}"))) { "Invalid packed artifact identity" }
+                val compression=artifact.compression?.trim()?.lowercase().orEmpty()
+                require(compression in setOf("","none","gzip","zlib")) {"Unsupported packed transport compression"}
+                if(compression !in setOf("","none"))require((artifact.uncompressedBytes?:0)>0&&
+                    artifact.uncompressedSha256?.matches(Regex("[0-9a-fA-F]{64}"))==true) {"Packed installed identity is missing"}
+            }
+        } else require(packedBase == null) { "Packed artifacts require a v4 manifest" }
     }
 }
 
@@ -276,6 +302,10 @@ object ContractJson {
                     },
                     poly = coverage.optionalObject("poly")?.toBundleArtifact(),
                 )
+            },
+            packedBase = root.optionalObject("packed_base")?.let { packed ->
+                PackedBundleBase(packed.requiredInt("version"), packed.requiredObject("roads").toBundleArtifact(),
+                    packed.optionalObject("nodes")?.toBundleArtifact())
             },
         )
     }

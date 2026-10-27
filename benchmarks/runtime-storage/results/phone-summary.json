@@ -1,0 +1,398 @@
+{
+  "complete_requested_phones": true,
+  "devices": {
+    "android": {
+      "geodesk": {
+        "correction_tests": 56,
+        "node_digest": "f16a6da37efa217d",
+        "node_warm": {
+          "count": 61191,
+          "max_us": 13952.1,
+          "p50_us": 410.538,
+          "p95_us": 1018.15,
+          "p99_us": 1630.46
+        },
+        "report_sha256": "2bf742356d841d638808126e99c7a7ba80748090316dfc2fd73afb1e6a9bf752",
+        "road_anonymous_pss_delta_bytes": 15900672,
+        "road_digest": "387b12eb0c5aa5e6",
+        "road_footprint_delta_bytes": null,
+        "road_init_ms": 3.232385,
+        "road_memory_after": {
+          "highwater_rss_bytes": 55103488,
+          "highwater_rss_source": "getrusage_ru_maxrss",
+          "physical_footprint_bytes": null,
+          "private_clean_bytes": 44748800,
+          "private_dirty_bytes": 17305600,
+          "private_resident_bytes": 62054400,
+          "pss_anonymous_bytes": 17305600,
+          "pss_bytes": 62082048,
+          "pss_file_bytes": 44774400,
+          "rss_bytes": 64811008,
+          "rss_source": "proc_smaps_rollup",
+          "shared_resident_bytes": 2756608
+        },
+        "road_results_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+        "road_rss_delta_bytes": 60239872,
+        "road_warm": {
+          "count": 1758,
+          "max_us": 29221.231,
+          "p50_us": 5970.77,
+          "p95_us": 16381.847,
+          "p99_us": 23701.539
+        },
+        "source_amendment_probe": {
+          "car_kmh": 50,
+          "composition_context_association": "hypothetical_forward_binding_and_confirmed_passage",
+          "error": "",
+          "failed": 0,
+          "failures": [],
+          "heavy_hgv_kmh": 25,
+          "journal_bytes": 2758,
+          "light_hgv_kmh": 50,
+          "module": "source-bound-restricted-node-amendment",
+          "passed": 18,
+          "schema": 1,
+          "source_import_binding_verified": false,
+          "source_node_id": "2532969814",
+          "source_record_fnv1a64": "e71e7bbba1cc2d29",
+          "source_way_id": "159830790",
+          "tests": 18,
+          "tombstone_baseline_kmh": 50,
+          "unknown_weight_unresolved": true
+        }
+      },
+      "packed": {
+        "correction_tests": 56,
+        "node_digest": "f16a6da37efa217d",
+        "node_warm": {
+          "count": 61191,
+          "max_us": 238.692,
+          "p50_us": 8.923,
+          "p95_us": 47.692,
+          "p99_us": 88.385
+        },
+        "report_sha256": "36f4b44f212302b5b1e86d1be606fd8f38d3c0fb5c3d9da36c87ea70a4ca776b",
+        "road_anonymous_pss_delta_bytes": 6410240,
+        "road_digest": "387b12eb0c5aa5e6",
+        "road_footprint_delta_bytes": null,
+        "road_init_ms": 58.091615,
+        "road_memory_after": {
+          "highwater_rss_bytes": 330330112,
+          "highwater_rss_source": "getrusage_ru_maxrss",
+          "physical_footprint_bytes": null,
+          "private_clean_bytes": 319381504,
+          "private_dirty_bytes": 7819264,
+          "private_resident_bytes": 327200768,
+          "pss_anonymous_bytes": 7819264,
+          "pss_bytes": 327228416,
+          "pss_file_bytes": 319408128,
+          "rss_bytes": 329928704,
+          "rss_source": "proc_smaps_rollup",
+          "shared_resident_bytes": 2727936
+        },
+        "road_results_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+        "road_rss_delta_bytes": 325324800,
+        "road_warm": {
+          "count": 1758,
+          "max_us": 22359.923,
+          "p50_us": 4174.692,
+          "p95_us": 12302.154,
+          "p99_us": 18422.23
+        },
+        "source_amendment_probe": {
+          "car_kmh": 50,
+          "composition_context_association": "hypothetical_forward_binding_and_confirmed_passage",
+          "error": "",
+          "failed": 0,
+          "failures": [],
+          "heavy_hgv_kmh": 25,
+          "journal_bytes": 2758,
+          "light_hgv_kmh": 50,
+          "module": "source-bound-restricted-node-amendment",
+          "passed": 18,
+          "schema": 1,
+          "source_import_binding_verified": false,
+          "source_node_id": "2532969814",
+          "source_record_fnv1a64": "e71e7bbba1cc2d29",
+          "source_way_id": "159830790",
+          "tests": 18,
+          "tombstone_baseline_kmh": 50,
+          "unknown_weight_unresolved": true
+        }
+      },
+      "sqlite": {
+        "correction_tests": 56,
+        "node_digest": "f16a6da37efa217d",
+        "node_warm": {
+          "count": 61191,
+          "max_us": 324.077,
+          "p50_us": 19.692,
+          "p95_us": 76.615,
+          "p99_us": 137.769
+        },
+        "report_sha256": "1cc29b4fb45fe2a30c1d5be4b0aaa3375a3c0ff20d74b04725d2fc95bae92e2a",
+        "road_anonymous_pss_delta_bytes": 15745024,
+        "road_digest": "387b12eb0c5aa5e6",
+        "road_footprint_delta_bytes": null,
+        "road_init_ms": 23.787077,
+        "road_memory_after": {
+          "highwater_rss_bytes": 21942272,
+          "highwater_rss_source": "getrusage_ru_maxrss",
+          "physical_footprint_bytes": null,
+          "private_clean_bytes": 1654784,
+          "private_dirty_bytes": 17158144,
+          "private_resident_bytes": 18812928,
+          "pss_anonymous_bytes": 17158144,
+          "pss_bytes": 18840576,
+          "pss_file_bytes": 1681408,
+          "rss_bytes": 21540864,
+          "rss_source": "proc_smaps_rollup",
+          "shared_resident_bytes": 2727936
+        },
+        "road_results_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+        "road_rss_delta_bytes": 16969728,
+        "road_warm": {
+          "count": 1758,
+          "max_us": 28564.538,
+          "p50_us": 5365,
+          "p95_us": 15547.692,
+          "p99_us": 23191.384
+        },
+        "source_amendment_probe": {
+          "car_kmh": 50,
+          "composition_context_association": "hypothetical_forward_binding_and_confirmed_passage",
+          "error": "",
+          "failed": 0,
+          "failures": [],
+          "heavy_hgv_kmh": 25,
+          "journal_bytes": 2758,
+          "light_hgv_kmh": 50,
+          "module": "source-bound-restricted-node-amendment",
+          "passed": 18,
+          "schema": 1,
+          "source_import_binding_verified": false,
+          "source_node_id": "2532969814",
+          "source_record_fnv1a64": "e71e7bbba1cc2d29",
+          "source_way_id": "159830790",
+          "tests": 18,
+          "tombstone_baseline_kmh": 50,
+          "unknown_weight_unresolved": true
+        }
+      }
+    },
+    "iphone": {
+      "geodesk": {
+        "correction_tests": 56,
+        "node_digest": "f16a6da37efa217d",
+        "node_warm": {
+          "count": 61191,
+          "max_us": 299.792,
+          "p50_us": 27.208,
+          "p95_us": 65,
+          "p99_us": 102.875
+        },
+        "report_sha256": "47ded1468db777266afddc869594412292b9698aa379ab5ab86aacc8e718a657",
+        "road_anonymous_pss_delta_bytes": null,
+        "road_digest": "4ce9f9d93a352e83",
+        "road_footprint_delta_bytes": 20168800,
+        "road_init_ms": 4.466875,
+        "road_memory_after": {
+          "highwater_rss_bytes": 67977216,
+          "highwater_rss_source": "getrusage_ru_maxrss",
+          "physical_footprint_bytes": 26575576,
+          "private_clean_bytes": null,
+          "private_dirty_bytes": null,
+          "private_resident_bytes": null,
+          "pss_anonymous_bytes": null,
+          "pss_bytes": null,
+          "pss_file_bytes": null,
+          "rss_bytes": 67977216,
+          "rss_source": "mach_task_basic_info",
+          "shared_resident_bytes": null
+        },
+        "road_results_sha256": "d1754570540b3e22bd8f0c3d3b2e1eab7b35113d93fe220fa11085ff2b3f3cbf",
+        "road_rss_delta_bytes": 42549248,
+        "road_warm": {
+          "count": 1758,
+          "max_us": 9240.25,
+          "p50_us": 1444.875,
+          "p95_us": 4189,
+          "p99_us": 6251.959
+        },
+        "source_amendment_probe": {
+          "car_kmh": 50,
+          "composition_context_association": "hypothetical_forward_binding_and_confirmed_passage",
+          "error": "",
+          "failed": 0,
+          "failures": [],
+          "heavy_hgv_kmh": 25,
+          "journal_bytes": 2758,
+          "light_hgv_kmh": 50,
+          "module": "source-bound-restricted-node-amendment",
+          "passed": 18,
+          "schema": 1,
+          "source_import_binding_verified": false,
+          "source_node_id": "2532969814",
+          "source_record_fnv1a64": "e71e7bbba1cc2d29",
+          "source_way_id": "159830790",
+          "tests": 18,
+          "tombstone_baseline_kmh": 50,
+          "unknown_weight_unresolved": true
+        }
+      },
+      "packed": {
+        "correction_tests": 56,
+        "node_digest": "f16a6da37efa217d",
+        "node_warm": {
+          "count": 61191,
+          "max_us": 122.125,
+          "p50_us": 4.667,
+          "p95_us": 27.708,
+          "p99_us": 52.084
+        },
+        "report_sha256": "eae02fca082e67d242bdf02e534ef8bbdc7a4045b58ee7701eb2e6f2ce65a4f1",
+        "road_anonymous_pss_delta_bytes": null,
+        "road_digest": "4ce9f9d93a352e83",
+        "road_footprint_delta_bytes": 8962384,
+        "road_init_ms": 95.999458,
+        "road_memory_after": {
+          "highwater_rss_bytes": 293158912,
+          "highwater_rss_source": "getrusage_ru_maxrss",
+          "physical_footprint_bytes": 15729608,
+          "private_clean_bytes": null,
+          "private_dirty_bytes": null,
+          "private_resident_bytes": null,
+          "pss_anonymous_bytes": null,
+          "pss_bytes": null,
+          "pss_file_bytes": null,
+          "rss_bytes": 293158912,
+          "rss_source": "mach_task_basic_info",
+          "shared_resident_bytes": null
+        },
+        "road_results_sha256": "d1754570540b3e22bd8f0c3d3b2e1eab7b35113d93fe220fa11085ff2b3f3cbf",
+        "road_rss_delta_bytes": 266829824,
+        "road_warm": {
+          "count": 1758,
+          "max_us": 5203.084,
+          "p50_us": 979.833,
+          "p95_us": 2870.084,
+          "p99_us": 4318.416
+        },
+        "source_amendment_probe": {
+          "car_kmh": 50,
+          "composition_context_association": "hypothetical_forward_binding_and_confirmed_passage",
+          "error": "",
+          "failed": 0,
+          "failures": [],
+          "heavy_hgv_kmh": 25,
+          "journal_bytes": 2758,
+          "light_hgv_kmh": 50,
+          "module": "source-bound-restricted-node-amendment",
+          "passed": 18,
+          "schema": 1,
+          "source_import_binding_verified": false,
+          "source_node_id": "2532969814",
+          "source_record_fnv1a64": "e71e7bbba1cc2d29",
+          "source_way_id": "159830790",
+          "tests": 18,
+          "tombstone_baseline_kmh": 50,
+          "unknown_weight_unresolved": true
+        }
+      },
+      "sqlite": {
+        "correction_tests": 56,
+        "node_digest": "f16a6da37efa217d",
+        "node_warm": {
+          "count": 61191,
+          "max_us": 155.083,
+          "p50_us": 8,
+          "p95_us": 37.167,
+          "p99_us": 69.916
+        },
+        "report_sha256": "c915ee87064e09fe037da84016c1eb9a7feca88c4f34f4acf6e81de812bbbdec",
+        "road_anonymous_pss_delta_bytes": null,
+        "road_digest": "4ce9f9d93a352e83",
+        "road_footprint_delta_bytes": 19873792,
+        "road_init_ms": 2.285083,
+        "road_memory_after": {
+          "highwater_rss_bytes": 46170112,
+          "highwater_rss_source": "getrusage_ru_maxrss",
+          "physical_footprint_bytes": 26247824,
+          "private_clean_bytes": null,
+          "private_dirty_bytes": null,
+          "private_resident_bytes": null,
+          "pss_anonymous_bytes": null,
+          "pss_bytes": null,
+          "pss_file_bytes": null,
+          "rss_bytes": 45957120,
+          "rss_source": "mach_task_basic_info",
+          "shared_resident_bytes": null
+        },
+        "road_results_sha256": "d1754570540b3e22bd8f0c3d3b2e1eab7b35113d93fe220fa11085ff2b3f3cbf",
+        "road_rss_delta_bytes": 20578304,
+        "road_warm": {
+          "count": 1758,
+          "max_us": 11253.167,
+          "p50_us": 1600.292,
+          "p95_us": 4424.667,
+          "p99_us": 6636.458
+        },
+        "source_amendment_probe": {
+          "car_kmh": 50,
+          "composition_context_association": "hypothetical_forward_binding_and_confirmed_passage",
+          "error": "",
+          "failed": 0,
+          "failures": [],
+          "heavy_hgv_kmh": 25,
+          "journal_bytes": 2758,
+          "light_hgv_kmh": 50,
+          "module": "source-bound-restricted-node-amendment",
+          "passed": 18,
+          "schema": 1,
+          "source_import_binding_verified": false,
+          "source_node_id": "2532969814",
+          "source_record_fnv1a64": "e71e7bbba1cc2d29",
+          "source_way_id": "159830790",
+          "tests": 18,
+          "tombstone_baseline_kmh": 50,
+          "unknown_weight_unresolved": true
+        }
+      }
+    }
+  },
+  "numeric_tolerance": 1e-07,
+  "parity": {
+    "all_node_backend_digests_exact": true,
+    "all_non_numeric_fields_exact": true,
+    "checked_road_results": 38676,
+    "cross_phone_parity_verified": true,
+    "max_numeric_error": {
+      "chainage_m": 3.197442310920451e-13,
+      "distance_m": 2.842170943040401e-14,
+      "lat": 0.0,
+      "lon": 0.0
+    },
+    "platforms_verified": [
+      "android",
+      "iphone"
+    ],
+    "queries_per_backend": 586,
+    "road_results_per_backend": 6446,
+    "success": true
+  },
+  "schema": 1,
+  "size_totals": {
+    "geodesk_with_canonical_semantics": {
+      "gzip_level6_bytes": 802770335,
+      "installed_bytes": 936137804
+    },
+    "optimized_sqlite": {
+      "gzip_level6_bytes": 738888283,
+      "installed_bytes": 841573172
+    },
+    "packed": {
+      "gzip_level6_bytes": 702202143,
+      "installed_bytes": 748542727
+    }
+  }
+}

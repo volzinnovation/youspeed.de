@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "corrupt_formats_rejected": 5,
+  "cases": {
+    "header": "node pack header checksum",
+    "directory": "node directory checksum",
+    "id_index": "node directory checksum",
+    "metadata": "node metadata decompression failed",
+    "truncated": "truncated node pack"
+  }
+}

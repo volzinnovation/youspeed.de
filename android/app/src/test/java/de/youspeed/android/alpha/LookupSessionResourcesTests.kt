@@ -137,4 +137,17 @@ class LookupSessionResourcesTests {
         cache.clear()
         assertEquals(0, cache.stats().entries)
     }
+    @Test fun evictedGeometryReloadKeepsExactCoordinatesOrderAndSourceIdentity() {
+        val cache=DecodedGeometryCache<String,Pair<Double,Double>>(maxEntries=1,maxPoints=2)
+        val source=listOf(48.1000001 to 9.2000001,48.1000002 to 9.2000002)
+        var decodes=0
+        fun original()=cache.getOrDecode("9007199254740993") {decodes++;source.map{it.first to it.second}}
+        val first=original()
+        assertSame(first,original())
+        cache.getOrDecode("10"){listOf(0.0 to 0.0)}
+        val reloaded=original()
+        assertNotSame(first,reloaded);assertEquals(source,reloaded);assertEquals(2,decodes)
+        assertSame(reloaded,original())
+        assertEquals(2,cache.stats().evictions)
+    }
 }

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "overall_success": true,
+  "node_count": 73991,
+  "canonical_records_sha256": "a36bb30102096fe02966a9e092dfddd2d2aed0d212aa853a5b8a6c61f301c831",
+  "verification": "Every full source node object compared by JSON value with the persistent native reader, including all tags and memberships; sorted by Int64 node ID.",
+  "hash_encoding": "<Q> little-endian UTF-8 byte length plus json.dumps(sort_keys=True,separators=(comma,colon),ensure_ascii=False) UTF-8 for each source object.",
+  "elapsed_seconds": 1.4083717920002528,
+  "native_io_stats": {
+    "nodes": 73991,
+    "file": {
+      "mode": "bounded_pread",
+      "mapped_bytes": 0,
+      "page_bytes": 4096,
+      "page_cache_capacity_bytes": 524288,
+      "page_cache_resident_bytes": 524288,
+      "page_cache_peak_bytes": 524288,
+      "page_cache_hits": 2716306,
+      "page_cache_misses": 66701,
+      "pread_calls": 140748,
+      "pread_bytes": 294412828,
+      "largest_pread_request_bytes": 65536
+    }
+  }
+}

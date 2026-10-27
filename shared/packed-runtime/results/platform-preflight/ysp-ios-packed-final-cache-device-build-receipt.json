@@ -1,0 +1,12 @@
+{
+  "suite": "production-iPhone-final-fixed-slot-cache-build",
+  "build_passed": true,
+  "configuration": "Debug",
+  "platform": "iphoneos",
+  "code_signing_allowed": false,
+  "marketing_version": "1.6",
+  "build_version": "10074",
+  "native_reader_sha256": "3256307ebd89a56a77c5b9c6a27b7f1d24b50e5c8e8f652f7ed4cb41b50d0b91",
+  "app_path": "/private/tmp/ysp-ios-packed-device-build/Build/Products/Debug-iphoneos/SpeedConsumer.app",
+  "log": "/private/tmp/ysp-ios-packed-final-cache-device-build.log"
+}

@@ -18,9 +18,48 @@ enum ConditionalSpeedRules {
         let direction: Int?
         let countryCode: String?
         var timeZoneID: String? = nil
+        var validFromUTC: Double? = nil
+        var validUntilUTC: Double? = nil
+        var fallbackRulesJSON: String? = nil
+        var fallbackUnresolved: Bool? = nil
+        var fallbackReason: String? = nil
+        // A node amendment can fall through to a time-dependent way rule.
+        // Keep that producer context rather than freezing its current scalar.
+        var baselineReevaluations: [Reevaluation]? = nil
+        var fallbackReevaluations: [Reevaluation]? = nil
         func evaluate(at: Date) -> Result {
+            evaluate(at: at, depth: 0)
+        }
+        private func evaluate(at: Date, depth: Int) -> Result {
+            guard depth < 8 else { return unknown("map_amendment_reevaluation_depth") }
+            let instant = at.timeIntervalSince1970
+            if validFromUTC.map({ instant < $0 }) == true || validUntilUTC.map({ instant >= $0 }) == true {
+                if let children = fallbackReevaluations {
+                    guard children.count == 1 else { return unknown("corrupt_map_amendment_fallback") }
+                    return children[0].evaluate(at: at, depth: depth + 1)
+                }
+                if let fallbackRulesJSON {
+                    guard let data = fallbackRulesJSON.data(using: .utf8),
+                          let rules = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                        return unknown("corrupt_fallback_rule_set")
+                    }
+                    return ConditionalSpeedRules.evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID,
+                        countryCode: countryCode, direction: direction), baseKmh: baseKmh, baseUnlimited: baseUnlimited)
+                }
+                if fallbackUnresolved == true { return unknown(fallbackReason ?? "map_amendment_baseline_unresolved") }
+                return Result(kmh: baseKmh, unlimited: baseUnlimited, unresolved: false, reason: "map_amendment_outside_validity")
+            }
             guard let data = rulesJSON.data(using: .utf8), let rules = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return unknown("corrupt_rule_set") }
-            return ConditionalSpeedRules.evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction), baseKmh: baseKmh, baseUnlimited: baseUnlimited)
+            var effectiveBase = baseKmh
+            var effectiveUnlimited = baseUnlimited
+            if let children = baselineReevaluations {
+                guard children.count == 1 else { return unknown("corrupt_map_amendment_baseline") }
+                let baseline = children[0].evaluate(at: at, depth: depth + 1)
+                if ["map_amendment_reevaluation_depth", "corrupt_map_amendment_baseline", "corrupt_map_amendment_fallback"].contains(baseline.reason) { return baseline }
+                effectiveBase = baseline.unresolved ? nil : baseline.kmh
+                effectiveUnlimited = !baseline.unresolved && baseline.unlimited
+            }
+            return ConditionalSpeedRules.evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction), baseKmh: effectiveBase, baseUnlimited: effectiveUnlimited)
         }
     }
 
@@ -35,7 +74,29 @@ enum ConditionalSpeedRules {
     }
 
     static func resolve(db: OpaquePointer, wayID: String, direction: Int?, baseKmh: Int?, baseUnlimited: Bool,
-                        at: Date = Date(), timeZoneID: String? = nil, countryCode: String? = nil) -> Result? {
+                        at: Date = Date(), timeZoneID: String? = nil, countryCode: String? = nil,
+                        amendmentStore: MapDataAmendmentStore? = nil, passedNodeIDs: Set<String> = []) -> Result? {
+        let baseline = resolveBundle(db: db, wayID: wayID, direction: direction, baseKmh: baseKmh,
+            baseUnlimited: baseUnlimited, at: at, timeZoneID: timeZoneID, countryCode: countryCode)
+        guard let generation = PackedBundleRuntime.metadata("packed_generation", database: db), !generation.isEmpty,
+              let store = amendmentStore ?? MapDataAmendmentStore.applicationStore() else { return baseline }
+        do {
+            guard var result = try store.resolve(wayID: wayID, bundle: generation, direction: direction,
+                context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction),
+                baseKmh: baseKmh, baseUnlimited: baseUnlimited, passedNodeIDs: passedNodeIDs,
+                baselineResult: baseline) else { return baseline }
+            result.reevaluation?.fallbackReevaluations = baseline?.reevaluation.map { [$0] }
+            result.reevaluation?.fallbackRulesJSON = baseline?.reevaluation?.rulesJSON
+            result.reevaluation?.fallbackUnresolved = baseline?.unresolved
+            result.reevaluation?.fallbackReason = baseline?.reason
+            return result
+        } catch {
+            return unknown("map_amendment_store_unavailable")
+        }
+    }
+
+    private static func resolveBundle(db: OpaquePointer, wayID: String, direction: Int?, baseKmh: Int?, baseUnlimited: Bool,
+                        at: Date, timeZoneID: String?, countryCode: String?) -> Result? {
         var capability: OpaquePointer?
         let hasCapability = sqlite3_prepare_v2(db, "SELECT version,grammar FROM road_speed_capability", -1, &capability, nil) == SQLITE_OK
         defer { sqlite3_finalize(capability) }

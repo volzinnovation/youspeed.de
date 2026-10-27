@@ -1,0 +1,98 @@
+{
+  "files": {
+    "packed": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime.pack",
+      "installed_bytes": 450617325,
+      "gzip_level6_bytes": 405881385,
+      "sha256": "96772329030697148ca363bfbb8860731869abf648cebf2806b532f0024c8f08"
+    },
+    "sqlite": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime.sqlite",
+      "installed_bytes": 542273536,
+      "gzip_level6_bytes": 442001706,
+      "sha256": "746ace61910ff9b3fd9d182f40bf905b35dd982de2ade0224a7cbd969f5c107d"
+    },
+    "source_semantics": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime-globals.zblocks",
+      "installed_bytes": 292666774,
+      "gzip_level6_bytes": 292255415,
+      "sha256": "1cb4f05e4aa88e8391d42c63ce69f443c055ee999c5d2c151aa49c7f04515c3b"
+    },
+    "source_semantics_index": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime-globals.index.json",
+      "installed_bytes": 183414,
+      "gzip_level6_bytes": 71019,
+      "sha256": "7e8edf6e585c3b4bfbe8c04f0e5d9286eca1c663902ae2090030ee3a430bd37b"
+    },
+    "geodesk": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/geodesk/bw-runtime.gol",
+      "installed_bytes": 94564632,
+      "gzip_level6_bytes": 63882052,
+      "sha256": "cf25dad4e541dcb7ea8d544dce8b58407752e7da3b4b986a57255035428ad5f4"
+    },
+    "generic_nodes": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/source/generic-speed-nodes.json",
+      "installed_bytes": 6175646,
+      "gzip_level6_bytes": 740377,
+      "sha256": "fdae89f8a37fbf5d23ce96201c4df2bf279d7b1b76c92355ef6c4fa1ee73db96"
+    },
+    "packed_nodes": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/nodes/nodes.yspn",
+      "installed_bytes": 5072870,
+      "gzip_level6_bytes": 3993429,
+      "sha256": "e294d4ffd85f975bcbd00aebd4afdcd46c6a8b50695c83c4dbdb69f12f4aa867"
+    },
+    "sqlite_nodes": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/nodes/nodes.sqlite",
+      "installed_bytes": 6447104,
+      "gzip_level6_bytes": 4559248,
+      "sha256": "da8903e16f9de7d5c5043c81415f656c039abc3d4b7101e484caff293d0df7bb"
+    },
+    "manifest": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime-manifest.json",
+      "installed_bytes": 2344,
+      "gzip_level6_bytes": 895,
+      "sha256": "824c19ca324fbbb193fbd2866c0691e4150af021fe98047e24269598f2d57c00"
+    }
+  },
+  "complete_candidate_components": {
+    "packed": [
+      "packed",
+      "packed_nodes",
+      "source_semantics",
+      "source_semantics_index",
+      "manifest"
+    ],
+    "optimized_sqlite": [
+      "sqlite",
+      "sqlite_nodes",
+      "source_semantics",
+      "source_semantics_index",
+      "manifest"
+    ],
+    "geodesk_with_canonical_semantics": [
+      "geodesk",
+      "sqlite",
+      "sqlite_nodes",
+      "source_semantics",
+      "source_semantics_index",
+      "manifest"
+    ]
+  },
+  "complete_candidate_totals": {
+    "packed": {
+      "installed_bytes": 748542727,
+      "gzip_level6_bytes": 702202143
+    },
+    "optimized_sqlite": {
+      "installed_bytes": 841573172,
+      "gzip_level6_bytes": 738888283
+    },
+    "geodesk_with_canonical_semantics": {
+      "installed_bytes": 936137804,
+      "gzip_level6_bytes": 802770335
+    }
+  },
+  "all_original_table_coverage": "Verified deduplicated native per-way records plus runtime-global archive",
+  "gzip": "Independent file gzip streams, level 6; computed without writing duplicate archives. Includes complete shared original semantic data in each candidate; native library/app binary excluded."
+}

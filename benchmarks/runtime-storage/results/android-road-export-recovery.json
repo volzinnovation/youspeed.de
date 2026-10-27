@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "method": "Re-exported all three original backend lookups on the reattached Android phone; no latency/memory rerun",
+  "backends": {
+    "packed": {
+      "original_raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "recovered_raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "matches_original": true,
+      "timing_report_unchanged": true
+    },
+    "sqlite": {
+      "original_raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "recovered_raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "matches_original": true,
+      "timing_report_unchanged": true
+    },
+    "geodesk": {
+      "original_raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "recovered_raw_sha256": "b62be597a7bbb10501630c124a48c793293166c3e65a935ffcfca42c0878c44a",
+      "matches_original": true,
+      "timing_report_unchanged": true
+    }
+  }
+}

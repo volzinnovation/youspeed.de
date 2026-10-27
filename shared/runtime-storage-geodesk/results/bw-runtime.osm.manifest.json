@@ -1,0 +1,10 @@
+{
+  "schema": "youspeed.geodesk-runtime-spatial-pbf.v1",
+  "source_pbf_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+  "source_way_count": 1085790,
+  "source_generic_node_count": 20141,
+  "output_bytes": 85580074,
+  "output_sha256": "88a6e0a7fedcf8b8650ab241fa47ada976b89c8a0dce5f5384c96c0c423c804f",
+  "elapsed_seconds": 191.8076375000237,
+  "scope": "All canonical roads and generic speed nodes across BW, with all original referenced way-node IDs/coordinates/tags. App-specific rules, boundaries and certified adjacency remain in the counted common semantic sidecar."
+}

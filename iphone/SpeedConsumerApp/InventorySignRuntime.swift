@@ -316,6 +316,15 @@ enum InventorySignBundle {
         return best.map { ($0.0, $0.1, $0.2) }
     }
 
+    /// Shared directed-association admission for existing inventory and reviewed
+    /// node amendments. These are the existing inventory thresholds verbatim.
+    static func travelDirection(projection p: (chainage: Double, heading: Double, distance: Double)?,
+                                heading: Double?, headingAccuracy: Double?) -> Int? {
+        guard let p, p.distance <= 25, let heading, heading.isFinite, (0..<360).contains(heading),
+              let headingAccuracy, headingAccuracy.isFinite, (0...35).contains(headingAccuracy) else { return nil }
+        return angle(heading,p.heading) <= 35 ? 1 : angle(heading,p.heading+180) <= 35 ? -1 : nil
+    }
+
     /// Unknown/absent capabilities fail closed, keeping old and other-region bundles unchanged.
     static func lookup(db: OpaquePointer, lat: Double, lon: Double, wayID: String?, points: [(Double, Double)],
                        heading: Double?, headingAccuracy: Double?, accuracy: Double, matchStable: Bool = true,
@@ -328,11 +337,7 @@ enum InventorySignBundle {
         guard supported, hasRequiredColumns(db), lat.isFinite, lon.isFinite, (-85..<85).contains(lat), (-180...180).contains(lon) else { return nil }
         let usable = accuracy.isFinite && (0...25).contains(accuracy)
         let p = usable ? projection(lat: lat, lon: lon, points: points) : nil
-        let direction: Int?
-        if let p, p.distance <= 25, let heading, heading.isFinite, (0..<360).contains(heading),
-           let headingAccuracy, headingAccuracy.isFinite, (0...35).contains(headingAccuracy) {
-            direction = angle(heading,p.heading) <= 35 ? 1 : angle(heading,p.heading+180) <= 35 ? -1 : nil
-        } else { direction = nil }
+        let direction = travelDirection(projection: p, heading: heading, headingAccuracy: headingAccuracy)
         var active: [InventoryTrafficRule] = []
         if matchStable, let wayID, let direction, let p {
             let sql = """

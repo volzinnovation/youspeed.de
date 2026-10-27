@@ -72,9 +72,11 @@ final class V3LookupResources: @unchecked Sendable {
     private var leased: [OpaquePointer: String] = [:]
     private var geometries: [GeometryKey: Geometry] = [:]
     private var capabilities: [String: Bool] = [:]
+    private var genericSignSource: PackedGenericSpeedSignSource?
+    private var genericSignSourceLoaded = false
 
     init(path: String, statementLimit: Int = 48, geometryLimit: Int = 512,
-         geometryByteLimit: Int = 4 * 1024 * 1024, capabilityLimit: Int = 128) {
+         geometryByteLimit: Int = 1 * 1024 * 1024, capabilityLimit: Int = 128) {
         self.path = path
         self.statementLimit = max(0, statementLimit)
         self.geometryLimit = max(0, geometryLimit)
@@ -95,14 +97,7 @@ final class V3LookupResources: @unchecked Sendable {
                     // the old descriptor with the replacement file's identity.
                     for _ in 0..<3 {
                         let before = try Identity(path: path)
-                        var opened: OpaquePointer?
-                        let encoded = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? path
-                        let code = sqlite3_open_v2("file:\(encoded)?mode=ro&immutable=1", &opened,
-                                                  SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil)
-                        guard code == SQLITE_OK, let opened else {
-                            if let opened { sqlite3_close(opened) }
-                            throw ConsumerAppError.sqlite("sqlite open failed for \(path)")
-                        }
+                        let opened = try PackedBundleRuntime.openReadOnly(path: path)
                         counts.opens += 1
                         let after: Identity
                         do { after = try Identity(path: path) }
@@ -219,12 +214,32 @@ final class V3LookupResources: @unchecked Sendable {
         return points
     }
 
+    func genericSpeedSignNodes(lat: Double, lon: Double, radiusM: Double) throws -> [GenericSpeedSignNode] {
+        precondition(depth > 0)
+        if !genericSignSourceLoaded {
+            genericSignSource = try PackedGenericSpeedSignSource.installedSource(contextURL: URL(fileURLWithPath: path))
+            genericSignSourceLoaded = true
+        }
+        return try genericSignSource?.nearby(lat: lat, lon: lon, radiusM: radiusM) ?? []
+    }
+
+    func genericSpeedSignSourceJSON(nodeID: String) throws -> String? {
+        precondition(depth > 0)
+        if !genericSignSourceLoaded {
+            genericSignSource = try PackedGenericSpeedSignSource.installedSource(contextURL: URL(fileURLWithPath: path))
+            genericSignSourceLoaded = true
+        }
+        return try genericSignSource?.sourceJSON(nodeID: nodeID)
+    }
+
     private func closeLocked() {
         precondition(leased.isEmpty, "Lookup statement outlived its session")
         for statement in statements.values { sqlite3_finalize(statement.pointer); counts.finalizes += 1 }
         statements.removeAll()
         geometries.removeAll()
         capabilities.removeAll()
+        genericSignSource = nil
+        genericSignSourceLoaded = false
         counts.geometryBytes = 0
         if let db { sqlite3_close(db); counts.closes += 1 }
         db = nil

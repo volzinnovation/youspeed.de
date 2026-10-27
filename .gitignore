@@ -45,6 +45,12 @@ mapdata/dist-v3/**
 mapdata/dist-v4/**
 mapdata/bundles/**/*.sqlite
 mapdata/bundles/**/*.sqlite.gz
+mapdata/bundles/**/*.yspc
+mapdata/bundles/**/*.yspc.gz
+mapdata/bundles/**/*.yspg
+mapdata/bundles/**/*.yspg.gz
+mapdata/bundles/**/*.yspn
+mapdata/bundles/**/*.yspn.gz
 mapdata/bundles/**/*.sql
 mapdata/bundles/**/*.sql.gz
 mapdata/bundles/**/deltas/
@@ -84,6 +90,7 @@ android/.idea/
 android/.gradle/
 android/local.properties
 android/**/build/
+android/**/.cxx/
 
 # Credentials and machine-local signing configuration
 /secret/MAPILLARY-CLIENT-TOKEN.txt

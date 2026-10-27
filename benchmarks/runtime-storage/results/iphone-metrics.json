@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "all_three_road_exports_byte_identical": true,
+  "raw_road_results_sha256": "d1754570540b3e22bd8f0c3d3b2e1eab7b35113d93fe220fa11085ff2b3f3cbf",
+  "compressed_bytes": 328997,
+  "backends": {
+    "packed": {
+      "init_ms": 95.999458,
+      "warm": {
+        "count": 1758,
+        "max_us": 5203.084,
+        "p50_us": 979.833,
+        "p95_us": 2870.084,
+        "p99_us": 4318.416
+      },
+      "rss_mib": 279.578125,
+      "rss_delta_mib": 254.46875,
+      "footprint_mib": 15.000923156738281,
+      "footprint_delta_mib": 8.547195434570312,
+      "node_warm": {
+        "count": 61191,
+        "max_us": 122.125,
+        "p50_us": 4.667,
+        "p95_us": 27.708,
+        "p99_us": 52.084
+      },
+      "node_memory_after": {
+        "highwater_rss_bytes": 293191680,
+        "highwater_rss_source": "getrusage_ru_maxrss",
+        "physical_footprint_bytes": 15467152,
+        "private_clean_bytes": null,
+        "private_dirty_bytes": null,
+        "private_resident_bytes": null,
+        "pss_anonymous_bytes": null,
+        "pss_bytes": null,
+        "pss_file_bytes": null,
+        "rss_bytes": 39944192,
+        "rss_source": "mach_task_basic_info",
+        "shared_resident_bytes": null
+      },
+      "node_rss_delta_mib": 5.015625,
+      "thermal_before": 0,
+      "thermal_after": 0,
+      "started_at_berlin": "2026-10-27T09:07:05.028325+01:00",
+      "finished_at_berlin": "2026-10-27T09:07:09.308321+01:00",
+      "road_digest": "4ce9f9d93a352e83",
+      "road_result_count": 6446,
+      "source_node_probe_failed": 0
+    },
+    "sqlite": {
+      "init_ms": 2.285083,
+      "warm": {
+        "count": 1758,
+        "max_us": 11253.167,
+        "p50_us": 1600.292,
+        "p95_us": 4424.667,
+        "p99_us": 6636.458
+      },
+      "rss_mib": 43.828125,
+      "rss_delta_mib": 19.625,
+      "footprint_mib": 25.031875610351562,
+      "footprint_delta_mib": 18.953125,
+      "node_warm": {
+        "count": 61191,
+        "max_us": 155.083,
+        "p50_us": 8,
+        "p95_us": 37.167,
+        "p99_us": 69.916
+      },
+      "node_memory_after": {
+        "highwater_rss_bytes": 46743552,
+        "highwater_rss_source": "getrusage_ru_maxrss",
+        "physical_footprint_bytes": 26985104,
+        "private_clean_bytes": null,
+        "private_dirty_bytes": null,
+        "private_resident_bytes": null,
+        "pss_anonymous_bytes": null,
+        "pss_bytes": null,
+        "pss_file_bytes": null,
+        "rss_bytes": 46727168,
+        "rss_source": "mach_task_basic_info",
+        "shared_resident_bytes": null
+      },
+      "node_rss_delta_mib": 0.1875,
+      "thermal_before": 0,
+      "thermal_after": 0,
+      "started_at_berlin": "2026-10-27T09:06:44.151280+01:00",
+      "finished_at_berlin": "2026-10-27T09:06:52.212398+01:00",
+      "road_digest": "4ce9f9d93a352e83",
+      "road_result_count": 6446,
+      "source_node_probe_failed": 0
+    },
+    "geodesk": {
+      "init_ms": 4.466875,
+      "warm": {
+        "count": 1758,
+        "max_us": 9240.25,
+        "p50_us": 1444.875,
+        "p95_us": 4189,
+        "p99_us": 6251.959
+      },
+      "rss_mib": 64.828125,
+      "rss_delta_mib": 40.578125,
+      "footprint_mib": 25.344444274902344,
+      "footprint_delta_mib": 19.234466552734375,
+      "node_warm": {
+        "count": 61191,
+        "max_us": 299.792,
+        "p50_us": 27.208,
+        "p95_us": 65,
+        "p99_us": 102.875
+      },
+      "node_memory_after": {
+        "highwater_rss_bytes": 68026368,
+        "highwater_rss_source": "getrusage_ru_maxrss",
+        "physical_footprint_bytes": 18907864,
+        "private_clean_bytes": null,
+        "private_dirty_bytes": null,
+        "private_resident_bytes": null,
+        "pss_anonymous_bytes": null,
+        "pss_bytes": null,
+        "pss_file_bytes": null,
+        "rss_bytes": 56016896,
+        "rss_source": "mach_task_basic_info",
+        "shared_resident_bytes": null
+      },
+      "node_rss_delta_mib": 8.65625,
+      "thermal_before": 0,
+      "thermal_after": 0,
+      "started_at_berlin": "2026-10-27T09:06:54.600227+01:00",
+      "finished_at_berlin": "2026-10-27T09:07:01.724190+01:00",
+      "road_digest": "4ce9f9d93a352e83",
+      "road_result_count": 6446,
+      "source_node_probe_failed": 0
+    }
+  }
+}

@@ -103,7 +103,7 @@ internal object SettlementContextPolicy {
 }
 
 /** Queries only the selected way; no bundle-wide scans occur while driving. */
-internal class SettlementContextResolver(private val db: SQLiteDatabase) {
+internal class SettlementContextResolver(private val db: RuntimeSqlDatabase) {
     private fun tableExists(name: String): Boolean = db.rawQuery(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", arrayOf(name),
     ).use { it.moveToFirst() }

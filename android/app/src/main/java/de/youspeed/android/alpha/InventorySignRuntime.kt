@@ -18,7 +18,7 @@ internal object InventorySignSourceScope {
         val identity = (sourceInputPbf ?: dbPath).lowercase().replace('_', '-')
         return "baden-wuerttemberg" in identity || "baden-württemberg" in identity
     }
-    fun allowsMobiData(db: SQLiteDatabase, path: String, countryCode: String? = null): Boolean {
+    fun allowsMobiData(db: RuntimeSqlDatabase, path: String, countryCode: String? = null): Boolean {
         fun metadata(key: String): String? = runCatching {
             db.rawQuery("SELECT value FROM metadata WHERE key=? LIMIT 1", arrayOf(key)).use { if (it.moveToFirst()) it.getString(0) else null }
         }.getOrNull()
@@ -92,6 +92,7 @@ internal data class InventoryWayRule(
 internal data class InventorySignSnapshot(
     val supported: Boolean = false, val signs: List<InventorySign> = emptyList(),
     val rules: List<InventoryWayRule> = emptyList(), val chainage: Double? = null, val localHeading: Double? = null,
+    val amendedNodes:List<AmendedNodeStation> = emptyList(),
 )
 internal data class InventorySignFix(
     val latitude: Double, val longitude: Double, val at: Instant, val accuracy: Double,
@@ -108,6 +109,7 @@ internal data class InventorySignDecision(
     val cityContextSign: InventorySign? = null, val resetContextSign: InventorySign? = null,
     val displayTriggeredAt: Instant? = null, val displayChanged: Boolean = false,
     val displayChangeReason: String? = null,
+    val passedAmendedNodeIds:Set<String> = emptySet(),
 ) {
     fun masksPostedFallback(wayId: String?): Boolean = wayId != null && (wayId == townResetWayId ||
         (wayId == endResetWayId && (direction == 0 || direction == endResetDirection)))
@@ -146,6 +148,7 @@ internal class InventorySignJournal(private val path: File) {
 
 /** Shared with the iPhone adapter: measured radii, directional rules, real frames only. */
 internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
+    private val amendedNodePassages=AmendedNodePassageRuntime()
     private fun persistEvent(value: JsonObject) {
         persist(value)
         val confirmed = value["outcome"]?.jsonPrimitive?.contentOrNull == "camera_confirmed"
@@ -212,7 +215,8 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
         if (!snapshot.supported || !usable) {
             closeEncounters("camera_unavailable", if (!snapshot.supported) "no_sign_capability" else "invalid_fix", now)
             priorChainage = null; priorAt = null
-            return InventorySignDecision(display = selectedSecondary, displayTriggeredAt = secondaryTriggeredAt)
+            return InventorySignDecision(display = selectedSecondary, displayTriggeredAt = secondaryTriggeredAt,
+                passedAmendedNodeIds=amendedNodePassages.evaluate(snapshot.amendedNodes,rawFix,now,null,null))
         }
         val departedBoundaries = boundarySources.filterValues { distance(fix.latitude, fix.longitude, it.latitude, it.longitude) > it.radiusMeters + 1e-6 }.keys.toList()
         boundaryApplied.removeAll(departedBoundaries.toSet())
@@ -331,6 +335,7 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
             .sortedWith(compareBy<InventorySign> { distance(fix.latitude, fix.longitude, it.latitude, it.longitude) }.thenBy { it.id }).firstOrNull()
         if (candidate != null && candidate.id != selectedSecondary?.id) { selectedSecondary = candidate; secondaryTriggeredAt = fix.at }
         val displayChanged = selectedSecondary?.id != previousSecondaryId
+        val passedNodes=amendedNodePassages.evaluate(snapshot.amendedNodes,rawFix,now,snapshot.chainage,snapshot.localHeading)
         return InventorySignDecision(selectedSecondary, rule, boundary, boundarySign,
             encounters.values.filter { !it.captured && it.sign.id in eligibleSigns.map { sign -> sign.id }.toSet() }.map { it.sign.id }, acceptedInsideCity,
             pendingBoundary?.takeIf { boundary == "applicable_end" && it.signId == boundarySign }?.sign?.let { source ->
@@ -338,7 +343,7 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
                     valueKmh = source.value?.takeIf { source.unit == "km/h" }?.toInt())
             }, acceptedTownResetWayId, endResetWayId, endResetDirection, fix.direction,
             acceptedCitySign, acceptedEndSign, secondaryTriggeredAt, displayChanged,
-            if (heldOpposite) "known_opposite_face" else if (displayChanged) "geofence_trigger" else null)
+            if (heldOpposite) "known_opposite_face" else if (displayChanged) "geofence_trigger" else null,passedNodes)
     }
 
     @Synchronized fun analyzedFrame(frameId: String, at: Instant, wayId: String?, direction: Int, now: Instant, bundleRevision: String?) {
@@ -427,7 +432,7 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
     @Synchronized fun finish(at: Instant) { closeEncounters("camera_unavailable", "session_ended", at); reset() }
     @Synchronized fun replaceSecondaryWithCamera() { selectedSecondary?.id?.let(cameraReplacedSecondaryIds::add); selectedSecondary = null; secondaryTriggeredAt = null }
     @Synchronized fun isCurrentSecondary(id: String?, triggeredAt: Instant?): Boolean = selectedSecondary?.id == id && secondaryTriggeredAt == triggeredAt
-    private fun reset() { encounters.clear(); boundaryApplied.clear(); boundarySources.clear(); knownDirections.clear(); priorWay = null; priorDirection = 0; priorChainage = null; priorAt = null; activeCancellation = null; pendingBoundary = null; acceptedInsideCity = null; acceptedCitySign = null; acceptedEndSign = null; selectedSecondary = null; secondaryTriggeredAt = null; cameraReplacedSecondaryIds.clear(); acceptedTownResetWayId = null; endResetWayId = null; endResetDirection = 0 }
+    private fun reset() { amendedNodePassages.reset(); encounters.clear(); boundaryApplied.clear(); boundarySources.clear(); knownDirections.clear(); priorWay = null; priorDirection = 0; priorChainage = null; priorAt = null; activeCancellation = null; pendingBoundary = null; acceptedInsideCity = null; acceptedCitySign = null; acceptedEndSign = null; selectedSecondary = null; secondaryTriggeredAt = null; cameraReplacedSecondaryIds.clear(); acceptedTownResetWayId = null; endResetWayId = null; endResetDirection = 0 }
     private fun closeEncounters(outcome: String, reason: String, at: Instant) {
         encounters.values.filter { it.outcome == null }.forEach { recordBestEffort(it, outcome, at, reason) }; encounters.clear()
     }
@@ -510,18 +515,26 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
 }
 
 /** Named optional columns only; old and non-BW databases have no side effects. */
-internal class InventorySignDatabase(private val path: String) : Closeable {
-    private val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+internal class InventorySignDatabase(private val path: String,
+    private val amendmentStore:MapDataAmendmentStore?=MapDataAmendmentStore.applicationStore()) : Closeable {
+    private val runtimeDatabase = RuntimeMapDatabase.open(path)
+    private val db = runtimeDatabase.database
+    private val genericNodes=RuntimeGenericSpeedNodes.openForDatabase(path)
+    private val generation=runCatching {db.rawQuery("SELECT value FROM metadata WHERE key='packed_generation'",null)
+        .use{if(it.moveToFirst())it.getString(0) else null}}.getOrNull()
     private val sourceFilter = if (InventorySignSourceScope.allowsMobiData(db, path)) "" else " AND s.source_id <> 'mobidata-bw-vzk'"
     private val supported = runCatching { db.rawQuery("SELECT value FROM traffic_sign_capability WHERE key='version'", null).use { it.moveToFirst() && it.getString(0) == "1" } }.getOrDefault(false)
+    private fun amendmentNode(record:MapDataAmendment)=
+        (if(record.sourceNamespace=="osm")genericNodes?.node(record.sourceId) else null)?:record.nodeJSON?.let{org.json.JSONObject(it)}
     fun read(latitude: Double, longitude: Double, wayId: String?, direction: Int): InventorySignSnapshot {
-        if (!supported) return InventorySignSnapshot()
-        val signs = db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ?" + sourceFilter,
+        val amendments=if(wayId!=null&&generation!=null)amendmentStore?.confirmedNodeAmendments(wayId,generation).orEmpty() else emptyList()
+        if (!supported&&amendments.isEmpty()) return InventorySignSnapshot()
+        val signs = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ?" + sourceFilter,
             arrayOf((latitude - .00065).toString(), (latitude + .00065).toString(), (longitude - .001).toString(), (longitude + .001).toString())).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.sign()) } }
         if (wayId == null || direction == 0) return InventorySignSnapshot(true, signs)
-        val rules = db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,r.rule_id,r.way_id,r.direction,r.start_chainage_m,r.end_chainage_m,r.station_chainage_m,r.local_heading_deg,r.speed_kmh,r.inside_city FROM traffic_sign_way_rule r JOIN traffic_sign_runtime s ON s.sign_id=r.sign_id LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE r.way_id=? AND r.direction=? AND r.association_status='accepted' AND r.lane_scope='all' AND a.status='accepted'" + sourceFilter,
+        val rules = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,r.rule_id,r.way_id,r.direction,r.start_chainage_m,r.end_chainage_m,r.station_chainage_m,r.local_heading_deg,r.speed_kmh,r.inside_city FROM traffic_sign_way_rule r JOIN traffic_sign_runtime s ON s.sign_id=r.sign_id LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE r.way_id=? AND r.direction=? AND r.association_status='accepted' AND r.lane_scope='all' AND a.status='accepted'" + sourceFilter,
             arrayOf(wayId, direction.toString())).use { cursor -> buildList { while (cursor.moveToNext()) add(InventoryWayRule(cursor.string("rule_id"), cursor.sign(), cursor.string("way_id"), cursor.int("direction"), cursor.double("start_chainage_m"), cursor.double("end_chainage_m"), cursor.double("station_chainage_m"), cursor.double("local_heading_deg"), cursor.nullInt("speed_kmh"), cursor.nullInt("inside_city")?.let { it != 0 })) } }
-        val boundaryStations = db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,a.way_id,a.direction,a.station_chainage_m,a.local_heading_deg FROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id WHERE a.way_id=? AND a.direction=? AND a.status='accepted' AND (s.kind IN ('settlement_boundary','speed_limit_end') OR s.sign_code='DE:282')" + sourceFilter,
+        val boundaryStations = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg,a.way_id,a.direction,a.station_chainage_m,a.local_heading_deg FROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id WHERE a.way_id=? AND a.direction=? AND a.status='accepted' AND (s.kind IN ('settlement_boundary','speed_limit_end') OR s.sign_code='DE:282')" + sourceFilter,
             arrayOf(wayId, direction.toString())).use { cursor -> buildList { while (cursor.moveToNext()) {
                 val sign = cursor.sign(); val station = cursor.double("station_chainage_m")
                 add(InventoryWayRule("boundary:${sign.id}", sign, wayId, direction, station, station, station,
@@ -541,9 +554,33 @@ internal class InventorySignDatabase(private val path: String) : Closeable {
             if (distance < bestDistance) { bestDistance = distance; bestChainage = chainage + fraction * geodesicLength; bestHeading = (Math.toDegrees(atan2(dx,dy)) + 360) % 360 }
             chainage += geodesicLength
         }
-        return InventorySignSnapshot(true, signs, rules + boundaryStations, bestChainage.takeIf { bestDistance <= 30 }, bestHeading.takeIf { bestDistance <= 30 })
+        val stations=amendments.mapNotNull {AmendedNodePassageRuntime.station(it,amendmentNode(it),chainage)}
+        val amendedSigns=stations.mapNotNull { station ->
+            if(InventorySignRuntime.distance(latitude,longitude,station.latitude,station.longitude)>station.radius)return@mapNotNull null
+            val record=amendments.firstOrNull{it.id==station.recordId}?:return@mapNotNull null
+            val source=amendmentNode(record)?:return@mapNotNull null
+            val tags=source.optJSONObject("tags")
+            InventorySign(station.sourceId,"local-map-amendment",record.id,record.sourceRevision,
+                tags?.optString("traffic_sign")?.takeIf{it.isNotBlank()}?:"maxspeed","speed_limit",
+                tags?.optString("maxspeed")?.toDoubleOrNull(),"km/h","parsed_source_value",
+                station.latitude,station.longitude,station.radius,null,emptySet(),station.wayId,station.direction,"accepted",bestHeading)
+        }
+        return InventorySignSnapshot(true, signs+amendedSigns, rules + boundaryStations, bestChainage.takeIf { bestDistance <= 30 }, bestHeading.takeIf { bestDistance <= 30 },stations)
     }
-    override fun close() = db.close()
+    fun applyNodeAmendments(result:SpeedLookupResult,fix:InventorySignFix,decision:InventorySignDecision,country:String?,atMs:Long=System.currentTimeMillis()):SpeedLookupResult {
+        val way=result.wayId?:return result
+        // The independent government/inventory producer keeps its existing priority.
+        if(result.bundleSpeedProvenance?.kind?.startsWith("inventory")==true||generation==null||decision.passedAmendedNodeIds.isEmpty())return result
+        val store=amendmentStore?:return result
+        val offer=store.resolve(way,generation,fix.direction.takeIf{it!=0},
+            ConditionalSpeedRules.Context(atMs,countryCode=country,direction=fix.direction.takeIf{it!=0}),
+            result.speedLimitKmh,result.isUnlimitedSpeedLimit,decision.passedAmendedNodeIds,
+            baselineResult=ConditionalSpeedRules.Result(result.speedLimitKmh,result.isUnlimitedSpeedLimit,
+                result.speedLimitKmh==null&&!result.isUnlimitedSpeedLimit,"map_baseline_unresolved",result.conditionalRuleContext))?:return result
+        val rule=offer.reevaluation
+        return result.copy(speedLimitKmh=offer.kmh,isUnlimitedSpeedLimit=offer.unlimited,conditionalRuleContext=rule)
+    }
+    override fun close() {try{genericNodes?.close()}finally{runtimeDatabase.close()}}
     private fun Cursor.index(name: String) = getColumnIndexOrThrow(name)
     private fun Cursor.string(name: String) = getString(index(name))
     private fun Cursor.double(name: String) = getDouble(index(name))

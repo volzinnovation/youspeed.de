@@ -1,0 +1,115 @@
+{
+  "checks": {
+    "corrections": "OSM and created local-node identity, persistent CAS/restriction amendment, current-drive directed passage, jitter/gap retention, reviewed scope end/reset/reversal, tombstone, dynamic baseline clock/expiry/depth/unresolved fallback",
+    "emulator_tests": {
+      "assumption_skipped": 1,
+      "assumption_skipped_test": "optionalRealBadenWuerttembergProbe (explicit optional fixture absent)",
+      "failed": 0,
+      "ignored": 1,
+      "ignored_test": "readonlyProxySupportsSQLiteViewsJoinsAndPackedGeometryCallback (API36 reopen denied; native VFS replaces bridge)",
+      "passed": 27,
+      "raw_status_counts": {
+        "-2": 0,
+        "-3": 1,
+        "-4": 1,
+        "0": 27
+      }
+    },
+    "monaco_codec2": {
+      "all_geometry_records_and_raw_json_exact": 1232,
+      "all_original_table_counts_exact": 44,
+      "complete_production_matcher_results_exact": 27,
+      "excluded_fields": "Timing fields only"
+    },
+    "native_abis_passed": [
+      "armeabi-v7a",
+      "arm64-v8a",
+      "x86",
+      "x86_64"
+    ],
+    "shared_budget_assertions": {
+      "context_capacity_max_bytes": 2097152,
+      "geometry_capacity_max_bytes": 524288,
+      "mapped_payload_bytes": 0,
+      "sqlite_pragma_cache_size": -1536
+    },
+    "unit_tests": {
+      "failed": 0,
+      "passed": 108,
+      "skipped": 0
+    }
+  },
+  "format": "youspeed.packed-runtime.platform-preflight",
+  "limits": {
+    "context_block_cache_bytes": 2097152,
+    "decoded_ring_cache": {
+      "entries": 128,
+      "points": 8192
+    },
+    "decoded_way_cache": {
+      "entries": 1024,
+      "points": 16384
+    },
+    "generic_nodes_cache_bytes": 524288,
+    "geometry_block_cache_bytes": 524288,
+    "owner_inventory": {
+      "basis": "Static owner audit; pool4 plus inventory1, maintenance1, serialized trip1",
+      "normal_worst_context_geometry_pairs": 7,
+      "persistent_context_geometry_pairs": 5,
+      "trip_journal_concurrent_map_loads": 1
+    },
+    "sqlite_cache_kib": 1536
+  },
+  "log_sha256": {
+    "all_four_abis_and_unit_tests": {
+      "local_file": "/Users/raphaelvolz/Github/youspeed.de/mapdata/build/packed-v4-2026-10-27/android-validation/youspeed-production-android-final-all-abi-unit.log",
+      "sha256": "44bad4df5f41a199042e9941101d3e4d30c56d0f83ebbddd70a567c02f505121"
+    },
+    "final_emulator_required_suite": {
+      "local_file": "/Users/raphaelvolz/Github/youspeed.de/mapdata/build/packed-v4-2026-10-27/android-validation/youspeed-production-android-packed-final-emulator.log",
+      "sha256": "929384528d406852c6fc465092a547fc5c706576b17fdb0c256515a5a29a665f"
+    },
+    "final_instrumentation_apk": {
+      "local_file": "/Users/raphaelvolz/Github/youspeed.de/mapdata/build/packed-v4-2026-10-27/android-validation/youspeed-production-android-final-budget-test-apk.log",
+      "sha256": "d95c344934348456d2b9b1c5b700c651ecc282de1736234324de0c60fa439d46"
+    },
+    "isolated_apks": {
+      "local_file": "/Users/raphaelvolz/Github/youspeed.de/mapdata/build/packed-v4-2026-10-27/android-validation/youspeed-production-android-final-budget-apk.log",
+      "sha256": "75e4d7b922d4636ea84882cfcc0481c53301f175625f4c8c04e9c7c462bce047"
+    },
+    "prior_codec1_pilot": {
+      "local_file": "/Users/raphaelvolz/Github/youspeed.de/mapdata/build/packed-v4-2026-10-27/android-validation/youspeed-production-android-pilot-emulator.log",
+      "sha256": "1dc58c1bfc13550281ca6777df4ebd5f039f9f05cf1801a7ddaac87115e7dd1f"
+    }
+  },
+  "platform": "android",
+  "ready_for_rollout": false,
+  "remaining_gate": "Both physical-phone low-RSS and integration acceptance",
+  "schema_version": 1,
+  "source_file_sha256": {
+    "android/app/src/main/cpp/CMakeLists.txt": "dabc83678bdc77c0909cea0e0828e38d69cf768eb4ef3a6f347d0f63fac89939",
+    "android/app/src/main/cpp/packed_runtime_jni.cpp": "207bd719aeabaf4d624796f227c2867a2d77fd8c114ef0eb9fd63b6207a7db70",
+    "android/app/src/main/cpp/packed_sqlite_jni.cpp": "6b49421783d7667bd377af0280e130e7a5c6377f24e72223c72d97e658b43eb9",
+    "android/app/src/main/java/de/youspeed/android/alpha/AmendedNodePassageRuntime.kt": "1e2a1643bff39e492c2e80426e209bba28db777c7e52b86e33fec1cd9465f4e9",
+    "android/app/src/main/java/de/youspeed/android/alpha/ConditionalSpeedRules.kt": "bfee258203717b2eff0dc8a2d1a96609a9043017f05311cfeadf5e2739e6179a",
+    "android/app/src/main/java/de/youspeed/android/alpha/InventorySignRuntime.kt": "7146588cf3ab398ac2c3eee4c3179c4cb8bbfa222410792dd7949250fd2fda6b",
+    "android/app/src/main/java/de/youspeed/android/alpha/LookupSessionResources.kt": "3a0b32fa786df8d9f3d4ae8ef67f1c9a2e8f09771b4e4ecc5e8b5fad41ecc2eb",
+    "android/app/src/main/java/de/youspeed/android/alpha/MapDataAmendmentStore.kt": "3b25ce391bdddebea59dd0fd792c3edd409692c94488b5b4f493e2f76f65bd2c",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeMapDatabase.kt": "4c6b4aefd2f8c36bdd9790e7a84d97e11a6e4dae6293efcf62f265050b049acc",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimePackedNative.kt": "5f95dc1380d95a1b2b86b7f0156fe8fb3252a1c484c23a36855c5ebe68fef387",
+    "android/app/src/main/java/de/youspeed/android/alpha/RuntimeSqlDatabase.kt": "18ee5c1bfc193b9ce84639858cffe065d604ba19eae9c62e19e30452b7c6e9a0",
+    "android/app/src/main/java/de/youspeed/android/alpha/TripJournalMapContext.kt": "69ac8195786076a8942fba63708c8f43735221b47cc4f9f35d49cb8780b4753b",
+    "android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt": "91b54128295a80c9d7794ea732f2cb84cf3f0a193aaba68096ce701830ca4c62",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "shared/runtime-storage-prototype/zstd_decoder.c": "c38d437c7f19959656dbbcf0236554210e85a2bdd31dbeca4d349cec5f2baa1f"
+  },
+  "validation_environment": {
+    "application_id": "de.youspeed.android.testhost",
+    "base_version_code": 10074,
+    "device": "Android API36 arm64 emulator",
+    "physical_device": false,
+    "version_name": "1.6-debug"
+  }
+}

@@ -95,6 +95,8 @@ class BundleBootstrapper(
     private val assetReader: AppAssetReader? = null,
     private val deltaDatabase: BundleDeltaDatabase = AndroidBundleDeltaDatabase(),
 ) {
+    private val packedCatalog = PackedBundleCatalogResolver(httpFetcher, clock)
+    private data class LoadedManifest(val url: String, val raw: String, val manifest: V3BundleManifest)
     private data class CoverageRing(
         val isHole: Boolean,
         val points: List<Pair<Double, Double>>,
@@ -141,7 +143,7 @@ class BundleBootstrapper(
                 }
                 val manifest = ContractJson.decodeBundleManifest(manifestFile.readText())
                 val dbFile = File(versionDir, manifest.db.file)
-                if (!dbFile.exists()) {
+                if (!dbFile.isAvailableDatabase()) {
                     return@mapNotNull null
                 }
                 DownloadedBundleInfo(
@@ -151,7 +153,8 @@ class BundleBootstrapper(
                     dbFileName = manifest.db.file,
                     dbPath = dbFile.absolutePath,
                     createdAtUTC = manifest.createdAtUTC,
-                    dbBytes = dbFile.length(),
+                    dbBytes = dbFile.length() + listOfNotNull(manifest.packedBase?.roads, manifest.packedBase?.nodes)
+                        .sumOf { File(versionDir, it.file).length() },
                 )
             }
         }.sortedWith(compareBy<DownloadedBundleInfo> { it.region }.thenByDescending { it.bundleVersion }.thenBy { it.dbFileName })
@@ -280,8 +283,26 @@ class BundleBootstrapper(
 
     @Throws(IOException::class)
     fun fetchManifest(manifestUrl: String): V3BundleManifest {
-        val raw = httpFetcher.fetch(manifestUrl).toString(Charsets.UTF_8)
-        return decodeManifestOrThrow(manifestUrl, raw)
+        return loadManifest(manifestUrl).manifest
+    }
+
+    private fun loadManifest(requestedUrl: String): LoadedManifest {
+        val published = packedCatalog.resolve(requestedUrl)
+        val url = published?.artifact?.url ?: requestedUrl
+        val bytes = httpFetcher.fetch(url)
+        if (published != null) {
+            val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+            require(bytes.size.toLong() == published.artifact.bytes && digest.equals(published.artifact.sha256, true)) {
+                "Packed catalog manifest checksum/size mismatch"
+            }
+        }
+        val raw = bytes.toString(Charsets.UTF_8)
+        val manifest = decodeManifestOrThrow(url, raw)
+        if (published != null) require(manifest.format == "youspeed.v4.bundle.manifest" &&
+            manifest.region == published.region && manifest.bundleVersion == published.bundleVersion) {
+            "Packed catalog manifest identity mismatch"
+        }
+        return LoadedManifest(url, raw, manifest)
     }
 
     /** Like iPhone, synchronizes every preferred-country shard and returns the last successful activation. */
@@ -314,10 +335,14 @@ class BundleBootstrapper(
         manifestUrl: String,
         onProgress: ((BundleSyncProgress) -> Unit)? = null,
     ): BundleSyncResult {
+        return syncLoadedManifest(loadManifest(manifestUrl), onProgress)
+    }
+
+    private fun syncLoadedManifest(loaded: LoadedManifest, onProgress: ((BundleSyncProgress) -> Unit)?): BundleSyncResult {
         ensureRoot()
-        val manifestBytes = httpFetcher.fetch(manifestUrl)
-        val manifestRaw = manifestBytes.toString(Charsets.UTF_8)
-        val manifest = decodeManifestOrThrow(manifestUrl, manifestRaw)
+        val manifestUrl = loaded.url
+        val manifestRaw = loaded.raw
+        val manifest = loaded.manifest
         val totalDownloadBytes = totalDownloadBytes(manifest)
         emitProgress(
             onProgress = onProgress,
@@ -333,7 +358,8 @@ class BundleBootstrapper(
             current.bundleVersion == manifest.bundleVersion &&
             materializedDatabaseExpectation(manifest)?.let { (bytes, sha) ->
                 current.dbBytes == bytes && current.dbSha256.equals(sha, ignoreCase = true)
-            } == true
+            } == true && installedPackedIdentityMatches(manifest, File(current.dbPath).parentFile) &&
+            packedCompanionsAvailable(manifest, File(current.dbPath).parentFile, verifyChecksums = true)
         ) {
             emitProgress(
                 onProgress = onProgress,
@@ -350,12 +376,19 @@ class BundleBootstrapper(
             )
         }
 
-        if (current != null && current.region == manifest.region && current.bundleVersion != manifest.bundleVersion &&
+        if (manifest.packedBase == null && current != null && current.region == manifest.region && current.bundleVersion != manifest.bundleVersion &&
             !DeltaUpdatePolicy.forceFullReload(current.bundleVersion, manifest.bundleVersion) && manifest.deltaIndex != null) {
             tryApplyDelta(current, manifest, manifestUrl, manifestRaw, onProgress)?.let { return it }
         }
 
-        val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/${tokenize(manifest.bundleVersion)}")
+        val generationDirectory = if (manifest.packedBase == null) tokenize(manifest.bundleVersion) else {
+            val identities = listOfNotNull(manifest.db, manifest.packedBase.roads, manifest.packedBase.nodes)
+                .joinToString("|") { artifact -> installedExpectation(artifact)?.second ?: artifact.sha256 }
+            val suffix = MessageDigest.getInstance("SHA-256").digest(identities.toByteArray())
+                .joinToString("") { "%02x".format(it) }.take(16)
+            "${tokenize(manifest.bundleVersion)}-$suffix"
+        }
+        val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/$generationDirectory")
         if (!bundleDir.exists() && !bundleDir.mkdirs()) {
             throw IOException("Unable to create bundle directory: ${bundleDir.absolutePath}")
         }
@@ -443,6 +476,7 @@ class BundleBootstrapper(
                 bundleDir = bundleDir,
                 onProgress = onProgress,
             )
+            installPackedCompanions(manifest, manifestUrl, bundleDir, stagingDir, onProgress)
             val finalDb = activatePreparedDatabase(stagingDb, bundleDir, manifest, manifestRaw, manifestUrl, dbArtifact)
             emitProgress(
                 onProgress = onProgress,
@@ -592,11 +626,22 @@ class BundleBootstrapper(
 
     private fun activatePreparedDatabase(stagingDb: File, bundleDir: File, manifest: V3BundleManifest,
         manifestRaw: String, manifestUrl: String, dbArtifact: MaterializedDatabaseArtifact): File {
-        deltaDatabase.validateSettlementCapability(stagingDb)
+        if (manifest.packedBase == null) deltaDatabase.validateSettlementCapability(stagingDb)
         if (!bundleDir.exists() && !bundleDir.mkdirs()) throw IOException("Cannot create bundle directory")
         val finalDb = File(bundleDir, manifest.db.file)
         val prepared = File(bundleDir, manifest.db.file + ".tmp")
         java.nio.file.Files.move(stagingDb.toPath(), prepared.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        if (manifest.packedBase != null) {
+            require(packedCompanionsAvailable(manifest, bundleDir, verifyChecksums = true)) { "Packed generation is incomplete" }
+            try {
+                deltaDatabase.validatePackedGeneration(prepared, manifest)
+                deltaDatabase.validate(prepared)
+                deltaDatabase.validateSettlementCapability(prepared)
+            } catch (failure: Throwable) {
+                prepared.delete()
+                throw failure
+            }
+        }
         java.nio.file.Files.move(prepared.toPath(), finalDb.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
             java.nio.file.StandardCopyOption.ATOMIC_MOVE)
         File(bundleDir, "bundle-manifest.v3.json").writeText(manifestRaw)
@@ -1004,7 +1049,72 @@ class BundleBootstrapper(
         }
     }
 
-    private fun File.isAvailableDatabase(): Boolean = isFile && length() > 0L
+    private fun File.isAvailableDatabase(): Boolean {
+        if (!isFile || length() <= 0L) return false
+        val manifest = parentFile?.let { File(it, "bundle-manifest.v3.json") }?.takeIf { it.isFile }
+            ?.let { runCatching { ContractJson.decodeBundleManifest(it.readText()) }.getOrNull() }
+        if (manifest?.packedBase != null) return packedCompanionsAvailable(manifest, parentFile)
+        return runCatching { !RuntimeMapDatabase.isPackedFile(this) }.getOrDefault(false)
+    }
+
+    private fun installedExpectation(artifact: BundleArtifact): Pair<Long, String>? {
+        return if (normalizedCompression(artifact) == null) artifact.bytes to artifact.sha256
+        else artifact.uncompressedBytes?.let { bytes -> artifact.uncompressedSha256?.let { bytes to it } }
+    }
+
+    private fun packedIdentity(manifest: V3BundleManifest): List<String>? = manifest.packedBase?.let { base ->
+        listOf(base.version.toString()) + listOfNotNull(base.roads, base.nodes).map { artifact ->
+            val installed = installedExpectation(artifact)
+            "${artifact.file}|${installed?.first}|${installed?.second?.lowercase(Locale.ROOT)}"
+        }
+    }
+
+    private fun installedPackedIdentityMatches(manifest: V3BundleManifest, directory: File?): Boolean {
+        if (manifest.packedBase == null) return true
+        val saved = directory?.let { File(it, "bundle-manifest.v3.json") }?.takeIf { it.isFile }
+            ?.let { runCatching { ContractJson.decodeBundleManifest(it.readText()) }.getOrNull() } ?: return false
+        return packedIdentity(saved) == packedIdentity(manifest)
+    }
+
+    private fun packedCompanionsAvailable(manifest: V3BundleManifest, directory: File?, verifyChecksums: Boolean = false): Boolean {
+        val base = manifest.packedBase ?: return true
+        if (directory == null || base.version != 1) return false
+        return listOfNotNull(base.roads, base.nodes).all { artifact ->
+            runCatching {
+                val (bytes, sha) = installedExpectation(artifact) ?: return@runCatching false
+                val file = RuntimeMapDatabase.companionFile(directory, artifact.file)
+                file.length() == bytes && (!verifyChecksums || sha256Hex(file).equals(sha, true))
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun installPackedCompanions(manifest: V3BundleManifest, manifestUrl: String, bundleDir: File,
+        stagingDir: File, onProgress: ((BundleSyncProgress) -> Unit)?) {
+        val base = manifest.packedBase ?: return
+        for (artifact in listOfNotNull(base.roads, base.nodes)) {
+            val (installedBytes, installedSha) = installedExpectation(artifact)
+                ?: throw IOException("Packed artifact has no installed identity")
+            val target = File(bundleDir, artifact.file)
+            if (target.isFile && target.length() == installedBytes && sha256Hex(target).equals(installedSha, true)) continue
+            val downloaded = File.createTempFile("packed-download-", ".tmp", stagingDir)
+            val prepared = File.createTempFile("packed-ready-", ".tmp", stagingDir)
+            try {
+                emitProgress(onProgress, BundleSyncStage.DOWNLOADING, "Lade ${artifact.file}", 0, totalDownloadBytes(manifest))
+                httpFetcher.fetchToFile(ContractJson.resolveArtifactUrl(artifact, manifestUrl), downloaded, null)
+                validateFile(downloaded, artifact.bytes, artifact.sha256, artifact.file)
+                val compression = normalizedCompression(artifact)
+                if (compression == null) {
+                    java.nio.file.Files.move(downloaded.toPath(), prepared.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                } else materializeCompressedDatabaseArtifact(downloaded, artifact, compression, prepared)
+                validateFile(prepared, installedBytes, installedSha, "packed installed ${artifact.file}")
+                java.nio.file.Files.move(prepared.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE)
+            } finally {
+                downloaded.delete()
+                prepared.delete()
+            }
+        }
+    }
 
     private fun sha256Hex(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -1030,7 +1140,8 @@ class BundleBootstrapper(
         val multipartTotal = manifest.dbParts
             ?.sumOf { it.bytes.coerceAtLeast(0L) }
             ?.takeIf { it > 0L }
-        return multipartTotal ?: manifest.db.bytes.coerceAtLeast(0L)
+        return (multipartTotal ?: manifest.db.bytes.coerceAtLeast(0L)) +
+            listOfNotNull(manifest.packedBase?.roads, manifest.packedBase?.nodes).sumOf { it.bytes.coerceAtLeast(0L) }
     }
 
     private fun resolveProgressTotalBytes(

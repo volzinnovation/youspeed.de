@@ -1,0 +1,278 @@
+{
+  "all_original_table_hashes_reconstructed_exactly": true,
+  "source_tables": 50,
+  "table_proofs": {
+    "ways": {
+      "rows": 1085790,
+      "original_sha256": "b5c730c073aa6da807585e420db4fcf37f01621066a87c258dee27e555dbae32",
+      "reconstructed_sha256": "b5c730c073aa6da807585e420db4fcf37f01621066a87c258dee27e555dbae32"
+    },
+    "way_endpoints": {
+      "rows": 1085790,
+      "original_sha256": "a2cd7eae88931918da3ff479ac4bf5c3124cf57df293d6b835d7d6c595b252f0",
+      "reconstructed_sha256": "a2cd7eae88931918da3ff479ac4bf5c3124cf57df293d6b835d7d6c595b252f0"
+    },
+    "traffic_sign_way_direction": {
+      "rows": 1085790,
+      "original_sha256": "83b2ea0e0de8160c423e9e6ac9ed5e5026c49a0bb9d5268bdf3ee4675cf71e34",
+      "reconstructed_sha256": "83b2ea0e0de8160c423e9e6ac9ed5e5026c49a0bb9d5268bdf3ee4675cf71e34"
+    },
+    "traffic_sign_lane": {
+      "rows": 211353,
+      "original_sha256": "0232c0291e26772d6fc3db389443da3bf0f4e7170807f6c0d80bbe1d89977d42",
+      "reconstructed_sha256": "0232c0291e26772d6fc3db389443da3bf0f4e7170807f6c0d80bbe1d89977d42"
+    },
+    "traffic_sign_way_rule": {
+      "rows": 118400,
+      "original_sha256": "bd6b47264bfd7686c9d2e58c67d9be3a87bcb2ca557808728a0866f791daa0df",
+      "reconstructed_sha256": "bd6b47264bfd7686c9d2e58c67d9be3a87bcb2ca557808728a0866f791daa0df"
+    },
+    "road_speed_source_tag": {
+      "rows": 589661,
+      "original_sha256": "dcd0bc391c9b3629ea02fb0e00b59a30424c8d9b75658cfc2cca1d618d3b63e7",
+      "reconstructed_sha256": "dcd0bc391c9b3629ea02fb0e00b59a30424c8d9b75658cfc2cca1d618d3b63e7"
+    },
+    "road_speed_rule_set": {
+      "rows": 9672,
+      "original_sha256": "e7e9fcf4cb37d955ab09f021244a42f9ceef00a1ea9ccd4654fce8b8f17555e6",
+      "reconstructed_sha256": "e7e9fcf4cb37d955ab09f021244a42f9ceef00a1ea9ccd4654fce8b8f17555e6"
+    },
+    "road_speed_rule": {
+      "rows": 15797,
+      "original_sha256": "0588cf852deb120a255997716c9f99425c14a374971065607d3efd3d5fac8af8",
+      "reconstructed_sha256": "0588cf852deb120a255997716c9f99425c14a374971065607d3efd3d5fac8af8"
+    },
+    "road_speed_interpretation": {
+      "rows": 28245,
+      "original_sha256": "195d3a6aad756bec457549fd3ac9ef7dcb3f5f2b8b53333b40499c01275ea267",
+      "reconstructed_sha256": "195d3a6aad756bec457549fd3ac9ef7dcb3f5f2b8b53333b40499c01275ea267"
+    },
+    "settlement_segment": {
+      "rows": 1294214,
+      "original_sha256": "c8528dcb0ca5a1fd70119e41653026b0f6ae2b45fd6d4d87441eec1d72704f24",
+      "reconstructed_sha256": "c8528dcb0ca5a1fd70119e41653026b0f6ae2b45fd6d4d87441eec1d72704f24"
+    },
+    "way_links": {
+      "rows": 1753356,
+      "original_sha256": "d504822867176631c492e40eb8233d28bc87aa8e5e107a902813aaba58cf3deb",
+      "reconstructed_sha256": "d504822867176631c492e40eb8233d28bc87aa8e5e107a902813aaba58cf3deb"
+    },
+    "way_continuity_membership": {
+      "rows": 495439,
+      "original_sha256": "2dcd20198e2117b91b2ed61d0d09d48df62f66511bba2aed1f1f23656a3e4fb2",
+      "reconstructed_sha256": "2dcd20198e2117b91b2ed61d0d09d48df62f66511bba2aed1f1f23656a3e4fb2"
+    },
+    "upcoming_path_way": {
+      "rows": 1085790,
+      "original_sha256": "a30143a8774f5e7f8ba97077d31c8842a345771f6321476b9c5f583adca892ee",
+      "reconstructed_sha256": "a30143a8774f5e7f8ba97077d31c8842a345771f6321476b9c5f583adca892ee"
+    },
+    "upcoming_path_segment": {
+      "rows": 4346282,
+      "original_sha256": "0dab932ab759f47eaa59f87bdea24b717dce20fdd6fb0525c4af016bf1fe104b",
+      "reconstructed_sha256": "0dab932ab759f47eaa59f87bdea24b717dce20fdd6fb0525c4af016bf1fe104b"
+    },
+    "motorway_exit_approach": {
+      "rows": 1497,
+      "original_sha256": "d35f61e9f4c13f4ade8428ae8be5a8116883183b15cda4b392393fb324336a54",
+      "reconstructed_sha256": "d35f61e9f4c13f4ade8428ae8be5a8116883183b15cda4b392393fb324336a54"
+    },
+    "areas": {
+      "rows": 144334,
+      "original_sha256": "e61aa334e56402247878acf92f588533f23d15410c3bf0eb695e000c92661e50",
+      "reconstructed_sha256": "e61aa334e56402247878acf92f588533f23d15410c3bf0eb695e000c92661e50"
+    },
+    "areas_rtree": {
+      "rows": 144334,
+      "original_sha256": "1f057e0d0a502063cd160d71f427834fa3e34a93e007ce5e70a2c408b136d993",
+      "reconstructed_sha256": "1f057e0d0a502063cd160d71f427834fa3e34a93e007ce5e70a2c408b136d993"
+    },
+    "city_boundary": {
+      "rows": 2857,
+      "original_sha256": "f838294795e66d356736ba7647e07df3c54213cd538ee7f7659e4133a63d4b00",
+      "reconstructed_sha256": "f838294795e66d356736ba7647e07df3c54213cd538ee7f7659e4133a63d4b00"
+    },
+    "city_boundary_rtree": {
+      "rows": 2857,
+      "original_sha256": "76a9020e3cd60811a6f2325f78966973038069ae7acee9c3465260ac9358a280",
+      "reconstructed_sha256": "76a9020e3cd60811a6f2325f78966973038069ae7acee9c3465260ac9358a280"
+    },
+    "city_place": {
+      "rows": 8745,
+      "original_sha256": "02e14fb905f58d9042beffaebde6642ddb818a014049e4f239e0f6c7709386d9",
+      "reconstructed_sha256": "02e14fb905f58d9042beffaebde6642ddb818a014049e4f239e0f6c7709386d9"
+    },
+    "city_place_rtree": {
+      "rows": 8745,
+      "original_sha256": "b608b003cbcc2a6613e0740cfce36e65174e81e6700f176ec3896cdd9c0265d7",
+      "reconstructed_sha256": "b608b003cbcc2a6613e0740cfce36e65174e81e6700f176ec3896cdd9c0265d7"
+    },
+    "city_ring": {
+      "rows": 3403,
+      "original_sha256": "4dd89f2d0a1139f0fdcfb5b06f345be55d0c94583a8921dcb6735d4c7a2f36f1",
+      "reconstructed_sha256": "4dd89f2d0a1139f0fdcfb5b06f345be55d0c94583a8921dcb6735d4c7a2f36f1"
+    },
+    "city_tile": {
+      "rows": 37949,
+      "original_sha256": "3c2321d9c343fb12bf92aa327199e7551f5c5da6e76a54c320c180306fcf4e94",
+      "reconstructed_sha256": "3c2321d9c343fb12bf92aa327199e7551f5c5da6e76a54c320c180306fcf4e94"
+    },
+    "corridor_pairs": {
+      "rows": 5634,
+      "original_sha256": "d681785510b5005a4ba2511722ba0ba8577713b05cbb7de976eaa45f870c709c",
+      "reconstructed_sha256": "d681785510b5005a4ba2511722ba0ba8577713b05cbb7de976eaa45f870c709c"
+    },
+    "corridor_progress": {
+      "rows": 45674,
+      "original_sha256": "0035244579fd81e9f6a229f99da28e6e3f30e71a9ae5fca71eaddab4a1012a65",
+      "reconstructed_sha256": "0035244579fd81e9f6a229f99da28e6e3f30e71a9ae5fca71eaddab4a1012a65"
+    },
+    "metadata": {
+      "rows": 48,
+      "original_sha256": "e8c2f9e02a1735d8e95b4e1193faf4be11bf69a502ae52df1aa4d362969a7b61",
+      "reconstructed_sha256": "e8c2f9e02a1735d8e95b4e1193faf4be11bf69a502ae52df1aa4d362969a7b61"
+    },
+    "motorway_way_network": {
+      "rows": 5931,
+      "original_sha256": "b7b0645668666c1471debe66abf4015e07c5edd5fe60f78f691b5fde7be4550e",
+      "reconstructed_sha256": "b7b0645668666c1471debe66abf4015e07c5edd5fe60f78f691b5fde7be4550e"
+    },
+    "motorway_way_network_rtree": {
+      "rows": 5931,
+      "original_sha256": "9420e64e8d5369a250886c1b058e4171f41535c39c0cf271d510ee3886f51d3c",
+      "reconstructed_sha256": "9420e64e8d5369a250886c1b058e4171f41535c39c0cf271d510ee3886f51d3c"
+    },
+    "road_speed_capability": {
+      "rows": 1,
+      "original_sha256": "f710f421ca0ad9de87015dc4354df9ad9c278a06c0c8a39d1a6cab0875dcd3da",
+      "reconstructed_sha256": "f710f421ca0ad9de87015dc4354df9ad9c278a06c0c8a39d1a6cab0875dcd3da"
+    },
+    "road_speed_condition": {
+      "rows": 68,
+      "original_sha256": "b2d42aee4ff7b61f4f2f6e1a223f65b294fd6a1cb449ed96c831d5c4b888f048",
+      "reconstructed_sha256": "b2d42aee4ff7b61f4f2f6e1a223f65b294fd6a1cb449ed96c831d5c4b888f048"
+    },
+    "settlement_area": {
+      "rows": 40190,
+      "original_sha256": "aa6b0cb8c205a6901195b0090c789193a0e665f9b5eaa3a0db55d9038dd61da6",
+      "reconstructed_sha256": "aa6b0cb8c205a6901195b0090c789193a0e665f9b5eaa3a0db55d9038dd61da6"
+    },
+    "settlement_ring": {
+      "rows": 44228,
+      "original_sha256": "9257efb86ba75983f45d92f75c9bad0ce1a3d59912572c6cb8834cfd20f494c8",
+      "reconstructed_sha256": "9257efb86ba75983f45d92f75c9bad0ce1a3d59912572c6cb8834cfd20f494c8"
+    },
+    "settlement_sign": {
+      "rows": 32858,
+      "original_sha256": "61b928841d758235a8d733cfd35734cbe00a64c1763a7b33235545823cfd9de4",
+      "reconstructed_sha256": "61b928841d758235a8d733cfd35734cbe00a64c1763a7b33235545823cfd9de4"
+    },
+    "surface_way_network": {
+      "rows": 1077262,
+      "original_sha256": "eb511d7ea9a7a4a874539da531906de034c57d3fcc93462444ea0f377c14064f",
+      "reconstructed_sha256": "eb511d7ea9a7a4a874539da531906de034c57d3fcc93462444ea0f377c14064f"
+    },
+    "surface_way_network_rtree": {
+      "rows": 1077262,
+      "original_sha256": "8913bba64c4cb50f57179bb4e5bdf702cdd0418f8af689d774705934d0034e03",
+      "reconstructed_sha256": "8913bba64c4cb50f57179bb4e5bdf702cdd0418f8af689d774705934d0034e03"
+    },
+    "traffic_sign_association": {
+      "rows": 172304,
+      "original_sha256": "85931535effe7848250cd86c8714335279006ff5435f563cc71eb0f1339d8438",
+      "reconstructed_sha256": "85931535effe7848250cd86c8714335279006ff5435f563cc71eb0f1339d8438"
+    },
+    "traffic_sign_capability": {
+      "rows": 7,
+      "original_sha256": "f9e5fcbff3e09acff0ba01335840bd53dca073d03f5cd146a5131ef773518772",
+      "reconstructed_sha256": "f9e5fcbff3e09acff0ba01335840bd53dca073d03f5cd146a5131ef773518772"
+    },
+    "traffic_sign_inventory": {
+      "rows": 163504,
+      "original_sha256": "4d76fc949f43f487688fc75a55ccb23393932189254dae8f60a358dacc6bea5e",
+      "reconstructed_sha256": "4d76fc949f43f487688fc75a55ccb23393932189254dae8f60a358dacc6bea5e"
+    },
+    "traffic_sign_inventory_rtree": {
+      "rows": 163504,
+      "original_sha256": "84fe46b9d74d3852ab41ebea83db805e29498a2926c9cad99dbcbff221912776",
+      "reconstructed_sha256": "84fe46b9d74d3852ab41ebea83db805e29498a2926c9cad99dbcbff221912776"
+    },
+    "traffic_sign_rule_path": {
+      "rows": 37807,
+      "original_sha256": "b1e230fcd44256c3f76b87dd489b4e90ac0dfe3daaf7ad9a1cce6a809048ab18",
+      "reconstructed_sha256": "b1e230fcd44256c3f76b87dd489b4e90ac0dfe3daaf7ad9a1cce6a809048ab18"
+    },
+    "traffic_sign_runtime": {
+      "rows": 172304,
+      "original_sha256": "7c353409daa2d9f264258ee8d78ac268a25ae4b5b37a7aac3538aef0a0de1c99",
+      "reconstructed_sha256": "7c353409daa2d9f264258ee8d78ac268a25ae4b5b37a7aac3538aef0a0de1c99"
+    },
+    "traffic_sign_source": {
+      "rows": 2,
+      "original_sha256": "424ba6777d2ac296ba0eaec7260c308dced70f655f886d0622de8d35c88d4217",
+      "reconstructed_sha256": "424ba6777d2ac296ba0eaec7260c308dced70f655f886d0622de8d35c88d4217"
+    },
+    "tunnel_way_network": {
+      "rows": 2597,
+      "original_sha256": "a3be31fb223c9bfa3d6b85e53e90737b9d5aa6ca6dc34089a811cbdb1925defb",
+      "reconstructed_sha256": "a3be31fb223c9bfa3d6b85e53e90737b9d5aa6ca6dc34089a811cbdb1925defb"
+    },
+    "tunnel_way_network_rtree": {
+      "rows": 2597,
+      "original_sha256": "3f351374cd3ccefba3db690bbd3d03314d4ab54f06b07943fc016163ae769ec8",
+      "reconstructed_sha256": "3f351374cd3ccefba3db690bbd3d03314d4ab54f06b07943fc016163ae769ec8"
+    },
+    "upcoming_path_capability": {
+      "rows": 8,
+      "original_sha256": "433740ed13d3abbe08fe9e3b00716f571a22a58c73a4a61c6b2677be8be29414",
+      "reconstructed_sha256": "433740ed13d3abbe08fe9e3b00716f571a22a58c73a4a61c6b2677be8be29414"
+    },
+    "upcoming_path_node": {
+      "rows": 1941024,
+      "original_sha256": "77b898d8af130dc6f8ff075b5a4e3430c59e2db978e9fb98a2abdd1ecf41a1b1",
+      "reconstructed_sha256": "77b898d8af130dc6f8ff075b5a4e3430c59e2db978e9fb98a2abdd1ecf41a1b1"
+    },
+    "upcoming_path_successor": {
+      "rows": 4346282,
+      "original_sha256": "5087be5b39fd1acdfb2c6c921e9b17fa8206fdd80847d09a88b29395294ffd1e",
+      "reconstructed_sha256": "5087be5b39fd1acdfb2c6c921e9b17fa8206fdd80847d09a88b29395294ffd1e"
+    },
+    "way_continuity_group": {
+      "rows": 80196,
+      "original_sha256": "69098e6325a6974156d3a503143265f3b89203d1caad81230550eb02d3e18319",
+      "reconstructed_sha256": "69098e6325a6974156d3a503143265f3b89203d1caad81230550eb02d3e18319"
+    },
+    "way_geom": {
+      "rows": 1085790,
+      "original_sha256": "696fb66955cb4f243dfff61d15bd5f62f147064ee76c4a77a3a901b394d35bd8",
+      "reconstructed_sha256": "696fb66955cb4f243dfff61d15bd5f62f147064ee76c4a77a3a901b394d35bd8"
+    },
+    "ways_rtree": {
+      "rows": 1085790,
+      "original_sha256": "1bba7c30946369eb99ccc3a0a1c9f9c36d71a37216c86488751b2038c624db27",
+      "reconstructed_sha256": "1bba7c30946369eb99ccc3a0a1c9f9c36d71a37216c86488751b2038c624db27"
+    }
+  },
+  "per_way_embedded_tables": [
+    "ways",
+    "way_endpoints",
+    "traffic_sign_way_direction",
+    "traffic_sign_lane",
+    "traffic_sign_way_rule",
+    "road_speed_source_tag",
+    "road_speed_rule_set",
+    "road_speed_rule",
+    "road_speed_interpretation",
+    "settlement_segment",
+    "way_links",
+    "way_continuity_membership",
+    "upcoming_path_way",
+    "upcoming_path_segment",
+    "motorway_exit_approach"
+  ],
+  "global_archive_bytes": 292666774,
+  "global_index_bytes": 183414,
+  "external_audit_archive_bytes": 640372386,
+  "raw_geometry_json_spelling_preserved": true,
+  "elapsed_seconds": 125.71012195802177
+}

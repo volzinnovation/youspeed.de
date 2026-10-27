@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "all_required_data_file_sizes_match": true,
+  "device_files": {
+    "data/runtime.pack": 450617325,
+    "data/runtime.sqlite": 542273536,
+    "data/bw-runtime.gol": 94564632,
+    "data/nodes.yspn": 5072870,
+    "data/nodes.sqlite": 6447104,
+    "data/runtime-globals.zblocks": 292666774,
+    "data/runtime-globals.index.json": 183414,
+    "data/runtime-manifest.json": 2344
+  },
+  "verification": "devicectl current appDataContainer Documents listing; payload SHA hashes remain the source manifest, not recomputed by this listing",
+  "runtime_measurements_completed": true,
+  "last_launch_succeeded": true,
+  "next_harness_has_outside_timing_phase_markers": true,
+  "debugger_diagnostic_error_historical": "Device needs to be unlocked"
+}

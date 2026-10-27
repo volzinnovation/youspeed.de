@@ -121,6 +121,33 @@ final class LookupResourceTests: XCTestCase {
         XCTAssertEqual(resources.statistics.opens, resources.statistics.closes)
     }
 
+    func testProductionGeometryPayloadBudgetEvictsAndReloadsExactCoordinates() throws {
+        let url = try database("production-budget.sqlite")
+        let resources = V3LookupResources(path: url.path)
+        _ = try resources.acquire()
+        defer { resources.releaseSession() }
+        let count = 17_000
+        func raw(_ latitude: String) -> String {
+            "[" + Array(repeating: "[\(latitude),9.123456789]", count: count).joined(separator: ",") + "]"
+        }
+        func decode(_ raw: String?) -> [(Double, Double)] {
+            let arrays = try! JSONSerialization.jsonObject(with: Data(raw!.utf8)) as! [[Double]]
+            return arrays.map { ($0[0], $0[1]) }
+        }
+        let first = raw("48.123456789"), second = raw("48.223456789")
+        let original = resources.geometry(first, decode: decode)
+        XCTAssertEqual(original.count, count)
+        _ = resources.geometry(first) { _ in XCTFail("Warm geometry decoded again"); return [] }
+        let changed = resources.geometry(second, decode: decode)
+        XCTAssertEqual(changed.first?.0, 48.223456789)
+        let reloaded = resources.geometry(first, decode: decode)
+        XCTAssertEqual(reloaded.map(\.0), original.map(\.0))
+        XCTAssertEqual(reloaded.map(\.1), original.map(\.1))
+        XCTAssertEqual(resources.statistics.geometryDecodes, 3, "Two large records exceed the default payload budget")
+        XCTAssertEqual(resources.statistics.cachedGeometries, 1)
+        XCTAssertLessThanOrEqual(resources.statistics.geometryBytes, 1024 * 1024)
+    }
+
     func testGeometryCacheKeepsStrictSettlementDecodingSeparateFromCoordinatePairs() throws {
         let url = try database("formats.sqlite")
         let resources = V3LookupResources(path: url.path)

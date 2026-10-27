@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "source_table_count": 50,
+  "every_original_table_hash_reconstructed": true,
+  "files": {
+    "packed": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime.pack",
+      "installed_bytes": 450617325,
+      "sha256": "96772329030697148ca363bfbb8860731869abf648cebf2806b532f0024c8f08"
+    },
+    "sqlite": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime.sqlite",
+      "installed_bytes": 542273536,
+      "sha256": "746ace61910ff9b3fd9d182f40bf905b35dd982de2ade0224a7cbd969f5c107d"
+    },
+    "source_semantics": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime-globals.zblocks",
+      "installed_bytes": 292666774,
+      "sha256": "1cb4f05e4aa88e8391d42c63ce69f443c055ee999c5d2c151aa49c7f04515c3b"
+    },
+    "source_semantics_index": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/runtime/runtime-globals.index.json",
+      "installed_bytes": 183414,
+      "sha256": "7e8edf6e585c3b4bfbe8c04f0e5d9286eca1c663902ae2090030ee3a430bd37b"
+    },
+    "geodesk": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/geodesk/bw-runtime.gol",
+      "installed_bytes": 94564632,
+      "sha256": "cf25dad4e541dcb7ea8d544dce8b58407752e7da3b4b986a57255035428ad5f4"
+    },
+    "generic_nodes": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/source/generic-speed-nodes.json",
+      "installed_bytes": 6175646,
+      "sha256": "fdae89f8a37fbf5d23ce96201c4df2bf279d7b1b76c92355ef6c4fa1ee73db96"
+    },
+    "packed_nodes": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/nodes/nodes.yspn",
+      "installed_bytes": 5072870,
+      "sha256": "e294d4ffd85f975bcbd00aebd4afdcd46c6a8b50695c83c4dbdb69f12f4aa867"
+    },
+    "sqlite_nodes": {
+      "path": "/private/tmp/youspeed-storage-prototype-20261026/nodes/nodes.sqlite",
+      "installed_bytes": 6447104,
+      "sha256": "da8903e16f9de7d5c5043c81415f656c039abc3d4b7101e484caff293d0df7bb"
+    }
+  },
+  "external_source_only": [
+    "generic_nodes"
+  ],
+  "semantics": "Every original source table resides exactly in native per-way records or runtime-global data, as mapped by the global index. Native node files preserve complete source JSON; the original node JSON and full duplicate source archive remain external evidence."
+}

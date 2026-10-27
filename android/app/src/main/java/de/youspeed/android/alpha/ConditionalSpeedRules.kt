@@ -9,9 +9,32 @@ import java.time.ZoneId
 /** Declarative bundle producer adapter; reference-policy semantics stay separate. */
 object ConditionalSpeedRules {
     data class Result(val kmh: Int?, val unlimited: Boolean, val unresolved: Boolean, val reason: String, val reevaluation: Reevaluation? = null)
-    data class Reevaluation(val rulesJSON: String, val baseKmh: Int?, val baseUnlimited: Boolean, val direction: Int?, val countryCode: String?, val timeZoneId: String? = null) {
-        fun evaluate(atMs: Long): Result = try { ConditionalSpeedRules.evaluate(JSONObject(rulesJSON), Context(atMs = atMs, timeZoneId = timeZoneId, countryCode = countryCode, direction = direction), baseKmh, baseUnlimited) }
-            catch (_: Exception) { unknown("corrupt_rule_set") }
+    data class Reevaluation(val rulesJSON: String, val baseKmh: Int?, val baseUnlimited: Boolean, val direction: Int?, val countryCode: String?, val timeZoneId: String? = null,
+        val validFromUTC:Double?=null,val validUntilUTC:Double?=null,val fallbackRulesJSON:String?=null,
+        val fallbackUnresolved:Boolean?=null,val fallbackReason:String?=null,
+        val baselineReevaluations:List<Reevaluation>?=null,val fallbackReevaluations:List<Reevaluation>?=null) {
+        fun evaluate(atMs: Long): Result = evaluateDepth(atMs,0)
+        private fun evaluateDepth(atMs:Long,depth:Int):Result {
+            if(depth>=8)return unknown("map_amendment_reevaluation_depth")
+            if(baselineReevaluations?.size?.let{it!=1}==true)return unknown("corrupt_map_amendment_baseline")
+            if(fallbackReevaluations?.size?.let{it!=1}==true)return unknown("corrupt_map_amendment_fallback")
+            return try {
+                val outside=validFromUTC?.let { atMs/1000.0<it }==true||validUntilUTC?.let { atMs/1000.0>=it }==true
+                val context=Context(atMs=atMs,timeZoneId=timeZoneId,countryCode=countryCode,direction=direction)
+                val baseline=baselineReevaluations?.single()?.evaluateDepth(atMs,depth+1)
+                if(baseline?.reason in setOf("map_amendment_reevaluation_depth","corrupt_map_amendment_baseline","corrupt_map_amendment_fallback"))return baseline!!
+                when {
+                    outside&&fallbackReevaluations!=null -> fallbackReevaluations.single().evaluateDepth(atMs,depth+1)
+                    outside&&fallbackRulesJSON!=null -> ConditionalSpeedRules.evaluate(JSONObject(fallbackRulesJSON),context,baseKmh,baseUnlimited)
+                    outside&&fallbackUnresolved==true -> unknown(fallbackReason?:"map_amendment_baseline_unresolved")
+                    outside -> Result(baseKmh,baseUnlimited,false,"map_amendment_outside_validity")
+                    else -> ConditionalSpeedRules.evaluate(JSONObject(rulesJSON),context,
+                        if(baseline==null)baseKmh else baseline.kmh,baseline?.unlimited?:baseUnlimited).let {
+                            if(it.unresolved&&baseline?.unresolved==true)baseline else it
+                        }
+                }
+            } catch (_: Exception) { unknown("corrupt_rule_set") }
+        }
     }
     data class Context(
         val atMs: Long = System.currentTimeMillis(), val timeZoneId: String? = null,
@@ -20,8 +43,30 @@ object ConditionalSpeedRules {
         val clockTrusted: Boolean = true,
     )
 
-    fun resolve(db: SQLiteDatabase, wayId: String, direction: Int?, baseKmh: Int?, baseUnlimited: Boolean,
-                atMs: Long = System.currentTimeMillis(), timeZoneId: String? = null, countryCode: String? = null): Result? {
+    fun resolve(db: SQLiteDatabase, wayId:String,direction:Int?,baseKmh:Int?,baseUnlimited:Boolean,
+                atMs:Long=System.currentTimeMillis(),timeZoneId:String?=null,countryCode:String?=null,
+                amendmentStore:MapDataAmendmentStore?=null):Result? =
+        resolve(FrameworkRuntimeSqlDatabase(db),wayId,direction,baseKmh,baseUnlimited,atMs,timeZoneId,countryCode,amendmentStore)
+
+    fun resolve(db: RuntimeSqlDatabase, wayId: String, direction: Int?, baseKmh: Int?, baseUnlimited: Boolean,
+                atMs: Long = System.currentTimeMillis(), timeZoneId: String? = null, countryCode: String? = null,
+                amendmentStore:MapDataAmendmentStore?=null): Result? {
+        val baseline=resolveBundle(db,wayId,direction,baseKmh,baseUnlimited,atMs,timeZoneId,countryCode)
+        val generation=try {db.rawQuery("SELECT value FROM metadata WHERE key='packed_generation'",null).use {if(it.moveToFirst())it.getString(0) else null}}
+            catch(_:android.database.sqlite.SQLiteException){null}
+        if(generation.isNullOrEmpty())return baseline
+        val store=amendmentStore?:MapDataAmendmentStore.applicationStore()?:return baseline
+        return try {
+            val result=store.resolve(wayId,generation,direction,Context(atMs,timeZoneId,countryCode,direction),baseKmh,baseUnlimited,
+                baselineResult=baseline)?:return baseline
+            result.copy(reevaluation=result.reevaluation?.copy(fallbackRulesJSON=baseline?.reevaluation?.rulesJSON,
+                fallbackUnresolved=baseline?.unresolved,fallbackReason=baseline?.reason,
+                fallbackReevaluations=baseline?.reevaluation?.let{listOf(it)}))
+        } catch(_:Exception) {unknown("map_amendment_store_unavailable")}
+    }
+
+    private fun resolveBundle(db: RuntimeSqlDatabase, wayId: String, direction: Int?, baseKmh: Int?, baseUnlimited: Boolean,
+                atMs: Long, timeZoneId: String?, countryCode: String?): Result? {
         val hasCapability = try { db.rawQuery("SELECT version,grammar FROM road_speed_capability", null).use {
             if (!it.moveToFirst() || it.getInt(0) != 1 || it.getString(1) != "youspeed-osm-speed-1" || it.moveToNext()) return unknown("unsupported_conditional_capability")
             true
@@ -41,12 +86,12 @@ object ConditionalSpeedRules {
         catch (_: Exception) { unknown("corrupt_rule_set") }
     }
 
-    private fun tableExists(db: SQLiteDatabase, name: String): Boolean = db.rawQuery(
+    private fun tableExists(db: RuntimeSqlDatabase, name: String): Boolean = db.rawQuery(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", arrayOf(name),
     ).use { it.moveToFirst() }
 
     private fun unknown(reason: String) = Result(null, false, true, reason)
-    private fun legacyUnresolved(db: SQLiteDatabase, wayId: String, direction: Int?): Result? {
+    private fun legacyUnresolved(db: RuntimeSqlDatabase, wayId: String, direction: Int?): Result? {
         val electronic = try {
             val cursor = try { db.rawQuery("SELECT maxspeed,maxspeed_forward,maxspeed_backward FROM ways WHERE way_id=?", arrayOf(wayId)) }
                 catch (_: android.database.sqlite.SQLiteException) { db.rawQuery("SELECT maxspeed FROM ways WHERE way_id=?", arrayOf(wayId)) }

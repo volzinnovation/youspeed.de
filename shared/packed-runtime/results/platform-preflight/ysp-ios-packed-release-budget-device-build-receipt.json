@@ -1,0 +1,24 @@
+{
+  "suite": "production-iPhone-shared-release-budgets-build",
+  "build_passed": true,
+  "configuration": "Debug",
+  "platform": "iphoneos",
+  "code_signing_allowed": false,
+  "marketing_version": "1.6",
+  "build_version": "10074",
+  "app_path": "/private/tmp/ysp-ios-packed-device-build/Build/Products/Debug-iphoneos/SpeedConsumer.app",
+  "log": "/private/tmp/ysp-ios-packed-release-budget-device-build.log",
+  "configured_cache_limits": {
+    "context_bytes": 2097152,
+    "geometry_bytes": 524288,
+    "sqlite_kib": 1536,
+    "swift_decoded_geometry_payload_bytes": 1048576
+  },
+  "source_sha256": {
+    "shared/runtime-storage-prototype/packed_runtime.h": "e1b1aecfd4cdf014cfe68bcec45a2770a7f94fe33f8b3309daea5ca82aab5ae3",
+    "shared/runtime-storage-prototype/packed_runtime.cpp": "135846b20c2bbfaa14c488c6523884d295e9cc414bdcf952a0439cfa997cd78e",
+    "shared/runtime-storage-prototype/packed_sqlite_vfs.cpp": "ea69107b4e014dca760e28d615c08129f28abb09e3aa0ea570902b62c3739fa1",
+    "iphone/SpeedConsumerApp/PackedBundleRuntime.swift": "83acb5e6f54112821a415b324f17296ff3d56a168bcda27900b97be0dbcf521d",
+    "iphone/SpeedConsumerApp/V3LookupResources.swift": "aa83c963fda185cc321ba8af32d99b96a68faf66e6772ff5339c1ac0b8d4a594"
+  }
+}

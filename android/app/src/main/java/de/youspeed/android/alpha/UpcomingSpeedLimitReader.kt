@@ -5,7 +5,8 @@ import org.json.JSONArray
 import kotlin.math.*
 
 /** Bounded directed previews from physical origins and explicit mapped road boundaries. */
-internal class UpcomingSpeedLimitReader(private val db: SQLiteDatabase, private val allowMobiData: Boolean = true) {
+internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, private val allowMobiData: Boolean = true) {
+    constructor(db:SQLiteDatabase,allowMobiData:Boolean=true):this(FrameworkRuntimeSqlDatabase(db),allowMobiData)
     private data class Segment(val id: String?, val way: String, val direction: Int, val start: Double, val end: Double, val length: Double, val startNode: String? = null, val endNode: String? = null)
     private data class Event(val sign: String, val source: String, val snapshot: String, val kind: String,
         val status: String, val parameter: String, val station: Double, val speed: Double?, val direction: Int?, val unit: String?, val code: String) {

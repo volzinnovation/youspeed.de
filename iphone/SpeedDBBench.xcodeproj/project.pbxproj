@@ -236,6 +236,23 @@
 		FC456C524266C29AC987BE43 /* TrafficSignCameraReferenceOfferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */; };
 		FD62AB20C68AC0EB6376D543 /* VisionDismissalVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E99625FEFE84861C5DCC7691 /* VisionDismissalVoice.swift */; };
 		FDADD879200055ACA254B841 /* V3SpeedLimitServicePool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98DD2E5EF42CC8EFC99702FF /* V3SpeedLimitServicePool.swift */; };
+		C203D2D440FD0597FBF43556 /* PackedBundleRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032CED04504FD845053AED68 /* PackedBundleRuntime.swift */; };
+		95344E535666AE5BC6C6F2E3 /* PackedBundleRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 032CED04504FD845053AED68 /* PackedBundleRuntime.swift */; };
+		70BC26E94ABAEA9122CB7C40 /* MapDataAmendmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F222F0EFFF71296F8E92E644 /* MapDataAmendmentStore.swift */; };
+		B23E206CB00F1FFB310166D6 /* MapDataAmendmentStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F222F0EFFF71296F8E92E644 /* MapDataAmendmentStore.swift */; };
+		1847542F784360C0F0B2B716 /* PackedGenericSpeedSigns.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF966329ABB96007E917AC0B /* PackedGenericSpeedSigns.swift */; };
+		4F88E7A7E1885AC247A66285 /* PackedGenericSpeedSigns.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF966329ABB96007E917AC0B /* PackedGenericSpeedSigns.swift */; };
+		83646693874CA83132DCAE7F /* packed_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A3D556226ED0E469DE80A2D1 /* packed_runtime.cpp */; };
+		78FFD1C76E39117B6749FF70 /* packed_runtime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A3D556226ED0E469DE80A2D1 /* packed_runtime.cpp */; };
+		92CC4FE4CBA7E951678A24DF /* packed_sqlite_vfs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D534386C06A63659EA0B6A6 /* packed_sqlite_vfs.cpp */; };
+		8E57EFCBAE1D2CD7C1882E64 /* packed_sqlite_vfs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D534386C06A63659EA0B6A6 /* packed_sqlite_vfs.cpp */; };
+		BEA2FD644F032A0B564BE326 /* runtime_sign_nodes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAFAEC20F54C173CBDBA2668 /* runtime_sign_nodes.cpp */; settings = {COMPILER_FLAGS = "-DYSP_NODES_PACKED_ONLY=1"; }; };
+		7CDCD84800F434C57FC743C2 /* runtime_sign_nodes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AAFAEC20F54C173CBDBA2668 /* runtime_sign_nodes.cpp */; settings = {COMPILER_FLAGS = "-DYSP_NODES_PACKED_ONLY=1"; }; };
+		92C473FEEA083B7F4BA029EF /* PackedBundleRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE140A65C8B404021E01F8CD /* PackedBundleRuntimeTests.swift */; };
+		D8D746CBA403EB9F6A09B45A /* MapDataAmendmentStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B99632382C159E31DF651F0 /* MapDataAmendmentStoreTests.swift */; };
+		A6F6A6635973B90A3062E34C /* packed-runtime-v1 in Resources */ = {isa = PBXBuildFile; fileRef = F312F9F325373BA101DD362D /* packed-runtime-v1 */; };
+		11FB2811C00E2BAC5153E068 /* zstd_decoder.c in Sources */ = {isa = PBXBuildFile; fileRef = CB4C1DB3D5B77CCA82B3F16D /* zstd_decoder.c */; };
+		804AC48BB3C19769ED599A5B /* zstd_decoder.c in Sources */ = {isa = PBXBuildFile; fileRef = CB4C1DB3D5B77CCA82B3F16D /* zstd_decoder.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -497,12 +514,29 @@
 		FBE90CAE15446042E62B6F56 /* hamburg.poly */ = {isa = PBXFileReference; path = hamburg.poly; sourceTree = "<group>"; };
 		FC99AE36886F7BCCAF89C410 /* RoadPathEvidence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPathEvidence.swift; sourceTree = "<group>"; };
 		FEF3D26E1587E34923C84FDA /* DriveRecorderStartupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveRecorderStartupTests.swift; sourceTree = "<group>"; };
+		032CED04504FD845053AED68 /* PackedBundleRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PackedBundleRuntime.swift"; sourceTree = "<group>"; };
+		F222F0EFFF71296F8E92E644 /* MapDataAmendmentStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MapDataAmendmentStore.swift"; sourceTree = "<group>"; };
+		FF966329ABB96007E917AC0B /* PackedGenericSpeedSigns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PackedGenericSpeedSigns.swift"; sourceTree = "<group>"; };
+		A3D556226ED0E469DE80A2D1 /* packed_runtime.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "../shared/runtime-storage-prototype/packed_runtime.cpp"; sourceTree = SOURCE_ROOT; };
+		4D534386C06A63659EA0B6A6 /* packed_sqlite_vfs.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "../shared/runtime-storage-prototype/packed_sqlite_vfs.cpp"; sourceTree = SOURCE_ROOT; };
+		AAFAEC20F54C173CBDBA2668 /* runtime_sign_nodes.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = "../shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp"; sourceTree = SOURCE_ROOT; };
+		DE140A65C8B404021E01F8CD /* PackedBundleRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PackedBundleRuntimeTests.swift"; sourceTree = "<group>"; };
+		1B99632382C159E31DF651F0 /* MapDataAmendmentStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MapDataAmendmentStoreTests.swift"; sourceTree = "<group>"; };
+		F312F9F325373BA101DD362D /* packed-runtime-v1 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "SpeedConsumerApp/TestFixtures/packed-runtime-v1"; sourceTree = SOURCE_ROOT; };
+		CB4C1DB3D5B77CCA82B3F16D /* zstd_decoder.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "../shared/runtime-storage-prototype/zstd_decoder.c"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		014723ABB9088B389ACA00C0 /* SpeedConsumerApp */ = {
 			isa = PBXGroup;
 			children = (
+				CB4C1DB3D5B77CCA82B3F16D /* zstd_decoder.c */,
+				AAFAEC20F54C173CBDBA2668 /* runtime_sign_nodes.cpp */,
+				4D534386C06A63659EA0B6A6 /* packed_sqlite_vfs.cpp */,
+				A3D556226ED0E469DE80A2D1 /* packed_runtime.cpp */,
+				FF966329ABB96007E917AC0B /* PackedGenericSpeedSigns.swift */,
+				F222F0EFFF71296F8E92E644 /* MapDataAmendmentStore.swift */,
+				032CED04504FD845053AED68 /* PackedBundleRuntime.swift */,
 				D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */,
 				734BE1C063C1A673E23AE2B7 /* Assets.xcassets */,
 				4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */,
@@ -694,6 +728,9 @@
 		A7CB22E93C70002B927746FB /* SpeedConsumerTests */ = {
 			isa = PBXGroup;
 			children = (
+				F312F9F325373BA101DD362D /* packed-runtime-v1 */,
+				1B99632382C159E31DF651F0 /* MapDataAmendmentStoreTests.swift */,
+				DE140A65C8B404021E01F8CD /* PackedBundleRuntimeTests.swift */,
 				9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */,
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
 				25977260953DEC2D70A20069 /* ConditionalOCRInterpretationTests.swift */,
@@ -1043,6 +1080,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A6F6A6635973B90A3062E34C /* packed-runtime-v1 in Resources */,
 				D079602BBCC192528304A508 /* CHE-cases.json in Resources */,
 				32B48593532676958DA45749 /* NLD-cases.json in Resources */,
 				CEEC3BFC77BC5AB78B80529C /* candidate-admission-v1.json in Resources */,
@@ -1157,6 +1195,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11FB2811C00E2BAC5153E068 /* zstd_decoder.c in Sources */,
+				BEA2FD644F032A0B564BE326 /* runtime_sign_nodes.cpp in Sources */,
+				92CC4FE4CBA7E951678A24DF /* packed_sqlite_vfs.cpp in Sources */,
+				83646693874CA83132DCAE7F /* packed_runtime.cpp in Sources */,
+				1847542F784360C0F0B2B716 /* PackedGenericSpeedSigns.swift in Sources */,
+				70BC26E94ABAEA9122CB7C40 /* MapDataAmendmentStore.swift in Sources */,
+				C203D2D440FD0597FBF43556 /* PackedBundleRuntime.swift in Sources */,
 				993E99E3D22FDC60BEAD3863 /* AppReviewPrompt.swift in Sources */,
 				90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */,
 				52E0BC41A844D0D41B0DBF86 /* BundleDownloadQueue.swift in Sources */,
@@ -1249,6 +1294,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D8D746CBA403EB9F6A09B45A /* MapDataAmendmentStoreTests.swift in Sources */,
+				92C473FEEA083B7F4BA029EF /* PackedBundleRuntimeTests.swift in Sources */,
 				A90F43FF340CEE032B22D5AF /* AppReviewPromptTests.swift in Sources */,
 				6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */,
 				19B30FCD5E08E64855C3BEE3 /* ConditionalOCRInterpretationTests.swift in Sources */,
@@ -1309,6 +1356,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				804AC48BB3C19769ED599A5B /* zstd_decoder.c in Sources */,
+				7CDCD84800F434C57FC743C2 /* runtime_sign_nodes.cpp in Sources */,
+				8E57EFCBAE1D2CD7C1882E64 /* packed_sqlite_vfs.cpp in Sources */,
+				78FFD1C76E39117B6749FF70 /* packed_runtime.cpp in Sources */,
+				4F88E7A7E1885AC247A66285 /* PackedGenericSpeedSigns.swift in Sources */,
+				B23E206CB00F1FFB310166D6 /* MapDataAmendmentStore.swift in Sources */,
+				95344E535666AE5BC6C6F2E3 /* PackedBundleRuntime.swift in Sources */,
 				1F69E46C3D85B97143F1A3FF /* AssetStore.swift in Sources */,
 				C3883B48011E83773BC9DE9C /* BenchmarkModels.swift in Sources */,
 				7639AEC111CBE0FE5084705E /* ConditionalSpeedRules.swift in Sources */,
@@ -1398,6 +1452,8 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lsqlite3",
+					"-lz",
+					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedDBBench;
 				PRODUCT_NAME = SpeedDBBench;
@@ -1430,7 +1486,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -1458,7 +1514,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10056;
+				CURRENT_PROJECT_VERSION = 10074;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1471,7 +1527,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.6;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1538,6 +1594,8 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lsqlite3",
+					"-lz",
+					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = de.youspeed.SpeedDBBench;
 				PRODUCT_NAME = SpeedDBBench;
@@ -1570,7 +1628,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -1598,7 +1656,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10056;
+				CURRENT_PROJECT_VERSION = 10074;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1617,7 +1675,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.4;
+				MARKETING_VERSION = 1.6;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1681,6 +1739,8 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lsqlite3",
+					"-lz",
+					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "de.youspeed.SpeedConsumer$(YOUSPEED_TEST_BUNDLE_SUFFIX)";
 				PRODUCT_NAME = SpeedConsumer;
@@ -1706,6 +1766,8 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-lsqlite3",
+					"-lz",
+					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "de.youspeed.SpeedConsumer$(YOUSPEED_TEST_BUNDLE_SUFFIX)";
 				PRODUCT_NAME = SpeedConsumer;

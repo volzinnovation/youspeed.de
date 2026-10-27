@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "nodes": 20141,
+  "memberships": 10922,
+  "queries": 20397,
+  "source_sha256": "fdae89f8a37fbf5d23ce96201c4df2bf279d7b1b76c92355ef6c4fa1ee73db96",
+  "packed_bytes": 5072870,
+  "sqlite_bytes": 6447104,
+  "source_bytes": 6175646,
+  "source_semantics": "Full canonical node JSON, all tags and original double chainage; memberships imply no verified applicability."
+}

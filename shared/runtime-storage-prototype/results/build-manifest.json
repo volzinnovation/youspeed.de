@@ -1,0 +1,474 @@
+{
+  "format": 1,
+  "source": "/private/tmp/youspeed-storage-prototype-20261026/source/bw.sqlite",
+  "source_bytes": 3185627136,
+  "ways": 1085790,
+  "points": 6479751,
+  "fallback_double_ways": 0,
+  "geometry_source_sha256": "cb85d88be6b2f15ace9bf90551053d13a68f64079ccd60aee6552631904d222d",
+  "geometry_roundtrip_sha256": "cb85d88be6b2f15ace9bf90551053d13a68f64079ccd60aee6552631904d222d",
+  "per_way_source_semantics_sha256": "e4f3b905181590493fb64c61f589a417623ffbb1ca8fa4abbb46c9ddfbfd5cee",
+  "source_tables": {
+    "areas": [
+      "row_id",
+      "area_id",
+      "geometry_type",
+      "name",
+      "place",
+      "boundary",
+      "admin_level",
+      "residential",
+      "points_json",
+      "min_lon",
+      "min_lat",
+      "max_lon",
+      "max_lat"
+    ],
+    "areas_rtree": [
+      "row_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "city_boundary": [
+      "row_id",
+      "osm_type",
+      "osm_id",
+      "admin_level",
+      "name",
+      "min_lon",
+      "min_lat",
+      "max_lon",
+      "max_lat"
+    ],
+    "city_boundary_rtree": [
+      "row_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "city_place": [
+      "row_id",
+      "place",
+      "name",
+      "lon",
+      "lat"
+    ],
+    "city_place_rtree": [
+      "row_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "city_ring": [
+      "boundary_row_id",
+      "ring_index",
+      "outer_index",
+      "is_hole",
+      "points_json"
+    ],
+    "city_tile": [
+      "boundary_row_id",
+      "tile_x",
+      "tile_y"
+    ],
+    "corridor_pairs": [
+      "corridor_kind",
+      "corridor_id",
+      "side_node_key",
+      "paired_kind",
+      "paired_corridor_id"
+    ],
+    "corridor_progress": [
+      "corridor_kind",
+      "corridor_id",
+      "side_node_key",
+      "way_id",
+      "start_depth_m",
+      "end_depth_m",
+      "start_depth_nodes",
+      "end_depth_nodes",
+      "corridor_span_m",
+      "corridor_span_nodes"
+    ],
+    "metadata": [
+      "key",
+      "value"
+    ],
+    "motorway_exit_approach": [
+      "way_id",
+      "endpoint_side",
+      "exit_way_id",
+      "path_distance_m",
+      "branch_heading_deg"
+    ],
+    "motorway_way_network": [
+      "way_id"
+    ],
+    "motorway_way_network_rtree": [
+      "way_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "road_speed_capability": [
+      "version",
+      "grammar",
+      "compiler_sha256"
+    ],
+    "road_speed_condition": [
+      "condition_id",
+      "ast_json"
+    ],
+    "road_speed_interpretation": [
+      "way_id",
+      "source_key",
+      "status",
+      "issue"
+    ],
+    "road_speed_rule": [
+      "rule_id",
+      "way_id",
+      "source_key",
+      "clause_index",
+      "priority",
+      "limit_json",
+      "condition_id",
+      "source_start",
+      "source_end"
+    ],
+    "road_speed_rule_set": [
+      "way_id",
+      "rules_json"
+    ],
+    "road_speed_source_tag": [
+      "way_id",
+      "key",
+      "raw_value",
+      "source_snapshot"
+    ],
+    "settlement_area": [
+      "area_id",
+      "osm_type",
+      "osm_id",
+      "kind",
+      "inside_city",
+      "source",
+      "confidence",
+      "tags_json",
+      "min_lon",
+      "min_lat",
+      "max_lon",
+      "max_lat"
+    ],
+    "settlement_ring": [
+      "area_id",
+      "ring_index",
+      "outer_index",
+      "is_hole",
+      "points_json"
+    ],
+    "settlement_segment": [
+      "segment_id",
+      "way_id",
+      "segment_index",
+      "direction",
+      "inside_city",
+      "source",
+      "confidence",
+      "evidence_json",
+      "points_json"
+    ],
+    "settlement_sign": [
+      "sign_id",
+      "osm_type",
+      "osm_id",
+      "sign_code",
+      "inside_city",
+      "direction",
+      "way_id",
+      "lon",
+      "lat",
+      "association",
+      "tags_json"
+    ],
+    "surface_way_network": [
+      "way_id"
+    ],
+    "surface_way_network_rtree": [
+      "way_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "traffic_sign_association": [
+      "sign_id",
+      "status",
+      "way_id",
+      "direction",
+      "station_chainage_m",
+      "local_heading_deg",
+      "confidence",
+      "evidence_json"
+    ],
+    "traffic_sign_capability": [
+      "key",
+      "value"
+    ],
+    "traffic_sign_inventory": [
+      "row_id",
+      "source_id",
+      "record_key",
+      "group_id",
+      "group_order",
+      "location_id",
+      "sign_code",
+      "longitude",
+      "latitude",
+      "orientation_deg",
+      "openlr_binary",
+      "openlr_confidence",
+      "municipality_ars",
+      "municipality_name",
+      "installed_at",
+      "updated_at",
+      "raw_properties_json"
+    ],
+    "traffic_sign_inventory_rtree": [
+      "row_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "traffic_sign_lane": [
+      "way_id",
+      "direction",
+      "lane_index",
+      "maxspeed",
+      "turns",
+      "access",
+      "source"
+    ],
+    "traffic_sign_rule_path": [
+      "rule_id",
+      "origin_way_id",
+      "way_directions_json"
+    ],
+    "traffic_sign_runtime": [
+      "sign_id",
+      "source_id",
+      "record_key",
+      "snapshot_sha256",
+      "sign_code",
+      "normalized_code",
+      "kind",
+      "numeric_value",
+      "unit",
+      "parameter_status",
+      "lon",
+      "lat",
+      "orientation_deg",
+      "display_radius_m",
+      "pictogram_code",
+      "pictogram_path",
+      "model_classes_json"
+    ],
+    "traffic_sign_source": [
+      "source_id",
+      "publisher",
+      "dataset_url",
+      "source_url",
+      "license_id",
+      "license_url",
+      "snapshot_sha256",
+      "snapshot_timestamp",
+      "record_count",
+      "min_lon",
+      "min_lat",
+      "max_lon",
+      "max_lat",
+      "usage_role",
+      "modification_notice"
+    ],
+    "traffic_sign_way_direction": [
+      "way_id",
+      "oneway",
+      "forward_allowed",
+      "backward_allowed",
+      "lanes",
+      "lanes_forward",
+      "lanes_backward",
+      "maxspeed_forward",
+      "maxspeed_backward",
+      "lane_tags_json",
+      "start_node_key",
+      "end_node_key",
+      "way_length_m",
+      "highway",
+      "ref",
+      "street_name"
+    ],
+    "traffic_sign_way_rule": [
+      "rule_id",
+      "sign_id",
+      "way_id",
+      "direction",
+      "start_chainage_m",
+      "end_chainage_m",
+      "station_chainage_m",
+      "local_heading_deg",
+      "speed_kmh",
+      "inside_city",
+      "association_status",
+      "lane_scope"
+    ],
+    "tunnel_way_network": [
+      "way_id"
+    ],
+    "tunnel_way_network_rtree": [
+      "way_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ],
+    "upcoming_path_capability": [
+      "key",
+      "value"
+    ],
+    "upcoming_path_node": [
+      "node_id",
+      "source_degree",
+      "restriction_barrier"
+    ],
+    "upcoming_path_segment": [
+      "segment_id",
+      "way_id",
+      "direction",
+      "start_chainage_m",
+      "end_chainage_m",
+      "start_node_id",
+      "end_node_id",
+      "length_m",
+      "permission_status"
+    ],
+    "upcoming_path_successor": [
+      "from_segment_id",
+      "status",
+      "to_segment_id",
+      "via_node_id",
+      "proof"
+    ],
+    "upcoming_path_way": [
+      "way_id",
+      "restriction_barrier",
+      "geometry_verified"
+    ],
+    "way_continuity_group": [
+      "continuity_group_id",
+      "continuity_kind",
+      "source_relation_id",
+      "ref_norm",
+      "street_name_norm",
+      "member_count"
+    ],
+    "way_continuity_membership": [
+      "way_id",
+      "continuity_group_id",
+      "continuity_kind"
+    ],
+    "way_endpoints": [
+      "way_id",
+      "ref_norm",
+      "highway",
+      "tunnel_flag",
+      "start_node_key",
+      "start_lon",
+      "start_lat",
+      "end_node_key",
+      "end_lon",
+      "end_lat",
+      "way_length_m"
+    ],
+    "way_geom": [
+      "way_id",
+      "points_json"
+    ],
+    "way_links": [
+      "way_id",
+      "linked_way_id",
+      "shared_ref",
+      "shared_node_key"
+    ],
+    "ways": [
+      "way_id",
+      "highway",
+      "street_name",
+      "ref",
+      "maxspeed",
+      "maxspeed_forward",
+      "maxspeed_backward",
+      "maxspeed_type",
+      "source_maxspeed",
+      "approx_heading_deg",
+      "service",
+      "tunnel",
+      "min_lon",
+      "min_lat",
+      "max_lon",
+      "max_lat"
+    ],
+    "ways_rtree": [
+      "way_id",
+      "min_lon",
+      "max_lon",
+      "min_lat",
+      "max_lat"
+    ]
+  },
+  "related_tables": [
+    "way_endpoints",
+    "traffic_sign_way_direction",
+    "traffic_sign_lane",
+    "traffic_sign_way_rule",
+    "road_speed_source_tag",
+    "road_speed_rule_set",
+    "road_speed_rule",
+    "road_speed_interpretation",
+    "settlement_segment",
+    "way_links",
+    "way_continuity_membership",
+    "upcoming_path_way",
+    "upcoming_path_segment",
+    "motorway_exit_approach"
+  ],
+  "build_seconds": 633.2716572080099,
+  "files": {
+    "runtime.sqlite": {
+      "bytes": 542273536
+    },
+    "source-semantics.index.json": {
+      "bytes": 408883
+    },
+    "source-semantics.zblocks": {
+      "bytes": 640372386
+    },
+    "runtime.pack": {
+      "bytes": 450617325
+    }
+  },
+  "archive_tables": 50,
+  "warning": "Experimental storage kernel. Original rows fully retained. Does not replace the production matcher or protected speed-reference policy.",
+  "section_crc32": [
+    3557341849,
+    1970868052,
+    1772309468,
+    1314422668
+  ]
+}

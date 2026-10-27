@@ -22,6 +22,9 @@ final class V3SpeedLimitService: @unchecked Sendable {
 
     private let dbPath: String
     private let resources: V3LookupResources
+    private let mapAmendments: MapDataAmendmentStore?
+    private let amendmentPassageLock = NSLock()
+    private var amendmentPassages = MapDataNodePassageRuntime()
     private var resourceGeneration: UInt64 = 0
     private let countryCode: String?
     private let regulationRegion: ((Double, Double) -> String?)?
@@ -856,10 +859,12 @@ final class V3SpeedLimitService: @unchecked Sendable {
         dbPath: String,
         countryCode: String? = nil,
         matchingModel: MatchingModel = .corridorHMM,
-        regulationRegion: ((Double, Double) -> String?)? = nil
+        regulationRegion: ((Double, Double) -> String?)? = nil,
+        amendmentStore: MapDataAmendmentStore? = MapDataAmendmentStore.applicationStore()
     ) {
         self.dbPath = dbPath
         self.resources = V3LookupResources(path: dbPath)
+        self.mapAmendments = amendmentStore
         self.countryCode = Self.normalizedCountryCode(countryCode) ?? Self.inferCountryCode(fromDBPath: dbPath)
         self.matchingModel = matchingModel
         self.regulationRegion = regulationRegion
@@ -868,6 +873,25 @@ final class V3SpeedLimitService: @unchecked Sendable {
     var resourceStatistics: V3LookupResources.Statistics { resources.statistics }
 
     func invalidateDatabase() { resources.invalidate() }
+
+    func resetMapAmendmentPassages() {
+        amendmentPassageLock.lock(); defer { amendmentPassageLock.unlock() }
+        amendmentPassages.reset()
+    }
+
+    /// Raw source nodes are available to evidence/review consumers. They do not
+    /// become current/ahead limit offers through proximity or membership alone.
+    func genericSpeedSignNodes(lat: Double, lon: Double, radiusM: Double = 250) throws -> [GenericSpeedSignNode] {
+        _ = try acquireDatabase()
+        defer { resources.releaseSession() }
+        return try resources.genericSpeedSignNodes(lat: lat, lon: lon, radiusM: radiusM)
+    }
+
+    func genericSpeedSignSourceJSON(nodeID: String) throws -> String? {
+        _ = try acquireDatabase()
+        defer { resources.releaseSession() }
+        return try resources.genericSpeedSignSourceJSON(nodeID: nodeID)
+    }
 
     /// Exercises the production surface-network admission query before matcher scoring.
     func admittedWayIDsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int) throws -> [String] {
@@ -881,6 +905,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
     private func acquireDatabase() throws -> OpaquePointer {
         let session = try resources.acquire()
         if resourceGeneration != session.generation {
+            resetMapAmendmentPassages()
             corridorPairCacheLock.lock()
             cachedCorridorPairContext = nil
             corridorPairCacheLock.unlock()
@@ -922,7 +947,8 @@ final class V3SpeedLimitService: @unchecked Sendable {
         speedKmh: Double? = nil,
         horizontalAccuracyM: Double? = nil,
         gpsSignalBars: Int? = nil,
-        inventoryFixUsable: Bool = true
+        inventoryFixUsable: Bool = true,
+        observationTimestamp: Date? = nil
     ) throws -> SpeedLimitResult {
         let t0 = DispatchTime.now().uptimeNanoseconds
 
@@ -1159,13 +1185,20 @@ final class V3SpeedLimitService: @unchecked Sendable {
             let settlementResolveMs = Double(DispatchTime.now().uptimeNanoseconds - settlementStarted) / 1_000_000.0
             let allowMobiData = InventorySignSourceScope.allowsMobiData(countryCode: countryCode, dbPath: dbPath,
                 sourceInputPBF: metadataValue(db: db, key: "source_input_pbf"))
-            let inventory = InventorySignBundle.lookup(db: db, lat: lat, lon: lon,
+            var inventory = InventorySignBundle.lookup(db: db, lat: lat, lon: lon,
                 wayID: finalSelected?.wayID, points: finalSelected?.points ?? [], heading: headingDeg,
                 headingAccuracy: headingAccuracyDeg,
                 accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
                 matchStable: (matchContext?.matchedFixCount ?? 0) >= 1
                     && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
                 allowMobiData: allowMobiData)
+            let nodeAmendmentProof = reviewedNodeAmendmentProof(db: db, selected: finalSelected, lat: lat, lon: lon,
+                heading: headingDeg, headingAccuracy: headingAccuracyDeg,
+                accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
+                stable: (matchContext?.matchedFixCount ?? 0) >= 1
+                    && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
+                timestamp: observationTimestamp)
+            inventory = addingReviewedNodeObservations(nodeAmendmentProof.lookup, to: inventory)
             let inventoryRule = inventory?.activeRule
             let inventoryOffer = inventoryRule.map {
                 InventorySignRoadOffer.resolve($0, country:countryCode ?? "DE",highway:finalSelected?.highway,
@@ -1177,7 +1210,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
                         accuracy: headingAccuracyDeg, speedKmh: speedKmh, localHeading: finalSelected?.localHeadingDeg),
                     baseKmh: settlementSpeedLimit(candidate: finalSelected, settlement: settlement),
                     baseUnlimited: finalSelected?.isUnlimitedSpeedLimit == true,
-                    countryCode: countryCode)
+                    countryCode: countryCode, amendmentStore: mapAmendments, passedNodeIDs: nodeAmendmentProof.ids)
             }
             let effectiveSpeed: Int?
             if let inventoryOffer { effectiveSpeed = inventoryOffer.speedKmh }
@@ -1789,13 +1822,20 @@ final class V3SpeedLimitService: @unchecked Sendable {
             let settlementResolveMs = Double(DispatchTime.now().uptimeNanoseconds - settlementStarted) / 1_000_000.0
             let allowMobiData = InventorySignSourceScope.allowsMobiData(countryCode: countryCode, dbPath: dbPath,
                 sourceInputPBF: metadataValue(db: db, key: "source_input_pbf"))
-            let inventory = InventorySignBundle.lookup(db: db, lat: lat, lon: lon,
+            var inventory = InventorySignBundle.lookup(db: db, lat: lat, lon: lon,
                 wayID: finalSelected?.wayID, points: finalSelected?.points ?? [], heading: headingDeg,
                 headingAccuracy: headingAccuracyDeg,
                 accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
                 matchStable: (matchContext?.matchedFixCount ?? 0) >= 1
                     && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
                 allowMobiData: allowMobiData)
+            let nodeAmendmentProof = reviewedNodeAmendmentProof(db: db, selected: finalSelected, lat: lat, lon: lon,
+                heading: headingDeg, headingAccuracy: headingAccuracyDeg,
+                accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
+                stable: (matchContext?.matchedFixCount ?? 0) >= 1
+                    && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
+                timestamp: observationTimestamp)
+            inventory = addingReviewedNodeObservations(nodeAmendmentProof.lookup, to: inventory)
             let inventoryRule = inventory?.activeRule
             let inventoryOffer = inventoryRule.map {
                 InventorySignRoadOffer.resolve($0, country:countryCode ?? "DE",highway:finalSelected?.highway,
@@ -1807,7 +1847,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
                         accuracy: headingAccuracyDeg, speedKmh: speedKmh, localHeading: finalSelected?.localHeadingDeg),
                     baseKmh: settlementSpeedLimit(candidate: finalSelected, settlement: settlement),
                     baseUnlimited: finalSelected?.isUnlimitedSpeedLimit == true,
-                    countryCode: countryCode)
+                    countryCode: countryCode, amendmentStore: mapAmendments, passedNodeIDs: nodeAmendmentProof.ids)
             }
             let effectiveSpeed: Int?
             if let inventoryOffer { effectiveSpeed = inventoryOffer.speedKmh }
@@ -2256,6 +2296,37 @@ final class V3SpeedLimitService: @unchecked Sendable {
         if InventorySignBundle.angle(heading, localHeading) <= 35 { return 1 }
         if InventorySignBundle.angle(heading, localHeading + 180) <= 35 { return -1 }
         return nil
+    }
+
+    private func reviewedNodeAmendmentProof(db: OpaquePointer, selected: WayCandidate?, lat: Double, lon: Double,
+                                           heading: Double?, headingAccuracy: Double?, accuracy: Double,
+                                           stable: Bool, timestamp: Date?) -> (ids: Set<String>, lookup: InventorySignLookup?) {
+        guard let store = mapAmendments, let generation = PackedBundleRuntime.metadata("packed_generation", database: db) else { return ([], nil) }
+        let stored = selected?.wayID.flatMap { try? store.nodePassageCandidates(wayID: $0, bundle: generation, at: Date()) } ?? []
+        let records = stored.compactMap { record -> MapDataAmendment? in
+            var current = record
+            do {
+                // Same-generation canonical source coordinates/memberships take
+                // precedence over a saved review snapshot. This does not infer
+                // a directed binding from source membership.
+                if record.sourceNamespace == "osm", let canonical = try resources.genericSpeedSignSourceJSON(nodeID: record.sourceID) {
+                    current.nodeJSON = canonical
+                }
+            } catch { return nil }
+            return current
+        }
+        amendmentPassageLock.lock(); defer { amendmentPassageLock.unlock() }
+        let ids = amendmentPassages.consume(records: records, bundle: generation, wayID: selected?.wayID,
+            points: selected?.points ?? [], wayLengthM: selected?.wayLengthM, lat: lat, lon: lon,
+            heading: heading, headingAccuracy: headingAccuracy, accuracy: accuracy, matchStable: stable, at: timestamp)
+        return (ids, amendmentPassages.observationLookup)
+    }
+
+    private func addingReviewedNodeObservations(_ nodes: InventorySignLookup?, to lookup: InventorySignLookup?) -> InventorySignLookup? {
+        guard let nodes, !nodes.signs.isEmpty else { return lookup }
+        return InventorySignLookup(signs: ((lookup?.signs ?? []) + nodes.signs).sorted { ($0.distanceM,$0.signID) < ($1.distanceM,$1.signID) },
+            activeRule: lookup?.activeRule, wayID: lookup?.wayID ?? nodes.wayID, direction: lookup?.direction ?? nodes.direction,
+            chainageM: lookup?.chainageM ?? nodes.chainageM, boundaries: lookup?.boundaries ?? [])
     }
 
     private static func reliableSpeedHeading(_ heading: Double?, accuracy: Double?, speedKmh: Double?) -> Double? {
@@ -9323,7 +9394,7 @@ final class V3SpeedLimitService: @unchecked Sendable {
         resources.capability("table:\(name)") {
             var stmt: OpaquePointer?
             defer { resources.release(stmt) }
-            let sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1 LIMIT 1"
+            let sql = "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=?1 LIMIT 1"
             guard resources.prepare(db, sql, -1, &stmt, nil) == SQLITE_OK, let stmt else { return nil }
             sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT)
             let code = sqlite3_step(stmt)
