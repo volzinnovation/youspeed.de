@@ -51,6 +51,9 @@ ACTIVE_PANORAMAX = """f.active AND i.active AND f.state='ready' AND i.visibility
  AND s.visibility_scope ? i.visibility
  AND NOT EXISTS (SELECT 1 FROM youspeed.panoramax_suppressions x
    WHERE x.source_id=f.source_id AND x.picture_id=f.picture_id)"""
+PANORAMAX_IMAGE_BINDING = ("picture_id", "annotation_id", "source_item", "feature", "crop_geometry", "digest", "bytes")
+PANORAMAX_IMAGE_SQL = """SELECT f.picture_id,f.annotation_id,i.metadata AS source_item,
+ f.metadata AS feature,c.geometry AS crop_geometry,c.digest,o.object_key AS object_path,o.bytes """ + PANORAMAX_JOIN + " WHERE f.crop_id=%s AND " + ACTIVE_PANORAMAX
 
 
 class InspectorError(Exception):
@@ -199,6 +202,54 @@ def crop_identity(path):
         raise InspectorError("Ungültige Crop-ID.", 400) from None
 
 
+def mobile_image_origin(value):
+    if not value:
+        return None
+    try:
+        parsed = urlsplit(value)
+        if (any(c.isspace() for c in value) or "\\" in value or parsed.scheme != "http"
+                or parsed.hostname not in {"127.0.0.1", "localhost"}
+                or parsed.username is not None or parsed.password is not None
+                or parsed.path not in {"", "/"} or parsed.query or parsed.fragment
+                or (parsed.port is not None and not 1 <= parsed.port <= 65535)):
+            raise ValueError
+    except ValueError:
+        raise InspectorError("Bild-Proxy muss ein privater HTTP-Loopback-Tunnel sein.") from None
+    return value.rstrip("/")
+
+
+class NoImageRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args):
+        return None
+
+
+def validate_image(data, row):
+    manifest = row["manifest"]
+    if (not 0 < len(data) <= MAX_IMAGE_BYTES or len(data) != manifest["byte_length"]
+            or hashlib.sha256(data).hexdigest() != row["digest"]
+            or row["digest"] != manifest["encoded_sha256"]):
+        raise InspectorError("Bildintegrität fehlgeschlagen (Länge / SHA-256).", 422)
+    encoding = manifest["encoding"]
+    if encoding == "PNG" and data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return data, "image/png"
+    if encoding == "JPEG" and data.startswith(b"\xff\xd8\xff"):
+        return data, "image/jpeg"
+    raise InspectorError("Gespeichertes Bildformat ungültig.", 422)
+
+
+def public_panoramax_image(row):
+    # Shared backend implementation is an explicit optional runtime dependency.
+    # It retrieves only public source images, without files or a private token.
+    try:
+        from commercial_backend.youspeed.panoramax_public_images import PublicCropError, reconstruct_public_crop
+    except ImportError:
+        raise InspectorError("Öffentliches Panoramax-Bild: Bildrekonstruktion ist nicht eingerichtet.", 503) from None
+    try:
+        return reconstruct_public_crop({key: row[key] for key in PANORAMAX_IMAGE_BINDING})
+    except PublicCropError as error:
+        raise InspectorError("Öffentliches Panoramax-Bild: " + error.message, error.status) from None
+
+
 def read_image(media_root, row):
     if media_root is None:
         raise InspectorError("Bildverzeichnis nicht eingerichtet. YOUSPEED_MANAGEMENT_MEDIA_ROOT auf das Backend-Medienverzeichnis setzen.")
@@ -219,20 +270,18 @@ def read_image(media_root, row):
         raise InspectorError("Bilddatei fehlt oder ist für den Inspector nicht lesbar.", 404) from None
     except OSError:
         raise InspectorError("Gespeicherte Bilddatei kann nicht sicher gelesen werden.", 422) from None
-    manifest = row["manifest"]
-    if len(data) != manifest["byte_length"] or hashlib.sha256(data).hexdigest() != row["digest"] or row["digest"] != manifest["encoded_sha256"]:
-        raise InspectorError("Bildintegrität fehlgeschlagen (Länge / SHA-256).", 422)
-    encoding = manifest["encoding"]
-    if encoding == "PNG" and data.startswith(b"\x89PNG\r\n\x1a\n"):
-        return data, "image/png"
-    if encoding == "JPEG" and data.startswith(b"\xff\xd8\xff"):
-        return data, "image/jpeg"
-    raise InspectorError("Gespeichertes Bildformat ungültig.", 422)
+    return validate_image(data, row)
 
 
 class CropStore:
     def __init__(self, args):
         self.args = args
+        self.mobile_image_proxy_url = mobile_image_origin(getattr(args, "mobile_image_proxy_url", None))
+        # Explicitly bypass environment HTTP proxies: private identities stay on
+        # the configured local tunnel. No credentials or browser-selected target.
+        self.mobile_image_opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}), NoImageRedirects()) if self.mobile_image_proxy_url else None
+        self.panoramax_public_image_fallback = bool(getattr(args, "panoramax_public_image_fallback", False))
         self.media_root = args.media_root.resolve() if args.media_root else None
         panoramax_root = getattr(args, "panoramax_media_root", None)
         self.panoramax_root = panoramax_root.resolve() if panoramax_root else None
@@ -342,7 +391,8 @@ class CropStore:
             identity = db.execute("SELECT current_database() AS database, current_user AS user").fetchone()
             # Fail here with a useful grant error before the first gallery query.
             db.execute("SELECT 1 FROM youspeed.media, youspeed.tombstones, youspeed.authorizations, youspeed.events LIMIT 0")
-        return {**identity, "media_available": bool(self.media_root and self.media_root.is_dir() and os.access(self.media_root, os.R_OK | os.X_OK))}
+        return {**identity, "media_available": bool(self.mobile_image_proxy_url or
+            (self.media_root and self.media_root.is_dir() and os.access(self.media_root, os.R_OK | os.X_OK)))}
 
     @staticmethod
     def require_live_controls(db):
@@ -434,8 +484,7 @@ class CropStore:
         with self.connection() as db:
             if not db.execute("SELECT pg_try_advisory_xact_lock_shared(hashtext('panoramax-corpus-media-v1')) AS acquired").fetchone()["acquired"]:
                 raise InspectorError("Panoramax-Bilder werden aktualisiert. Erneut versuchen.", 503)
-            row = db.execute("SELECT c.digest,o.object_key AS object_path,o.bytes " + PANORAMAX_JOIN
-                + " WHERE f.crop_id=%s AND " + ACTIVE_PANORAMAX, (crop_id,)).fetchone()
+            row = db.execute(PANORAMAX_IMAGE_SQL, (crop_id,)).fetchone()
             if not row:
                 raise InspectorError("Panoramax-Crop nicht verfügbar.", 404)
             if self.args.panoramax_image_proxy_url:
@@ -451,29 +500,76 @@ class CropStore:
                 try:
                     with urllib.request.build_opener(NoRedirect).open(request, timeout=20) as response:
                         data = response.read(MAX_IMAGE_BYTES + 1)
-                except (urllib.error.URLError, OSError):
-                    raise InspectorError("Panoramax-Report-Bild nicht erreichbar.", 503) from None
-                if len(data) != row["bytes"] or hashlib.sha256(data).hexdigest() != row["digest"] or not data.startswith(b"\x89PNG\r\n\x1a\n"):
-                    raise InspectorError("Panoramax-Bildintegrität fehlgeschlagen.", 422)
-                return data, "image/png"
-            row["manifest"] = {"encoding": "PNG", "encoded_sha256": row["digest"], "byte_length": row["bytes"]}
-            # Corpus object keys have a fixed digest-based subdirectory layout.
-            if self.panoramax_root is None:
+                except urllib.error.HTTPError as error:
+                    unavailable = error.code == 503
+                    error.close()
+                    if not unavailable or not self.panoramax_public_image_fallback:
+                        raise InspectorError("Panoramax-Report-Bild nicht erreichbar.", 503) from None
+                except (urllib.error.URLError, OSError, TimeoutError):
+                    if not self.panoramax_public_image_fallback:
+                        raise InspectorError("Panoramax-Report-Bild nicht erreichbar.", 503) from None
+                else:
+                    return validate_image(data, {**row, "manifest": {
+                        "encoding": "PNG", "encoded_sha256": row["digest"], "byte_length": row["bytes"]}})
+            elif self.panoramax_root is not None:
+                # Corpus object keys have a fixed digest-based subdirectory layout.
+                name = row["object_path"]
+                if not re.fullmatch(r"panoramax/crop-objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\.png", name):
+                    raise InspectorError("Ungültiger Panoramax-Bildpfad.", 422)
+                directory = (self.panoramax_root / Path(name).parent).resolve()
+                if not directory.is_relative_to(self.panoramax_root):
+                    raise InspectorError("Ungültiger Panoramax-Bildpfad.", 422)
+                try:
+                    return read_image(directory, {**row, "object_path": Path(name).name, "manifest": {
+                        "encoding": "PNG", "encoded_sha256": row["digest"], "byte_length": row["bytes"]}})
+                except InspectorError as error:
+                    if error.status != 404 or not self.panoramax_public_image_fallback:
+                        raise
+            elif not self.panoramax_public_image_fallback:
                 raise InspectorError("Panoramax-Bildzugriff ist nicht eingerichtet.")
-            name = row["object_path"]
-            if not re.fullmatch(r"panoramax/crop-objects/sha256/[a-f0-9]{2}/[a-f0-9]{64}\.png", name):
-                raise InspectorError("Ungültiger Panoramax-Bildpfad.", 422)
-            directory = (self.panoramax_root / Path(name).parent).resolve()
-            if not directory.is_relative_to(self.panoramax_root):
-                raise InspectorError("Ungültiger Panoramax-Bildpfad.", 422)
-            row["object_path"] = Path(name).name
-            return read_image(directory, row)
+            data = public_panoramax_image(row)
+            # READ COMMITTED rechecks the same lifecycle rules after the public
+            # fetch. A revoked/replaced source must never escape a slow request.
+            current = db.execute(PANORAMAX_IMAGE_SQL, (crop_id,)).fetchone()
+            if not current:
+                raise InspectorError("Öffentliches Panoramax-Bild: Aufnahme ist nicht mehr freigegeben.", 404)
+            if any(current[key] != row[key] for key in PANORAMAX_IMAGE_BINDING):
+                raise InspectorError("Öffentliches Panoramax-Bild: Bildquelle wurde inzwischen geändert. Erneut laden.", 422)
+            try:
+                return validate_image(data, {**current, "manifest": {
+                    "encoding": "PNG", "encoded_sha256": current["digest"], "byte_length": current["bytes"]}})
+            except InspectorError:
+                raise InspectorError("Öffentliches Panoramax-Bild: Bildintegrität fehlgeschlagen.", 422) from None
 
     def image(self, identity):
         with self.connection() as db:
-            row = db.execute("SELECT m.* FROM youspeed.media m WHERE m.installation=%s AND m.epoch=%s AND m.crop_id=%s AND " + ACTIVE_MEDIA, identity).fetchone()
+            image_sql = "SELECT m.* FROM youspeed.media m WHERE m.installation=%s AND m.epoch=%s AND m.crop_id=%s AND " + ACTIVE_MEDIA
+            row = db.execute(image_sql, identity).fetchone()
             if not row:
                 raise InspectorError("Crop nicht verfügbar, abgelaufen oder zurückgezogen.", 404)
+            if self.mobile_image_proxy_url:
+                installation, epoch, crop_id = crop_identity(
+                    f"/inspector/api/crops/{identity[0]}/{identity[1]}/{identity[2]}/image")
+                request = urllib.request.Request(self.mobile_image_proxy_url
+                    + f"/inspector/api/crops/{installation}/{epoch}/{crop_id}/image",
+                    headers={"Accept": "image/png, image/jpeg", "Cache-Control": "no-store"})
+                try:
+                    with self.mobile_image_opener.open(request, timeout=20) as response:
+                        data = response.read(MAX_IMAGE_BYTES + 1)
+                except urllib.error.HTTPError as error:
+                    status = 404 if error.code in {404, 410} else 502
+                    error.close()
+                    raise InspectorError("Verkehrszeichenbild am Bild-Proxy nicht verfügbar.", status) from None
+                except (urllib.error.URLError, OSError, TimeoutError):
+                    raise InspectorError("Bild-Proxy nicht erreichbar.", 503) from None
+                # now() is fixed at transaction start. Check actual wall-clock
+                # expiry as well as revocation and the full current image binding.
+                current = db.execute(image_sql + " AND m.expires>EXTRACT(EPOCH FROM clock_timestamp())", identity).fetchone()
+                if not current:
+                    raise InspectorError("Verkehrszeichenbild ist nicht mehr freigegeben oder inzwischen abgelaufen.", 404)
+                if any(current[key] != row[key] for key in ("object_path", "digest", "manifest")):
+                    raise InspectorError("Verkehrszeichenbild wurde inzwischen geändert. Erneut laden.", 422)
+                return validate_image(data, current)
             return read_image(self.media_root, row)
 
 
@@ -735,9 +831,11 @@ def arguments(argv=None):
     parser.add_argument("--db-port", type=int, default=None)
     parser.add_argument("--review-service-url", default=os.environ.get("YOUSPEED_CROP_REVIEW_URL"), help="Separately authenticated backend review origin (HTTPS, loopback HTTP or private youspeed-review service); no browser-selected destinations")
     parser.add_argument("--media-root", type=Path, default=os.environ.get("YOUSPEED_MANAGEMENT_MEDIA_ROOT"), help="Read-only path to management-media on volz-db (or its read-only mount)")
+    parser.add_argument("--mobile-image-proxy-url", default=os.environ.get("YOUSPEED_MOBILE_IMAGE_PROXY_URL"), help="Fixed HTTP loopback origin of a private Inspector reached through an SSH tunnel; image bytes only")
     parser.add_argument("--panoramax-media-root", type=Path, default=os.environ.get("YOUSPEED_PANORAMAX_CORPUS_ROOT"))
     parser.add_argument("--panoramax-mapping-file", type=Path, default=ROOT.parent / "Woladen.de-analytics/commercial_backend/youspeed/panoramax-reverse-v1.json")
     parser.add_argument("--panoramax-image-proxy-url", default=os.environ.get("YOUSPEED_PANORAMAX_IMAGE_PROXY_URL"), help="Loopback SSH tunnel to the Panoramax image-only bridge")
+    parser.add_argument("--panoramax-public-image-fallback", action="store_true", help="Reconstruct admitted public Panoramax images in RAM if private image access is unavailable; requires the shared analytics helper on PYTHONPATH")
 
     parser.add_argument("--sign-positions-file", type=Path, default=os.environ.get("YOUSPEED_SIGN_POSITIONS_FILE"), help="Private external static fit export; sources rechecked on every request")
     return parser.parse_args(argv)

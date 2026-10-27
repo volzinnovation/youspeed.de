@@ -10,7 +10,7 @@ async function workspace(deleteFails=false,overrides={}){
   if(url.endsWith('/trips'))data={trips:[{id:'synthetic-trip',started_at:1000,start_place:'QA',end_place:'QA',distance_m:100}]};
   return {ok:status<400,status,json:async()=>data};
  };
- const context={document:{getElementById:element},fetch,Option:class{constructor(text,value){this.textContent=text;this.value=value;}},URLSearchParams,AbortController,DOMException,Intl,setTimeout:overrides.setTimeout||setTimeout,clearTimeout,crypto:{randomUUID:()=> 'synthetic-request'},location:{hash:'',pathname:'/',search:'',reload(){reloads++;}},window:{addEventListener(){}},history:{replaceState(){}}};
+ const context={document:{getElementById:element,querySelectorAll:()=>[]},fetch,Option:class{constructor(text,value){this.textContent=text;this.value=value;}},URLSearchParams,AbortController,DOMException,Intl,setTimeout:overrides.setTimeout||setTimeout,clearTimeout,crypto:{randomUUID:()=> 'synthetic-request'},location:{hash:'',pathname:'/',search:'',reload(){reloads++;}},window:{addEventListener(){}},history:{replaceState(){}},L:overrides.L,YouSpeedInspectorTiles:overrides.tiles};
  vm.runInNewContext(script,context);
  for(let i=0;i<20&&element('osm-close').hidden;i++)await new Promise(setImmediate);
  assert.equal(element('osm-close').hidden,false);
@@ -62,4 +62,19 @@ test('a cancelled job finishing its poll wait cannot unlock a new session import
 test('the upload input is genuinely hidden and has no label hitbox around the close button',()=>{
  const html=fs.readFileSync(require.resolve('../../inspector/osm.html'),'utf8');
  assert.match(html,/<button id="osm-open"[^>]*type="button"/);assert.match(html,/<input id="osm-files"[^>]*\bhidden\b/);assert.doesNotMatch(html,/<label[^>]*for="osm-files"/);assert.match(html,/<button id="osm-close"[^>]*type="button"/);
+});
+test('known backend evidence warnings use traffic-sign image terminology while preserving image identity and other reasons',async()=>{
+ const chain=()=>({addTo(){return this;},setView(){return this;},bindTooltip(){return this;},remove(){}});
+ const L={map:chain,featureGroup:chain,circleMarker:chain},tiles={create:chain};
+ for(const [reason_code,reason,expected] of [
+  ['public_evidence_missing','Kein eindeutig passendes öffentliches Panoramax-Bild gefunden. Eigene Crops bleiben als Evidenz erhalten.','Eigene Verkehrszeichenbilder bleiben als Evidenz erhalten.'],
+  ['other_reason','Zuordnung <noch offen>.','Zuordnung &lt;noch offen&gt;.'],
+ ]){
+  const proposal={id:'synthetic-way',way_id:123,title:'Synthetischer Vorschlag',status:'needs_work',initialStatus:'needs_work',variants:[],point:[8.5,48.8],reason_code,reason,evidence:[{kind:'own_crop',object:'synthetic-image.png',captured_at:1000}]};
+  const w=await workspace(false,{L,tiles,fetch(url){if(url.endsWith('/proposals'))return {ok:true,status:200,json:async()=>({proposals:[proposal],discovery:{complete:true}})};}});
+  w.element('osm-filter').value='all';await w.element('osm-trip').onchange();
+  const html=w.element('osm-detail').innerHTML;
+  assert.ok(html.includes(expected));assert.ok(html.includes('Eigenes Verkehrszeichenbild 1'));assert.ok(html.includes('/trips/synthetic-trip/images/synthetic-image.png'));assert.doesNotMatch(html,/\bCrops?\b/);
+  assert.equal(w.element('osm-error').hidden,true);
+ }
 });

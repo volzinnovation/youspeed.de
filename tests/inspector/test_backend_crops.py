@@ -2,14 +2,17 @@
 from contextlib import contextmanager
 import hashlib
 from http.client import HTTPConnection
+from http.server import BaseHTTPRequestHandler
 import importlib.util
 import json
 import sqlite3
 from pathlib import Path
+import io
 import tempfile
 import threading
+import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 SPEC = importlib.util.spec_from_file_location("inspector_server", Path(__file__).resolve().parents[2] / "inspector/server.py")
 server = importlib.util.module_from_spec(SPEC)
@@ -102,6 +105,8 @@ class StoreTests(unittest.TestCase):
                 return test.rows
 
             def fetchone(self):
+                if "pg_try_advisory" in test.calls[-1][0]:
+                    return {"acquired": True}
                 if "AS fresh" in test.calls[-1][0]:
                     return test.control
                 return test.rows[0] if test.rows else None
@@ -111,6 +116,64 @@ class StoreTests(unittest.TestCase):
             yield Database()
 
         self.store.connection = connection
+
+    def image_proxy(self):
+        test = self
+        self.proxy_calls = []
+        self.proxy_payload = PNG
+        self.proxy_status = 200
+        self.proxy_on_get = None
+
+        class Upstream(BaseHTTPRequestHandler):
+            def do_GET(self):
+                test.proxy_calls.append((self.path, self.headers.get("Authorization")))
+                if test.proxy_on_get:
+                    test.proxy_on_get()
+                self.send_response(test.proxy_status)
+                self.send_header("Location", f"http://127.0.0.1:{self.server.server_port}/redirect-target")
+                self.end_headers()
+                try:
+                    self.wfile.write(test.proxy_payload)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+
+            def log_message(self, *_):
+                pass
+
+        upstream = server.ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+        thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(thread.join)
+        self.addCleanup(upstream.server_close)
+        self.addCleanup(upstream.shutdown)
+        origin = f"http://127.0.0.1:{upstream.server_port}"
+        args = server.arguments(["--mobile-image-proxy-url", origin])
+        store = server.CropStore(args)
+        store.connection = self.store.connection
+        return store
+
+    def public_panoramax_fixture(self, enabled=True, bridge=True):
+        self.store.panoramax_public_image_fallback = enabled
+        self.store.args.panoramax_image_proxy_url = "http://127.0.0.1:18082" if bridge else None
+        row = {"picture_id": CROP, "annotation_id": INSTALLATION, "source_item": {"picture": {}},
+            "feature": {"shape": {}}, "crop_geometry": {"actual_box": [0, 0, 2, 2]},
+            "digest": hashlib.sha256(PNG).hexdigest(), "bytes": len(PNG),
+            "object_path": "panoramax/crop-objects/sha256/aa/" + "a" * 64 + ".png"}
+        self.rows = [row]
+        module = types.ModuleType("commercial_backend.youspeed.panoramax_public_images")
+        class PublicCropError(Exception):
+            def __init__(self, message, status):
+                self.message, self.status = message, status
+        module.PublicCropError = PublicCropError
+        module.reconstruct_public_crop = Mock(return_value=PNG)
+        overlay = patch.dict(server.sys.modules, {module.__name__: module})
+        overlay.start(); self.addCleanup(overlay.stop)
+        return row, module
+
+    @staticmethod
+    def unavailable_panoramax_bridge():
+        return types.SimpleNamespace(open=Mock(side_effect=server.urllib.error.HTTPError(
+            "http://127.0.0.1:18082/private", 503, "unavailable", {}, io.BytesIO(b"unavailable"))))
 
     def test_statistics_cli_does_not_require_gallery_media_options(self):
         from scripts.inspector.sign_statistics import arguments as report_arguments
@@ -359,6 +422,77 @@ class StoreTests(unittest.TestCase):
             read.assert_not_called()
         self.assertIn("panoramax_suppressions", calls[-1][0])
 
+    def test_public_panoramax_fallback_verifies_png_and_rechecks_current_source_after_bridge_503(self):
+        row, helper = self.public_panoramax_fixture()
+        with patch.object(server.urllib.request, "build_opener", return_value=self.unavailable_panoramax_bridge()), patch.object(server, "read_image") as disk:
+            self.assertEqual(self.store.panoramax_image(CROP), (PNG, "image/png"))
+            disk.assert_not_called()
+        helper.reconstruct_public_crop.assert_called_once_with({key: row[key] for key in server.PANORAMAX_IMAGE_BINDING})
+        self.assertEqual(len(self.calls), 3)  # Shared lock, initial eligibility, post-fetch eligibility.
+        for sql, params in self.calls[1:]:
+            self.assertEqual(params, (CROP,))
+            for condition in ("f.active", "i.active", "visibility='anyone'", "panoramax_suppressions"):
+                self.assertIn(condition, sql)
+
+    def test_public_panoramax_fallback_rejects_revocation_after_public_fetch(self):
+        _, helper = self.public_panoramax_fixture(bridge=False)
+        def reconstruct(_):
+            self.rows = []
+            return PNG
+        helper.reconstruct_public_crop.side_effect = reconstruct
+        with self.assertRaises(server.InspectorError) as error:
+            self.store.panoramax_image(CROP)
+        self.assertEqual(error.exception.status, 404)
+        self.assertIn("Öffentliches Panoramax-Bild", str(error.exception))
+
+    def test_public_panoramax_fallback_rejects_corrupt_bytes_and_changed_render_binding(self):
+        for changed_row in (False, True):
+            with self.subTest(changed_row=changed_row):
+                row, helper = self.public_panoramax_fixture(bridge=False)
+                def reconstruct(_):
+                    if changed_row:
+                        self.rows = [{**row, "crop_geometry": {"actual_box": [1, 0, 3, 2]}}]
+                        return PNG
+                    return PNG + b"changed"
+                helper.reconstruct_public_crop.side_effect = reconstruct
+                with self.assertRaises(server.InspectorError) as error:
+                    self.store.panoramax_image(CROP)
+                self.assertEqual(error.exception.status, 422)
+                self.assertIn("Öffentliches Panoramax-Bild", str(error.exception))
+
+    def test_public_panoramax_fallback_requires_explicit_flag(self):
+        for bridge in (False, True):
+            with self.subTest(bridge=bridge):
+                _, helper = self.public_panoramax_fixture(enabled=False, bridge=bridge)
+                with patch.object(server.urllib.request, "build_opener", return_value=self.unavailable_panoramax_bridge()):
+                    with self.assertRaises(server.InspectorError) as error:
+                        self.store.panoramax_image(CROP)
+                self.assertEqual(error.exception.status, 503)
+                helper.reconstruct_public_crop.assert_not_called()
+
+    def test_public_panoramax_fallback_prefers_healthy_bridge_and_does_not_mask_bridge_denial(self):
+        _, helper = self.public_panoramax_fixture()
+        bridge = types.SimpleNamespace(open=Mock(return_value=io.BytesIO(PNG)))
+        with patch.object(server.urllib.request, "build_opener", return_value=bridge):
+            self.assertEqual(self.store.panoramax_image(CROP), (PNG, "image/png"))
+        helper.reconstruct_public_crop.assert_not_called()
+        self.assertEqual(len(self.calls), 2)
+        bridge.open.side_effect = server.urllib.error.HTTPError("http://127.0.0.1/private", 403, "forbidden", {}, io.BytesIO(b"forbidden"))
+        with patch.object(server.urllib.request, "build_opener", return_value=bridge):
+            with self.assertRaises(server.InspectorError):
+                self.store.panoramax_image(CROP)
+        helper.reconstruct_public_crop.assert_not_called()
+
+    def test_public_panoramax_fallback_is_explicit_cli_option_and_prefixes_helper_errors(self):
+        self.assertFalse(server.arguments([]).panoramax_public_image_fallback)
+        self.assertTrue(server.arguments(["--panoramax-public-image-fallback"]).panoramax_public_image_fallback)
+        _, helper = self.public_panoramax_fixture(bridge=False)
+        helper.reconstruct_public_crop.side_effect = helper.PublicCropError("Öffentliche Aufnahme nicht mehr verfügbar.", 404)
+        with self.assertRaises(server.InspectorError) as error:
+            self.store.panoramax_image(CROP)
+        self.assertEqual(error.exception.status, 404)
+        self.assertTrue(str(error.exception).startswith("Öffentliches Panoramax-Bild:"))
+
     def test_utc_inclusive_day_filter(self):
         _, _, clauses, params = server.crop_filters({"from": ["2026-10-01"], "to": ["2026-10-06"]})
         self.assertEqual(params[0].isoformat(), "2026-10-01T00:00:00+00:00")
@@ -375,6 +509,126 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(params, (INSTALLATION, 0, CROP))
         for condition in ("m.expires >", "t.deleted_through", "a.state<>'granted'"):
             self.assertIn(condition, sql)
+
+    def test_mobile_proxy_preserves_current_db_verified_png_and_jpeg_without_disk_access(self):
+        store = self.image_proxy()
+        for payload, encoding, content_type in [(PNG, "PNG", "image/png"),
+                (b"\xff\xd8\xffsynthetic JPEG", "JPEG", "image/jpeg")]:
+            with self.subTest(encoding=encoding):
+                self.proxy_payload = payload
+                row = media_row(payload)
+                row["manifest"]["encoding"] = encoding
+                self.rows = [row]
+                with patch.object(server, "read_image") as read:
+                    self.assertEqual(store.image((INSTALLATION, 0, CROP)), (payload, content_type))
+                    read.assert_not_called()
+        self.assertEqual(self.proxy_calls, [(IMAGE_PATH, None), (IMAGE_PATH, None)])
+
+    def test_mobile_proxy_rejects_hash_length_manifest_and_image_format_mismatches(self):
+        store = self.image_proxy()
+        fixtures = []
+        fixtures.append((PNG + b"changed", media_row()))
+        row = media_row(); row["manifest"]["byte_length"] += 1
+        fixtures.append((PNG, row))
+        row = media_row(); row["manifest"]["encoded_sha256"] = "0" * 64
+        fixtures.append((PNG, row))
+        fixtures.append((b"<html>not an image</html>", media_row(b"<html>not an image</html>")))
+        row = media_row(); row["manifest"]["encoding"] = "JPEG"
+        fixtures.append((PNG, row))
+        for payload, row in fixtures:
+            with self.subTest(payload=payload, manifest=row["manifest"]):
+                self.proxy_payload, self.rows = payload, [row]
+                with self.assertRaises(server.InspectorError) as error:
+                    store.image((INSTALLATION, 0, CROP))
+                self.assertEqual(error.exception.status, 422)
+
+    def test_mobile_proxy_bounds_image_bytes_even_when_database_claims_larger_valid_object(self):
+        store = self.image_proxy()
+        self.proxy_payload = PNG + b"x" * server.MAX_IMAGE_BYTES
+        self.rows = [media_row(self.proxy_payload)]
+        with self.assertRaises(server.InspectorError) as error:
+            store.image((INSTALLATION, 0, CROP))
+        self.assertEqual(error.exception.status, 422)
+
+    def test_mobile_proxy_rechecks_lifecycle_on_every_request_before_network_access(self):
+        store = self.image_proxy()
+        self.rows = [media_row()]
+        self.assertEqual(store.image((INSTALLATION, 0, CROP))[0], PNG)
+        self.rows = []  # Same image has now expired, been deleted or lost authorization.
+        with self.assertRaises(server.InspectorError) as error:
+            store.image((INSTALLATION, 0, CROP))
+        self.assertEqual(error.exception.status, 404)
+        self.assertEqual(len(self.proxy_calls), 1)
+        self.assertEqual(len(self.calls), 3)
+        for sql, params in self.calls:
+            self.assertEqual(params, (INSTALLATION, 0, CROP))
+            for condition in ("m.expires >", "t.deleted_through", "a.state<>'granted'"):
+                self.assertIn(condition, sql)
+
+    def test_mobile_proxy_withholds_bytes_if_revoked_or_expired_during_fetch(self):
+        store = self.image_proxy()
+        self.rows = [media_row()]
+        self.proxy_on_get = self.rows.clear
+        with self.assertRaises(server.InspectorError) as error:
+            store.image((INSTALLATION, 0, CROP))
+        self.assertEqual(error.exception.status, 404)
+        self.assertEqual(self.proxy_calls, [(IMAGE_PATH, None)])
+        self.assertIn("clock_timestamp()", self.calls[-1][0])
+
+    def test_mobile_proxy_withholds_bytes_if_image_binding_changes_during_fetch(self):
+        for field in ("object_path", "digest", "manifest"):
+            with self.subTest(field=field):
+                store = self.image_proxy()
+                self.rows = [media_row()]
+                replacement = media_row()
+                replacement[field] = {**replacement[field], "changed": True} if field == "manifest" else "changed"
+                def replace_row():
+                    self.rows = [replacement]
+                self.proxy_on_get = replace_row
+                with self.assertRaises(server.InspectorError) as error:
+                    store.image((INSTALLATION, 0, CROP))
+                self.assertEqual(error.exception.status, 422)
+                self.assertEqual(self.proxy_calls, [(IMAGE_PATH, None)])
+
+    def test_mobile_proxy_rejects_redirects_without_contacting_the_redirect_target(self):
+        store = self.image_proxy()
+        self.rows = [media_row()]
+        self.proxy_status = 302
+        with self.assertRaises(server.InspectorError) as error:
+            store.image((INSTALLATION, 0, CROP))
+        self.assertEqual(error.exception.status, 502)
+        self.assertEqual(self.proxy_calls, [(IMAGE_PATH, None)])
+        self.assertNotIn("127.0.0.1", str(error.exception))
+
+    def test_mobile_proxy_configuration_rejects_non_loopback_origins_before_transport_creation(self):
+        invalid = ["https://127.0.0.1:8080", "http://example.com", "http://127.0.0.1.evil.test",
+            "http://localhost/path", "http://localhost?secret=x", "http://localhost#fragment",
+            "http://user:secret@localhost", "http://localhost:bad", "http://localhost:0",
+            "http://localhost:65536", "file:///private/image", " http://localhost", "http://localhost\\@example.com"]
+        with patch.object(server.urllib.request, "build_opener") as transport:
+            for origin in invalid:
+                with self.subTest(origin=origin), self.assertRaises(server.InspectorError) as error:
+                    server.CropStore(server.arguments(["--mobile-image-proxy-url", origin]))
+                self.assertNotIn("secret", str(error.exception))
+            transport.assert_not_called()
+
+    def test_mobile_proxy_status_reflects_configuration_without_probe_and_keeps_direct_mount(self):
+        with patch.dict(server.os.environ, {"YOUSPEED_MOBILE_IMAGE_PROXY_URL": "http://localhost:18080"}):
+            store = server.CropStore(server.arguments([]))
+        store.connection = self.store.connection
+        self.rows = [{"database": "youspeed", "user": "youspeed_report"}]
+        with patch.object(store.mobile_image_opener, "open") as probe:
+            self.assertEqual(store.status(), {"database": "youspeed", "user": "youspeed_report", "media_available": True})
+            probe.assert_not_called()
+        with tempfile.TemporaryDirectory() as directory:
+            args = server.arguments(["--media-root", directory, "--mobile-image-proxy-url", ""])
+            direct = server.CropStore(args); direct.connection = self.store.connection
+            self.assertTrue(direct.status()["media_available"])
+            self.rows = [media_row()]
+            (Path(directory) / self.rows[0]["object_path"]).write_bytes(PNG)
+            self.assertEqual(direct.image((INSTALLATION, 0, CROP)), (PNG, "image/png"))
+        self.rows = [{"database": "youspeed", "user": "youspeed_report"}]
+        self.assertFalse(direct.status()["media_available"])
 
     def test_default_report_user_and_redacted_database_errors(self):
         with patch.dict(server.os.environ, {}, clear=True):

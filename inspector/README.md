@@ -232,6 +232,57 @@ Bei einem Reverse Proxy den genauen Inspector-Host inklusive Port mit
 `--allowed-host` zulassen. Der Proxy muss ebenfalls auf das private Netz
 beschränkt sein. Daten- und Bildantworten sind same-origin und `no-store`.
 
+### Aktueller lokaler Inspector mit dem privaten Bilddienst
+
+Wenn die Report-Datenbank über einen bestehenden SSH-Tunnel erreichbar ist,
+aber das Medienvolume ausschließlich auf volz-db liegt, kann der lokale
+Inspector den dort bereits vorhandenen privaten Inspector als Bildquelle nutzen:
+
+```sh
+/tmp/youspeed-inspector-venv/bin/python inspector/server.py \
+  --port 18764 \
+  --mobile-image-proxy-url http://127.0.0.1:18080
+```
+
+Die Report-Datei bleibt serverseitig; `18080` muss auf den bestehenden privaten
+Inspector auf volz-db zeigen. Der Bildproxy akzeptiert ausschließlich eine fest
+konfigurierte Loopback-HTTP-Origin, keine Browser-Ziele oder Weiterleitungen.
+Jeder Abruf prüft zuvor den aktuellen Datensatz mit `youspeed_report` in einer
+read-only Transaktion und danach die empfangenen Bytes gegen Länge, SHA-256 und
+PNG/JPEG-Format. Es entsteht keine Bildkopie auf Disk. Alternativ setzt
+`YOUSPEED_MOBILE_IMAGE_PROXY_URL` dieselbe Origin. Direkte nur lesbare
+Medienmounts bleiben unterstützt.
+
+Für öffentliche Panoramax-Aufnahmen kann der vorhandene Analytics-Renderer
+einen fehlenden gespeicherten Bildzugriff ersetzen, ohne eine Bilddatei zu
+speichern. Dazu die optionalen Abhängigkeiten installieren und den passenden
+Analytics-Checkout auf den Python-Suchpfad legen:
+
+```sh
+/tmp/youspeed-inspector-venv/bin/python -m pip install -r inspector/requirements-public-images.txt
+PYTHONPATH=../Woladen.de-analytics \
+  /tmp/youspeed-inspector-venv/bin/python inspector/server.py \
+  --port 18764 \
+  --mobile-image-proxy-url http://127.0.0.1:18080 \
+  --panoramax-public-image-fallback
+```
+
+Der nur lesende Report-Datensatz, die aktuell öffentliche Panoramax-Annotation,
+der Hash des Original-JPEGs, registrierte Abmessungen und Geometrie sowie zuletzt
+der PNG-Hash und die Länge müssen übereinstimmen. Bei einer Abweichung bleibt das
+Bild unverfügbar; eine vollständige Aufnahme ersetzt keinen gespeicherten
+Zeichenausschnitt. Verarbeitung und begrenzte Originalbilddaten bleiben im RAM.
+Der private Bilddienst wird weiter bevorzugt, wenn sein optionaler Proxy oder
+ein Medienmount funktioniert. Der öffentliche Fallback benötigt keinen
+Operator-Schlüssel und verändert keine Datenbankrechte.
+
+Die aktuelle lokale Oberfläche liegt dann unter
+`http://localhost:18764/inspector/#crops`; der vorhandene private Remote-Inspector
+bleibt über den Tunnel unter `http://localhost:18080/inspector/#crops` erreichbar.
+Ohne laufenden Tunnel ist die Datenbankverbindung nicht verfügbar. Ein funktionierendes
+öffentliches Panoramax-Frontend bestätigt nicht automatisch die Verfügbarkeit
+des getrennten privaten Crop-Objektspeichers oder seines Bild-Bridges.
+
 PostgreSQL und Bildablage sind getrennt: `YOUSPEED_MANAGEMENT_MEDIA_ROOT` muss
 das **Management-Medienverzeichnis** bzw. seinen nur lesbaren Mount bezeichnen.
 Der Backend-Container verwendet `/var/lib/woladen/youspeed-management-media`
