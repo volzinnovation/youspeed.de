@@ -1,11 +1,52 @@
 package de.youspeed.android.alpha
 
+import java.io.File
+import kotlinx.serialization.json.*
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrafficSignFusionEngineTests {
+    @Test fun sharedShadowSelectionMatchesIPhoneAndRetainsOriginalIdentity() {
+        val path = listOf("shared", "../shared", "../../shared").map { File(it, "tsr/applicability/shadow-selection-fixtures.json") }.first(File::exists)
+        val cases = Json.parseToJsonElement(path.readText()).jsonObject.getValue("cases").jsonArray
+        for (item in cases) {
+            val c = item.jsonObject
+            val name = c.getValue("id").jsonPrimitive.content
+            val candidates = c.getValue("candidates").jsonArray.map { element ->
+                val d = element.jsonObject
+                val box = d.getValue("box").jsonArray.map { it.jsonPrimitive.double }
+                val value = d["value"]?.jsonPrimitive?.intOrNull
+                TrafficSignDetection(TrafficSignCandidate(
+                    rawClassId = d.getValue("id").jsonPrimitive.content,
+                    rawLabel = d.getValue("id").jsonPrimitive.content,
+                    semantic = TrafficSignSemantic(TrafficSignSemanticKind.fromWire(d.getValue("semantic_kind").jsonPrimitive.content), value, if (value == null) null else "km/h"),
+                    rawScore = d.getValue("raw_score").jsonPrimitive.double,
+                    calibratedConfidence = d["calibrated_confidence"]?.jsonPrimitive?.doubleOrNull,
+                    boundingBox = NormalizedTrafficSignBoundingBox(box[0], box[1], box[2], box[3]),
+                ))
+            }
+            val thresholds = c.getValue("candidates").jsonArray.associate { d -> d.jsonObject.getValue("id").jsonPrimitive.content to d.jsonObject.getValue("class_threshold").jsonPrimitive.double }
+            val engine = TrafficSignFusionEngine(TrafficSignThresholds(0.6, 0.8, c.getValue("unknown_threshold").jsonPrimitive.double, 2, 1500, 0.2),
+                if (c.getValue("runtime_output").jsonPrimitive.content == "raw_score") TrafficSignCalibrationOutput.RAW_SCORE else TrafficSignCalibrationOutput.CALIBRATED_CONFIDENCE, thresholds)
+            val withheld = c.getValue("withheld_indices").jsonArray.map { it.jsonPrimitive.int }.toSet()
+            val selected = engine.selectPrimaryDetection(candidates.filterIndexed { index, _ -> index !in withheld })
+            val expected = c["expected_candidate_id"]?.jsonPrimitive?.contentOrNull
+            assertEquals(name, expected, selected?.candidate?.rawClassId)
+            if (expected != null) assertSame(name, candidates.first { it.candidate.rawClassId == expected }, selected)
+            assertEquals(name, expected, engine.observe(selected, 0).candidate?.rawClassId)
+        }
+    }
+
+    @Test fun survivorSelectionRejectsBoxBeyondImageEvenWithinConstructorTolerance() {
+        val outside = detection(NormalizedTrafficSignBoundingBox(0.9, 0.2, 0.10000000001, 0.2))
+        val inside = detection(box(0.4, 0.2), rawClassId = "inside")
+        assertSame(inside, engine().selectPrimaryDetection(listOf(outside, inside)))
+        assertNull(engine().selectPrimaryDetection(listOf(outside)))
+    }
+
     private fun endEngine(classId: String) = TrafficSignFusionEngine(
         thresholds = TrafficSignThresholds(0.45, 0.7, 0.25, 3, 1500, 0.2),
         scoreSource = TrafficSignCalibrationOutput.RAW_SCORE, classThresholds = mapOf(classId to 0.7))

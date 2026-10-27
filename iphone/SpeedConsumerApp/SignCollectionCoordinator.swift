@@ -284,7 +284,7 @@ import CoreMotion
                     var metadata = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID,
                         installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt,
                         localFrameToken: frame.token, privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: claim,
-                        vehiclePosition: framePosition, cameraViewingDirection: frameDirection)
+                        vehiclePosition: framePosition, cameraViewingDirection: frameDirection, phoneRoadMatch: emission.collectionPhoneRoadMatch)
                     if let selection = candidate.selection { metadata["collection_selection"] = selection.wire }
                     if let annotation = candidate.supplementaryOCR { metadata["supplementary_ocr"] = annotation.wire }
                     try store.enqueueAutomaticCrop(metadata: metadata, bytes: crop.bytes)

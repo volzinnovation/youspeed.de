@@ -1033,6 +1033,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 // MARK: - Atomic frame state
 
 struct TrafficSignFrameSnapshot: Equatable, Sendable {
+    let collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?
     let applicabilityMapFix: TSRMapFix?
     let context: TrafficSignDetectionContext?
     let coordinate: TrafficSignCoordinate?
@@ -1050,7 +1051,8 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
         sessionGeneration: UInt64 = 0,
         contextGeneration: UInt64 = 0,
         captureSessionId: String? = nil,
-        diagnosticCaptureEnabled: Bool = false
+        diagnosticCaptureEnabled: Bool = false,
+        collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = nil
     ) {
         self.context = context
         self.applicabilityMapFix = applicabilityMapFix
@@ -1062,6 +1064,7 @@ struct TrafficSignFrameSnapshot: Equatable, Sendable {
         self.contextGeneration = contextGeneration
         self.captureSessionId = captureSessionId
         self.diagnosticCaptureEnabled = diagnosticCaptureEnabled
+        self.collectionPhoneRoadMatch = collectionPhoneRoadMatch
     }
 }
 
@@ -1117,6 +1120,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
     let collectionCaptureAt: Date?
     /// Boxes describe the mobile recognition window, not a full-size captured photo.
     let usesDetectorWindow: Bool
+    let collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?
 
     init(
         event: TrafficSignRecognitionEvent,
@@ -1140,7 +1144,8 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         collectionDetections: [TrafficSignDetection] = [],
         collectionFrame: SignCollectionFrame? = nil,
         collectionCaptureAt: Date? = nil,
-        usesDetectorWindow: Bool = false
+        usesDetectorWindow: Bool = false,
+        collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = nil
     ) {
         precondition(
             event.roadContext == frameContext,
@@ -1168,6 +1173,7 @@ struct TrafficSignRuntimeEmission: Equatable, Sendable {
         self.collectionFrame = collectionFrame
         self.collectionCaptureAt = collectionCaptureAt
         self.usesDetectorWindow = usesDetectorWindow
+        self.collectionPhoneRoadMatch = collectionPhoneRoadMatch
     }
 }
 
@@ -2268,7 +2274,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 collectionDetections: collectionDetections,
                 collectionFrame: makeCollectionFrame(item),
                 collectionCaptureAt: item.roadPathCapture.flatMap { $0.clockKnown ? Date(timeIntervalSince1970: $0.capturedAtSeconds) : nil },
-                usesDetectorWindow: true
+                usesDetectorWindow: true,
+                collectionPhoneRoadMatch: item.snapshot.collectionPhoneRoadMatch
             )
             callbackQueue.async { [weak self, eventHandler] in
                 guard self?.canDeliverCallback == true else { return }

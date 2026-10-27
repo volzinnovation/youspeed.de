@@ -52,6 +52,39 @@ def validate_vectors(vectors):
                 b=c['box']
                 if b['x']+b['width']>1.000001 or b['y']+b['height']>1.000001:raise ValueError('Box outside normalized frame')
 
+def validate_capture_snapshots(scenario, result):
+    """Assert input identity and the actual native map-only adapter's guarantees."""
+    batches = scenario['batches']
+    frames = result['frames']
+    if result['id'] != scenario['id'] or len(frames) != len(batches):
+        raise ValueError('Capture snapshot frame identity mismatch')
+    for index, (batch, frame) in enumerate(zip(batches, frames)):
+        # Equality is deliberate: a later or previously valid road snapshot may
+        # not be substituted, even when that would yield a better decision.
+        if canonical(frame['batch']) != canonical(batch):
+            raise ValueError('Capture snapshot input was replaced')
+        for decision in frame['decisions']:
+            if decision.get('roadSnapshotId') != (batch.get('road') or {}).get('snapshotId'):
+                raise ValueError('Decision borrowed another road snapshot')
+        expected = scenario.get('expectedFrameReasons')
+        if expected is not None:
+            if len(expected) != len(frames) or [d['reasons'] for d in frame['decisions']] != [expected[index]]:
+                raise ValueError(f"Capture-time reason mismatch: {scenario['id']} frame {index}")
+    source_roads = [(batch, batch['road']) for batch in batches if batch.get('road') is not None]
+    snapshots = result['liveMapFixSnapshots']
+    if len(snapshots) != len(source_roads):
+        raise ValueError('Live map-fix snapshot count mismatch')
+    for (batch, source), snapshot in zip(source_roads, snapshots):
+        if snapshot.get('cameraHorizontalFovDeg') is not None or snapshot.get('cameraYawDeg') is not None:
+            raise ValueError('Map-only adapter manufactured camera calibration')
+        for key in ('capturedAtMs', 'wayId', 'horizontalAccuracyM', 'courseAccuracyDeg', 'courseDeg',
+                    'localTangentDeg', 'matchedStable', 'roadClass', 'hypotheses', 'branches', 'capabilities', 'postedSpeedKmh'):
+            if canonical(snapshot.get(key)) != canonical(source.get(key)):
+                raise ValueError(f'Live map-fix adapter changed {key}')
+        if snapshot['scope'] != batch['scope']:
+            raise ValueError('Live map-fix scope mismatch')
+    return len(snapshots)
+
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--vectors',type=Path,default=CONTRACT/'golden-vectors-v1.json')
@@ -78,14 +111,17 @@ def main():
             outputs[platform]=json.loads(subprocess.check_output(cmd+[str(args.vectors)]))
             costs[platform]=(time.perf_counter()-start)*1000
         compare(canonical(outputs['swift']),canonical(outputs['kotlin']))
-        rows=[]
+        rows=[]; capture_checks=0
         for scenario,result in zip(vectors['scenarios'],outputs['swift']):
+            capture_checks += validate_capture_snapshots(scenario,result)
             final=result['frames'][-1]['decisions']; expected=scenario.get('expectedFinalClass')
             if expected is not None and expected not in [d['classification'] for d in final]:raise ValueError(f"Golden decision failed: {scenario['id']}")
             rows.append(dict(scenario=scenario['id'],frames=len(result['frames']),finalDecisions=[dict(trackId=d['trackId'],classification=d['classification'],reasons=d['reasons']) for d in final]))
         origins=sorted({s.get('origin','unspecified') for s in vectors['scenarios']})
         report=dict(schemaVersion=1,lane='recorded_candidate',origins=origins,fieldQualified=False,parity='passed',numericTolerance=1e-9,
-            corpusSha256=digest(args.vectors),configSha256=digest(CONTRACT/'policy-v1.json'),sourceHashes={str(p.relative_to(ROOT)):digest(p) for p in sources},
+            corpusSha256=digest(args.vectors),configSha256=digest(CONTRACT/'policy-v1.json'),sourceHashes={str(p.relative_to(ROOT)):digest(p) for p in sources + [Path(__file__),Path(__file__).with_name('Replay.swift'),Path(__file__).with_name('Replay.kt')]},
+            captureSnapshotChecks=dict(liveMapFixSnapshots=capture_checks, cameraCalibration='unavailable in map-only adapter; synthetic zero yaw does not become measured mount evidence',
+                immutableBatchAndRoadIdentities=True, expectedPerFrameReasons=True),
             scenarios=rows,processWallTimeIncludingStartupMs=costs,
             pending=['Reviewed real sequence corpus and baseline','Full-image inference replay','Independent holdout and frozen empirical gates','Minimum-device sustained performance, battery and thermal evidence','Explicit paired-platform rollout approval'])
         args.output.mkdir(parents=True,exist_ok=True)

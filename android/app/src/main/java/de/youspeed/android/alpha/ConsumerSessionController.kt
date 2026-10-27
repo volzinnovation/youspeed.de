@@ -691,6 +691,7 @@ class ConsumerSessionController(
     private var latestTrafficSignMapFix: TSRMapFix? = null
     private var latestTrafficSignContext: TrafficSignDetectionContext? = null
     private var latestTrafficSignMatchedPosition: TrafficSignPositionSample? = null
+    private var latestCollectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null
     @Volatile private var latestTrafficSignPosition: TrafficSignPositionSample? = null
     private var lastTrafficSignDebugLogSignature: String? = null
     private var lastTrafficSignDebugLogAtMs = 0L
@@ -2300,7 +2301,7 @@ class ConsumerSessionController(
         appendRuntimeDiagnosticEvent("vision_dismissed", mapOf("source" to "user"))
     }
 
-    internal fun onSignCollectionFrame(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, generation: Long, frame: SignCollectionFrame? = null, ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null, captureAt: Instant? = null) {
+    internal fun onSignCollectionFrame(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, generation: Long, frame: SignCollectionFrame? = null, ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null, captureAt: Instant? = null, phoneRoadMatch: SignCollectionPhoneRoadMatch? = null) {
         mainHandler.post {
             if (generation != trafficSignGeneration.get() || event.driveSessionId != trafficSignDriveSessionId || !isTrafficSignRecognitionRuntimeEnabled()) { frame?.close(); return@post }
             captureRecognizedSigns(event, detections)
@@ -2325,7 +2326,7 @@ class ConsumerSessionController(
                         .onFailure { appendRuntimeDiagnosticEvent("inventory_sign_log_error", mapOf("reason" to it.message)) }
                 }
             }
-            signCollection.observe(event, detections, latestCaptureLocation?.let(::Location), frame, ocrAnnotation = ocrAnnotation, captureAt = captureAt)
+            signCollection.observe(event, detections, latestCaptureLocation?.let(::Location), frame, ocrAnnotation = ocrAnnotation, captureAt = captureAt, phoneRoadMatch = phoneRoadMatch)
         }
     }
 
@@ -3752,6 +3753,7 @@ class ConsumerSessionController(
                     runtimeActivationEligible = isTrafficSignRecognitionRuntimeEnabled(),
                     driveSessionId = trafficSignDriveSessionId,
                     applicabilityMapFix = latestTrafficSignMapFix,
+                    collectionPhoneRoadMatch = latestCollectionPhoneRoadMatch,
                 )
             } ?: run {
                 noteTrafficSignDebugRoadContextInvalid(null)
@@ -4035,6 +4037,7 @@ class ConsumerSessionController(
                 immediateTrafficSignOverride = null
             }
             latestTrafficSignContext = null
+            latestCollectionPhoneRoadMatch = null
             latestTrafficSignMatchedPosition = null
             latestResolverLocation = null
             latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
@@ -5973,6 +5976,7 @@ class ConsumerSessionController(
                         trafficSignResolver.clear()
                         immediateTrafficSignOverride = null
                         latestTrafficSignContext = null
+                        latestCollectionPhoneRoadMatch = null
                         latestTrafficSignMatchedPosition = null
                         latestResolverLocation = null
                         resetTrafficSignTraversalLocked()
@@ -7126,6 +7130,7 @@ class ConsumerSessionController(
             trafficSignResolver.clear()
             immediateTrafficSignOverride = null
             latestTrafficSignContext = null
+            latestCollectionPhoneRoadMatch = null
             latestTrafficSignMatchedPosition = null
             latestResolverLocation = null
             latestTrafficSignDirection = TrafficSignTravelDirection.UNKNOWN
@@ -7206,6 +7211,9 @@ class ConsumerSessionController(
                 headingDegrees, if (android.os.Build.VERSION.SDK_INT >= 26 && location.hasBearingAccuracy()) location.bearingAccuracyDegrees.toDouble() else null,
                 matchedWayStable)
         }
+        latestCollectionPhoneRoadMatch = SignCollectionPhoneRoadMatch.capture(
+            result.wayId, bundleVersion, bundleSha256, Instant.ofEpochMilli(position.timestampMs),
+            result.travelDirection.wireValue, matchedWayStable)
         latestTrafficSignContext = context
         latestTrafficSignMatchedPosition = position
         latestTrafficSignBase = effectiveBase

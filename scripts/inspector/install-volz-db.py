@@ -24,12 +24,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--local-port", type=int, default=18080)
+    parser.add_argument("--review-service-url", help="Optional existing private review origin; no token is stored in Inspector")
     args = parser.parse_args()
     if os.geteuid() != 0 or not socket.gethostname().startswith("volz-db"):
         raise RuntimeError("Run with sudo on volz-db")
     if not all(1024 <= port <= 65535 for port in (args.port, args.local_port)):
         raise RuntimeError("Invalid inspector port")
     source = Path(__file__).resolve().parents[2]
+    if args.review_service_url:
+        import sys
+        sys.path.insert(0, str(source))
+        from inspector.crop_review_proxy import CropReviewProxy
+        CropReviewProxy(args.review_service_url)  # Validate before any server mutation.
     manifest = json.loads((source / "inspector-deployment.json").read_text())
     for name, expected in manifest["files"].items():
         path = (source / name).resolve()
@@ -92,6 +98,8 @@ def main():
                "--bind", "0.0.0.0", "--port", str(args.port), "--allowed-host", f"127.0.0.1:{args.port}",
                "--allowed-host", f"localhost:{args.port}", "--allowed-host", f"127.0.0.1:{args.local_port}",
                "--allowed-host", f"localhost:{args.local_port}"]
+    if args.review_service_url:
+        command += ["--review-service-url", args.review_service_url]
     created = False
     try:
         run(command)

@@ -104,3 +104,33 @@ def test_frame_country_is_optional_and_requires_iso2_when_present():
         batch['country'] = invalid
         with pytest.raises(jsonschema.ValidationError):
             validator.validate(batch)
+
+
+def test_capture_boundary_fixtures_and_snapshot_validator_fail_closed():
+    replay = module('replay')
+    scenarios = {s['id']: s for s in load('golden-vectors-v1.json')['scenarios']}
+    scenario = scenarios['capture_context_age_boundaries']
+    ages = [b['capturedAtMs'] - b['road']['capturedAtMs'] for b in scenario['batches']]
+    assert ages == pytest.approx([100, 100, 1500, 1500.001, -.001, 100])
+    result = dict(id=scenario['id'], frames=[], liveMapFixSnapshots=[])
+    for batch, reasons in zip(scenario['batches'], scenario['expectedFrameReasons']):
+        result['frames'].append(dict(batch=copy.deepcopy(batch), decisions=[dict(
+            roadSnapshotId=batch['road']['snapshotId'], reasons=reasons)]))
+        road = copy.deepcopy(batch['road'])
+        road.update(cameraHorizontalFovDeg=None, cameraYawDeg=None, scope=batch['scope'])
+        result['liveMapFixSnapshots'].append(road)
+    assert replay.validate_capture_snapshots(scenario, result) == 6
+    mutations = [
+        lambda r: r['liveMapFixSnapshots'][0].update(cameraYawDeg=0),
+        lambda r: r['liveMapFixSnapshots'][0].update(cameraHorizontalFovDeg=80),
+        lambda r: r['liveMapFixSnapshots'][0].update(capturedAtMs=9999),
+        lambda r: r['frames'][3].update(batch=copy.deepcopy(scenario['batches'][2])),
+        lambda r: r['frames'][4]['decisions'][0].update(roadSnapshotId='newer-fix'),
+        lambda r: r['frames'][3]['decisions'][0].update(reasons=['coherent_approach_unique_corridor']),
+    ]
+    for mutate in mutations:
+        bad = copy.deepcopy(result); mutate(bad)
+        with pytest.raises(ValueError): replay.validate_capture_snapshots(scenario, bad)
+    no_yaw = scenarios['known_fov_unreviewed_yaw']
+    assert all(b['road']['cameraHorizontalFovDeg'] == 80 and b['road']['cameraYawDeg'] is None for b in no_yaw['batches'])
+    assert no_yaw['expectedFrameReasons'] == [['camera_calibration_unavailable']] * 3

@@ -44,6 +44,22 @@ def build():
     add('stale_capture_context',unknown,lambda fs:[f['road'].update(capturedAtMs=f['capturedAtMs']-3000) for f in fs])
     add('missing_links',unknown,lambda fs:[f['road'].update(capabilities=['local_tangent']) for f in fs])
     add('unreviewed_mount',unknown,lambda fs:[f['road'].update(cameraYawDeg=None,cameraHorizontalFovDeg=None) for f in fs])
+    add('known_fov_unreviewed_yaw',unknown,lambda fs:[f['road'].update(cameraYawDeg=None) for f in fs])
+    vectors[-1]['expectedFrameReasons'] = [['camera_calibration_unavailable']] * 3
+    # One physical track alternates qualified and unqualified map snapshots.
+    # A prior fresh context must never replace this frame's stale/future fix.
+    frames = sequence('capture_context_age_boundaries')
+    for i in range(3, 6):
+        frame = copy.deepcopy(frames[-1]); fid = f'capture_context_age_boundaries-{i}'
+        frame.update(frameId=fid, capturedAtMs=1000+i*400)
+        frame['candidates'] = [candidate(fid, size=.08+i*.02)]
+        frames.append(frame)
+    for i, (frame, age) in enumerate(zip(frames, [100, 100, 1500, 1500.001, -.001, 100])):
+        frame['road'].update(snapshotId=f'boundary-fix-{i}', capturedAtMs=frame['capturedAtMs']-age)
+    vectors.append(dict(id='capture_context_age_boundaries', origin='synthetic', expectedFinalClass=ego,
+        expectedFrameReasons=[['insufficient_independent_observations'], ['coherent_approach_unique_corridor'],
+            ['coherent_approach_unique_corridor'], ['stale_road_context'], ['stale_road_context'], ['coherent_approach_unique_corridor']],
+        batches=frames))
     add('stopped_traffic',unknown,lambda fs:[f['candidates'][0]['box'].update(width=.08,height=.08) for f in fs])
     add('semantic_flicker',unknown,lambda fs:fs[1]['candidates'][0].update(semanticKey='maximum_speed:70:km/h'))
     add('simultaneous_equal_signs',ego,lambda fs:[f.update(candidates=[candidate(f['frameId'],0,x=.2,size=.08+i*.02),candidate(f['frameId'],1,x=.7,size=.08+i*.02)],rawCandidateCount=2) for i,f in enumerate(fs)])

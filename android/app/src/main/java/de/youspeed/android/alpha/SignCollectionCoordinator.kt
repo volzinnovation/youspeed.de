@@ -188,7 +188,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
         while (locations.size > 120) locations.removeFirst()
     }
     fun observe(event: TrafficSignRecognitionEvent, detections: List<TrafficSignDetection>, location: Location?, frame: SignCollectionFrame? = null,
-        ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null, captureAt: Instant? = null) {
+        ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null, captureAt: Instant? = null, phoneRoadMatch: SignCollectionPhoneRoadMatch? = null) {
         if (closed || !enabled || !authorized || !cameraActive || event.source != TrafficSignInputSource.LIVE_FRAME) { frame?.close(); return }
         if (framePending) { frame?.close(); ocrAnnotation?.let { updateSupplementaryOCR(it) }; return }
         val id = session ?: run { frame?.close(); return }
@@ -265,7 +265,7 @@ internal class SignCollectionCoordinator(private val context: Context, private v
                     val crop = frame.crop(box)
                     var metadata = crop.metadata(SignCollectionJson.uuid(), candidate.observationId,
                         store.installationId, store.collectionEpoch, "detector", candidate.frameAt, frame.token, "passed", "metadata-strip-1", claim,
-                        vehiclePosition = framePosition, cameraViewingDirection = frameDirection)
+                        vehiclePosition = framePosition, cameraViewingDirection = frameDirection, phoneRoadMatch = phoneRoadMatch)
                     candidate.selection?.let { metadata = JsonObject(metadata + ("collection_selection" to it.wire)) }
                     candidate.supplementaryOCR?.let { metadata = JsonObject(metadata + ("supplementary_ocr" to it.wire)) }
                     store.enqueueAutomaticCrop(metadata, crop.bytes)

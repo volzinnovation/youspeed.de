@@ -28,6 +28,7 @@ data class TrafficSignDetectionContextSnapshotValue(
     val runtimeActivationEligible: Boolean = false,
     val driveSessionId: String? = null,
     val applicabilityMapFix: TSRMapFix? = null,
+    val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null,
 ) {
     init {
         require(generation >= 0L) { "Traffic-sign context generation must not be negative" }
@@ -152,6 +153,7 @@ data class TrafficSignOrchestrationOutput(
     val collectionFrame: SignCollectionFrame? = null,
     val collectionCaptureAtUtc: Instant? = null,
     val roadPathDiagnostic: String? = null,
+    val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch? = null,
     val ocrPhase: TrafficSignSupplementaryOCRPhase = TrafficSignSupplementaryOCRPhase.NOT_REQUIRED,
     val ocrAnnotation: TrafficSignSupplementaryTextAnnotation? = null,
     val ocrAttemptAnnotation: TrafficSignSupplementaryTextAnnotation? = ocrAnnotation,
@@ -305,6 +307,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                             runtimeActivationEligible = snapshot.runtimeActivationEligible,
                             driveSessionId = snapshot.driveSessionId,
                             applicabilityMapFix = snapshot.applicabilityMapFix,
+                            collectionPhoneRoadMatch = snapshot.collectionPhoneRoadMatch,
                         ),
                         capturedAtNanos = frame.capturedAtMonotonicNanos,
                     )
@@ -767,6 +770,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     collectionFrame = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionFrame,
                     collectionCaptureAtUtc = (backendResult as? TrafficSignBackendResult.Recognition)?.collectionCaptureAtUtc,
                     roadPathDiagnostic = created.roadPathDiagnostic,
+                    collectionPhoneRoadMatch = active.accepted.collectionPhoneRoadMatch,
                     usesDetectorWindow = (backendResult as? TrafficSignBackendResult.Recognition)?.usesDetectorWindow == true,
                     ocrPhase = phase,
                     ocrAnnotation = annotation.takeIf { created.contextIsCurrent },
@@ -1030,6 +1034,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         val runtimeActivationEligible: Boolean,
         val driveSessionId: String?,
         val applicabilityMapFix: TSRMapFix?,
+        val collectionPhoneRoadMatch: SignCollectionPhoneRoadMatch?,
     )
 
     private data class FrameMetadata(

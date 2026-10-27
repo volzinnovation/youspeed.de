@@ -94,7 +94,9 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
                     vehiclePosition: position, cameraViewingDirection: ["azimuth_degrees": 270-Double(ms)/10,
                         "elevation_degrees": 0, "reference": "true_north", "optical_axis": "rear_camera",
                         "measured_at": SignCollectionJSON.utc(candidate.frameAt), "frame_measurement_delta_ms": 0,
-                        "accuracy_status": "high", "source": "core_motion_true_north"])
+                        "accuracy_status": "high", "source": "core_motion_true_north"], phoneRoadMatch: SignCollectionPhoneRoadMatch(
+                            osmWayID: String(4700 + ms), bundleVersion: "bundle-\(ms)", bundleDBSHA256: String(repeating: ms == 100 ? "a" : "b", count: 64),
+                            matchedFixAt: candidate.frameAt.addingTimeInterval(-0.1), travelDirection: "forward", matchedWayStable: true))
                 try gate.validate(manifest, model: "crop")
                 try store.enqueueAutomaticCrop(metadata: manifest, bytes: crop.bytes)
                 manifests.append(manifest); return .stored
@@ -115,6 +117,8 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
     try check((manifests[0]["camera_viewing_direction"] as! [String: Any])["azimuth_degrees"] as! Double == 260 &&
               (manifests[1]["camera_viewing_direction"] as! [String: Any])["azimuth_degrees"] as! Double == 210,
               "repeated crops retain their own camera direction independently of driving course")
+    try check((manifests[0]["phone_road_match"] as! [String: Any])["osm_way_id"] as! String == "4800" &&
+              (manifests[1]["phone_road_match"] as! [String: Any])["osm_way_id"] as! String == "5300", "repeat crops retain their exact frame's phone match")
     for _ in 0..<2 {
         let next = try store.nextCrop()!
         let queued = try SignCollectionJSON.parse(next.metadata) as! [String: Any]
@@ -122,6 +126,7 @@ func runCollectionRepeatCropChecks(gate: SignCollectionContractGate, root: URL, 
         try check(SignCollectionJSON.canonical(queued["camera_viewing_direction"]!) == SignCollectionJSON.canonical(original["camera_viewing_direction"]!), "queued camera direction stays immutable")
         try check(try SignCollectionJSON.canonical(queued["vehicle_position"]!) == SignCollectionJSON.canonical(original["vehicle_position"]!),
                   "durable queue preserves crop coordinates and course")
+        try check(try SignCollectionJSON.canonical(queued["phone_road_match"]!) == SignCollectionJSON.canonical(original["phone_road_match"]!), "queue retains immutable phone match")
         try store.finishBestEffortCrop(id: next.id)
     }
     try check(store.nextCrop() == nil, "both repeated crops can drain independently")

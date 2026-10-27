@@ -40,7 +40,9 @@ final class SignCollectionFoundationTests: XCTestCase {
                     let manifest = crop.metadata(cropID: SignCollectionJSON.uuid(), observationID: candidate.observationID, installationID: try store.installationID,
                         epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: candidate.frameAt, localFrameToken: "frame-\(ms)",
                         privacyPreflight: "passed", redactionVersion: "metadata-strip-1", collectionClaim: try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure),
-                        vehiclePosition: position)
+                        vehiclePosition: position, phoneRoadMatch: SignCollectionPhoneRoadMatch(
+                            osmWayID: String(4700 + ms), bundleVersion: "bundle-\(ms)", bundleDBSHA256: String(repeating: ms == 100 ? "a" : "b", count: 64),
+                            matchedFixAt: candidate.frameAt.addingTimeInterval(-0.1), travelDirection: "forward", matchedWayStable: true))
                     try gate.validate(manifest, model: "crop")
                     try store.enqueueAutomaticCrop(metadata: manifest, bytes: crop.bytes)
                     manifests.append(manifest); return .stored
@@ -48,6 +50,15 @@ final class SignCollectionFoundationTests: XCTestCase {
             }) { try store.enqueue(kind: "sighting", event: $0, disclosure: SignCollectionCapabilities.metadataDisclosure) }
         }
         if let failure { throw failure }
+        let fraction = Date(timeIntervalSince1970: 1_791_532_800.0015)
+        let fractionalCrop = try SignCollectionCrop.generate(upright: image, box: ["x":0,"y":0,"width":1,"height":1])
+        let fractionalMetadata = fractionalCrop.metadata(cropID: SignCollectionJSON.uuid(), observationID: SignCollectionJSON.uuid(),
+            installationID: try store.installationID, epoch: try store.collectionEpoch, sourceKind: "detector", frameAt: fraction,
+            localFrameToken: "fractional", privacyPreflight: "passed", redactionVersion: "metadata-strip-1",
+            collectionClaim: try store.claim(scope: "crop_storage", disclosure: SignCollectionCapabilities.cropDisclosure),
+            phoneRoadMatch: SignCollectionPhoneRoadMatch(osmWayID: "123", bundleVersion: "fixture", bundleDBSHA256: String(repeating: "a", count: 64),
+                matchedFixAt: Date(timeIntervalSince1970: 1_791_532_799.5), travelDirection: "forward", matchedWayStable: true))
+        try gate.validate(fractionalMetadata, model: "crop")
         XCTAssertEqual(try store.pendingCount(), 1); XCTAssertEqual(manifests.count, 2)
         XCTAssertEqual(manifests[0]["observation_id"] as? String, manifests[1]["observation_id"] as? String)
         XCTAssertNotEqual(manifests[0]["crop_id"] as? String, manifests[1]["crop_id"] as? String)
@@ -57,6 +68,8 @@ final class SignCollectionFoundationTests: XCTestCase {
         XCTAssertEqual((manifests[0]["vehicle_position"] as? [String: Any])?["course_degrees"] as? Double, 10)
         XCTAssertEqual((manifests[1]["vehicle_position"] as? [String: Any])?["course_degrees"] as? Double, 60)
         XCTAssertEqual((manifests[1]["vehicle_position"] as? [String: Any])?["fix_at"] as? String, manifests[1]["source_frame_at"] as? String)
+        XCTAssertEqual((manifests[0]["phone_road_match"] as? [String: Any])?["osm_way_id"] as? String, "4800")
+        XCTAssertEqual((manifests[1]["phone_road_match"] as? [String: Any])?["osm_way_id"] as? String, "5300")
         var queued = [[String: Any]]()
         for _ in 0..<2 {
             let crop = try XCTUnwrap(store.nextCrop())

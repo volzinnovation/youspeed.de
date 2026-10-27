@@ -45,11 +45,11 @@ internal data class SignCollectionCrop(val geometry: SignCollectionCropGeometry,
     }
     fun metadata(cropId: String, observationId: String, installationId: String, epoch: Int, sourceKind: String, frameAt: Instant,
         localFrameToken: String?, privacyPreflight: String, redactionVersion: String, collectionClaim: SignCollectionClaim, processorClaim: SignCollectionClaim? = null,
-        vehiclePosition: JsonElement = JsonNull, cameraViewingDirection: JsonObject? = null): JsonObject =
+        vehiclePosition: JsonElement = JsonNull, cameraViewingDirection: JsonObject? = null, phoneRoadMatch: SignCollectionPhoneRoadMatch? = null): JsonObject =
         JsonObject(geometry.wire + buildJsonObject {
             put("schema_version", 1); put("crop_id", cropId); put("observation_id", observationId); put("installation_id", installationId); put("collection_epoch", epoch)
             put("source_kind", sourceKind); put("source_frame_at", frameAt.toString()); put("source_width", sourceWidth); put("source_height", sourceHeight)
-            put("vehicle_position", vehiclePosition)
+            put("vehicle_position", vehiclePosition); put("phone_road_match", phoneRoadMatch?.metadata(frameAt) ?: JsonNull)
             cameraViewingDirection?.let {
                 put("capture_metadata_version", 1); put("device_id", installationId); put("camera_viewing_direction", it)
             }

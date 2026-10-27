@@ -50,6 +50,24 @@ class TrafficSignFusionEngine(
         require(classThresholds.values.all { it.isFinite() && it in 0.0..1.0 })
     }
 
+    /** Reselect only after an active guard removes detections. Mirrors iPhone
+     * fusion admission/ranking while returning the original candidate object so
+     * its raw-frame index and physical-track lineage remain intact. Use the
+     * original mapped semantic here, as Swift livePrimaryOnlyDetection does;
+     * do not promote an unknown alias during selection by normalizing it early.
+     */
+    internal fun selectPrimaryDetection(detections: List<TrafficSignDetection>): TrafficSignDetection? {
+        val eligible = detections.filter { detection ->
+            val candidate = detection.candidate
+            val box = candidate.boundingBox
+            box.x + box.width <= 1.0 && box.y + box.height <= 1.0 &&
+                candidate.isQualifiedObservation(scoreSource, thresholds.unknown, classThresholds[candidate.rawClassId] ?: 0.0)
+        }.sortedWith(compareByDescending<TrafficSignDetection> { effectiveScore(it.candidate) }
+            .thenByDescending { it.candidate.boundingBox.area })
+        return eligible.firstOrNull { it.candidate.semantic.kind != TrafficSignSemanticKind.UNKNOWN }
+            ?: eligible.firstOrNull()
+    }
+
     fun observe(
         detection: TrafficSignDetection?,
         observedAtMs: Long,

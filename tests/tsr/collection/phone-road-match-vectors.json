@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "scope": "Diagnostic original on-device match provenance; no freshness or applicability assertion",
+  "cases": [
+    {
+      "id": "exact_original_match_above_js_safe_integer",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "signed64_maximum",
+      "input": {
+        "osm_way_id": "9223372036854775807",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "future_fix_diagnostic",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532799000,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "stale_diagnostic",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532860000,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "positive_day_boundary",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791619200000,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "negative_day_boundary",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791446400000,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "outside_positive_day",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791619200001,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "outside_negative_day",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791446399999,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "unmatched",
+      "input": {
+        "osm_way_id": null,
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "zero",
+      "input": {
+        "osm_way_id": "0",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "leading_zero",
+      "input": {
+        "osm_way_id": "012",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "negative",
+      "input": {
+        "osm_way_id": "-1",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "plus",
+      "input": {
+        "osm_way_id": "+1",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "space",
+      "input": {
+        "osm_way_id": " 1",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "overflow",
+      "input": {
+        "osm_way_id": "9223372036854775808",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "unicode",
+      "input": {
+        "osm_way_id": "\uff11\uff12",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "missing_bundle_hash",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": null,
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "invalid_hash",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "uppercase_hash",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "missing_fix",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": null,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "unknown_direction_unstable",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "unknown",
+        "matched_way_stable": false
+      },
+      "accepted": true
+    },
+    {
+      "id": "reverse",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "reverse",
+        "matched_way_stable": true
+      },
+      "accepted": true
+    },
+    {
+      "id": "invalid_direction",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "bw-2026-09-13",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "backward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "empty_bundle_version",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    },
+    {
+      "id": "long_bundle_version",
+      "input": {
+        "osm_way_id": "9007199254740993",
+        "bundle_version": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "bundle_db_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "matched_fix_ms": 1791532800000,
+        "frame_ms": 1791532801500,
+        "travel_direction": "forward",
+        "matched_way_stable": true
+      },
+      "accepted": false
+    }
+  ]
+}
