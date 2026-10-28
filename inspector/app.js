@@ -2544,6 +2544,8 @@ function drawPortalOverlay(contexts) {
         continue;
       }
       const style = portalLineStyle(kind, isTrigger);
+      const tooltip = document.createElement("span");
+      tooltip.textContent = `${corridorKindLabel(kind)} ${isTrigger ? "trigger" : "inside"} · ${streetDisplay(row.street_name, row.ref) ?? `Way ${wayID}`}`;
       const layer = L.polyline(points, {
         pane: "corridorOverlayPane",
         color: style.color,
@@ -2552,7 +2554,7 @@ function drawPortalOverlay(contexts) {
         dashArray: style.dashArray
       })
         .bindTooltip(
-          `${corridorKindLabel(kind)} ${isTrigger ? "trigger" : "inside"} · ${streetDisplay(row.street_name, row.ref) ?? `Way ${wayID}`}`,
+          tooltip,
           { sticky: true }
         )
         .addTo(map);
@@ -2571,6 +2573,8 @@ function drawPortalOverlay(contexts) {
       const portalKey = `${context.mainKind}:${context.sideNodeKey}`;
       if (!drawnPortalKeys.has(portalKey)) {
         const style = portalPointStyle(context.mainKind);
+        const tooltip = document.createElement("span");
+        tooltip.textContent = `${corridorKindLabel(context.mainKind)} entry / exit · ${formatCoordinatePair(context.portalPoint)}`;
         const layer = L.circleMarker(context.portalPoint, {
           pane: "corridorPortalPane",
           radius: 8,
@@ -2579,7 +2583,7 @@ function drawPortalOverlay(contexts) {
           fillColor: style.fillColor,
           fillOpacity: 0.95
         })
-          .bindTooltip(`${corridorKindLabel(context.mainKind)} entry / exit · ${formatCoordinatePair(context.portalPoint)}`, {
+          .bindTooltip(tooltip, {
             sticky: true
           })
           .addTo(map);

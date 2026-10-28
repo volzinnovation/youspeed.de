@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include "packed_runtime.h"
+#include "bundle_delta_sql.h"
 
 namespace {
 struct Session { sqlite3* db=nullptr; void* geometry=nullptr; };
@@ -35,6 +36,15 @@ void geometryFunction(sqlite3_context* context,int argc,sqlite3_value** argv) {
     else if(*error)sqlite3_result_error(context,error,-1);
     else sqlite3_result_null(context);
 }
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_de_youspeed_android_alpha_RuntimePackedNative_applyBundleDelta(JNIEnv* env,jobject,jbyteArray path,jbyteArray sql) {
+    const auto name=input(env,path);const auto source=input(env,sql);
+    if(env->ExceptionCheck())return;
+    if(name.find('\0')!=std::string::npos){fail(env,"Embedded NUL in delta database path");return;}
+    char error[1024]{};
+    if(ysp_apply_bundle_delta(name.c_str(),source.data(),source.size(),error,sizeof error)!=SQLITE_OK)fail(env,error);
 }
 
 extern "C" JNIEXPORT jlong JNICALL

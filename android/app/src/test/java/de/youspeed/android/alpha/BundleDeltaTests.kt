@@ -61,6 +61,58 @@ class BundleDeltaTests {
         assertThrows(IllegalArgumentException::class.java) { DeltaUpdatePolicy.sqlStatements("INSERT INTO ways VALUES ('unterminated)") }
     }
 
+    @Test fun unsafeManifestPathsFailBeforeDownloadsAndPreserveSiblingJournalAndActiveState() = scenario { fixture ->
+        val installed = fixture.install("2026-09-01", "old")
+        val state = File(fixture.root, "active_bundle.json").readBytes()
+        val journal = File(fixture.root, "trip-journal/journal.sqlite").also {
+            it.parentFile!!.mkdirs(); it.writeText("private journal sentinel")
+        }
+        fixture.offerDelta("replacement")
+        val valid = fixture.responses.getValue(fixture.manifestUrl).toString(Charsets.UTF_8)
+        val attacks = listOf(
+            valid.replace("\"file\":\"speeds.sqlite\"", "\"file\":\"../../../trip-journal/journal.sqlite\""),
+            valid.replace("\"region\":\"region\"", "\"region\":\"../trip-journal\""),
+            valid.replace("\"bundle_version\":\"2026-09-02\"", "\"bundle_version\":\"..\""),
+        )
+        for (attack in attacks) {
+            fixture.requests.clear()
+            fixture.responses[fixture.manifestUrl] = attack.toByteArray()
+            assertThrows(IOException::class.java) { fixture.bootstrapper.syncFromManifestUrl(fixture.manifestUrl) }
+            assertEquals(listOf(fixture.manifestUrl), fixture.requests)
+            assertArrayEquals(state, File(fixture.root, "active_bundle.json").readBytes())
+            assertEquals("old", File(installed.dbPath).readText())
+            assertEquals("private journal sentinel", journal.readText())
+        }
+        // Old poisoned manifests are ignored by inventory/recovery reads too.
+        File(File(installed.dbPath).parentFile, "bundle-manifest.v3.json").writeText(attacks.first())
+        assertTrue(fixture.bootstrapper.listDownloadedBundles().isEmpty())
+    }
+
+    @Test fun everyLocalArtifactRejectsTraversalAndHierarchicalRegionIdentifiersRemainValid() = scenario { fixture ->
+        fixture.install("2026-09-01", "old")
+        val manifest = ContractJson.decodeBundleManifest(fixture.responses.getValue(fixture.manifestUrl).toString(Charsets.UTF_8))
+        val escaped = manifest.db.copy(file = "../journal.sqlite")
+        for (invalid in listOf(manifest.copy(db = escaped), manifest.copy(dbParts = listOf(escaped)),
+            manifest.copy(deltaIndex = escaped), manifest.copy(penaltyRules = escaped),
+            manifest.copy(coverage = BundleCoverage(BundleCoverageBBox(0.0, 0.0, 1.0, 1.0), escaped)),
+            manifest.copy(packedBase = PackedBundleBase(1, escaped)))) {
+            assertThrows(IllegalArgumentException::class.java) { invalid.validateLocalPaths() }
+        }
+        for (name in listOf("", ".", "..", "a/b", "a\\b", "a\u0000b", " a.sqlite")) {
+            assertThrows(IllegalArgumentException::class.java) { BundlePathSafety.validateFileName(name) }
+        }
+        manifest.copy(region = "germany/baden-wuerttemberg").validateLocalPaths()
+        val escapedDirectory = File(fixture.root, "bundles/../trip-journal")
+        assertThrows(IllegalArgumentException::class.java) {
+            BundlePathSafety.descendant(escapedDirectory, File(fixture.root, "bundles"))
+        }
+        // Filename-safe quote characters must be encoded as data in local state.
+        val state = fixture.bootstrapper.activeState()!!.copy(bundleVersion = """v1","db_file_name":"journal.sqlite""")
+        val roundTrip = ContractJson.decodeActiveBundleState(ContractJson.encodeActiveBundleState(state))
+        assertEquals(state.bundleVersion, roundTrip.bundleVersion)
+        assertEquals("speeds.sqlite", roundTrip.dbFileName)
+    }
+
     @Test fun appliesCompressedDeltaChainWithoutDownloadingFullDatabase() = scenario { fixture ->
         fixture.install("2026-09-01", "old")
         fixture.offerDelta("new", compressed = true)

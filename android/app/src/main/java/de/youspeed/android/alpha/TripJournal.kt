@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit
 
 /** Private journal. Its evidence never participates in live driving-rule interpretation. */
 class TripJournal internal constructor(private val context: Context, heartbeat: Boolean = true, private val wallClock:()->Double={System.currentTimeMillis()/1000.0}, private val elapsedClock:()->Long={SystemClock.elapsedRealtime()}) : AutoCloseable {
+    internal val mediaLibrary=TripJournalMediaLibrary(context)
     companion object {
         @Volatile private var instance: TripJournal? = null
         fun existing(): TripJournal? = instance

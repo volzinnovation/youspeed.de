@@ -248,6 +248,123 @@ final class PackedBundleRuntimeTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: installed), context)
     }
 
+    func testLegacyManifestPathsRejectTraversalInEveryLocalArtifact() throws {
+        let artifact = BundleArtifact(file: "speeds.sqlite", bytes: 100, sha256: String(repeating: "a", count: 64), url: nil)
+        let valid = V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3",
+            region: "germany/baden-wuerttemberg", bundleVersion: "2026-09-01", createdAtUTC: "fixture", minAppVersion: "1.0",
+            db: artifact, dbParts: nil, deltaIndex: nil)
+        XCTAssertNoThrow(try BundleCompatibility.validate(valid, appVersion: "1.5"))
+        let encoded = try JSONEncoder().encode(valid)
+        let original = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        let escaped: [String: Any] = ["file": "../journal.sqlite", "bytes": 100, "sha256": String(repeating: "a", count: 64)]
+        for field in ["db", "delta_index", "penalty_rules", "db_parts", "coverage", "packed_base"] {
+            var poisoned = original
+            switch field {
+            case "db_parts": poisoned[field] = [escaped]
+            case "coverage": poisoned[field] = ["bbox": ["min_lon": 0, "min_lat": 0, "max_lon": 1, "max_lat": 1], "poly": escaped]
+            case "packed_base": poisoned[field] = ["version": 1, "roads": escaped]
+            default: poisoned[field] = escaped
+            }
+            let data = try JSONSerialization.data(withJSONObject: poisoned)
+            XCTAssertThrowsError(try JSONDecoder().decode(V3BundleManifest.self, from: data), field)
+        }
+        for name in ["", ".", "..", "a/b", "a\\b", "a\0b", " a.sqlite"] {
+            XCTAssertThrowsError(try BundlePathSafety.validateFileName(name), name)
+        }
+        for region in ["../germany", "germany/../journal", "/germany", "germany//baden", "germany/"] {
+            XCTAssertThrowsError(try BundlePathSafety.validateRegion(region), region)
+        }
+    }
+
+    func testLegacyDownloadAndDeltaCannotOverwriteSiblingJournalAndKeepHierarchicalActiveLayout() async throws {
+        guard Bundle.main.bundleIdentifier == "de.youspeed.SpeedConsumer.TestHost" else {
+            throw XCTSkip("This install regression requires the isolated TestHost")
+        }
+        let fm = FileManager.default
+        let support = try V3BundleManager.applicationSupportDirectory()
+        try? fm.removeItem(at: support)
+        try fm.createDirectory(at: support, withIntermediateDirectories: true)
+        defer { PackedRuntimeURLProtocol.configure([:]); try? fm.removeItem(at: support) }
+        func database(_ path: URL, sql: String) throws {
+            var handle: OpaquePointer?
+            XCTAssertEqual(sqlite3_open(path.path, &handle), SQLITE_OK)
+            let db = try XCTUnwrap(handle)
+            defer { sqlite3_close(db) }
+            XCTAssertEqual(sqlite3_exec(db, sql, nil, nil, nil), SQLITE_OK, String(cString: sqlite3_errmsg(db)))
+        }
+        let source = support.appendingPathComponent("source.sqlite")
+        try database(source, sql: """
+            CREATE TABLE ways(way_id INTEGER PRIMARY KEY,street_name TEXT);
+            CREATE VIRTUAL TABLE ways_rtree USING rtree(way_id,min_lon,max_lon,min_lat,max_lat);
+            CREATE TABLE way_geom(way_id INTEGER PRIMARY KEY,points_json TEXT);
+            INSERT INTO ways VALUES(1,'Before');
+            """)
+        let journalDirectory = support.appendingPathComponent("trip-journal")
+        try fm.createDirectory(at: journalDirectory, withIntermediateDirectories: true)
+        let journal = journalDirectory.appendingPathComponent("journal.sqlite")
+        try database(journal, sql: "CREATE TABLE events(value TEXT); INSERT INTO events VALUES('private sentinel');")
+        let privateBytes = try Data(contentsOf: journal), data = try Data(contentsOf: source)
+        let manifestURL = URL(string: "https://packed-runtime.test/manifest.json")!
+        let sourceURL = URL(string: "https://packed-runtime.test/speeds.sqlite")!
+        func manifest(version: String = "2026-09-01", file: String = "speeds.sqlite", region: String = "germany/baden-wuerttemberg",
+                      delta: BundleArtifact? = nil) -> V3BundleManifest {
+            V3BundleManifest(format: "youspeed.v3.bundle.manifest", schemaVersion: 1, variant: "v3", region: region,
+                bundleVersion: version, createdAtUTC: "fixture", minAppVersion: "1.0",
+                db: BundleArtifact(file: file, bytes: Int64(data.count), sha256: sha(data), url: sourceURL.absoluteString),
+                dbParts: nil, deltaIndex: delta)
+        }
+        // Pruning must keep real nested generations without following a
+        // directory link that merely points at a bundle outside map storage.
+        let external = fm.temporaryDirectory.appendingPathComponent("prune-external-\(UUID().uuidString)")
+        try fm.createDirectory(at: external, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: external) }
+        try data.write(to: external.appendingPathComponent("speeds.sqlite"))
+        try JSONEncoder().encode(manifest()).write(to: external.appendingPathComponent("bundle-manifest.v3.json"))
+        let orphan = support.appendingPathComponent("bundles/prune-orphan")
+        try fm.createDirectory(at: orphan, withIntermediateDirectories: true)
+        try fm.createSymbolicLink(at: orphan.appendingPathComponent("linked-generation"), withDestinationURL: external)
+        let manager = V3BundleManager(session: Self.session())
+        PackedRuntimeURLProtocol.configure([manifestURL.absoluteString: (200, try JSONEncoder().encode(manifest())), sourceURL.absoluteString: (200, data)])
+        let initial = try await manager.syncFromManifestURL(manifestURL)
+        XCTAssertTrue(initial.dbPath.contains("/bundles/germany/baden-wuerttemberg-2026-09-01/"))
+        XCTAssertFalse(fm.fileExists(atPath: orphan.path), "A symlink target must not count as a stored descendant")
+        XCTAssertEqual(try Data(contentsOf: external.appendingPathComponent("speeds.sqlite")), data)
+        let reloaded = V3BundleManager(session: Self.session())
+        let reloadedURL = try await reloaded.activeDatabaseURL()
+        XCTAssertEqual(reloadedURL?.path, initial.dbPath, "Existing hierarchical-region paths must retain their layout")
+        let state = try Data(contentsOf: support.appendingPathComponent("active_bundle.json"))
+        for invalid in [manifest(version: "2026-09-02", file: "../../../trip-journal/journal.sqlite"),
+                        manifest(version: "../../trip-journal"), manifest(region: "germany/../trip-journal")] {
+            PackedRuntimeURLProtocol.configure([manifestURL.absoluteString: (200, try JSONEncoder().encode(invalid)), sourceURL.absoluteString: (200, data)])
+            do { _ = try await manager.syncFromManifestURL(manifestURL); XCTFail("Unsafe paths must reject before activation") } catch {}
+            XCTAssertEqual(try Data(contentsOf: journal), privateBytes)
+            XCTAssertEqual(try Data(contentsOf: support.appendingPathComponent("active_bundle.json")), state)
+        }
+        let poisoned = support.appendingPathComponent("bundles/poison")
+        try fm.createDirectory(at: poisoned, withIntermediateDirectories: true)
+        try JSONEncoder().encode(manifest(file: "../../trip-journal/journal.sqlite"))
+            .write(to: poisoned.appendingPathComponent("bundle-manifest.v3.json"))
+        let inventory = try await manager.listDownloadedBundles()
+        XCTAssertFalse(inventory.contains { $0.dbPath.contains("/trip-journal/") })
+
+        let attack = Data("ATTACH DATABASE '\(journal.path.replacingOccurrences(of: "'", with: "''"))' AS private; DELETE FROM private.events; DETACH DATABASE private;".utf8)
+        let index = Data(#"{"format":"youspeed.v3.delta.index","schema_version":1,"count":1,"entries":[{"from_bundle_version":"2026-09-01","to_bundle_version":"2026-09-02","region":"germany/baden-wuerttemberg","delta_manifest_file":"deltas/attack.json"}]}"#.utf8)
+        let deltaManifest: [String: Any] = ["format": "youspeed.v3.delta.manifest", "schema_version": 1,
+            "region": "germany/baden-wuerttemberg", "from_bundle_version": "2026-09-01", "to_bundle_version": "2026-09-02",
+            "patch": ["file": "attack.sql", "bytes": attack.count, "sha256": sha(attack)]]
+        let target = manifest(version: "2026-09-02", delta: BundleArtifact(file: "index.json", bytes: Int64(index.count), sha256: sha(index), url: nil))
+        PackedRuntimeURLProtocol.configure([manifestURL.absoluteString: (200, try JSONEncoder().encode(target)),
+            "https://packed-runtime.test/index.json": (200, index),
+            "https://packed-runtime.test/deltas/attack.json": (200, try JSONSerialization.data(withJSONObject: deltaManifest)),
+            "https://packed-runtime.test/deltas/attack.sql": (200, attack)])
+        do { _ = try await manager.syncFromManifestURL(manifestURL); XCTFail("Publisher SQL must not attach private databases") } catch {}
+        XCTAssertEqual(try Data(contentsOf: journal), privateBytes)
+        XCTAssertEqual(try Data(contentsOf: support.appendingPathComponent("active_bundle.json")), state)
+        XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: initial.dbPath)), data)
+        let staging = support.appendingPathComponent("staging")
+        XCTAssertTrue((try? fm.contentsOfDirectory(atPath: staging.path).isEmpty) ?? true)
+    }
+
     private static func session() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [PackedRuntimeURLProtocol.self]

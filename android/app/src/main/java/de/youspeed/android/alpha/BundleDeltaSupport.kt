@@ -1,6 +1,5 @@
 package de.youspeed.android.alpha
 
-import android.database.sqlite.SQLiteDatabase
 import java.io.File
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -35,12 +34,7 @@ internal class AndroidBundleDeltaDatabase : BundleDeltaDatabase {
     }
 
     override fun applyPatch(database: File, sql: String) {
-        SQLiteDatabase.openDatabase(database.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
-            for (statement in DeltaUpdatePolicy.sqlStatements(sql)) db.execSQL(statement)
-            db.rawQuery("PRAGMA wal_checkpoint(TRUNCATE)", null).use { cursor ->
-                check(cursor.moveToFirst() && cursor.getInt(0) == 0) { "Delta checkpoint failed" }
-            }
-        }
+        RuntimePackedNative.applyBundleDelta(database.path.toByteArray(Charsets.UTF_8), sql.toByteArray(Charsets.UTF_8))
     }
 
     override fun validateSettlementCapability(database: File) {

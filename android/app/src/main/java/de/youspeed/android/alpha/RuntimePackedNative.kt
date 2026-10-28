@@ -4,6 +4,7 @@ package de.youspeed.android.alpha
  * mistakes ordinary UTF-8 for Java's modified UTF-8 string representation. */
 internal object RuntimePackedNative {
     init { System.loadLibrary("youspeed_packed_runtime") }
+    external fun applyBundleDelta(path: ByteArray, sql: ByteArray)
     external fun sqlOpen(path:ByteArray,packed:Boolean):Long
     external fun sqlGeometry(handle:Long,path:ByteArray)
     external fun sqlPrepare(handle:Long,sql:ByteArray,args:Array<ByteArray?>?):Long

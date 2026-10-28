@@ -5,6 +5,33 @@ import SQLite3
 
 private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+enum BundlePathSafety {
+    static func validateFileName(_ value: String) throws {
+        guard !value.isEmpty, value == value.trimmingCharacters(in: .whitespacesAndNewlines),
+              value != ".", value != "..", !value.contains("/"), !value.contains("\\"),
+              !value.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else {
+            throw ConsumerAppError.invalidManifest("Bundle paths require a local file name")
+        }
+    }
+
+    /// Region IDs may be country/shard; each component is an identifier. Keep
+    /// the existing on-disk layout for already installed hierarchical regions.
+    static func validateRegion(_ value: String) throws {
+        for component in value.split(separator: "/", omittingEmptySubsequences: false) {
+            try validateFileName(String(component))
+        }
+    }
+
+    static func descendant(_ child: URL, of directory: URL) throws -> URL {
+        let root = directory.resolvingSymlinksInPath().standardizedFileURL.path
+        let path = child.resolvingSymlinksInPath().standardizedFileURL.path
+        guard path.hasPrefix(root + "/") else {
+            throw ConsumerAppError.invalidManifest("Bundle path escapes its storage directory")
+        }
+        return child
+    }
+}
+
 struct BundleArtifact: Codable, Sendable {
     let file: String
     let bytes: Int64
@@ -40,6 +67,18 @@ struct BundleArtifact: Codable, Sendable {
         self.compression = compression
         self.uncompressedBytes = uncompressedBytes
         self.uncompressedSHA256 = uncompressedSHA256
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(file: try values.decode(String.self, forKey: .file),
+            bytes: try values.decode(Int64.self, forKey: .bytes),
+            sha256: try values.decode(String.self, forKey: .sha256),
+            url: try values.decodeIfPresent(String.self, forKey: .url),
+            compression: try values.decodeIfPresent(String.self, forKey: .compression),
+            uncompressedBytes: try values.decodeIfPresent(Int64.self, forKey: .uncompressedBytes),
+            uncompressedSHA256: try values.decodeIfPresent(String.self, forKey: .uncompressedSHA256))
+        try BundlePathSafety.validateFileName(file)
     }
 }
 
@@ -195,6 +234,25 @@ struct V3BundleManifest: Codable {
         self.coverage = coverage
         self.packedBase = packedBase
     }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(format: try values.decode(String.self, forKey: .format),
+            schemaVersion: try values.decode(Int.self, forKey: .schemaVersion),
+            variant: try values.decode(String.self, forKey: .variant),
+            region: try values.decode(String.self, forKey: .region),
+            countryCode: try values.decodeIfPresent(String.self, forKey: .countryCode),
+            bundleVersion: try values.decode(String.self, forKey: .bundleVersion),
+            createdAtUTC: try values.decode(String.self, forKey: .createdAtUTC),
+            minAppVersion: try values.decode(String.self, forKey: .minAppVersion),
+            db: try values.decode(BundleArtifact.self, forKey: .db),
+            dbParts: try values.decodeIfPresent([BundleArtifact].self, forKey: .dbParts),
+            deltaIndex: try values.decodeIfPresent(BundleArtifact.self, forKey: .deltaIndex),
+            penaltyRules: try values.decodeIfPresent(BundleArtifact.self, forKey: .penaltyRules),
+            coverage: try values.decodeIfPresent(BundleCoverage.self, forKey: .coverage),
+            packedBase: try values.decodeIfPresent(BundlePackedBase.self, forKey: .packedBase))
+        try BundleCompatibility.validateLocalPaths(self)
+    }
 }
 
 enum BundleCompatibility {
@@ -203,7 +261,17 @@ enum BundleCompatibility {
     /// manifest gates; a newer marketing version cannot claim future support.
     static let packedReaderCompatibilityVersion = "1.6"
 
+    static func validateLocalPaths(_ manifest: V3BundleManifest) throws {
+        try BundlePathSafety.validateRegion(manifest.region)
+        try BundlePathSafety.validateFileName(manifest.bundleVersion)
+        let artifacts = [manifest.db] + (manifest.dbParts ?? [])
+            + [manifest.deltaIndex, manifest.penaltyRules, manifest.coverage?.poly].compactMap { $0 }
+            + (manifest.packedBase?.artifacts ?? [])
+        for artifact in artifacts { try BundlePathSafety.validateFileName(artifact.file) }
+    }
+
     static func validate(_ manifest: V3BundleManifest, appVersion: String?) throws {
+        try validateLocalPaths(manifest)
         let legacy = manifest.format == "youspeed.v3.bundle.manifest" && manifest.variant == "v3" && manifest.packedBase == nil
         let packed = manifest.format == "youspeed.v4.bundle.manifest" && manifest.variant == "v4" && manifest.packedBase != nil
         guard (legacy || packed), manifest.schemaVersion == 1 else {

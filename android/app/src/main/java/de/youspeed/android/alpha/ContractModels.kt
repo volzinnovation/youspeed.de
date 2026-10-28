@@ -9,6 +9,23 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+internal object BundlePathSafety {
+    fun validateFileName(value: String) {
+        require(value.isNotEmpty() && value == value.trim() && value != "." && value != ".." &&
+            '/' !in value && '\\' !in value && value.none { it.isISOControl() }) { "Bundle paths require a local file name" }
+    }
+
+    // Country/shard IDs retain their logical identity; never accept dot segments.
+    fun validateRegion(value: String) = value.split('/').forEach(::validateFileName)
+
+    fun descendant(child: java.io.File, directory: java.io.File): java.io.File {
+        require(child.canonicalPath.startsWith(directory.canonicalPath + java.io.File.separator)) {
+            "Bundle path escapes its storage directory"
+        }
+        return child
+    }
+}
+
 data class BundleArtifact(
     val file: String,
     val bytes: Long,
@@ -60,7 +77,15 @@ data class V3BundleManifest(
     val coverage: BundleCoverage?,
     val packedBase: PackedBundleBase? = null,
 ) {
+    fun validateLocalPaths() {
+        BundlePathSafety.validateRegion(region)
+        BundlePathSafety.validateFileName(bundleVersion)
+        val artifacts = listOfNotNull(db, deltaIndex, penaltyRules, coverage?.poly, packedBase?.roads, packedBase?.nodes) + dbParts.orEmpty()
+        artifacts.forEach { BundlePathSafety.validateFileName(it.file) }
+    }
+
     fun validateLaunchContract(currentAppVersion: String = BuildConfig.MAP_COMPATIBILITY_APP_VERSION) {
+        validateLocalPaths()
         val packed = format == "youspeed.v4.bundle.manifest"
         require(packed || format == "youspeed.v3.bundle.manifest") { "Unexpected manifest format: $format" }
         require(variant == if (packed) "v4" else "v3") { "Unexpected manifest variant: $variant" }
@@ -316,7 +341,7 @@ object ContractJson {
                 PackedBundleBase(packed.requiredInt("version"), packed.requiredObject("roads").toBundleArtifact(),
                     packed.optionalObject("nodes")?.toBundleArtifact())
             },
-        )
+        ).also { it.validateLocalPaths() }
     }
 
     fun decodeDeltaIndex(raw: String): List<V3DeltaEntry> {
@@ -336,28 +361,17 @@ object ContractJson {
             root.requiredString("to_bundle_version"), root.requiredObject("patch").toBundleArtifact())
     }
 
-    fun encodeActiveBundleState(state: ActiveBundleState): String {
-        val escapedDbPath = state.dbPath.replace("\\", "\\\\").replace("\"", "\\\"")
-        val escapedManifestUrl = state.manifestUrl.replace("\\", "\\\\").replace("\"", "\\\"")
-        val escapedRegion = state.region.replace("\\", "\\\\").replace("\"", "\\\"")
-        val escapedDbFile = state.dbFileName.replace("\\", "\\\\").replace("\"", "\\\"")
-        val countryCodePart = state.countryCode?.let {
-            "\"country_code\":\"${it.replace("\\", "\\\\").replace("\"", "\\\"")}\","
-        }.orEmpty()
-        return buildString {
-            append("{")
-            append("\"region\":\"").append(escapedRegion).append("\",")
-            append(countryCodePart)
-            append("\"bundle_version\":\"").append(state.bundleVersion).append("\",")
-            append("\"db_file_name\":\"").append(escapedDbFile).append("\",")
-            append("\"db_path\":\"").append(escapedDbPath).append("\",")
-            append("\"db_sha256\":\"").append(state.dbSha256).append("\",")
-            append("\"db_bytes\":").append(state.dbBytes).append(",")
-            append("\"manifest_url\":\"").append(escapedManifestUrl).append("\",")
-            append("\"activated_at_utc\":\"").append(state.activatedAtUTC).append("\"")
-            append("}")
-        }
-    }
+    fun encodeActiveBundleState(state: ActiveBundleState): String = JsonObject(buildMap {
+        put("region", JsonPrimitive(state.region))
+        state.countryCode?.let { put("country_code", JsonPrimitive(it)) }
+        put("bundle_version", JsonPrimitive(state.bundleVersion))
+        put("db_file_name", JsonPrimitive(state.dbFileName))
+        put("db_path", JsonPrimitive(state.dbPath))
+        put("db_sha256", JsonPrimitive(state.dbSha256))
+        put("db_bytes", JsonPrimitive(state.dbBytes))
+        put("manifest_url", JsonPrimitive(state.manifestUrl))
+        put("activated_at_utc", JsonPrimitive(state.activatedAtUTC))
+    }).toString()
 
     fun decodeActiveBundleState(raw: String): ActiveBundleState {
         val root = json.parseToJsonElement(raw).jsonObject
@@ -371,7 +385,12 @@ object ContractJson {
             dbBytes = root.requiredLong("db_bytes"),
             manifestUrl = root.requiredString("manifest_url"),
             activatedAtUTC = root.requiredString("activated_at_utc"),
-        )
+        ).also {
+            BundlePathSafety.validateRegion(it.region)
+            BundlePathSafety.validateFileName(it.bundleVersion)
+            BundlePathSafety.validateFileName(it.dbFileName)
+            require(it.dbPath.none { char -> char.isISOControl() }) { "Invalid active bundle database path" }
+        }
     }
 
     fun resolveArtifactUrl(artifact: BundleArtifact, manifestUrl: String): String {
@@ -391,7 +410,7 @@ object ContractJson {
             compression = optionalString("compression"),
             uncompressedBytes = optionalLong("uncompressed_bytes"),
             uncompressedSha256 = optionalString("uncompressed_sha256"),
-        )
+        ).also { BundlePathSafety.validateFileName(it.file) }
     }
 
     private fun JsonObject.requiredArray(key: String): JsonArray =

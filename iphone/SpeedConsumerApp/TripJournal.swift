@@ -13,6 +13,7 @@ import Darwin
 final class TripJournal: ObservableObject, @unchecked Sendable {
     static let shared = TripJournal()
     private let preferences: UserDefaults
+    let mediaLibrary: JournalMediaLibrary
     private let queue = DispatchQueue(label: "de.youspeed.trip-journal")
     private var db: OpaquePointer?
     private var directory: URL?
@@ -67,8 +68,9 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
             self.backlogLock.lock(); self.backlog -= 1; self.backlogLock.unlock()
         }
     }
-    init(directory: URL? = nil, preferences: UserDefaults = .standard, heartbeat: Bool = true, promptClock: (() -> Double)? = nil) {
+    init(directory: URL? = nil, preferences: UserDefaults = .standard, heartbeat: Bool = true, promptClock: (() -> Double)? = nil, mediaLibrary: JournalMediaLibrary = .init()) {
         self.preferences = preferences
+        self.mediaLibrary = mediaLibrary
         self.promptClock = promptClock ?? Self.monotonic
         queue.async {
             do {
@@ -616,7 +618,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         let snapshot = try exportSnapshot(id)
         let root = Self.exportDirectory(id).appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        try TripJournalExport.write(trip: snapshot.trip, events: snapshot.events, counters: snapshot.counters, options: options, to: root)
+        try TripJournalExport.write(trip: snapshot.trip, events: snapshot.events, counters: snapshot.counters, options: options, mediaLibrary: mediaLibrary, to: root)
         return root
     }
     func archive(_ id: String, options: TripExportOptions = .init()) throws -> URL {
@@ -767,14 +769,90 @@ enum JournalDiscoveries {
     }
 }
 
+/// Journal/backup locators are descriptive metadata, never file capabilities.
+/// Current library records are the authority for every local media read.
+struct JournalMediaLibrary: Sendable {
+    let panoramaxBase: URL
+    let videos: URL
+
+    init(panoramaxBase: URL? = nil, videos: URL? = nil) {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("YouSpeed", isDirectory: true)
+        self.panoramaxBase = (panoramaxBase ?? support).resolvingSymlinksInPath().standardizedFileURL
+        self.videos = (videos ?? self.panoramaxBase.appendingPathComponent("DriveRecorder/Videos", isDirectory: true)).standardizedFileURL
+    }
+
+    private func reference(id: String, type: String) -> (root: URL, relative: String)? {
+        guard !id.isEmpty, id != ".", id != "..", !id.contains("/"), !id.contains("\\"), !id.contains("\0") else { return nil }
+        if type == "video" {
+            // The video library's durable identity is its direct-child filename.
+            guard id.lowercased().hasSuffix(".mov"),
+                  let entries = try? FileManager.default.contentsOfDirectory(at: videos, includingPropertiesForKeys: nil),
+                  entries.contains(where: { $0.lastPathComponent == id }) else { return nil }
+            guard videos.path.hasPrefix(panoramaxBase.path + "/") else { return nil }
+            return (panoramaxBase, String(videos.path.dropFirst(panoramaxBase.path.count + 1)) + "/" + id)
+        }
+        guard type == "photo" || type == "photo_remote" else { return nil }
+        let root = panoramaxBase.appendingPathComponent("Panoramax", isDirectory: true)
+        guard FileManager.default.fileExists(atPath: root.path),
+              let store = try? PanoramaxQueueStore(root: panoramaxBase, performStartupMaintenance: false),
+              let batches = try? store.listBatches() else { return nil }
+        for batch in batches {
+            guard batch.batchID != ".", batch.batchID != "..", !batch.batchID.contains("/"), !batch.batchID.contains("\\") else { continue }
+            for item in batch.items where item.itemID == id && item.metadata.captureID == id && item.metadata.captureSessionID == batch.captureSessionID {
+                // Bind the record to its own capture directory; thumbnails and
+                // unrelated files elsewhere in the app cannot become originals.
+                let expected = "batches/\(batch.batchID)/\(id)/\(id).jpg"
+                guard item.originalPath == expected else { continue }
+                return (panoramaxBase, "Panoramax/" + expected)
+            }
+        }
+        return nil
+    }
+
+    /// Walk from the trusted library root using directory descriptors, refusing
+    /// symlinks at every component. The returned handle pins the checked file
+    /// through copying/decoding even if a path changes after projection.
+    func open(id: String, type: String) -> (url: URL, handle: FileHandle)? {
+        guard let ref = reference(id: id, type: type) else { return nil }
+        let root = ref.root.standardizedFileURL
+        var descriptor = Darwin.open(root.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard descriptor >= 0 else { return nil }
+        let components = ref.relative.split(separator: "/").map(String.init)
+        for (index, component) in components.enumerated() {
+            let flags = O_RDONLY | O_NOFOLLOW | O_CLOEXEC | (index < components.count - 1 ? O_DIRECTORY : 0)
+            let next = component.withCString { Darwin.openat(descriptor, $0, flags) }
+            Darwin.close(descriptor)
+            guard next >= 0 else { return nil }
+            descriptor = next
+        }
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, info.st_mode & mode_t(S_IFMT) == mode_t(S_IFREG) else { Darwin.close(descriptor); return nil }
+        return (root.appendingPathComponent(ref.relative), FileHandle(fileDescriptor: descriptor, closeOnDealloc: true))
+    }
+
+    func url(id: String, type: String) -> URL? {
+        guard let opened = open(id: id, type: type) else { return nil }
+        try? opened.handle.close()
+        return opened.url
+    }
+}
+
 struct JournalMedia: Identifiable {
     let id: String
     var payload: [String: Any]
     var capturedAt: Date
-    var type: String { payload["type"] as? String ?? "photo" }
+    var library: JournalMediaLibrary = .init()
+    var type: String { let value = payload["type"] as? String ?? "photo"; return value == "photo_remote" ? "photo" : value }
     var session: String { payload["session"] as? String ?? id }
     var path: String { payload["path"] as? String ?? "" }
-    var localURL: URL? { let local = payload["local_path"] as? String ?? path; return !local.hasPrefix("https://") && FileManager.default.fileExists(atPath: local) ? URL(fileURLWithPath: local) : nil }
+    var localURL: URL? { library.url(id: id, type: type) }
+    var localImage: UIImage? {
+        guard type == "photo", let opened = library.open(id: id, type: type) else { return nil }
+        defer { try? opened.handle.close() }
+        guard let data = try? opened.handle.readToEnd() else { return nil }
+        return UIImage(data: data)
+    }
     var remoteURL: URL? { let remote = payload["remote_url"] as? String ?? path; guard remote.hasPrefix("https://") else { return nil }; return URL(string: remote) }
     var startedAt: Date? { (payload["started_at"] as? Double).map(Date.init(timeIntervalSince1970:)) }
     var duration: Double? { payload["duration_s"] as? Double }
@@ -783,7 +861,7 @@ struct JournalMedia: Identifiable {
         let offset = date.timeIntervalSince(start)
         return offset >= 0 && offset <= duration ? offset + (payload["presentation_start_s"] as? Double ?? 0) : nil
     }
-    static func project(_ events: [JournalEvent]) -> [JournalMedia] {
+    static func project(_ events: [JournalEvent], library: JournalMediaLibrary = .init()) -> [JournalMedia] {
         var result = [String: JournalMedia]()
         for event in events where event.kind == "media" {
             guard let id = event.payload["id"] as? String else { continue }
@@ -796,7 +874,7 @@ struct JournalMedia: Identifiable {
             } else {
                 var payload = event.payload
                 if let path = payload["path"] as? String, !path.hasPrefix("https://") { payload["local_path"] = path }
-                result[id] = JournalMedia(id: id, payload: payload, capturedAt: event.time)
+                result[id] = JournalMedia(id: id, payload: payload, capturedAt: event.time, library: library)
             }
         }
         return result.values.sorted { $0.capturedAt < $1.capturedAt }
@@ -811,7 +889,7 @@ private enum TripJournalExport {
         if ["=", "+", "-", "@", "\t", "\r"].contains(where: { string.hasPrefix($0) }) { string = "'" + string }
         return "\"" + string.replacingOccurrences(of: "\"", with: "\"\"") + "\""
     }
-    static func write(trip original: [String: Any], events raw: [[String: Any]], counters: [String: Any], options: TripExportOptions, to root: URL) throws {
+    static func write(trip original: [String: Any], events raw: [[String: Any]], counters: [String: Any], options: TripExportOptions, mediaLibrary: JournalMediaLibrary, to root: URL) throws {
         let all = raw.map(JournalEvent.init).filter { options.includeOdometer || $0.kind != "odometer_entry" }, points = all.filter(\.trackEligible)
         let ends = [points.first?.coordinate, points.last?.coordinate, options.homeCoordinate].compactMap { $0 }
         func hidden(_ coordinate: CLLocationCoordinate2D?) -> Bool {
@@ -868,7 +946,7 @@ private enum TripJournalExport {
             }
         }
         var mediaRows = [[String: Any]](), omitted = [[String: String]]()
-        for media in JournalMedia.project(all) {
+        for media in JournalMedia.project(all, library: mediaLibrary) {
             let nearest = points.min { abs($0.time.timeIntervalSince(media.capturedAt)) < abs($1.time.timeIntervalSince(media.capturedAt)) }
             let direct = JournalEvent(["payload": String(data: try JSONSerialization.data(withJSONObject: media.payload), encoding: .utf8)!]).coordinate
             let located = direct ?? nearest.flatMap { abs($0.time.timeIntervalSince(media.capturedAt)) <= 3 ? $0.coordinate : nil }
@@ -878,14 +956,20 @@ private enum TripJournalExport {
             var row = media.payload
             row.removeValue(forKey: "path"); row.removeValue(forKey: "local_path")
             if options.masked { row = ["id": media.id, "type": media.type, "captured_at": media.capturedAt.timeIntervalSince1970] }
-            if options.selectedMedia.contains(media.id), let source = media.localURL {
-                let name = "media/\(UUID().uuidString).\(options.masked ? "jpg" : source.pathExtension)"
+            if options.selectedMedia.contains(media.id), let opened = mediaLibrary.open(id: media.id, type: media.type) {
+                defer { try? opened.handle.close() }
+                let name = "media/\(UUID().uuidString).\(options.masked ? "jpg" : opened.url.pathExtension)"
                 let destination = root.appendingPathComponent(name)
                 try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
                 if options.masked {
-                    guard let image = UIImage(contentsOfFile: source.path), let bytes = image.jpegData(compressionQuality: 0.95) else { omitted.append(["id": media.id, "reason": "photo_metadata_stripping_failed"]); continue }
+                    guard let data = try opened.handle.readToEnd(), let image = UIImage(data: data), let bytes = image.jpegData(compressionQuality: 0.95) else { omitted.append(["id": media.id, "reason": "photo_metadata_stripping_failed"]); continue }
                     try bytes.write(to: destination, options: .atomic)
-                } else { try FileManager.default.copyItem(at: source, to: destination) }
+                } else {
+                    guard FileManager.default.createFile(atPath: destination.path, contents: nil) else { throw CocoaError(.fileWriteUnknown) }
+                    let output = try FileHandle(forWritingTo: destination)
+                    defer { try? output.close() }
+                    while let bytes = try opened.handle.read(upToCount: 65_536), !bytes.isEmpty { try output.write(contentsOf: bytes) }
+                }
                 row["archive_path"] = name
             } else { omitted.append(["id": media.id, "reason": media.localURL == nil ? "local_media_unavailable" : "media_not_selected"]) }
             mediaRows.append(row)
@@ -1264,7 +1348,7 @@ struct TripJournalView: View {
             if let deleteMedia {
                 Button(journalText("delete_with_media"), role: .destructive) {
                     guard let id = pendingDelete else { return }
-                    let media = JournalMedia.project(journal.events(id).map(JournalEvent.init))
+                    let media = JournalMedia.project(journal.events(id).map(JournalEvent.init), library: journal.mediaLibrary)
                     pendingDelete = nil; busy = true
                     Task { @MainActor in
                         let result = await deleteMedia(Set(media.filter { $0.type == "photo" }.map(\.id)), Set(media.filter { $0.type == "video" }.map(\.id)))
@@ -1388,7 +1472,7 @@ private struct TripJournalDetailView: View {
             let trip = journal.snapshot().trips.first { $0["id"] as? String == id } ?? [:]
             let events = journal.events(id).map(JournalEvent.init)
             let points = events.filter(\.trackEligible)
-            let media = JournalMedia.project(events)
+            let media = JournalMedia.project(events, library: journal.mediaLibrary)
             let selection = events.first { $0.id == selected }
             List {
                 Section {
@@ -1492,8 +1576,8 @@ private struct TripJournalDetailView: View {
                 Label(event.title, systemImage: icon(event.kind))
                 Text(event.time, format: .dateTime.hour().minute().second()).monospacedDigit()
                 if let c = event.coordinate { Text(String(format: "%.6f, %.6f", locale: Locale.current, c.latitude, c.longitude)).font(.caption).textSelection(.enabled) }
-                if let clip = media.first(where: { $0.offset(at: event.time) != nil }), let url = clip.localURL, let offset = clip.offset(at: event.time) {
-                    NavigationLink(journalText("video_here")) { JournalVideoPlayer(url: url, offset: offset) }
+                if let clip = media.first(where: { $0.offset(at: event.time) != nil }), clip.localURL != nil, let offset = clip.offset(at: event.time) {
+                    NavigationLink(journalText("video_here")) { JournalVideoPlayer(media: clip, offset: offset) }
                     Text(journalText("estimated_seek")).font(.caption).foregroundStyle(.secondary)
                 } else { Text(journalText("no_recording")).font(.caption).foregroundStyle(.secondary) }
             }
@@ -1524,12 +1608,12 @@ private struct TripJournalDetailView: View {
     @ViewBuilder private func mediaRow(_ media: JournalMedia) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(media.startedAt ?? media.capturedAt, format: .dateTime.hour().minute().second()).font(.subheadline.monospacedDigit())
-            if let url = media.localURL {
+            if media.localURL != nil {
                 NavigationLink {
-                    if media.type == "video" { JournalVideoPlayer(url: url, offset: 0) }
-                    else if let image = UIImage(contentsOfFile: url.path) { ScrollView { Image(uiImage: image).resizable().scaledToFit() } }
+                    if media.type == "video" { JournalVideoPlayer(media: media, offset: 0) }
+                    else if let image = media.localImage { ScrollView { Image(uiImage: image).resizable().scaledToFit() } }
                 } label: {
-                    if media.type == "photo", let image = UIImage(contentsOfFile: url.path) { Image(uiImage: image).resizable().scaledToFill().frame(width: 100, height: 65).clipped() }
+                    if media.type == "photo", let image = media.localImage { Image(uiImage: image).resizable().scaledToFill().frame(width: 100, height: 65).clipped() }
                     Label(journalText("open_local"), systemImage: media.type == "video" ? "play.circle" : "photo")
                 }
             } else { Label(journalText("media_missing"), systemImage: "externaldrive.badge.exclamationmark").font(.caption).foregroundStyle(.secondary) }
@@ -1570,12 +1654,12 @@ private struct TripJournalDetailView: View {
 }
 
 private struct JournalVideoPlayer: View {
-    let url: URL
+    let media: JournalMedia
     let offset: Double
     @State private var player: AVPlayer?
     var body: some View {
         VideoPlayer(player: player)
-            .onAppear { let item = AVPlayer(url: url); item.seek(to: CMTime(seconds: max(0, offset), preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero); player = item }
+            .onAppear { guard let url = media.localURL else { return }; let item = AVPlayer(url: url); item.seek(to: CMTime(seconds: max(0, offset), preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero); player = item }
             .onDisappear { player?.pause(); player = nil }
     }
 }

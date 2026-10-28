@@ -125,7 +125,10 @@ class BundleBootstrapper(
         val state = runCatching { ContractJson.decodeActiveBundleState(stateFile.readText()) }.getOrNull()
             ?: return null
         // Content integrity is checked before installation; local access only needs the file to remain available.
-        return state.takeIf { File(it.dbPath).isAvailableDatabase() }
+        return state.takeIf {
+            (it.bundleVersion == "seed" || runCatching { BundlePathSafety.descendant(File(it.dbPath), File(rootDir, "bundles")) }.isSuccess) &&
+                File(it.dbPath).isAvailableDatabase()
+        }
     }
 
     fun listDownloadedBundles(): List<DownloadedBundleInfo> {
@@ -141,7 +144,8 @@ class BundleBootstrapper(
                 if (!manifestFile.exists()) {
                     return@mapNotNull null
                 }
-                val manifest = ContractJson.decodeBundleManifest(manifestFile.readText())
+                val manifest = runCatching { ContractJson.decodeBundleManifest(manifestFile.readText()) }.getOrNull()
+                    ?: return@mapNotNull null
                 val dbFile = File(versionDir, manifest.db.file)
                 if (!dbFile.isAvailableDatabase()) {
                     return@mapNotNull null
@@ -388,7 +392,7 @@ class BundleBootstrapper(
                 .joinToString("") { "%02x".format(it) }.take(16)
             "${tokenize(manifest.bundleVersion)}-$suffix"
         }
-        val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/$generationDirectory")
+        val bundleDir = bundleDirectory(manifest.region, generationDirectory)
         if (!bundleDir.exists() && !bundleDir.mkdirs()) {
             throw IOException("Unable to create bundle directory: ${bundleDir.absolutePath}")
         }
@@ -560,7 +564,7 @@ class BundleBootstrapper(
             }
             deltaDatabase.validate(staging)
             validateFile(staging, expectedDatabase.first, expectedDatabase.second, "materialized delta database")
-            val bundleDir = File(File(rootDir, "bundles"), "${tokenize(manifest.region)}/${tokenize(manifest.bundleVersion)}")
+            val bundleDir = bundleDirectory(manifest.region, tokenize(manifest.bundleVersion))
             installPenaltyRules(
                 manifest = manifest,
                 manifestUrl = manifestUrl,
@@ -626,10 +630,12 @@ class BundleBootstrapper(
 
     private fun activatePreparedDatabase(stagingDb: File, bundleDir: File, manifest: V3BundleManifest,
         manifestRaw: String, manifestUrl: String, dbArtifact: MaterializedDatabaseArtifact): File {
+        manifest.validateLocalPaths()
+        BundlePathSafety.descendant(bundleDir, File(rootDir, "bundles"))
         if (manifest.packedBase == null) deltaDatabase.validateSettlementCapability(stagingDb)
         if (!bundleDir.exists() && !bundleDir.mkdirs()) throw IOException("Cannot create bundle directory")
-        val finalDb = File(bundleDir, manifest.db.file)
-        val prepared = File(bundleDir, manifest.db.file + ".tmp")
+        val finalDb = BundlePathSafety.descendant(File(bundleDir, manifest.db.file), bundleDir)
+        val prepared = BundlePathSafety.descendant(File(bundleDir, manifest.db.file + ".tmp"), bundleDir)
         java.nio.file.Files.move(stagingDb.toPath(), prepared.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
         if (manifest.packedBase != null) {
             require(packedCompanionsAvailable(manifest, bundleDir, verifyChecksums = true)) { "Packed generation is incomplete" }
@@ -1242,6 +1248,13 @@ class BundleBootstrapper(
                 error,
             )
         }
+    }
+
+    private fun bundleDirectory(region: String, version: String): File {
+        BundlePathSafety.validateRegion(region)
+        BundlePathSafety.validateFileName(version)
+        val root = File(rootDir, "bundles")
+        return BundlePathSafety.descendant(File(root, "${tokenize(region)}/$version"), root)
     }
 
     private fun tokenize(raw: String): String {

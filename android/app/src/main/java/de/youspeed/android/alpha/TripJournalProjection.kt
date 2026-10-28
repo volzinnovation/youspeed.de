@@ -3,6 +3,80 @@ package de.youspeed.android.alpha
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileInputStream
+import android.content.Context
+import android.system.Os
+import android.system.OsConstants
+
+/** Backup paths are metadata. Only current records in the two media libraries
+ * can authorize a local read, including when an old container path is stale. */
+internal class TripJournalMediaLibrary(files:File,noBackup:File) {
+    constructor(context:Context):this(context.filesDir,context.noBackupFilesDir)
+    private val displayFiles=files.absoluteFile
+    private val displayNoBackup=noBackup.absoluteFile
+    private val files=files.canonicalFile
+    private val noBackup=noBackup.canonicalFile
+
+    private data class Reference(val root:File,val relative:String,val displayRoot:File)
+    private fun reference(id:String,type:String):Reference? {
+        if(id.isEmpty() || id in listOf(".","..") || id.any {it=='/' || it=='\\' || it=='\u0000'}) return null
+        if(type=="video") {
+            // The video library's durable identity is its direct-child filename.
+            if(!id.endsWith(".mp4",true) || File(files,"dashcam").listFiles()?.none {it.name==id}!=false) return null
+            return Reference(files,"dashcam/$id",displayFiles)
+        }
+        if(type!="photo" && type!="photo_remote") return null
+        if(!File(noBackup,"panoramax/batches").isDirectory) return null
+        return runCatching {
+            val store=PanoramaxQueueStore(noBackup)
+            store.listBatches().firstNotNullOfOrNull {batch ->
+                batch.items.firstOrNull {it.itemId==id && it.metadata.captureId==id && it.metadata.captureSessionId==batch.captureSessionId}?.let {item ->
+                    val expected="batches/${batch.batchId}/$id/$id.jpg"
+                    if(item.originalPath==expected) Reference(noBackup,"panoramax/$expected",displayNoBackup) else null
+                }
+            }
+        }.getOrNull()
+    }
+
+    private fun checked(ref:Reference):File? = runCatching {
+        var current=ref.root
+        for(component in ref.relative.split('/')) {
+            require(component.isNotEmpty() && component!="." && component!="..")
+            current=File(current,component)
+            require(!OsConstants.S_ISLNK(Os.lstat(current.path).st_mode))
+        }
+        require(current.canonicalFile==current.absoluteFile && current.isFile)
+        current
+    }.getOrNull()
+
+    fun file(id:String,type:String):File?=reference(id,type)?.let {ref ->
+        val canonical=checked(ref) ?: return@let null
+        // Library filters compare paths from Context/queue records. Preserve
+        // their trusted /data/user/0 alias after checking its canonical target;
+        // backup locators never participate in this presentation path.
+        val display=File(ref.displayRoot,ref.relative)
+        display.takeIf {runCatching {it.canonicalFile==canonical}.getOrDefault(false)}
+    }
+
+    /** Re-resolve ownership at the byte sink and pin the checked regular file.
+     * NOFOLLOW and inode checks reject replacement since the UI projection. */
+    fun open(id:String,type:String):FileInputStream? {
+        val ref=reference(id,type) ?: return null
+        val file=checked(ref) ?: return null
+        return runCatching {
+            val before=Os.lstat(file.path)
+            val descriptor=Os.open(file.path,OsConstants.O_RDONLY or OsConstants.O_NOFOLLOW or OsConstants.O_CLOEXEC,0)
+            try {
+                val opened=Os.fstat(descriptor)
+                require(OsConstants.S_ISREG(opened.st_mode) && opened.st_dev==before.st_dev && opened.st_ino==before.st_ino)
+                require(checked(ref)==file)
+                val after=Os.lstat(file.path)
+                require(opened.st_dev==after.st_dev && opened.st_ino==after.st_ino)
+                FileInputStream(descriptor)
+            } catch(error:Throwable) {Os.close(descriptor);throw error}
+        }.getOrNull()
+    }
+}
 
 /** Read-only views retain original event identities and never rewrite the source log. */
 internal object TripJournalProjection {
@@ -42,7 +116,7 @@ internal object TripJournalProjection {
         }
         return groups.values.sortedBy { it.optDouble("time") }
     }
-    fun media(events:List<JSONObject>):List<JSONObject> {
+    fun media(events:List<JSONObject>,library:TripJournalMediaLibrary):List<JSONObject> {
         val values=linkedMapOf<String,JSONObject>()
         events.filter { it.optString("kind")=="media" }.forEach { event ->
             val p=payload(event)
@@ -51,14 +125,16 @@ internal object TripJournalProjection {
             val merged=values.getOrPut(key) { JSONObject().put("time",event.optDouble("time")) }
             p.keys().forEach { merged.put(it,p.opt(it)) }
             val path=p.optString("path")
-            merged.put("availability",when { path.startsWith("https://") -> "remote_reference"; File(path).isFile -> "local_original"; else -> "local_missing" })
+            val local=if(path.startsWith("https://")) null else library.file(p.optString("id"),p.optString("type"))
+            if(local!=null) merged.put("path",local.path)
+            merged.put("availability",when { path.startsWith("https://") -> "remote_reference"; local!=null -> "local_original"; else -> "local_missing" })
         }
         return values.values.sortedBy { it.optDouble("started_at",it.optDouble("time")) }
     }
-    data class Seek(val path:String,val seconds:Double,val approximate:Boolean)
-    fun seek(events:List<JSONObject>,time:Double):Seek?=media(events).filter { it.optString("type")=="video" && it.optString("availability")=="local_original" && it.optString("timing_quality")!="clock_alignment_uncertain" }.mapNotNull { item ->
+    data class Seek(val path:String,val seconds:Double,val approximate:Boolean,val id:String)
+    fun seek(events:List<JSONObject>,time:Double,library:TripJournalMediaLibrary):Seek?=media(events,library).filter { it.optString("type")=="video" && it.optString("availability")=="local_original" && it.optString("timing_quality")!="clock_alignment_uncertain" }.mapNotNull { item ->
         val start=item.optDouble("started_at",Double.NaN);val duration=item.optDouble("duration_s",Double.NaN)
-        TripMediaClock.offset(time,start,duration,item.optDouble("presentation_start_s",0.0))?.let { Seek(item.optString("path"),it,item.optString("timing_quality")!="presentation_clock") }
+        TripMediaClock.offset(time,start,duration,item.optDouble("presentation_start_s",0.0))?.let { Seek(item.optString("path"),it,item.optString("timing_quality")!="presentation_clock",item.optString("id")) }
     }.firstOrNull()
 }
 

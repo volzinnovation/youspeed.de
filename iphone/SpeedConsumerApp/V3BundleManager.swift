@@ -4,6 +4,10 @@ import OSLog
 import SQLite3
 import zlib
 
+@_silgen_name("ysp_apply_bundle_delta")
+private func applyAuthorizedBundleDelta(_ path: UnsafePointer<CChar>, _ sql: UnsafePointer<CChar>, _ bytes: Int,
+                                        _ error: UnsafeMutablePointer<CChar>, _ errorSize: Int) -> Int32
+
 actor V3BundleManager {
     private nonisolated static let logger = Logger(subsystem: "de.youspeed.SpeedConsumer", category: "bundle-manager")
     private struct CoverageRing {
@@ -299,7 +303,15 @@ actor V3BundleManager {
             return nil
         }
         let data = try Data(contentsOf: stateURL)
-        return try decoder.decode(ActiveBundleState.self, from: data)
+        let state = try decoder.decode(ActiveBundleState.self, from: data)
+        guard (try? BundlePathSafety.validateRegion(state.region)) != nil,
+              (try? BundlePathSafety.validateFileName(state.bundleVersion)) != nil,
+              (try? BundlePathSafety.validateFileName(state.dbFileName)) != nil else { return nil }
+        if state.bundleVersion != "seed", let path = state.dbPath {
+            guard !path.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else { return nil }
+            guard (try? BundlePathSafety.descendant(URL(fileURLWithPath: path), of: bundlesDir())) != nil else { return nil }
+        }
+        return state
     }
 
     func selectedLocalBundleRoute() throws -> LocalBundleRoute? {
@@ -449,15 +461,21 @@ actor V3BundleManager {
             return URL(fileURLWithPath: explicitPath, isDirectory: false)
         }
         let root = try bundlesDir()
-        let preferred = root
-            .appendingPathComponent(bundleDirectoryName(region: state.region, bundleVersion: state.bundleVersion), isDirectory: true)
-            .appendingPathComponent(state.dbFileName)
+        let preferred = try BundlePathSafety.descendant(
+            bundleDirectoryURL(region: state.region, bundleVersion: state.bundleVersion).appendingPathComponent(state.dbFileName), of: root)
         if fileManager.fileExists(atPath: preferred.path) {
             return preferred
         }
-        return root
-            .appendingPathComponent(state.bundleVersion, isDirectory: true)
-            .appendingPathComponent(state.dbFileName)
+        return try BundlePathSafety.descendant(root.appendingPathComponent(state.bundleVersion, isDirectory: true)
+            .appendingPathComponent(state.dbFileName), of: root)
+    }
+
+    private func bundleDirectoryURL(region: String, bundleVersion: String) throws -> URL {
+        try BundlePathSafety.validateRegion(region)
+        try BundlePathSafety.validateFileName(bundleVersion)
+        let root = try bundlesDir()
+        return try BundlePathSafety.descendant(root.appendingPathComponent(
+            bundleDirectoryName(region: region, bundleVersion: bundleVersion), isDirectory: true), of: root)
     }
 
     private func bundleDirectoryName(region: String, bundleVersion: String) -> String {
@@ -885,10 +903,7 @@ actor V3BundleManager {
                 try applyPatchSQL(patchSQL, toDBPath: stagingDB.path)
             }
             try quickValidateDB(at: stagingDB)
-            let bundleDir = try bundlesDir().appendingPathComponent(
-                bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion),
-                isDirectory: true
-            )
+            let bundleDir = try bundleDirectoryURL(region: manifest.region, bundleVersion: manifest.bundleVersion)
             try await installPenaltyRules(
                 manifest: manifest,
                 manifestURL: manifestURL,
@@ -1073,8 +1088,7 @@ actor V3BundleManager {
             // Keep startup responsive by skipping heavy PRAGMA quick_check here.
             try quickValidateDB(at: stagingDB, runQuickCheck: false)
             try validatePackedGeneration(database: stagingDB, manifest: manifest)
-            let bundleDir = try packedStagingDirectory ?? bundlesDir().appendingPathComponent(
-                bundleDirectoryName(region: manifest.region, bundleVersion: manifest.bundleVersion), isDirectory: true)
+            let bundleDir = try packedStagingDirectory ?? bundleDirectoryURL(region: manifest.region, bundleVersion: manifest.bundleVersion)
             try await installPenaltyRules(
                 manifest: manifest,
                 manifestURL: manifestURL,
@@ -1215,10 +1229,8 @@ actor V3BundleManager {
             let digest = SHA256.hash(data: Data(identities.utf8)).map { String(format: "%02x", $0) }.joined()
             directoryName = baseDirectoryName + "-" + digest.prefix(16)
         } else { directoryName = baseDirectoryName }
-        let bundleDir = try bundlesDir().appendingPathComponent(
-            directoryName,
-            isDirectory: true
-        )
+        let root = try bundlesDir()
+        let bundleDir = try BundlePathSafety.descendant(root.appendingPathComponent(directoryName, isDirectory: true), of: root)
         if manifest.packedBase != nil {
             return try activatePreparedPackedGeneration(database: preparedDB, directory: bundleDir,
                                                        manifest: manifest, verifiedSHA: verifiedSHA)
@@ -1227,8 +1239,8 @@ actor V3BundleManager {
             try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
         }
 
-        let finalDB = bundleDir.appendingPathComponent(manifest.db.file)
-        let finalTmp = bundleDir.appendingPathComponent("\(manifest.db.file).tmp")
+        let finalDB = try BundlePathSafety.descendant(bundleDir.appendingPathComponent(manifest.db.file), of: bundleDir)
+        let finalTmp = try BundlePathSafety.descendant(bundleDir.appendingPathComponent("\(manifest.db.file).tmp"), of: bundleDir)
         let sqliteCompanionSuffixes = ["-wal", "-shm"]
         do {
             try? removeItemIfExists(at: finalTmp)
@@ -1350,10 +1362,7 @@ actor V3BundleManager {
         guard installedDatabaseIsAvailable(at: dbURL) else {
             Self.logger.error("startup_recovery active_state file_missing path=\(dbURL.path, privacy: .public)")
             if state.dbPath == nil {
-                let preferredDir = try bundlesDir().appendingPathComponent(
-                    bundleDirectoryName(region: state.region, bundleVersion: state.bundleVersion),
-                    isDirectory: true
-                )
+                let preferredDir = try bundleDirectoryURL(region: state.region, bundleVersion: state.bundleVersion)
                 let legacyDir = try bundlesDir().appendingPathComponent(state.bundleVersion, isDirectory: true)
                 try? removeItemIfExists(at: preferredDir)
                 try? removeItemIfExists(at: legacyDir)
@@ -1554,10 +1563,8 @@ actor V3BundleManager {
         Self.logger.notice(
             "startup_recovery activate begin source=\(sourceDB.lastPathComponent, privacy: .public) version=\(normalizedVersion, privacy: .public)"
         )
-        let bundleDir = try bundlesDir().appendingPathComponent(
-            bundleDirectoryName(region: region, bundleVersion: normalizedVersion),
-            isDirectory: true
-        )
+        try BundlePathSafety.validateFileName(dbFileName)
+        let bundleDir = try bundleDirectoryURL(region: region, bundleVersion: normalizedVersion)
         if !fileManager.fileExists(atPath: bundleDir.path) {
             try fileManager.createDirectory(at: bundleDir, withIntermediateDirectories: true)
         }
@@ -2104,6 +2111,7 @@ actor V3BundleManager {
     }
 
     private func stagingDBURL(forVersion version: String) throws -> URL {
+        try BundlePathSafety.validateFileName(version)
         let stageDir = try stagingDirectory()
         return stageDir.appendingPathComponent("\(version)-\(UUID().uuidString).sqlite")
     }
@@ -2252,6 +2260,7 @@ actor V3BundleManager {
     }
 
     private func stageCopyOfActiveDB(forVersion version: String) throws -> URL {
+        try BundlePathSafety.validateFileName(version)
         guard let current = try activeDatabaseURL(), fileManager.fileExists(atPath: current.path) else {
             throw ConsumerAppError.io("No active DB for delta patch")
         }
@@ -2946,12 +2955,12 @@ actor V3BundleManager {
         let bundlesRoot = try bundlesDir()
         let entries = try fileManager.contentsOfDirectory(
             at: bundlesRoot,
-            includingPropertiesForKeys: [.isDirectoryKey],
+            includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
             options: [.skipsHiddenFiles]
         )
         for entry in entries {
-            let values = try? entry.resourceValues(forKeys: [.isDirectoryKey])
-            guard values?.isDirectory == true else {
+            let values = try? entry.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            guard values?.isDirectory == true, values?.isSymbolicLink != true else {
                 continue
             }
             if entry.lastPathComponent == "seed" {
@@ -2964,8 +2973,44 @@ actor V3BundleManager {
             if firstSQLiteFileName(in: entry) != nil {
                 continue
             }
+            // A country/shard region retains its existing nested layout. The
+            // top-level country is a container, not an abandoned generation.
+            if containsStoredBundleDescendant(in: entry, bundlesRoot: bundlesRoot) {
+                continue
+            }
             try? removeItemIfExists(at: entry)
         }
+    }
+
+    private func containsStoredBundleDescendant(in directory: URL, bundlesRoot: URL) -> Bool {
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isSymbolicLinkKey, .isRegularFileKey]
+        guard let descendants = fileManager.enumerator(at: directory, includingPropertiesForKeys: Array(keys)) else {
+            return false
+        }
+        for case let candidate as URL in descendants {
+            guard let properties = try? candidate.resourceValues(forKeys: keys), properties.isSymbolicLink != true else {
+                descendants.skipDescendants()
+                continue
+            }
+            guard properties.isDirectory == true else { continue }
+            guard (try? BundlePathSafety.descendant(candidate, of: bundlesRoot)) != nil else {
+                descendants.skipDescendants()
+                continue
+            }
+            let manifestURL = candidate.appendingPathComponent("bundle-manifest.v3.json")
+            guard let manifestProperties = try? manifestURL.resourceValues(forKeys: keys),
+                  manifestProperties.isRegularFile == true, manifestProperties.isSymbolicLink != true,
+                  let manifest = decodeManifestIfPresent(at: manifestURL),
+                  (try? validateManifestCompatibility(manifest)) != nil else { continue }
+            let artifacts = [manifest.db] + (manifest.packedBase?.artifacts ?? [])
+            if artifacts.allSatisfy({ artifact in
+                let file = candidate.appendingPathComponent(artifact.file)
+                guard (try? BundlePathSafety.descendant(file, of: candidate)) != nil,
+                      let values = try? file.resourceValues(forKeys: keys) else { return false }
+                return values.isRegularFile == true && values.isSymbolicLink != true
+            }) { return true }
+        }
+        return false
     }
 
     private func ensureSufficientDiskSpace(requiredBytes: Int64, reason: String) throws {
@@ -3108,22 +3153,14 @@ actor V3BundleManager {
     }
 
     private func applyPatchSQL(_ patchSQL: String, toDBPath path: String) throws {
-        var db: OpaquePointer?
-        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK, let db else {
-            throw ConsumerAppError.sqlite("sqlite open failed for patch application")
+        guard !path.utf8.contains(0) else { throw ConsumerAppError.sqlite("Invalid delta database path") }
+        var error = [CChar](repeating: 0, count: 1024)
+        let code = path.withCString { filePath in
+            patchSQL.withCString { sql in
+                applyAuthorizedBundleDelta(filePath, sql, patchSQL.utf8.count, &error, 1024)
+            }
         }
-        defer { sqlite3_close(db) }
-
-        if sqlite3_exec(db, patchSQL, nil, nil, nil) != SQLITE_OK {
-            let msg = String(cString: sqlite3_errmsg(db))
-            throw ConsumerAppError.sqlite("delta patch failed: \(msg)")
-        }
-        // Ensure the digest below covers every committed patch byte rather
-        // than a main file whose latest pages still live in a WAL companion.
-        guard sqlite3_exec(db, "PRAGMA wal_checkpoint(TRUNCATE)", nil, nil, nil) == SQLITE_OK else {
-            let msg = String(cString: sqlite3_errmsg(db))
-            throw ConsumerAppError.sqlite("delta checkpoint failed: \(msg)")
-        }
+        guard code == SQLITE_OK else { throw ConsumerAppError.sqlite("delta patch failed: \(String(cString: error))") }
     }
 
     private func nowUTC() -> String {

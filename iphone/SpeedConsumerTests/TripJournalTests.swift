@@ -403,13 +403,13 @@ final class TripJournalTests: XCTestCase {
     }
     func testEnablingJournalInsideLiveCameraAssociatesVideoAndSeeksOnlyWithinItsInterval() throws {
         try withJournal { journal, root in
-            let file = root.appendingPathComponent("live.mov"); try Data([0]).write(to: file)
+            let file = try libraryVideo(journal, id: "live.mov", bytes: Data([0]))
             let start = Date().addingTimeInterval(-5)
             journal.videoTiming(id: "live.mov", path: file.path, session: "camera", startedAt: start, duration: nil, finished: false)
             journal.setEnabled(true); journal.start()
             let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
             journal.videoTiming(id: "live.mov", path: file.path, session: "camera", startedAt: start, duration: 10, finished: true)
-            let media = try XCTUnwrap(JournalMedia.project(journal.events(id).map(JournalEvent.init)).first)
+            let media = try XCTUnwrap(JournalMedia.project(journal.events(id).map(JournalEvent.init), library: journal.mediaLibrary).first)
             XCTAssertEqual(try XCTUnwrap(media.offset(at: start.addingTimeInterval(3))), 3, accuracy: 0.000_001)
             XCTAssertNil(media.offset(at: start.addingTimeInterval(-0.01)))
             XCTAssertNil(media.offset(at: start.addingTimeInterval(10.01)))
@@ -445,7 +445,7 @@ final class TripJournalTests: XCTestCase {
             }
             let location = PanoramaxLocationSample(latitude: 49.02, longitude: 8.02, capturedAt: at, accuracyMeters: 3, altitudeMeters: 10, headingDegrees: 0)
             let original = try XCTUnwrap(PanoramaxJPEGMetadata.adding(to: image.jpegData(compressionQuality: 0.9)!, location: location))
-            let source = root.appendingPathComponent("private.jpg"); try original.write(to: source)
+            let source = try libraryPhoto(journal, id: "photo", bytes: original, location: location)
             journal.bind("photo"); journal.media(session: "photo", id: "photo", path: source.path, kind: "photo", at: at, location: location)
             _ = journal.snapshot()
             let exported = try journal.export(id, options: TripExportOptions(masked: true, selectedMedia: ["photo"]))
@@ -572,16 +572,132 @@ final class TripJournalTests: XCTestCase {
     }
     private func withJournal(_ test: (TripJournal, URL) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let mediaBase = root.appendingPathComponent("Media", isDirectory: true)
+        try FileManager.default.createDirectory(at: mediaBase, withIntermediateDirectories: true)
         let suite = "trip-feature-test-\(UUID().uuidString)", prefs = try XCTUnwrap(UserDefaults(suiteName: suite))
-        let journal = TripJournal(directory: root, preferences: prefs, heartbeat: false)
+        let journal = TripJournal(directory: root, preferences: prefs, heartbeat: false, mediaLibrary: JournalMediaLibrary(panoramaxBase: mediaBase))
         defer { journal.close(); prefs.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
         _ = journal.snapshot()
         try test(journal, root)
     }
 
+    private func libraryVideo(_ journal: TripJournal, id: String, bytes: Data) throws -> URL {
+        try FileManager.default.createDirectory(at: journal.mediaLibrary.videos, withIntermediateDirectories: true)
+        let file = journal.mediaLibrary.videos.appendingPathComponent(id)
+        try bytes.write(to: file)
+        return file
+    }
+
+    private func libraryPhoto(_ journal: TripJournal, id: String, bytes: Data, location: PanoramaxLocationSample) throws -> URL {
+        let store = try PanoramaxQueueStore(root: journal.mediaLibrary.panoramaxBase, performStartupMaintenance: false)
+        let batch = try store.createBatch(captureSessionID: "photo-session")
+        let metadata = PanoramaxCaptureMetadata(captureID: id, captureSessionID: batch.captureSessionID,
+            capturedAt: location.capturedAt, location: location, sha256: PanoramaxQueueStore.sha256(bytes), byteSize: Int64(bytes.count), software: "YouSpeed/test")
+        let item = try store.addJPEG(batchID: batch.batchID, jpeg: bytes, thumbnail: bytes, metadata: metadata)
+        return try XCTUnwrap(store.originalURL(for: item))
+    }
+
 }
 
 extension TripJournalTests {
+    func testRestoredMediaResolvesCurrentLibraryIdentityAndNeverBackupPaths() throws {
+        try withJournal { journal, root in
+            journal.setEnabled(true); journal.start(); _ = journal.snapshot()
+            seedRetainedEndpoints(journal)
+            let id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            let privateFile = root.appendingPathComponent("private.sqlite")
+            let privateBytes = Data("PRIVATE JOURNAL SENTINEL".utf8)
+            try privateBytes.write(to: privateFile)
+            let originalBytes = Data("GENUINE LIBRARY VIDEO".utf8)
+            let original = try libraryVideo(journal, id: "owned.mov", bytes: originalBytes)
+            journal.bind("capture")
+            journal.media(session: "capture", id: "fake.mov", path: privateFile.path, kind: "video")
+            journal.media(session: "capture", id: "wrong-photo", path: original.path, kind: "photo")
+            // The current library identity survives an old device/container path.
+            journal.media(session: "capture", id: "owned.mov", path: "/old-container/owned.mov", kind: "video")
+            let backup = try journal.backup(password: "test-password")
+            defer { try? FileManager.default.removeItem(at: backup) }
+            try journal.restore(from: backup, password: "test-password")
+            let projected = JournalMedia.project(journal.events(id).map(JournalEvent.init), library: journal.mediaLibrary)
+            XCTAssertNil(projected.first { $0.id == "fake.mov" }?.localURL)
+            XCTAssertNil(projected.first { $0.id == "wrong-photo" }?.localURL)
+            XCTAssertNotNil(projected.first { $0.id == "owned.mov" }?.localURL)
+            var forged = try XCTUnwrap(projected.first { $0.id == "fake.mov" })
+            forged.payload["local_path"] = privateFile.path
+            XCTAssertNil(forged.localURL); XCTAssertNil(forged.localImage)
+            for badID in ["../private.sqlite", "nested/owned.mov", "", "private.sqlite"] {
+                XCTAssertNil(journal.mediaLibrary.open(id: badID, type: "video"))
+            }
+            let exported = try journal.export(id, options: TripExportOptions(selectedMedia: Set(projected.map(\.id))))
+            let copies = try FileManager.default.contentsOfDirectory(at: exported.appendingPathComponent("media"), includingPropertiesForKeys: nil)
+            XCTAssertEqual(copies.count, 1)
+            XCTAssertEqual(try Data(contentsOf: XCTUnwrap(copies.first)), originalBytes)
+            XCTAssertEqual(try Data(contentsOf: privateFile), privateBytes)
+            try FileManager.default.removeItem(at: original)
+            XCTAssertNil(projected.first { $0.id == "owned.mov" }?.localURL, "Projection must not retain authority after deletion")
+        }
+    }
+
+    func testMediaRejectsFinalAndParentSymlinksAndPinsOpenedOriginal() throws {
+        try withJournal { journal, root in
+            journal.setEnabled(true); journal.start(); _ = journal.snapshot(); seedRetainedEndpoints(journal)
+            let trip = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+            let privateFile = root.appendingPathComponent("private.mov")
+            try Data("PRIVATE".utf8).write(to: privateFile)
+            XCTAssertNil(journal.mediaLibrary.open(id: "private.mov", type: "video"), "Matching extension outside the video library is insufficient")
+            let bytes = Data("ORIGINAL".utf8)
+            let video = try libraryVideo(journal, id: "owned.mov", bytes: bytes)
+            journal.bind("camera"); journal.media(session: "camera", id: "owned.mov", path: video.path, kind: "video")
+            let projected = try XCTUnwrap(JournalMedia.project(journal.events(trip).map(JournalEvent.init), library: journal.mediaLibrary).first)
+            XCTAssertNotNil(projected.localURL)
+            let opened = try XCTUnwrap(journal.mediaLibrary.open(id: "owned.mov", type: "video"))
+            defer { try? opened.handle.close() }
+            try FileManager.default.removeItem(at: video)
+            try FileManager.default.createSymbolicLink(at: video, withDestinationURL: privateFile)
+            XCTAssertNil(projected.localURL); XCTAssertNil(journal.mediaLibrary.open(id: "owned.mov", type: "video"))
+            XCTAssertEqual(try opened.handle.readToEnd(), bytes, "Export reads the checked descriptor, never a replaced locator")
+            let exported = try journal.export(trip, options: TripExportOptions(selectedMedia: ["owned.mov"]))
+            XCTAssertFalse(FileManager.default.fileExists(atPath: exported.appendingPathComponent("media").path))
+            try FileManager.default.removeItem(at: video)
+            try bytes.write(to: video)
+            let moved = root.appendingPathComponent("outside-library", isDirectory: true)
+            try FileManager.default.moveItem(at: journal.mediaLibrary.videos, to: moved)
+            try FileManager.default.createSymbolicLink(at: journal.mediaLibrary.videos, withDestinationURL: moved)
+            XCTAssertNil(journal.mediaLibrary.open(id: "owned.mov", type: "video"))
+            try FileManager.default.removeItem(at: journal.mediaLibrary.videos)
+
+            let at = Date(), location = PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: at, accuracyMeters: 3, altitudeMeters: nil, headingDegrees: nil)
+            let jpeg = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { _ in }.jpegData(compressionQuality: 0.9)!
+            let photo = try libraryPhoto(journal, id: "photo", bytes: jpeg, location: location)
+            XCTAssertNotNil(journal.mediaLibrary.open(id: "photo", type: "photo"))
+            XCTAssertNil(journal.mediaLibrary.open(id: "unknown-photo", type: "photo"))
+            let forged = JournalMedia(id: "unknown-photo", payload: ["path": photo.path, "local_path": photo.path, "type": "photo"], capturedAt: at, library: journal.mediaLibrary)
+            XCTAssertNil(forged.localURL); XCTAssertNil(forged.localImage)
+            let itemDirectory = photo.deletingLastPathComponent(), movedItem = root.appendingPathComponent("outside-capture")
+            try FileManager.default.moveItem(at: itemDirectory, to: movedItem)
+            try FileManager.default.createSymbolicLink(at: itemDirectory, withDestinationURL: movedItem)
+            XCTAssertNil(journal.mediaLibrary.open(id: "photo", type: "photo"))
+        }
+    }
+
+    func testRemotePhotoUpdateKeepsOwnedLocalOriginalAndMissingRemoteMetadata() throws {
+        try withJournal { journal, _ in
+            let at = Date(), location = PanoramaxLocationSample(latitude: 49, longitude: 8, capturedAt: at, accuracyMeters: 3, altitudeMeters: nil, headingDegrees: nil)
+            let jpeg = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { _ in }.jpegData(compressionQuality: 0.9)!
+            let source = try libraryPhoto(journal, id: "photo", bytes: jpeg, location: location)
+            func event(_ path: String, _ type: String, _ seq: Int) throws -> JournalEvent {
+                let payload: [String: Any] = ["id": "photo", "type": type, "session": "photo-session", "path": path]
+                return JournalEvent(["seq": seq, "time": at.timeIntervalSince1970, "kind": "media", "payload": String(data: try JSONSerialization.data(withJSONObject: payload), encoding: .utf8)!])
+            }
+            let events = try [event("/old-container/photo.jpg", "photo", 1), event("https://example.invalid/?pic=photo", "photo_remote", 2)]
+            let photo = try XCTUnwrap(JournalMedia.project(events, library: journal.mediaLibrary).first)
+            XCTAssertEqual(photo.type, "photo"); XCTAssertNotNil(photo.localURL); XCTAssertNotNil(photo.localImage); XCTAssertNotNil(photo.remoteURL)
+            try FileManager.default.removeItem(at: source)
+            XCTAssertNil(photo.localURL); XCTAssertNil(photo.localImage); XCTAssertNotNil(photo.remoteURL)
+            XCTAssertEqual(JournalMedia.project(events, library: journal.mediaLibrary).count, 1)
+        }
+    }
+
     func testStandstillSaveRemembersOdometerAndResumesOnlyOnMovement() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let suite="trip-stop-\(UUID().uuidString)",prefs=try XCTUnwrap(UserDefaults(suiteName:suite))

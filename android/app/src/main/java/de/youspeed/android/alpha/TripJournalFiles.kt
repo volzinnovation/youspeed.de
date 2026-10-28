@@ -56,7 +56,7 @@ internal object TripJournalFiles {
     }
     fun export(context:Context,trip:JSONObject,events:List<JSONObject>,counters:JSONObject):File = write(context,trip,events,counters,TripExportOptions())
     fun archive(context:Context,trip:JSONObject,events:List<JSONObject>,counters:JSONObject,radius:Double,logs:Boolean,media:Boolean):File {
-        return archive(context,trip,events,counters,TripExportOptions(masked=radius>0,maskRadiusMetres=radius,includeRawLogs=logs,selectedMedia=if(media) TripJournalProjection.media(events).map {it.optString("id")}.toSet() else emptySet()))
+        return archive(context,trip,events,counters,TripExportOptions(masked=radius>0,maskRadiusMetres=radius,includeRawLogs=logs,selectedMedia=if(media) TripJournalProjection.media(events,TripJournalMediaLibrary(context)).map {it.optString("id")}.toSet() else emptySet()))
     }
     fun archive(context:Context,trip:JSONObject,events:List<JSONObject>,counters:JSONObject,options:TripExportOptions):File {
         require(options.maskRadiusMetres.isFinite() && options.maskRadiusMetres in 0.0..10000.0)
@@ -163,10 +163,12 @@ internal object TripJournalFiles {
             val discoveries=TripJournalProjection.discoveries(events)
             File(root,"discoveries.json").writeText(JSONObject(metadata.toString()).put("discoveries",JSONArray(discoveries)).toString())
             File(root,"discoveries.csv").writeText("event_id,time_utc,class_code,source,latitude,longitude,confidence,value,units,media_id\n"+discoveries.joinToString("\n") { p -> listOf(p.opt("event_id"),iso(p.optDouble("time")),p.opt("class_code"),p.opt("source"),p.opt("latitude"),p.opt("longitude"),p.opt("confidence"),p.opt("value"),p.opt("units"),p.opt("media_id")).joinToString(",",transform=::csv) })
-            val mediaIndex=TripJournalProjection.media(allEvents)
+            val library=TripJournalMediaLibrary(context)
+            val mediaIndex=TripJournalProjection.media(allEvents,library)
             val portableMedia=JSONArray()
             mediaIndex.forEach { item ->
-                val source=File(item.optString("path"));val type=item.optString("type")
+                val type=item.optString("type")
+                val source=library.file(item.optString("id"),type)
                 val capturedAt=item.optDouble("time")
                 val direct=item.takeIf { !it.isNull("latitude") && !it.isNull("longitude") }
                 val nearest=located.minByOrNull { abs(it.first.optDouble("time")-capturedAt) }?.takeIf { abs(it.first.optDouble("time")-capturedAt)<=3 }
@@ -175,15 +177,17 @@ internal object TripJournalFiles {
                     omissions.put(JSONObject().put("id",item.optString("id")).put("reason","privacy_mask_or_unknown_photo_position"));return@forEach
                 }
                 val row=if(masked) JSONObject().put("id",item.optString("id")).put("type",type).put("captured_at",capturedAt) else JSONObject(item.toString()).apply { remove("path");remove("local_path") }
-                if(item.optString("id") in options.selectedMedia && source.isFile && type in listOf("photo","video")) {
+                val input=if(item.optString("id") in options.selectedMedia && source!=null && type in listOf("photo","video")) library.open(item.optString("id"),type) else null
+                if(input!=null && source!=null) input.use {
                     val name="media/${UUID.randomUUID()}.${if(masked) "jpg" else source.extension}"
                     val destination=File(root,name);check(destination.parentFile!!.isDirectory || destination.parentFile!!.mkdirs())
                     if(masked) {
-                        val image=android.graphics.BitmapFactory.decodeFile(source.path)
+                        val image=android.graphics.BitmapFactory.decodeStream(input)
                         if(image==null) {omissions.put(JSONObject().put("id",item.optString("id")).put("reason","photo_metadata_stripping_failed"));return@forEach}
                         var upright=image
                         try {
-                            val orientation=androidx.exifinterface.media.ExifInterface(source).getAttributeInt(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL)
+                            input.channel.position(0)
+                            val orientation=androidx.exifinterface.media.ExifInterface(input).getAttributeInt(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL)
                             val matrix=android.graphics.Matrix().apply {when(orientation) {
                                 androidx.exifinterface.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> setScale(-1f,1f)
                                 androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> setRotate(180f)
@@ -196,9 +200,9 @@ internal object TripJournalFiles {
                             if(!matrix.isIdentity) upright=android.graphics.Bitmap.createBitmap(image,0,0,image.width,image.height,matrix,true)
                             destination.outputStream().use {check(upright.compress(android.graphics.Bitmap.CompressFormat.JPEG,95,it))}
                         } finally {if(upright!==image) upright.recycle();image.recycle()}
-                    } else source.copyTo(destination)
+                    } else destination.outputStream().use {output ->input.copyTo(output)}
                     row.put("archive_path",name)
-                } else omissions.put(JSONObject().put("id",item.optString("id")).put("reason",if(source.isFile) "media_not_selected" else "local_media_unavailable"))
+                } else omissions.put(JSONObject().put("id",item.optString("id")).put("reason",if(source!=null && item.optString("id") !in options.selectedMedia) "media_not_selected" else "local_media_unavailable"))
                 portableMedia.put(row)
             }
             val mediaDocument=JSONObject().put("schema_version",1).put("media",portableMedia).put("omitted",omissions)

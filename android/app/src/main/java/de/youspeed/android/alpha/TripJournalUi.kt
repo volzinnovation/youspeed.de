@@ -254,7 +254,7 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
         LaunchedEffect(id) {
             if(mediaCleanup!=null) {
                 try {
-                    val media=withContext(Dispatchers.IO) {TripJournalProjection.media(journal.mediaEvents(id))}
+                    val media=withContext(Dispatchers.IO) {TripJournalProjection.media(journal.mediaEvents(id),journal.mediaLibrary)}
                     val preview=withContext(Dispatchers.IO) {mediaCleanup(media,false)}
                     deletionMedia=media;cleanupPreview=preview;deletionMediaReady=true
                 } catch(cancelled:CancellationException) {throw cancelled}
@@ -348,7 +348,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     }
     fun task(body:suspend ()->Unit) { scope.launch { busy=true;runCatching { body() }.onFailure { failure=it.cause?.message ?: it.message };busy=false } }
     fun requestDelete(id:String) {task {
-        val owned=withContext(Dispatchers.IO) {TripJournalProjection.media(journal.events(id))}
+        val owned=withContext(Dispatchers.IO) {TripJournalProjection.media(journal.events(id),journal.mediaLibrary)}
         deletionMedia=owned;deleteMedia=false
         cleanupPreview=withContext(Dispatchers.IO) {mediaCleanup?.invoke(owned,false).orEmpty()};deletion=id
     }}
@@ -392,7 +392,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     }
     val trip=trips.firstOrNull { it.optString("id")==selected }
     val discoveries=remember(events) { TripJournalProjection.discoveries(events) }
-    val media=remember(events) { TripJournalProjection.media(events) }
+    val media=remember(events) { TripJournalProjection.media(events,journal.mediaLibrary) }
     val visibleEvents=events.filter { e -> (eventFilter=="all" || e.optString("kind")==eventFilter) && (signFilter.isBlank() || TripJournalProjection.payload(e).toString().contains(signFilter,true)) }
     SheetScaffold(jt("Trip journal","Fahrtenbuch","Carnet de trajets","Rittenboek"),onDismiss,"trip-journal-sheet",onBack=if(selected!=null) ({selected=null;selectedTime=null}) else null,containerColor=Color.White) {
         LazyColumn(Modifier.fillMaxSize().testTag("trip-journal-list"),verticalArrangement=Arrangement.spacedBy(12.dp)) {
@@ -433,7 +433,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
                     val first=gps.firstOrNull()?.optDouble("time");val last=gps.lastOrNull()?.optDouble("time")
                     if(first!=null && last!=null && last>first) Slider(((selectedTime ?: first)-first).toFloat(),{selectedTime=first+it},valueRange=0f..(last-first).toFloat(),modifier=Modifier.semantics { contentDescription=jt("Route time","Zeitpunkt der Route","Heure du tracé","Routetijd") })
                     Row { TextButton({replay=!replay}) {Text(if(replay) jt("Pause","Pause","Pause","Pauze") else jt("Replay","Wiedergeben","Lire","Afspelen"))}
-                        val seek=selectedTime?.let { TripJournalProjection.seek(events,it) };TextButton({playing=seek},enabled=seek!=null) { Text(jt("Video from here","Video ab hier","Vidéo à partir d’ici","Video vanaf hier")) } }
+                        val seek=selectedTime?.let { TripJournalProjection.seek(events,it,journal.mediaLibrary) };TextButton({playing=seek},enabled=seek!=null) { Text(jt("Video from here","Video ab hier","Vidéo à partir d’ici","Video vanaf hier")) } }
                     selectedTime?.let { time -> Text(tripDate(time));val fix=gps.minByOrNull { abs(it.optDouble("time")-time) }?.let(TripJournalProjection::payload)
                         fix?.let { p -> Text("%.5f, %.5f".format(p.optDouble("latitude"),p.optDouble("longitude"))+p.optDouble("speed",Double.NaN).takeIf { it.isFinite() }?.let { " · %.1f km/h".format(it*3.6) }.orEmpty()) }
                     }
@@ -456,7 +456,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
                     item { Text(if(session=="photos") "Panoramax" else jt("Dashcam session","Dashcam-Sitzung","Session dashcam","Dashcamsessie")+" · ${items.size}") }
                     items(items,key={"${it.optString("type")}-${it.optString("id")}-${it.optString("path")}"}) { m ->
                         val path=m.optString("path");val local=m.optString("availability")=="local_original";val remote=path.startsWith("https://")
-                        TextButton({selectedTime=m.optDouble("started_at",m.optDouble("time"));when { remote -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(path))) }.onFailure { failure=it.message };m.optString("type")=="video" -> playing=TripJournalProjection.Seek(path,0.0,m.optString("timing_quality")!="presentation_clock");else -> photo=path }},enabled=local || remote) {
+                        TextButton({selectedTime=m.optDouble("started_at",m.optDouble("time"));when { remote -> runCatching { context.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse(path))) }.onFailure { failure=it.message };m.optString("type")=="video" -> playing=TripJournalProjection.Seek(path,0.0,m.optString("timing_quality")!="presentation_clock",m.optString("id"));else -> photo=m.optString("id") }},enabled=local || remote) {
                             Text("${tripDate(m.optDouble("started_at",m.optDouble("time")))} · ${if(remote) jt("Open in Panoramax","In Panoramax öffnen","Ouvrir dans Panoramax","Openen in Panoramax") else File(path).name} · ${if(local) jt("Local original","Lokales Original","Original local","Lokaal origineel") else if(remote) jt("Remote link","Remote-Link","Lien distant","Externe link") else jt("Missing/deleted","Fehlt/gelöscht","Absent/supprimé","Ontbreekt/verwijderd")}")
                         }
                     }
@@ -532,10 +532,10 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     if(library && galleryContent!=null) galleryContent(media) {library=false}
     playing?.let { seek -> SheetScaffold(jt("Dashcam playback","Dashcam-Wiedergabe","Lecture dashcam","Dashcam afspelen"),{playing=null},"trip-video-sheet") { Column {
         if(seek.approximate) Text(jt("Approximate capture-clock alignment (up to 2 s)","Ungefähre Aufnahmezeit-Zuordnung (bis 2 s)","Alignement approximatif (jusqu’à 2 s)","Geschatte klokuitlijning (tot 2 s)"))
-        AndroidView(factory={ ctx -> VideoView(ctx).apply {setVideoPath(seek.path);setMediaController(MediaController(ctx).also {it.setAnchorView(this)});setOnPreparedListener {seekTo((seek.seconds*1000).toInt());start()} }},modifier=Modifier.fillMaxSize(),onRelease={it.stopPlayback()})
+        AndroidView(factory={ ctx -> VideoView(ctx).apply {journal.mediaLibrary.file(seek.id,"video")?.let {setVideoPath(it.path)};setMediaController(MediaController(ctx).also {it.setAnchorView(this)});setOnPreparedListener {seekTo((seek.seconds*1000).toInt());start()} }},modifier=Modifier.fillMaxSize(),onRelease={it.stopPlayback()})
     } } }
     photo?.let { path -> SheetScaffold(jt("Photo · this trip","Foto · diese Fahrt","Photo · ce trajet","Foto · deze rit"),{photo=null},"trip-photo-sheet") {
-        val bitmap=remember(path) { BitmapFactory.decodeFile(path) };DisposableEffect(bitmap) {onDispose {bitmap?.recycle()}}
+        val bitmap=remember(path) { journal.mediaLibrary.open(path,"photo")?.use {BitmapFactory.decodeStream(it)} };DisposableEffect(bitmap) {onDispose {bitmap?.recycle()}}
         bitmap?.let {Image(it.asImageBitmap(),contentDescription=jt("Captured photo","Aufgenommenes Foto","Photo capturée","Gemaakte foto"),modifier=Modifier.fillMaxSize())}
     } }
 }

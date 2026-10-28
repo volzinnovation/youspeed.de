@@ -29,10 +29,109 @@ class TripJournalAcceptanceInstrumentedTest {
         val context=object:ContextWrapper(base) {
             override fun getFilesDir()=File(root,"files").apply {mkdirs()}
             override fun getCacheDir()=File(root,"cache").apply {mkdirs()}
+            override fun getNoBackupFilesDir()=File(root,"no-backup").apply {mkdirs()}
             override fun getSharedPreferences(name:String,mode:Int):SharedPreferences=base.getSharedPreferences(preferenceName,mode)
         }
         val clock=Clock()
         try {TripJournal(context,false,{clock.wall},{clock.elapsed}).use {test(context,clock,it)}} finally {base.deleteSharedPreferences(preferenceName);root.deleteRecursively()}
+    }
+
+    private fun libraryPhoto(context:Context,id:String,jpeg:File):File {
+        val store=PanoramaxQueueStore(context)
+        val batch=store.createBatch("photo-session")
+        val at=java.time.Instant.now()
+        val metadata=PanoramaxCaptureMetadata(id,batch.captureSessionId,at,PanoramaxLocationSample(48.0,8.0,at,3.0),PanoramaxQueueStore.sha256(jpeg),jpeg.length(),"YouSpeed/test")
+        return store.originalFile(store.addJpeg(batch.batchId,jpeg,jpeg,metadata))
+    }
+
+    private fun libraryVideo(context:Context,id:String,bytes:ByteArray):File = File(context.filesDir,"dashcam/$id").apply {
+        parentFile!!.mkdirs();writeBytes(bytes)
+    }
+
+    @Test fun restoredMediaUsesLibraryIdentityAndNeverImportedPathOrLocalPath()=isolated {context,clock,journal ->
+        journal.setEnabled(true);journal.start();val trip=journal.snapshot().first.single().getString("id")
+        journal.location(clock.fix(48.0));journal.snapshot();clock.advance(2.0);journal.location(clock.fix(48.001));journal.snapshot()
+        val privateBytes="PRIVATE SENTINEL".toByteArray()
+        val privateFile=File(context.filesDir,"private.sqlite").apply {writeBytes(privateBytes)}
+        val originalBytes="LIBRARY ORIGINAL".toByteArray()
+        val original=libraryVideo(context,"owned.mp4",originalBytes)
+        journal.bind("capture")
+        journal.media("capture","fake.mp4",privateFile.path,"video",clock.wall,metadata=mapOf("started_at" to clock.wall,"duration_s" to 10.0))
+        journal.media("capture","wrong-photo",original.path,"photo",clock.wall)
+        journal.media("capture","owned.mp4","/old-container/owned.mp4","video",clock.wall)
+        val payload=journal.backupPayload()
+        val entries=payload.getJSONArray("events")
+        for(index in 0 until entries.length()) {
+            val entry=entries.getJSONObject(index)
+            if(entry.getString("kind")=="media") entry.put("payload",TripJournalProjection.payload(entry).put("local_path",privateFile.path).toString())
+        }
+        val backup=TripJournalFiles.backup(context,payload,"synthetic-password")
+        journal.restore(backup,"synthetic-password")
+        val projected=TripJournalProjection.media(journal.events(trip),journal.mediaLibrary)
+        assertEquals("local_missing",projected.single {it.optString("id")=="fake.mp4"}.getString("availability"))
+        assertEquals("local_missing",projected.single {it.optString("id")=="wrong-photo"}.getString("availability"))
+        assertEquals(original.canonicalFile,File(projected.single {it.optString("id")=="owned.mp4"}.getString("path")).canonicalFile)
+        assertNull(TripJournalProjection.seek(journal.events(trip),clock.wall+1,journal.mediaLibrary))
+        listOf("../private.sqlite","nested/owned.mp4","","private.sqlite").forEach {assertNull(journal.mediaLibrary.open(it,"video"))}
+        ZipFile(journal.archive(trip,TripExportOptions(selectedMedia=projected.map {it.getString("id")}.toSet()))).use {zip ->
+            val copies=zip.entries().asSequence().filter {it.name.startsWith("media/")}.toList()
+            assertEquals(1,copies.size);assertArrayEquals(originalBytes,zip.getInputStream(copies.single()).readBytes())
+        }
+        assertArrayEquals(privateBytes,privateFile.readBytes())
+        original.delete()
+        assertNull(journal.mediaLibrary.file("owned.mp4","video"))
+    }
+
+    @Test fun localMediaRejectsFinalAndParentSymlinksAndPinsOpenedOriginal()=isolated {context,clock,journal ->
+        journal.setEnabled(true);journal.start();val trip=journal.snapshot().first.single().getString("id")
+        val privateFile=File(context.filesDir,"private.mp4").apply {writeText("PRIVATE")}
+        assertNull(journal.mediaLibrary.open("private.mp4","video"))
+        val originalBytes="ORIGINAL".toByteArray()
+        val original=libraryVideo(context,"owned.mp4",originalBytes)
+        journal.bind("capture");journal.media("capture","owned.mp4",original.path,"video",clock.wall)
+        val projected=TripJournalProjection.media(journal.events(trip),journal.mediaLibrary)
+        assertEquals("local_original",projected.single().getString("availability"))
+        journal.mediaLibrary.open("owned.mp4","video")!!.use {input ->
+            assertTrue(original.delete());android.system.Os.symlink(privateFile.path,original.path)
+            assertNull(journal.mediaLibrary.file("owned.mp4","video"));assertNull(journal.mediaLibrary.open("owned.mp4","video"))
+            assertArrayEquals(originalBytes,input.readBytes())
+            ZipFile(journal.archive(trip,TripExportOptions(selectedMedia=setOf("owned.mp4")))).use {zip ->
+                assertFalse(zip.entries().asSequence().any {it.name.startsWith("media/")})
+            }
+        }
+        assertTrue(original.delete());original.writeBytes(originalBytes)
+        val outside=File(context.filesDir,"outside-library")
+        assertTrue(original.parentFile!!.renameTo(outside));android.system.Os.symlink(outside.path,original.parentFile!!.path)
+        assertNull(journal.mediaLibrary.open("owned.mp4","video"));assertTrue(original.parentFile!!.delete())
+        val staged=File(context.cacheDir,"photo.jpg")
+        val bitmap=android.graphics.Bitmap.createBitmap(2,2,android.graphics.Bitmap.Config.ARGB_8888)
+        staged.outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG,95,it)};bitmap.recycle()
+        val photo=libraryPhoto(context,"photo",staged)
+        assertNotNull(journal.mediaLibrary.file("photo","photo"))
+        journal.media("capture","unknown-photo",photo.path,"photo",clock.wall)
+        val forgedPhoto=TripJournalProjection.media(journal.events(trip),journal.mediaLibrary).single {it.optString("id")=="unknown-photo"}
+        assertEquals("local_missing",forgedPhoto.getString("availability"));assertNull(journal.mediaLibrary.open("unknown-photo","photo"))
+        val moved=File(context.filesDir,"outside-capture")
+        assertTrue(photo.parentFile!!.renameTo(moved));android.system.Os.symlink(moved.path,photo.parentFile!!.path)
+        assertNull(journal.mediaLibrary.file("photo","photo"));assertNull(journal.mediaLibrary.open("photo","photo"))
+    }
+
+    @Test fun remoteAndMissingPhotoMetadataRemainAvailableWithoutTrustingTheirLocators()=isolated {context,clock,journal ->
+        val staged=File(context.cacheDir,"photo.jpg")
+        val bitmap=android.graphics.Bitmap.createBitmap(2,2,android.graphics.Bitmap.Config.ARGB_8888)
+        staged.outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG,95,it)};bitmap.recycle()
+        val original=libraryPhoto(context,"photo",staged)
+        journal.setEnabled(true);journal.start();val trip=journal.snapshot().first.single().getString("id")
+        journal.bind("capture");journal.media("capture","photo","/old-container/photo.jpg","photo",clock.wall)
+        journal.media("capture","photo","https://example.invalid/?pic=photo","photo_remote",clock.wall)
+        val projected=TripJournalProjection.media(journal.events(trip),journal.mediaLibrary)
+        assertEquals(setOf("local_original","remote_reference"),projected.map {it.getString("availability")}.toSet())
+        assertEquals("The trip library filter uses the queue's trusted path alias",original.absolutePath,
+            projected.single {it.getString("availability")=="local_original"}.getString("path"))
+        assertTrue(original.delete())
+        val missing=TripJournalProjection.media(journal.events(trip),journal.mediaLibrary)
+        assertEquals(setOf("local_missing","remote_reference"),missing.map {it.getString("availability")}.toSet())
+        assertEquals(2,missing.size)
     }
     @Test fun gpsRetriesAndStorageOptOutDoNotDuplicateOrRetainPrivateTrack()=isolated { _,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")
@@ -222,10 +321,11 @@ class TripJournalAcceptanceInstrumentedTest {
     @Test fun maskedSelectedPhotoStripsGpsAndPreservesOriginalAndUnknownPositionIsExcluded()=isolated { context,clock,journal ->
         journal.setEnabled(true);journal.start();val id=journal.snapshot().first.single().getString("id")
         for(i in 0..6) {journal.location(clock.fix(48.0+i*0.0005));journal.snapshot();clock.advance(1.0)}
-        val original=File(context.filesDir,"sample.jpg")
+        val staged=File(context.filesDir,"sample.jpg")
         val bitmap=android.graphics.Bitmap.createBitmap(16,8,android.graphics.Bitmap.Config.ARGB_8888)
-        original.outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG,95,it)};bitmap.recycle()
-        androidx.exifinterface.media.ExifInterface(original).apply {setLatLong(48.0015,8.0);setAttribute(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90.toString());saveAttributes()}
+        staged.outputStream().use {bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG,95,it)};bitmap.recycle()
+        androidx.exifinterface.media.ExifInterface(staged).apply {setLatLong(48.0015,8.0);setAttribute(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90.toString());saveAttributes()}
+        val original=libraryPhoto(context,"visible",staged)
         val bytes=original.readBytes();val measured=journal.snapshot().second.getDouble("distance")
         journal.bind("photo-session");journal.media("photo-session","visible",original.path,"photo",clock.wall-4,metadata=mapOf("latitude" to 48.0015,"longitude" to 8.0,"accuracy" to 3.0))
         journal.media("photo-session","unknown",original.path,"photo",clock.wall-100)

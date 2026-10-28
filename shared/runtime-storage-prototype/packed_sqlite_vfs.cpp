@@ -1,4 +1,6 @@
 #include "packed_runtime.h"
+#define YSP_BUNDLE_DELTA_SQL_IMPLEMENTATION
+#include "bundle_delta_sql.h"
 #include <sqlite3.h>
 #include <algorithm>
 #include <cstring>
