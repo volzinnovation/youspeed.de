@@ -1,0 +1,36 @@
+name: Repository credential hygiene
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - codex/youspeed-v1.5-mobidata-bw
+  workflow_dispatch:
+    inputs:
+      history:
+        description: Also inspect every reachable Git blob
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  credentials:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify scanner behavior
+        run: python3 -m unittest tests.test_repository_secrets
+      - name: Inspect tracked files
+        run: python3 scripts/check_repository_secrets.py
+      - name: Inspect reachable history when requested
+        if: github.event_name == 'workflow_dispatch' && inputs.history
+        run: python3 scripts/check_repository_secrets.py --history

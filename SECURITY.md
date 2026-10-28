@@ -13,3 +13,7 @@ Security fixes are applied to the current release line. Users should update to t
 ## Repository hygiene
 
 Contributions must not contain credentials, signing material, device identifiers, private release configuration, or non-consensual location and driving traces. Use synthetic fixtures for public tests and keep local diagnostics in ignored paths.
+
+Before committing, run `python3 scripts/check_repository_secrets.py` to check tracked files without printing matched credential values. Run `python3 scripts/check_repository_secrets.py --history` before pushing to also inspect reachable Git history. The repository hygiene workflow runs the tracked-file check on pull requests and pushes.
+
+Keep local credentials under ignored `secret/`, `secrets/`, or `credentials/` directories, or use environment variables and the platform credential store. Ignore rules prevent accidental additions; they do not remove files already tracked or erase earlier commits. If a real credential is found, revoke or rotate it before coordinating any required history cleanup. Pattern-based checks supplement review and cannot prove that every possible secret format is absent.

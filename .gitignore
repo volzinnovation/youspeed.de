@@ -7,9 +7,12 @@
 # Python
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.ruff_cache/
 
 # JavaScript/static-site tooling
-node_modules/
+# Match local dependency-directory symlinks as well as directories.
+node_modules
 npm-debug.log*
 .parcel-cache/
 coverage/
@@ -17,6 +20,7 @@ coverage/
 # Local build/runtime outputs
 /output/
 .codex-tmp/
+.worktrees/
 .tmp/
 tmp/
 *.tmp
@@ -93,12 +97,15 @@ android/**/build/
 android/**/.cxx/
 
 # Credentials and machine-local signing configuration
-/secret/MAPILLARY-CLIENT-TOKEN.txt
+/secret/
+/secrets/
+/credentials/
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.p8
 *.p12
 *.pfx
 *.jks
@@ -107,6 +114,17 @@ android/**/.cxx/
 *.provisionprofile
 *.ipa
 *.xcarchive/
+
+# Ad-hoc repository statistics and UI inspection exports
+/authors.json
+/cohorts.json
+/dirs.json
+/domains.json
+/exts.json
+/survival.json
+/stack_plot.png
+/eye-view-landscape.png
+/eye-view-portrait.png
 
 # Local browser captures, scratch databases and private collection evidence
 .playwright-mcp/

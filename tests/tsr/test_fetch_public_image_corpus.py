@@ -49,7 +49,7 @@ def test_user_supplied_youspeed_panoramax_host_is_supported_without_broadening_s
 
 
 @pytest.mark.parametrize("url", ["file:///etc/passwd", "http://panoramax.openstreetmap.fr/a",
-                                "https://example.com/a", "https://user:pass@panoramax.openstreetmap.fr/a"])
+                                "https://example.com/a", "https://user:dummy-password@panoramax.openstreetmap.fr/a"])
 def test_unapproved_urls_rejected(url):
     with pytest.raises(ValueError, match="HTTPS"):
         public_url(url)

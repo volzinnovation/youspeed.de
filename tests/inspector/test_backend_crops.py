@@ -603,7 +603,7 @@ class StoreTests(unittest.TestCase):
     def test_mobile_proxy_configuration_rejects_non_loopback_origins_before_transport_creation(self):
         invalid = ["https://127.0.0.1:8080", "http://example.com", "http://127.0.0.1.evil.test",
             "http://localhost/path", "http://localhost?secret=x", "http://localhost#fragment",
-            "http://user:secret@localhost", "http://localhost:bad", "http://localhost:0",
+            "http://user:dummy-password@localhost", "http://localhost:bad", "http://localhost:0",
             "http://localhost:65536", "file:///private/image", " http://localhost", "http://localhost\\@example.com"]
         with patch.object(server.urllib.request, "build_opener") as transport:
             for origin in invalid:
@@ -633,7 +633,7 @@ class StoreTests(unittest.TestCase):
     def test_default_report_user_and_redacted_database_errors(self):
         with patch.dict(server.os.environ, {}, clear=True):
             self.assertEqual(server.arguments([]).db_user, "youspeed_report")
-        error = Exception("postgresql://user:password@private-host/db")
+        error = Exception("postgresql://user:dummy-password@private-host/db")
         self.assertNotIn("password@", str(server.database_error(error)))
 
 
