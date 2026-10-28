@@ -49,10 +49,16 @@ enum JournalZIP {
     static func write(directory: URL, to destination: URL, maximumArchiveSize: UInt64 = UInt64(UInt32.max)) throws {
         let manager = FileManager.default
         let root = directory.standardizedFileURL.resolvingSymlinksInPath()
-        let target = destination.standardizedFileURL.resolvingSymlinksInPath()
         var isDirectory: ObjCBool = false
         guard manager.fileExists(atPath: root.path, isDirectory: &isDirectory), isDirectory.boolValue else { throw Failure.invalidDirectory }
-        guard target.path != root.path, !target.path.hasPrefix(root.path + "/") else { throw Failure.invalidDestination }
+        let requestedTarget = destination.standardizedFileURL
+        // On iPhone, a missing leaf and an existing directory can resolve /var and
+        // /private/var differently. Resolve the parent before adding a new filename.
+        let target = manager.fileExists(atPath: requestedTarget.path)
+            ? requestedTarget.resolvingSymlinksInPath()
+            : requestedTarget.deletingLastPathComponent().resolvingSymlinksInPath()
+                .appendingPathComponent(requestedTarget.lastPathComponent)
+        guard !target.pathComponents.starts(with: root.pathComponents) else { throw Failure.invalidDestination }
         let sources = try list(root)
         guard sources.count < Int(UInt16.max) else { throw Failure.tooManyEntries }
         let temporary = target.deletingLastPathComponent().appendingPathComponent(".\(target.lastPathComponent).\(UUID().uuidString).partial")

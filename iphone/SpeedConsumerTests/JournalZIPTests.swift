@@ -71,7 +71,72 @@ final class JournalZIPTests: XCTestCase {
             XCTAssertFalse(FileManager.default.fileExists(atPath: output.path))
             try FileManager.default.removeItem(at: input.appendingPathComponent("journal.json"))
             try save(Data("{}".utf8), as: "journal.json", in: input)
-            XCTAssertThrowsError(try JournalZIP.write(directory: input, to: input.appendingPathComponent("self.zip")))
+            let destination = input.appendingPathComponent("self.zip")
+            let oldRoot = input.standardizedFileURL.resolvingSymlinksInPath()
+            let oldTarget = destination.standardizedFileURL.resolvingSymlinksInPath()
+            print("ZIP_DESTINATION_REGRESSION source=\(oldRoot.path) target=\(oldTarget.path) source_components=\(oldRoot.pathComponents) target_components=\(oldTarget.pathComponents)")
+            assertInvalidDestination(input, destination)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        }
+    }
+
+    func testSourceAndNestedDestinationsAreRejectedWithoutChangingExistingFiles() throws {
+        try fixture { _, input, _ in
+            let original = Data("original source bytes".utf8)
+            let existing = input.appendingPathComponent("journal.json")
+            try original.write(to: existing)
+            let nested = input.appendingPathComponent("nested", isDirectory: true)
+            try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+            assertInvalidDestination(input, input)
+            assertInvalidDestination(input, existing)
+            assertInvalidDestination(input, nested.appendingPathComponent("export.zip"))
+            assertInvalidDestination(input.resolvingSymlinksInPath(), input.appendingPathComponent("fresh.zip"))
+            assertInvalidDestination(input, input.resolvingSymlinksInPath().appendingPathComponent("fresh.zip"))
+            XCTAssertEqual(try Data(contentsOf: existing), original)
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: input.path).sorted(), ["journal.json", "nested"])
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: nested.path), [])
+        }
+    }
+
+    func testDestinationsThroughSymlinksIntoSourceAreRejected() throws {
+        try fixture { root, input, _ in
+            let original = Data("source must survive rejection".utf8)
+            let existing = input.appendingPathComponent("journal.json")
+            try original.write(to: existing)
+            let directoryAlias = root.appendingPathComponent("source-alias", isDirectory: true)
+            try FileManager.default.createSymbolicLink(at: directoryAlias, withDestinationURL: input)
+            let fileAlias = root.appendingPathComponent("existing.zip")
+            try FileManager.default.createSymbolicLink(at: fileAlias, withDestinationURL: existing)
+            assertInvalidDestination(input, directoryAlias.appendingPathComponent("fresh.zip"))
+            assertInvalidDestination(directoryAlias, input.appendingPathComponent("fresh.zip"))
+            assertInvalidDestination(input, fileAlias)
+            XCTAssertEqual(try Data(contentsOf: existing), original)
+            XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: input.path), ["journal.json"])
+        }
+    }
+
+    func testSimilarlyNamedSiblingAndItsDirectoryAliasRemainValidDestinations() throws {
+        try fixture { root, input, _ in
+            let original = Data("{\"trip\":\"sibling export\"}".utf8)
+            try save(original, as: "journal.json", in: input)
+            let sibling = root.appendingPathComponent("source-other", isDirectory: true)
+            try FileManager.default.createDirectory(at: sibling, withIntermediateDirectories: true)
+            let alias = root.appendingPathComponent("sibling-alias", isDirectory: true)
+            try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: sibling)
+            for (index, directory) in [sibling, alias].enumerated() {
+                let destination = directory.appendingPathComponent("trip-\(index).zip")
+                try JournalZIP.write(directory: input, to: destination)
+                XCTAssertEqual(try decode(Data(contentsOf: destination))["journal.json"]?.data, original)
+            }
+            XCTAssertEqual(try Data(contentsOf: input.appendingPathComponent("journal.json")), original)
+        }
+    }
+
+    private func assertInvalidDestination(_ input: URL, _ destination: URL, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertThrowsError(try JournalZIP.write(directory: input, to: destination), file: file, line: line) { error in
+            guard case JournalZIP.Failure.invalidDestination = error else {
+                return XCTFail("Expected invalidDestination, received \(error)", file: file, line: line)
+            }
         }
     }
 
