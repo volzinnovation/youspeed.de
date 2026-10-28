@@ -479,6 +479,7 @@ class ConsumerSessionController(
     private val debugLogPersistence = DebugLogPersistence(
         preferences.getBoolean(DebugLogPersistence.PREFERENCE_KEY, true),
     )
+    private val diagnosticJournalPolicy = AppDiagnosticJournalPolicy()
     private val appContext = context.applicationContext
     internal val tripJournal = TripJournal.get(appContext)
     // Shared v1.4 collection storage and automatic upload coordinator.
@@ -3673,7 +3674,7 @@ class ConsumerSessionController(
         (uiState.currentSpeedKmh / 3.6).takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
 
     private fun appendCaptureConfigurationDiagnostic(reason: String) {
-        appendRuntimeDiagnosticEvent("capture_configuration", mapOf(
+        val details = mapOf(
             "schemaVersion" to 1, "reason" to reason,
             "photosSelected" to panoramaxCaptureEnabled, "photosEnabled" to isPanoramaxCaptureEnabled(),
             "dashcamEnabled" to isDashcamRecordingEnabled(), "recognitionEnabled" to isTrafficSignRecognitionRuntimeEnabled(),
@@ -3686,7 +3687,12 @@ class ConsumerSessionController(
             "showDetectedLanes" to uiState.showDetectedLanes,
             "laneOverlaySource" to "independent_preview",
             "previewVisibilityAvailable" to true, "previewVisible" to lanePreviewVisible,
-            "previewGeometryAvailable" to (lanePreviewGeometry != null)))
+            "previewGeometryAvailable" to (lanePreviewGeometry != null))
+        debugLogPersistence.withLock {
+            if (diagnosticJournalPolicy.shouldLogCaptureConfiguration(details, debugLogPersistence.ticket())) {
+                appendRuntimeDiagnosticEvent("capture_configuration", details)
+            }
+        }
     }
 
     private fun reconcileTrafficSignCamera(reason: String = "capture_state") {
@@ -7536,7 +7542,7 @@ class ConsumerSessionController(
         event: String,
         details: Map<String, Any?> = emptyMap(),
     ) {
-        tripJournal.tsr(event, details)
+        if (diagnosticJournalPolicy.retainInJournal(event, details)) tripJournal.tsr(event, details)
         val ticket = debugLogPersistence.ticket() ?: return
         val timestamp = clock.instant()
         val snapshot = details.toMap()

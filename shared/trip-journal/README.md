@@ -146,3 +146,24 @@ explicit: a media metadata record is not proof that its original image/video
 bytes were included. Small reports/tracks and the media index remain useful
 alternative views; the full raw event stream is no longer repeated in several
 sidecars. The web importer and its upload limits are unchanged.
+
+## App-side diagnostic copies
+
+New iPhone sessions record structured frame/OCR evidence directly in the journal;
+prose and serialized debug lines are written only to the dedicated TSR log.
+The redundant informational OS-log copy of each TSR summary is also removed.
+Warnings, faults and the independent frame, sign, GPS, media and gap records
+remain available.
+
+Android no longer mirrors known timing, camera/lane cadence, capture-configuration,
+routine speech-playback and UI-composition diagnostics into the trip journal. The dedicated
+runtime diagnostic log still receives them under the existing Debug logging
+setting. Recognition/sign observations, path/applicability evidence, errors,
+state transitions and unknown event types remain eligible for the journal.
+Unchanged capture configurations are logged once per enabled debug interval;
+real configuration changes are still logged even when their reason is unchanged.
+
+These changes reduce future writes and exports. Existing logs, journal events,
+backups and legacy diagnostic exports are preserved. Diagnostic logging and
+structured trip recording retain their existing independent settings. GPS CSV
+and matcher output remain compatible with their existing readers.

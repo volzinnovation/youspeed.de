@@ -4761,15 +4761,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         maybeSpeakOverspeedWarning()
     }
 
-    /// Direct test/diagnostic frame events remain presentation-only. Runtime
-    /// activation is deliberately unavailable without the passage finalizer.
-    func acceptTrafficSignRecognitionEvent(_ event: TrafficSignRecognitionEvent) {
-        if let data = try? JSONEncoder().encode(event), let json = String(data: data, encoding: .utf8) { TripJournal.shared.tsr(json, at: event.frameTimestampUtc) }
-        guard trafficSignMutationIsEnabled else { return }
-        publishTrafficSignRecognitionState(for: event)
-        refreshTrafficSignFrameSnapshot()
-    }
-
     private func persistTrafficSignPassage(
         _ passage: TrafficSignPassageEvent,
         decision: TrafficSignPassagePersistenceDecision,
@@ -5123,7 +5114,6 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let latency = String(format: "%.1f", event.latencyMs)
         let baseSpeed = baseSpeedKmh.map(String.init) ?? "none"
         let line = "timestamp=\(timestamp) event_id=\(eventID) source=\(event.source.rawValue) state=\(event.state.rawValue) speed_kmh=\(speedText) confidence=\(confidenceText) track=\(trackID) restrictions=\(restrictionCount) way=\(wayID) lat=\(latitude) lon=\(longitude) heading=\(heading) direction=\(direction) passage=\(passageLog.value) shadow_state=\(shadowState) shadow_speed_kmh=\(shadowSpeed) base_speed_kmh=\(baseSpeed) shadow_comparison=\(shadowComparison) latency_ms=\(latency) qa_log=\(qaLogReference) image=\(imageReference)"
-        Self.tsrLogger.info("\(line, privacy: .public)")
         appendTSRLogLine(line)
     }
 
@@ -10026,11 +10016,10 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func appendTSRLog(_ fields: String, timestamp: Date = Date()) {
-        appendTSRLogLine("timestamp=\(Self.trafficSignTimestamp(timestamp)) \(fields)", timestamp: timestamp)
+        appendTSRLogLine("timestamp=\(Self.trafficSignTimestamp(timestamp)) \(fields)")
     }
 
-    private func appendTSRLogLine(_ line: String, timestamp: Date? = nil) {
-        TripJournal.shared.tsr(line, at: timestamp)
+    private func appendTSRLogLine(_ line: String) {
         guard startupLogReviewState != .clearing else { return }
         guard let logURL = prepareTSRLogFileIfNeeded() else { return }
         do {
