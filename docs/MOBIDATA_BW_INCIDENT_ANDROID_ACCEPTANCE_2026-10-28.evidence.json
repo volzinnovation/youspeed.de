@@ -1,0 +1,206 @@
+{
+  "format": "youspeed.android.incident-client.physical-acceptance.v1",
+  "completed_at_utc": "2026-10-28T20:51:04.384237+00:00",
+  "scope": "Updated-client acceptance on a physical device; backend deployment and source activation remain postponed.",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "device": {
+    "model": "moto g86 5G",
+    "api_level": 36,
+    "physical": true,
+    "identity_evidence": "Private local evidence; no device serial published."
+  },
+  "application": {
+    "id": "de.youspeed.android.debug",
+    "marketing_version": "1.5",
+    "installed_version_name": "1.5-debug",
+    "original_build": 10078,
+    "intermediate_build": 10079,
+    "final_build": 10080,
+    "installation": "adb install -r; no uninstall or app-data clearing",
+    "first_install_time_preserved": true,
+    "apk": {
+      "build": 10080,
+      "marketing_version": "1.5",
+      "package": "de.youspeed.android.debug",
+      "bytes": 637953697,
+      "sha256": "c3b13e2e8b97717566c6b1551860294d931ffbc2dc14013d7403f2223698b62a",
+      "private_incident_acceptance_assets_in_apk": false
+    },
+    "installed_apk_sha256": "c3b13e2e8b97717566c6b1551860294d931ffbc2dc14013d7403f2223698b62a"
+  },
+  "physical_tests": {
+    "target": "de.youspeed.android.testhost",
+    "build": 10080,
+    "tests": 15,
+    "passed": 15,
+    "failed": 0,
+    "skipped": 0,
+    "duration_seconds": 18.568,
+    "classes": {
+      "RoadAdvisoryAcceptanceInstrumentedTest": 6,
+      "RoadworksServiceInstrumentedTest": 3,
+      "TrafficSignObservationConcurrencyInstrumentedTest": 6
+    },
+    "coverage": [
+      "Captured backend artifact:111 features,19 reported-active,78 eligible at capture; incidents-only fixture configuration.",
+      "Source-active time uses trusted server/monotonic clock while GPS retains handset wall-age validation.",
+      "304 sends conditional validator and preserves original received clock;15-minute report lease expires.",
+      "Wrong publication binding andHTTP503 retain accepted cache and cannot keep an expired report alerting.",
+      "Restored disk cache has unknown clock and cannot alert until a new200 clock binding;304 cannot bind it.",
+      "Old source-modified time suppresses otherwise active reports.",
+      "Actual production dashboard and parked details render recorded congestion/source/age/distance/expiry and direction caveat.",
+      "Six real controller/store ANR interleaving regressions: generation/OCR rollback, receipt exclusion, duplicate branches, nonblocking UI, admitted writes."
+    ],
+    "final_log": {
+      "private_local_reference": "isolated-10080-final-instrumentation.log",
+      "bytes": 11308,
+      "sha256": "b6273334eb6eb1242f623fe362bc7c781a028e3a8e15e2911893347307992075"
+    }
+  },
+  "visual_acceptance": {
+    "test_data_only": true,
+    "captured_publication_server_time": "2026-10-28T18:54:34Z",
+    "transport": "Injected into isolated host only; no live requests, no real-feed activation.",
+    "location": "Synthetic point on a captured public feature; dashboard0km/h; no fabricated road trip.",
+    "snapshot_sha256": "e923679be79ed2deabd37f549987ac8ecd4a2152b2a0f677162cc83d7a5f201a",
+    "captured_features": 111,
+    "reported_active_features": 19,
+    "eligible_features_at_capture": 78,
+    "shown_kind": "congestion",
+    "production_layout": "Summary(kind+distance), source+age+delay/offline metadata, optional one-line road name. Existing dashboard foreground contrast palette; full description remains parked.",
+    "caption_bounds_px": "Rect.fromLTRB(0.0, 1358.0, 1220.0, 1505.0)",
+    "metadata_bounds_px": "Rect.fromLTRB(178.0, 1409.0, 1043.0, 1454.0)",
+    "caption_light_pixels": 18057,
+    "metadata_light_pixels": 5565,
+    "metadata_ellipsized": false,
+    "metadata_full_text_visible": true,
+    "metadata_visible_character_count": 50,
+    "metadata_text_length": 50,
+    "dashboard": {
+      "private_local_reference": "incident-ui-testdata-10080/incident-testdata-dashboard.png",
+      "bytes": 151048,
+      "sha256": "f245382aa480ff774a0b6e65ca690e8871e521ce94079c548bf23ddd40b26e25"
+    },
+    "metadata_crop": {
+      "private_local_reference": "incident-ui-testdata-10080/incident-testdata-metadata.png",
+      "bytes": 10067,
+      "sha256": "7c87a7fd00e477712ddfd0d8fc17fb50ca4b34d3a9c29890fc2e59fca111e9bf"
+    },
+    "parked_details": {
+      "private_local_reference": "incident-ui-testdata-10080/incident-testdata-details.png",
+      "bytes": 308279,
+      "sha256": "87ffcebaf1c8d0c9acc1ea36c2556e4e605f8be5b3dcb7de1cf45ec16c2d0bb3"
+    }
+  },
+  "normal_app_smoke": {
+    "stationary_dashboard_loaded": true,
+    "displayed_speed_kmh": 0,
+    "screenshot_extras_used": false,
+    "advisory_opt_in_before": false,
+    "advisory_opt_in_after": false,
+    "roadworks_preference_file_absent_before_and_after": true,
+    "off_switch_visually_confirmed": true,
+    "switch_toggled": false,
+    "capture_and_recognition_preferences": "Preserved as found. Their normal app activity can produce new records after launch.",
+    "logs_startup_choice": "Logs behalten und fortfahren; diagnostics retained.",
+    "off_settings_screen": {
+      "private_local_reference": "normal-10080-settings-scroll4.png",
+      "bytes": 122205,
+      "sha256": "1ac45a52fc6d507aa00984dd0c273b74777d1e3e003fc0d2c761fb3898db30d4"
+    },
+    "dashboard_screen": {
+      "private_local_reference": "normal-10080-final-dashboard.png",
+      "bytes": 218418,
+      "sha256": "0c9edcc32d7e227345e25426bcc52eaf5f29861f5ede0ef3de18337ee94bb661"
+    },
+    "stale_and_failure_behavior": "Verified through isolated real service tests; normal opt-in remained off, so no positive live incident was claimed in the driver installation."
+  },
+  "preservation": {
+    "initial_10078_critical_archive": {
+      "archive_bytes": 622018560,
+      "members": 30,
+      "files": 24,
+      "expanded_bytes": 621998944
+    },
+    "fresh_10079_before10080_critical_archive": {
+      "archive_bytes": 605553152,
+      "members": 28,
+      "files": 22,
+      "expanded_bytes": 605534704,
+      "critical_baselines_match": true
+    },
+    "archives_read_and_all_regular_file_hashes_verified": true,
+    "rollback_10078_apk": {
+      "sha256": "1e9b9d79a0a8ee1183e8d4b4852b4f92f7d02388222b8c9957bcc1a64c63d872",
+      "bytes": 637952933,
+      "installed_build": 10078
+    },
+    "critical_files_unchanged_through_final_install_before_launch": {
+      "shared_prefs/youspeed.xml": "0ddd85b4492b5173e9d34ca5bf58b2093680449dfc6fa0c44c801d06b2345052",
+      "shared_prefs/trip-journal.xml": "41d5a0bfc8eecbca2d71a0b3160a53189ba386f8cd2d73d36f53d0b0ab5fd0e2",
+      "shared_prefs/youspeed.sign_collection.xml": "fdb2f0bb8c2e615bc54517640fac4b565dcc652edfd961df227c2660605bde4b",
+      "files/bundle/active_bundle.json": "4add90f9e41dd93f92b5f808ab6c0c6a09cde4262e2802f79e19b4d9da6bdbf7",
+      "files/bundle/local_observation_store.sqlite": "e8fc315415ea5af7229aa4a5920e84e72d0c61d906ec0c6aa4c648cdddbcbb26",
+      "files/trip-journal/trips.sqlite": "f1ff3d19ce26f0764ceb195f9b00cbfc012ebf24d8dca759666cc45793df76e4",
+      "no_backup/SignCollection/collection.sqlite": "69fd0f11c974e554db444661f6b8c4a404ae16b775c153bd0c25c2c7652adbe0"
+    },
+    "preferences_unchanged_after_final_visual_smoke": true,
+    "active_bundle": {
+      "region": "baden-wuerttemberg",
+      "version": "2026-10-23-v1.5-journal-conditional",
+      "database_bytes": 3185627136,
+      "sha256": "e973d279de2803b13037b9e87132be72f28a22d8f9c9bbef79d73093772b1849",
+      "verified_before_and_after_both_updates": true,
+      "restore_reference": "Existing local compressed database decoded and hashed to identical bytes; active database not redundantly copied."
+    },
+    "file_inventory_10078_before10079": 2084,
+    "file_inventory_10079_after_install_before_launch": 2084,
+    "file_inventory_10079_before10080": 2095,
+    "file_inventory_10080_after_install_before_launch": 2095,
+    "each_update_prelaunch_inventory_identical": true,
+    "original_dashcam_and_panoramax_media_paths_retained": 1968,
+    "original_log_paths_retained": 3,
+    "missing_original_media_or_log_paths": 0,
+    "full_media_and_log_content_copy_or_hash_claimed": false,
+    "media_logs_preservation_limit": "Complete file-path inventories and critical/active-database hashes were verified. Existing media/log bytes remain installed; no claim of hashing every media/log file.",
+    "panoramax_metadata_backup_verified_files": 221,
+    "transient_upload_state": "Two original multipart upload staging files were consumed during ordinary10079 app activity; their original bytes are retained in the verified10078 critical archive. No manual data deletion occurred.",
+    "partial_archive": "The interrupted large-log backup is retained privately as a clearly named partial archive and is not counted as verified backup."
+  },
+  "qualification_history": [
+    {
+      "build": 10079,
+      "initial_physical_run": {
+        "tests": 15,
+        "passed": 11,
+        "failed": 4
+      },
+      "fixture_correction": "Reduced synthetic manifest disabled motorway sources but initially retained coverage.autobahn_included=true. Production rejected it correctly; fixture flag corrected, validation not weakened."
+    },
+    {
+      "build": 10079,
+      "final_physical_run": {
+        "tests": 15,
+        "passed": 15,
+        "failed": 0,
+        "skipped": 0
+      },
+      "production_finding": "Physical screenshot exposed dark default caption text on black dashboard. Both platforms now use their existing dashboard contrast foreground."
+    },
+    {
+      "build": 10080,
+      "initial_physical_run": {
+        "tests": 15,
+        "passed": 14,
+        "failed": 1
+      },
+      "test_correction": "Compose intrinsic didOverflowWidth reported fractional-width overflow despite no line ellipsis and all50characters visible. Regression now checks actual full visible range, no ellipsis, height/parent bounds and visible pixels; product freshness and eligibility gates unchanged."
+    }
+  ],
+  "limits": [
+    "Recorded-source UI demonstrates the actual implementation and does not claim a currently live report on the driver installation.",
+    "No road-driving acceptance or regional completeness/recall/cancellation-by-absence claim.",
+    "No backend deployment, scheduler start, source activation or protected speed-reference-policy change. BEMaS and motorway feeds remain disabled."
+  ],
+  "private_evidence_root": "/private/tmp/youspeed-device-acceptance-20261028/android"
+}

@@ -1,0 +1,837 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "created_at": {
+    "utc": "2026-10-28T18:51:28.408061Z",
+    "europe_berlin": "2026-10-28T19:51:28.408061+01:00",
+    "timezone": "CET"
+  },
+  "scope": "Read-only finite public BEMaS timestamp/content investigation. Raw sources and research scripts remain outside repositories. No activation, deployment, scheduler, live-state mutation or pairing-policy relaxation.",
+  "raw_directory": "/private/tmp/youspeed-bemas-clock-investigation-20261028",
+  "source_urls": {
+    "geojson": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_geojson.json",
+    "datex": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_svzbw.datex2.xml",
+    "cifs": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_cifs.json"
+  },
+  "conclusions": [
+    {
+      "status": "observed",
+      "finding": "HTTP Last-Modified and ETags advanced across one export boundary while complete decoded GeoJSON and DATEX bodies were byte-identical. Conditional follow-up GETs returned200, not304. Fresh representation metadata therefore does not establish new event content or a new XML publication."
+    },
+    {
+      "status": "observed",
+      "finding": "The fresh complete XML publication was2026-10-28T18:34:56.269+01:00, correctly parsed as17:34:56.269UTC /18:34:56.269CET. The GeoJSONHTTP modification clocks were18:40:30UTC and18:45:29UTC (19:40:30/19:45:29CET), producing3933.731s and4232.731s pairing skews."
+    },
+    {
+      "status": "observed",
+      "finding": "The existing900-second pairing guard rejects schedule enrichment in both fresh complete pairs; all840 exported windowfeatures retain unknown schedules and four suspectPoints stay quarantined."
+    },
+    {
+      "status": "interpretation_not_internal_root_cause",
+      "finding": "The observations are consistent with upstream re-export/representation metadata advancing independently of an older XML publication. They do not establish where or why any internal upstream delay occurs. No local offset-conversion bug was found; no broader parser-correctness claim is made."
+    },
+    {
+      "status": "observed",
+      "finding": "The prior complete pair has996 unique joins but147 differing overall intervals.132 of those GeoJSON intervals exactly match compiled XML work phases;10 extend XML overall bounds,13 differ within the GeoJSON phase and2 have unsupported equal-clock ambiguity. Suffix phase expansion is a distinct qualification issue, not a reason to bypass clock checks."
+    }
+  ],
+  "complete_current_samples": [
+    {
+      "round": "20261028T184433Z",
+      "xml": {
+        "publication": {
+          "raw": "2026-10-28T18:34:56.269+01:00",
+          "utc": "2026-10-28T17:34:56.269000Z",
+          "local_iso": "2026-10-28T18:34:56.269000+01:00",
+          "timezone": "CET"
+        },
+        "record_ids": 3366,
+        "records": 3366,
+        "record_version_min": {
+          "raw": "2023-04-04T11:21:09.837000+00:00",
+          "utc": "2023-04-04T11:21:09.837000Z",
+          "local_iso": "2023-04-04T13:21:09.837000+02:00",
+          "timezone": "CEST"
+        },
+        "record_version_max": {
+          "raw": "2026-10-28T17:24:50.690000+00:00",
+          "utc": "2026-10-28T17:24:50.690000Z",
+          "local_iso": "2026-10-28T18:24:50.690000+01:00",
+          "timezone": "CET"
+        },
+        "record_versions_after_publication": 0,
+        "record_map_sha256": "dbbff5fe16a8c01928d15fe098685e1542bf164f8cafd580e10d1b7de0d9e230"
+      },
+      "geojson": {
+        "top_level_keys": [
+          "type",
+          "features"
+        ],
+        "feature_count": 985,
+        "feature_ids_sha256": "7c3c4441ac604b26f5c8bf7134e048b1b4e2951d80508f9e2eaba3afbd9d6961",
+        "feature_map_sha256": "60ee2585df72e6bb3f51ea98e0d99761b572d0760c12773afbfb461b16df8bbb",
+        "xml_join_multiplicity": {
+          "1": 985
+        },
+        "outer_window_comparison": {
+          "within_1_second": 845,
+          "conflict": 140
+        }
+      },
+      "cifs": {
+        "top_level_keys": [
+          "incidents",
+          "timestamp"
+        ],
+        "timestamp": {
+          "raw": "2026-10-28T18:40:28.085418",
+          "trusted_offset_timestamp": false
+        },
+        "incidents_count": 985,
+        "incidents_sha256": "a671d80613c1e49a5f58ef213f6d2c3e7daa00298e1b99ab5984da434bf3b44d"
+      },
+      "clock_differences_seconds": {
+        "geojson_http_modified_minus_xml_publication": 3933.731,
+        "xml_http_modified_minus_xml_publication": 3924.731,
+        "geojson_http_modified_minus_xml_http_modified": 9.0
+      },
+      "actual_adapter": {
+        "receipt": {
+          "geojson_sha256": "8cc38d64588613cc128e41486c850b345e379760ce57ba58f469b30c198a8c18",
+          "datex_sha256": "3fabb08dfd89e843eb0d69e50fd613cc38305102f7ef9ca8ebd1129d441ae548",
+          "source_modified_at": "2026-10-28T18:40:30Z",
+          "source_publication_at": "2026-10-28T17:34:56Z",
+          "last_checked_at": "2026-10-28T18:46:28Z",
+          "last_ingested_at": "2026-10-28T18:46:28Z",
+          "membership_count": 985,
+          "accepted_count": 840,
+          "quarantined_count": 4,
+          "issues": [
+            {
+              "source_id": "138434891-138481357-138481358-138492397-0-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            },
+            {
+              "source_id": "138434891-138481357-138481358-138492397-1-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            },
+            {
+              "source_id": "138434891-138481357-138492799-138492803-0-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            },
+            {
+              "source_id": "138434891-138481357-138492799-138492803-1-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            }
+          ],
+          "evaluation_window": {
+            "start": "2026-10-28T00:00:00Z",
+            "end": "2026-11-05T00:00:00Z"
+          }
+        },
+        "schedule_counts": {
+          "unknown": 840
+        },
+        "quality_flags": {
+          "cross_format_generation_or_identity_unresolved": 840,
+          "one_direction_not_road_verified": 303
+        }
+      },
+      "sampling_started": {
+        "utc": "2026-10-28T18:44:33.218095Z",
+        "europe_berlin": "2026-10-28T19:44:33.218095+01:00",
+        "timezone": "CET"
+      },
+      "pair_completed": {
+        "utc": "2026-10-28T18:46:28.291106Z",
+        "europe_berlin": "2026-10-28T19:46:28.291106+01:00",
+        "timezone": "CET"
+      },
+      "source_receipts": [
+        {
+          "source": "geojson",
+          "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_geojson.json",
+          "status": 200,
+          "elapsed_seconds": 7.153,
+          "decoded_bytes": 1085170,
+          "sha256": "8cc38d64588613cc128e41486c850b345e379760ce57ba58f469b30c198a8c18",
+          "headers": {
+            "content-encoding": "gzip",
+            "content-length": "202198",
+            "content-type": "application/json",
+            "date": "Wed, 28 Oct 2026 18:44:35 GMT",
+            "etag": "\"dmgow9otle2s4c0m\"",
+            "last-modified": "Wed, 28 Oct 2026 18:40:30 GMT",
+            "vary": "Accept-Encoding"
+          },
+          "conditional_request": false,
+          "raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/objects/8cc38d64588613cc128e41486c850b345e379760ce57ba58f469b30c198a8c18",
+          "request_started": {
+            "utc": "2026-10-28T18:44:33.220278Z",
+            "europe_berlin": "2026-10-28T19:44:33.220278+01:00",
+            "timezone": "CET"
+          },
+          "request_finished": {
+            "utc": "2026-10-28T18:44:40.373315Z",
+            "europe_berlin": "2026-10-28T19:44:40.373315+01:00",
+            "timezone": "CET"
+          },
+          "http_clock_labels": {
+            "date": {
+              "utc": "2026-10-28T18:44:35Z",
+              "europe_berlin": "2026-10-28T19:44:35+01:00",
+              "timezone": "CET"
+            },
+            "last-modified": {
+              "utc": "2026-10-28T18:40:30Z",
+              "europe_berlin": "2026-10-28T19:40:30+01:00",
+              "timezone": "CET"
+            }
+          }
+        },
+        {
+          "source": "datex",
+          "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_svzbw.datex2.xml",
+          "status": 200,
+          "elapsed_seconds": 115.072,
+          "decoded_bytes": 29652084,
+          "sha256": "3fabb08dfd89e843eb0d69e50fd613cc38305102f7ef9ca8ebd1129d441ae548",
+          "headers": {
+            "content-encoding": "gzip",
+            "content-length": "1209660",
+            "content-type": "text/xml; charset=utf-8",
+            "date": "Wed, 28 Oct 2026 18:44:34 GMT",
+            "etag": "\"dmgow6krbe4xpxdo\"",
+            "last-modified": "Wed, 28 Oct 2026 18:40:21 GMT",
+            "vary": "Accept-Encoding"
+          },
+          "conditional_request": false,
+          "raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/objects/3fabb08dfd89e843eb0d69e50fd613cc38305102f7ef9ca8ebd1129d441ae548",
+          "request_started": {
+            "utc": "2026-10-28T18:44:33.221212Z",
+            "europe_berlin": "2026-10-28T19:44:33.221212+01:00",
+            "timezone": "CET"
+          },
+          "request_finished": {
+            "utc": "2026-10-28T18:46:28.291106Z",
+            "europe_berlin": "2026-10-28T19:46:28.291106+01:00",
+            "timezone": "CET"
+          },
+          "http_clock_labels": {
+            "date": {
+              "utc": "2026-10-28T18:44:34Z",
+              "europe_berlin": "2026-10-28T19:44:34+01:00",
+              "timezone": "CET"
+            },
+            "last-modified": {
+              "utc": "2026-10-28T18:40:21Z",
+              "europe_berlin": "2026-10-28T19:40:21+01:00",
+              "timezone": "CET"
+            }
+          }
+        },
+        {
+          "source": "cifs",
+          "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_cifs.json",
+          "status": 200,
+          "elapsed_seconds": 43.301,
+          "decoded_bytes": 922359,
+          "sha256": "da62a11036a8abd106e01002e8fa45971baef872820a8bad25fac0926a1adb96",
+          "headers": {
+            "content-encoding": "gzip",
+            "content-length": "203210",
+            "content-type": "application/json",
+            "date": "Wed, 28 Oct 2026 18:44:33 GMT",
+            "etag": "\"dmgow9qvf5ma4csq\"",
+            "last-modified": "Wed, 28 Oct 2026 18:40:30 GMT",
+            "vary": "Accept-Encoding"
+          },
+          "conditional_request": false,
+          "raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/objects/da62a11036a8abd106e01002e8fa45971baef872820a8bad25fac0926a1adb96",
+          "request_started": {
+            "utc": "2026-10-28T18:44:33.221422Z",
+            "europe_berlin": "2026-10-28T19:44:33.221422+01:00",
+            "timezone": "CET"
+          },
+          "request_finished": {
+            "utc": "2026-10-28T18:45:16.521503Z",
+            "europe_berlin": "2026-10-28T19:45:16.521503+01:00",
+            "timezone": "CET"
+          },
+          "http_clock_labels": {
+            "date": {
+              "utc": "2026-10-28T18:44:33Z",
+              "europe_berlin": "2026-10-28T19:44:33+01:00",
+              "timezone": "CET"
+            },
+            "last-modified": {
+              "utc": "2026-10-28T18:40:30Z",
+              "europe_berlin": "2026-10-28T19:40:30+01:00",
+              "timezone": "CET"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "round": "20261028T184704Z",
+      "xml": {
+        "publication": {
+          "raw": "2026-10-28T18:34:56.269+01:00",
+          "utc": "2026-10-28T17:34:56.269000Z",
+          "local_iso": "2026-10-28T18:34:56.269000+01:00",
+          "timezone": "CET"
+        },
+        "record_ids": 3366,
+        "records": 3366,
+        "record_version_min": {
+          "raw": "2023-04-04T11:21:09.837000+00:00",
+          "utc": "2023-04-04T11:21:09.837000Z",
+          "local_iso": "2023-04-04T13:21:09.837000+02:00",
+          "timezone": "CEST"
+        },
+        "record_version_max": {
+          "raw": "2026-10-28T17:24:50.690000+00:00",
+          "utc": "2026-10-28T17:24:50.690000Z",
+          "local_iso": "2026-10-28T18:24:50.690000+01:00",
+          "timezone": "CET"
+        },
+        "record_versions_after_publication": 0,
+        "record_map_sha256": "dbbff5fe16a8c01928d15fe098685e1542bf164f8cafd580e10d1b7de0d9e230"
+      },
+      "geojson": {
+        "top_level_keys": [
+          "type",
+          "features"
+        ],
+        "feature_count": 985,
+        "feature_ids_sha256": "7c3c4441ac604b26f5c8bf7134e048b1b4e2951d80508f9e2eaba3afbd9d6961",
+        "feature_map_sha256": "60ee2585df72e6bb3f51ea98e0d99761b572d0760c12773afbfb461b16df8bbb",
+        "xml_join_multiplicity": {
+          "1": 985
+        },
+        "outer_window_comparison": {
+          "within_1_second": 845,
+          "conflict": 140
+        }
+      },
+      "cifs": {
+        "top_level_keys": [
+          "incidents",
+          "timestamp"
+        ],
+        "timestamp": {
+          "raw": "2026-10-28T18:45:27.112122",
+          "trusted_offset_timestamp": false
+        },
+        "incidents_count": 985,
+        "incidents_sha256": "a671d80613c1e49a5f58ef213f6d2c3e7daa00298e1b99ab5984da434bf3b44d"
+      },
+      "clock_differences_seconds": {
+        "geojson_http_modified_minus_xml_publication": 4232.731,
+        "xml_http_modified_minus_xml_publication": 4222.731,
+        "geojson_http_modified_minus_xml_http_modified": 10.0
+      },
+      "actual_adapter": {
+        "receipt": {
+          "geojson_sha256": "8cc38d64588613cc128e41486c850b345e379760ce57ba58f469b30c198a8c18",
+          "datex_sha256": "3fabb08dfd89e843eb0d69e50fd613cc38305102f7ef9ca8ebd1129d441ae548",
+          "source_modified_at": "2026-10-28T18:45:29Z",
+          "source_publication_at": "2026-10-28T17:34:56Z",
+          "last_checked_at": "2026-10-28T18:47:26Z",
+          "last_ingested_at": "2026-10-28T18:47:26Z",
+          "membership_count": 985,
+          "accepted_count": 840,
+          "quarantined_count": 4,
+          "issues": [
+            {
+              "source_id": "138434891-138481357-138481358-138492397-0-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            },
+            {
+              "source_id": "138434891-138481357-138481358-138492397-1-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            },
+            {
+              "source_id": "138434891-138481357-138492799-138492803-0-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            },
+            {
+              "source_id": "138434891-138481357-138492799-138492803-1-sperrung.001",
+              "code": "quarantined_coordinate_order"
+            }
+          ],
+          "evaluation_window": {
+            "start": "2026-10-28T00:00:00Z",
+            "end": "2026-11-05T00:00:00Z"
+          }
+        },
+        "schedule_counts": {
+          "unknown": 840
+        },
+        "quality_flags": {
+          "cross_format_generation_or_identity_unresolved": 840,
+          "one_direction_not_road_verified": 303
+        }
+      },
+      "sampling_started": {
+        "utc": "2026-10-28T18:47:04.766367Z",
+        "europe_berlin": "2026-10-28T19:47:04.766367+01:00",
+        "timezone": "CET"
+      },
+      "pair_completed": {
+        "utc": "2026-10-28T18:47:26.103955Z",
+        "europe_berlin": "2026-10-28T19:47:26.103955+01:00",
+        "timezone": "CET"
+      },
+      "source_receipts": [
+        {
+          "source": "geojson",
+          "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_geojson.json",
+          "status": 200,
+          "elapsed_seconds": 4.124,
+          "decoded_bytes": 1085170,
+          "sha256": "8cc38d64588613cc128e41486c850b345e379760ce57ba58f469b30c198a8c18",
+          "headers": {
+            "content-encoding": "gzip",
+            "content-length": "202198",
+            "content-type": "application/json",
+            "date": "Wed, 28 Oct 2026 18:47:05 GMT",
+            "etag": "\"dmgp03b38u3d4c0m\"",
+            "last-modified": "Wed, 28 Oct 2026 18:45:29 GMT",
+            "vary": "Accept-Encoding"
+          },
+          "conditional_request": true,
+          "raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/objects/8cc38d64588613cc128e41486c850b345e379760ce57ba58f469b30c198a8c18",
+          "request_started": {
+            "utc": "2026-10-28T18:47:04.768560Z",
+            "europe_berlin": "2026-10-28T19:47:04.768560+01:00",
+            "timezone": "CET"
+          },
+          "request_finished": {
+            "utc": "2026-10-28T18:47:08.892638Z",
+            "europe_berlin": "2026-10-28T19:47:08.892638+01:00",
+            "timezone": "CET"
+          },
+          "http_clock_labels": {
+            "date": {
+              "utc": "2026-10-28T18:47:05Z",
+              "europe_berlin": "2026-10-28T19:47:05+01:00",
+              "timezone": "CET"
+            },
+            "last-modified": {
+              "utc": "2026-10-28T18:45:29Z",
+              "europe_berlin": "2026-10-28T19:45:29+01:00",
+              "timezone": "CET"
+            }
+          }
+        },
+        {
+          "source": "datex",
+          "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_svzbw.datex2.xml",
+          "status": 200,
+          "elapsed_seconds": 21.335,
+          "decoded_bytes": 29652084,
+          "sha256": "3fabb08dfd89e843eb0d69e50fd613cc38305102f7ef9ca8ebd1129d441ae548",
+          "headers": {
+            "content-encoding": "gzip",
+            "content-length": "1209660",
+            "content-type": "text/xml; charset=utf-8",
+            "date": "Wed, 28 Oct 2026 18:47:05 GMT",
+            "etag": "\"dmgozzyyf954pxdo\"",
+            "last-modified": "Wed, 28 Oct 2026 18:45:19 GMT",
+            "vary": "Accept-Encoding"
+          },
+          "conditional_request": true,
+          "raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/objects/3fabb08dfd89e843eb0d69e50fd613cc38305102f7ef9ca8ebd1129d441ae548",
+          "request_started": {
+            "utc": "2026-10-28T18:47:04.769376Z",
+            "europe_berlin": "2026-10-28T19:47:04.769376+01:00",
+            "timezone": "CET"
+          },
+          "request_finished": {
+            "utc": "2026-10-28T18:47:26.103955Z",
+            "europe_berlin": "2026-10-28T19:47:26.103955+01:00",
+            "timezone": "CET"
+          },
+          "http_clock_labels": {
+            "date": {
+              "utc": "2026-10-28T18:47:05Z",
+              "europe_berlin": "2026-10-28T19:47:05+01:00",
+              "timezone": "CET"
+            },
+            "last-modified": {
+              "utc": "2026-10-28T18:45:19Z",
+              "europe_berlin": "2026-10-28T19:45:19+01:00",
+              "timezone": "CET"
+            }
+          }
+        },
+        {
+          "source": "cifs",
+          "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_cifs.json",
+          "status": 200,
+          "elapsed_seconds": 13.582,
+          "decoded_bytes": 922359,
+          "sha256": "425623d21f0a602824b6bc6f3d967ec21aa0b6e846ab795b571515cbcae2f362",
+          "headers": {
+            "content-encoding": "gzip",
+            "content-length": "203210",
+            "content-type": "application/json",
+            "date": "Wed, 28 Oct 2026 18:47:05 GMT",
+            "etag": "\"dmgp0388u9bh4csq\"",
+            "last-modified": "Wed, 28 Oct 2026 18:45:29 GMT",
+            "vary": "Accept-Encoding"
+          },
+          "conditional_request": true,
+          "raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/objects/425623d21f0a602824b6bc6f3d967ec21aa0b6e846ab795b571515cbcae2f362",
+          "request_started": {
+            "utc": "2026-10-28T18:47:04.769653Z",
+            "europe_berlin": "2026-10-28T19:47:04.769653+01:00",
+            "timezone": "CET"
+          },
+          "request_finished": {
+            "utc": "2026-10-28T18:47:18.351140Z",
+            "europe_berlin": "2026-10-28T19:47:18.351140+01:00",
+            "timezone": "CET"
+          },
+          "http_clock_labels": {
+            "date": {
+              "utc": "2026-10-28T18:47:05Z",
+              "europe_berlin": "2026-10-28T19:47:05+01:00",
+              "timezone": "CET"
+            },
+            "last-modified": {
+              "utc": "2026-10-28T18:45:29Z",
+              "europe_berlin": "2026-10-28T19:45:29+01:00",
+              "timezone": "CET"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "consecutive_current_sample_changes": {
+    "from": "20261028T184433Z",
+    "to": "20261028T184704Z",
+    "xml_records": {
+      "before": 3366,
+      "after": 3366,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 3366
+    },
+    "geo_features": {
+      "before": 985,
+      "after": 985,
+      "added": 0,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 985
+    }
+  },
+  "http_export_boundary": {
+    "geojson_http_last_modified_before": {
+      "utc": "2026-10-28T18:40:30Z",
+      "europe_berlin": "2026-10-28T19:40:30+01:00",
+      "timezone": "CET"
+    },
+    "geojson_http_last_modified_after": {
+      "utc": "2026-10-28T18:45:29Z",
+      "europe_berlin": "2026-10-28T19:45:29+01:00",
+      "timezone": "CET"
+    },
+    "datex_http_last_modified_before": {
+      "utc": "2026-10-28T18:40:21Z",
+      "europe_berlin": "2026-10-28T19:40:21+01:00",
+      "timezone": "CET"
+    },
+    "datex_http_last_modified_after": {
+      "utc": "2026-10-28T18:45:19Z",
+      "europe_berlin": "2026-10-28T19:45:19+01:00",
+      "timezone": "CET"
+    },
+    "geojson_body_unchanged": true,
+    "datex_body_unchanged": true,
+    "cifs_incidents_content_unchanged": true,
+    "cifs_body_change": "Only the unoffset root timestamp changed; canonical incidents array SHA-256 is identical. Its time-zone convention remains unverified.",
+    "cadence_limit": "One observed HTTP export boundary, not a publisher-update cadence or availability benchmark; the XML publication did not advance across these two fresh rounds."
+  },
+  "prior_complete_pair": {
+    "source_receipt": "docs/MOBIDATA_BW_ROAD_ADVISORIES_2026-10-28.evidence.json",
+    "observed_at": {
+      "utc": "2026-10-28T14:41:03Z",
+      "europe_berlin": "2026-10-28T15:41:03+01:00",
+      "timezone": "CET"
+    },
+    "source_receipts": [
+      {
+        "source": "bemas-geojson",
+        "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_geojson.json",
+        "sha256": "31cdb03e457a5ea2c789845e9755c71d2bd6be8a52032812b4a3c339dcc1b75e",
+        "decoded_bytes": 1094821,
+        "publication_time": null,
+        "http_headers": {
+          "date": "Wed, 28 Oct 2026 14:41:03 GMT",
+          "last-modified": "Wed, 28 Oct 2026 14:40:13 GMT",
+          "etag": "\"dmgjsajlm8kp4cny\"",
+          "content-length": "203038",
+          "content-encoding": "gzip",
+          "content-type": "application/json"
+        },
+        "raw_path": "/private/tmp/youspeed-mobidata-20261028/bemas-geojson.json",
+        "http_clock_labels": {
+          "date": {
+            "utc": "2026-10-28T14:41:03Z",
+            "europe_berlin": "2026-10-28T15:41:03+01:00",
+            "timezone": "CET"
+          },
+          "last-modified": {
+            "utc": "2026-10-28T14:40:13Z",
+            "europe_berlin": "2026-10-28T15:40:13+01:00",
+            "timezone": "CET"
+          }
+        }
+      },
+      {
+        "source": "bemas-datex",
+        "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_svzbw.datex2.xml",
+        "sha256": "d85b72327e1672917f31135530f777ab8c5600d5e1b88cf6e12b2065724a730d",
+        "decoded_bytes": 29487270,
+        "publication_time": "2026-10-28T15:20:04.705+01:00",
+        "http_headers": {
+          "date": "Wed, 28 Oct 2026 14:41:03 GMT",
+          "last-modified": "Wed, 28 Oct 2026 14:40:06 GMT",
+          "etag": "\"dmgjs7yuqnqoprdz\"",
+          "content-length": "1201895",
+          "content-encoding": "gzip",
+          "content-type": "text/xml; charset=utf-8"
+        },
+        "raw_path": "/private/tmp/youspeed-mobidata-20261028/bemas-datex.xml",
+        "http_clock_labels": {
+          "date": {
+            "utc": "2026-10-28T14:41:03Z",
+            "europe_berlin": "2026-10-28T15:41:03+01:00",
+            "timezone": "CET"
+          },
+          "last-modified": {
+            "utc": "2026-10-28T14:40:06Z",
+            "europe_berlin": "2026-10-28T15:40:06+01:00",
+            "timezone": "CET"
+          }
+        }
+      }
+    ],
+    "xml_publication": {
+      "utc": "2026-10-28T14:20:04.705000Z",
+      "europe_berlin": "2026-10-28T15:20:04.705000+01:00",
+      "timezone": "CET"
+    },
+    "geojson_features": 996,
+    "xml_record_ids": 3351,
+    "xml_records": 3351,
+    "xml_join_multiplicity": {
+      "1": 996
+    },
+    "outer_window_comparison": {
+      "within_1_second": 849,
+      "conflict": 147
+    },
+    "phase_analysis": {
+      "mismatched_total": 147,
+      "geo_inside_xml_outer": 137,
+      "xml_schedule_matches_entire_geo_phase": 132,
+      "compile_ambiguous_equal_clock": 2,
+      "xml_schedule_differs_within_geo_phase": 13,
+      "geo_extends_xml_outer": 10
+    },
+    "phase_example": {
+      "id": "81904979-81904981-81904993-81904994-sperrung.001",
+      "geo_interval": [
+        "2026-12-07T19:00:00Z",
+        "2026-12-08T04:00:00Z"
+      ],
+      "xml_overall": [
+        "2026-12-07T19:00:00Z",
+        "2026-12-11T04:00:00Z"
+      ],
+      "xml_intervals_within_geo": [
+        {
+          "start": "2026-12-07T19:00:00Z",
+          "end": "2026-12-08T04:00:00Z"
+        }
+      ]
+    },
+    "phase_analysis_detail_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/prior-pair-phase-analysis.json",
+    "record_version_min": {
+      "utc": "2023-04-04T11:21:09.837000Z",
+      "europe_berlin": "2023-04-04T13:21:09.837000+02:00",
+      "timezone": "CEST"
+    },
+    "record_version_max": {
+      "utc": "2026-10-28T14:09:51.285000Z",
+      "europe_berlin": "2026-10-28T15:09:51.285000+01:00",
+      "timezone": "CET"
+    },
+    "record_versions_after_publication": 0
+  },
+  "prior_to_fresh_content_changes": {
+    "from": "2026-10-28T14:41:03Z",
+    "to": "2026-10-28T18:44:33.218095Z",
+    "geojson_features": {
+      "before": 996,
+      "after": 985,
+      "added": 8,
+      "removed": 19,
+      "changed": 0,
+      "unchanged": 977
+    },
+    "xml_records": {
+      "before": 3351,
+      "after": 3366,
+      "added": 15,
+      "removed": 0,
+      "changed": 2,
+      "unchanged": 3349
+    },
+    "limitation": "This verifies some event content changed between afternoon and evening samples; it does not measure the timing of intervening updates."
+  },
+  "incomplete_transfer_attempts": [
+    {
+      "source": "bemas-datex",
+      "transfer_complete": false,
+      "curl_exit_code": 28,
+      "timeout_seconds": 60.005047,
+      "compressed_bytes_received": 885949,
+      "compressed_content_length": 1209660,
+      "retained_partial_decoded_bytes": 22639875,
+      "retained_partial_sha256": "7de5a38b539ff5070c194f23152991b6b0c47bdd8c3471df4087f529d302c6c4",
+      "partial_raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/xml-probe.xml",
+      "headers_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/xml-probe.headers",
+      "http_headers": {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Content-Type,User-Agent",
+        "content-encoding": "gzip",
+        "content-length": "1209660",
+        "content-type": "text/xml; charset=utf-8",
+        "date": "Wed, 28 Oct 2026 18:40:46 GMT",
+        "etag": "\"dmgow6krbe4xpxdo\"",
+        "last-modified": "Wed, 28 Oct 2026 18:40:21 GMT",
+        "server": "Caddy",
+        "vary": "Accept-Encoding"
+      },
+      "publication_prefix_only": {
+        "raw": "2026-10-28T18:34:56.269+01:00",
+        "utc": "2026-10-28T17:34:56.269000Z",
+        "europe_berlin": "2026-10-28T18:34:56.269000+01:00",
+        "timezone": "CET"
+      },
+      "used_for_normalization_or_generation": false,
+      "limitation": "HTTP headers and complete prefix only; truncated XML is not an accepted source generation."
+    },
+    {
+      "source": "bemas-datex",
+      "transfer_complete": false,
+      "curl_exit_code": 28,
+      "timeout_seconds": 75.006,
+      "compressed_bytes_received": 995205,
+      "compressed_content_length": 1209660,
+      "retained_partial_decoded_bytes": 24926958,
+      "retained_partial_sha256": "721c0a7f88b2f158d1352bb9cee342c0997ca2f8bb29cb478d2731f8067736ea",
+      "partial_raw_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/20261028T184224Z-datex.body",
+      "headers_path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/20261028T184224Z-datex.headers",
+      "http_headers": {
+        "accept-ranges": "bytes",
+        "access-control-allow-origin": "*",
+        "access-control-expose-headers": "Content-Type,User-Agent",
+        "content-encoding": "gzip",
+        "content-length": "1209660",
+        "content-type": "text/xml; charset=utf-8",
+        "date": "Wed, 28 Oct 2026 18:42:26 GMT",
+        "etag": "\"dmgow6krbe4xpxdo\"",
+        "last-modified": "Wed, 28 Oct 2026 18:40:21 GMT",
+        "server": "Caddy",
+        "vary": "Accept-Encoding"
+      },
+      "publication_prefix_only": {
+        "raw": "2026-10-28T18:34:56.269+01:00",
+        "utc": "2026-10-28T17:34:56.269000Z",
+        "europe_berlin": "2026-10-28T18:34:56.269000+01:00",
+        "timezone": "CET"
+      },
+      "used_for_normalization_or_generation": false,
+      "limitation": "HTTP headers and complete prefix only; truncated XML is not an accepted source generation."
+    }
+  ],
+  "transfer_observations": {
+    "complete_datex_elapsed_seconds": [
+      115.072,
+      21.335
+    ],
+    "research_only_transfer_limit_seconds": 150,
+    "production_transfer_limit_changed": false,
+    "limitation": "A60-second and75-second attempt timed out; complete transfers then took115.072s and21.335s. These few local-host observations do not establish production latency or justify changing production bounds."
+  },
+  "adapter_review": {
+    "path": "/Users/raphaelvolz/Github/Woladen.de-analytics/commercial_backend/youspeed/roadworks.py",
+    "sha256": "c4315ecbd359738ee1e4b0b5fdae943c7c253a12b262117690636112bcc94e32",
+    "offset_parser": "instant: lines49-53 requires an offset and converts toUTC.",
+    "pairing_gate": "normalize: line281 requires abs(XMLpublication - GeoJSONHTTPmodified)<=900s.",
+    "retry": "ingest: lines501-505 retries the pair once when clocks differ by more than900s.",
+    "validity_gate": "compile_schedule: lines261-263 rejects overall-window differences greater than1s.",
+    "changed": false
+  },
+  "future_phase_aware_candidate": {
+    "status": "proposal_only_not_implemented_or_qualified",
+    "requirements": [
+      "Keep the900-second cross-format clock gate and exact unique publisher-ID join.",
+      "Require source-verified GeoJSON suffix/phase semantics; compare a GeoJSON phase to supported compiled XML work intervals within the XML overall validity.",
+      "Only consider exact supported phase agreement, intersect with the existing evaluation window and preserve opaque full GeoJSON IDs.",
+      "Quarantine the10 historical intervals extending XML bounds, plus all unsupported/ambiguous or still-disagreeing schedules.",
+      "Prove opposite-direction/Point handling and repeated publication/withdrawal behavior before accepting any BEMaS pilot."
+    ],
+    "limit": "The132 historically matching phases are not132 active or display-eligible works; current pairing skew still blocks every fresh schedule."
+  },
+  "decisions": {
+    "bemas_enabled": false,
+    "all_other_source_flags_untouched": true,
+    "pairing_limit_seconds": 900,
+    "pairing_limit_changed": false,
+    "backend_modified": false,
+    "production_activated": false,
+    "deployment_performed": false,
+    "scheduler_created": false,
+    "qualification": "pending"
+  },
+  "validation": [
+    "Verified SHA-256 against every retained complete raw object.",
+    "Parsed both complete fresh XML bodies and ran the unchanged owning-repository BEMaS normalizer offline.",
+    "Validated offset conversion using Python OffsetDateTime-equivalent datetime.fromisoformat: +01:00 maps to preceding UTC hour.",
+    "Compared every GeoJSON feature and XML record fingerprint across the two fresh complete samples."
+  ],
+  "reproduction": {
+    "scripts": [
+      {
+        "path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/sample.py",
+        "sha256": "8666896105f84dfa15809f2fd7d3ac6c37a4cddb401d3d2f106440ff9e6b3319"
+      },
+      {
+        "path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/profile.py",
+        "sha256": "d1d94ec5b40a3cfe268a67b23479d870fb53a429a23a3692db295bb28ad49485"
+      },
+      {
+        "path": "/private/tmp/youspeed-bemas-clock-investigation-20261028/build_evidence.py",
+        "sha256": "812231ba727c7a85036071fcf419e0c4ebce3a059cc7c56c51123a92dfc8f9ec"
+      }
+    ],
+    "commands": [
+      "python3 /private/tmp/youspeed-bemas-clock-investigation-20261028/sample.py",
+      "python3 /private/tmp/youspeed-bemas-clock-investigation-20261028/sample.py --conditional",
+      "PYTHONDONTWRITEBYTECODE=1 python3 /private/tmp/youspeed-bemas-clock-investigation-20261028/profile.py",
+      "PYTHONDONTWRITEBYTECODE=1 python3 /private/tmp/youspeed-bemas-clock-investigation-20261028/build_evidence.py"
+    ],
+    "matching_algorithm": "Strip only the final dot suffix from GeoJSON properties.id; require one XML situationRecord with that exact base ID. Compare offset-parsed GeoJSON starttime/endtime to XML overallStartTime/overallEndTime and, separately for research, compile supported XML validity within the GeoJSON interval."
+  }
+}

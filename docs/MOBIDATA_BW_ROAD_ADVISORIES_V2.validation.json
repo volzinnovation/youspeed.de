@@ -1,0 +1,199 @@
+{
+  "date": "2026-10-28",
+  "scope": "Local implementation and validation only; deployment, source activation, publication and physical-device installation postponed.",
+  "app_branch": "codex/youspeed-v1.5-mobidata-bw",
+  "backend_branch": "main",
+  "checks": {
+    "iphone": {
+      "tests": 17,
+      "failures": 0,
+      "result": "passed",
+      "platform": "iOS 26.5 Simulator, isolated iPhone 17 Pro test host",
+      "command": "./scripts/iphone/run_consumer_device_tests.sh --skip-project-gen --destination 'platform=iOS Simulator,id=E6D05F95-EEB0-4DA4-B60D-D56271088A71' --derived-data /private/tmp/youspeed-advisory-v2-derived --only-testing SpeedConsumerTests/RoadworksAdvisoryTests --only-testing SpeedConsumerTests/RoadworksServiceTests --result-bundle /private/tmp/youspeed-mobidata-20261028/road-advisories-v2-final.xcresult",
+      "log_sha256": "5b3aae589ac2524961f1c4655573d45465427e1722b69df0e8e0be6fca8a581f"
+    },
+    "android_jvm": {
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "android_instrumentation": {
+      "result": "compiled; not installed or executed",
+      "task": ":app:compileDebugAndroidTestKotlin"
+    },
+    "backend": {
+      "tests": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "passed after guarded application in owning repository",
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider --confcutdir=tests/youspeed tests/youspeed/test_roadworks.py tests/youspeed/test_road_advisories.py",
+      "junit_sha256": "4e275e37c30438425031df702ae5a1843e26cb2a4568f3f9352e073e05e5e309"
+    },
+    "shared_contract": {
+      "tests": 5,
+      "failures": 0,
+      "result": "passed",
+      "command": "python3 -m unittest discover -s tests/map -p test_road_advisory_contract.py -v"
+    },
+    "backend_and_app_openapi_bytes_match": true,
+    "protected_speed_reference_files_changed": false,
+    "deployment_performed": false,
+    "source_activation_performed": false,
+    "physical_device_installation_performed": false
+  },
+  "activation_gates": [
+    "BEMaS publication skew leaves current sample schedules unknown; existing 15-minute guard preserved.",
+    "New source schema/withdrawal/schedule qualification and representative direction/coverage acceptance remain.",
+    "MIA per-feed licence and final attribution must be established before activation.",
+    "Full HTTP-ingestion memory/CPU benchmark in approved production-container limits remains; offline parser sample is not that benchmark."
+  ],
+  "app_files": {
+    "iphone/SpeedConsumerApp/RoadworksAdvisory.swift": {
+      "sha256": "83a3b4795146f2eb2baaec813b07ce34fe78ffec9d94fa6a0d990daf0d8b23ce",
+      "bytes": 22951
+    },
+    "iphone/SpeedConsumerApp/RoadworksService.swift": {
+      "sha256": "917872127bc6b57d25ffe85926e175ff68c75ee9ea4acc365c96d022e9b6fc78",
+      "bytes": 25732
+    },
+    "iphone/SpeedConsumerTests/RoadworksAdvisoryTests.swift": {
+      "sha256": "00ac2154d3d0d0f2c2597cbda09c36c9e42a92a4b60ca2e788c2aab72633ba88",
+      "bytes": 14814
+    },
+    "iphone/SpeedConsumerTests/RoadworksServiceTests.swift": {
+      "sha256": "3ddea9dd5a814354b31ed06f477c64ad83e2249d407bc9e67a7a75626f33d200",
+      "bytes": 9029
+    },
+    "android/app/src/main/java/de/youspeed/android/alpha/RoadworksAdvisory.kt": {
+      "sha256": "2df1693d56d99c35b882d3b4141b6d4a20f6372111ecae971733a5284da5d36b",
+      "bytes": 20714
+    },
+    "android/app/src/main/java/de/youspeed/android/alpha/RoadworksService.kt": {
+      "sha256": "dfd17469f0b3e51674eb626ee0a07ef6488a9412fbfeef5360b0032490fe6b4c",
+      "bytes": 23035
+    },
+    "android/app/src/test/java/de/youspeed/android/alpha/RoadworksAdvisoryTests.kt": {
+      "sha256": "4e34e7bcbc635acdf429310b6b530246891d6e959128c88a946ae3d7946fa7cd",
+      "bytes": 14642
+    },
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/RoadworksServiceInstrumentedTest.kt": {
+      "sha256": "7f3434ad4eebfb080e9a36aa6c4457faf27f198bfc338ab03a7e21fca51ae3fd",
+      "bytes": 8346
+    },
+    "shared/roadworks/CONTRACT_V2.md": {
+      "sha256": "99a70b176877c1113f54125f626edcf4cd380b139eccabfb166ab49808608c58",
+      "bytes": 4715
+    },
+    "shared/roadworks/README.md": {
+      "sha256": "31b83699d18a598d0ed5055d6c08b2ab4355ed8686b4d5de87cc50b754c89a91",
+      "bytes": 1517
+    },
+    "shared/roadworks/manifest-v2.json": {
+      "sha256": "9310202fa65d09889f2c010b3f7932783efdd845ed5716a8cb1029a206a20980",
+      "bytes": 4785
+    },
+    "shared/roadworks/snapshot-v2.json": {
+      "sha256": "1ba051b6ee5294322cfaabea0bdb4e5b083dbbfde728faa76a95e521acb00489",
+      "bytes": 8986
+    },
+    "docs/MOBIDATA_BW_ROAD_ADVISORIES_API_V2.openapi.json": {
+      "sha256": "537ab587eac9356431958a155049f89aceedfab05aad525ac77c198aa1313272",
+      "bytes": 24747
+    },
+    "docs/MOBIDATA_BW_ROAD_ADVISORIES_2026-10-28.evidence.json": {
+      "sha256": "05fdf5d45f42832d905dd85d46287501c0651b28f888db60df8dc2059cb2590a",
+      "bytes": 7751
+    },
+    "docs/MOBIDATA_BW_ROAD_ADVISORIES_V2_IMPLEMENTATION.md": {
+      "sha256": "782b8e95125b7df1580fcce11629ceedeaa01a4d7d9008db660fd183c88ae228",
+      "bytes": 7576
+    },
+    "tests/map/test_road_advisory_contract.py": {
+      "sha256": "4c68824a930382430f6d7f1ef081f6cac95c4e533c0606ce26d4275b98cf186b",
+      "bytes": 4755
+    },
+    "docs/README.md": {
+      "sha256": "2a7985b476df684e95a8013a26e94e9536a78f037764b01120170d9b75b401a5",
+      "bytes": 8232
+    }
+  },
+  "backend_files": {
+    "commercial_backend/youspeed/api.py": {
+      "base_sha256": "2e12647c1087afd6ca1d799633f2a9e33ca665d451884127812b8c06a8d287c2",
+      "sha256": "068aa464c30dc437d9426f02a9525f3482b3d5fe83e5a3da03d5341f0d8f5e52",
+      "bytes": 21021
+    },
+    "commercial_backend/youspeed/roadworks.py": {
+      "base_sha256": "375b7bc4601e93ce4a7a3ced963bb0e29e852a791896c58b4fb395f0e2563125",
+      "sha256": "c4315ecbd359738ee1e4b0b5fdae943c7c253a12b262117690636112bcc94e32",
+      "bytes": 31283
+    },
+    "commercial_backend/youspeed/roadworks_api.py": {
+      "base_sha256": "7562cebaed549f45b8ccf7928bed0f6080e3a540f95f70ffe0c6b211db3dc789",
+      "sha256": "ec7a397341cf17434f0d844f9d287a6f1f35bea1aca589ad2e7de65117c0ea58",
+      "bytes": 6189
+    },
+    "commercial_backend/youspeed/road_advisories.py": {
+      "base_sha256": null,
+      "sha256": "7c1322f8a6dadb72374668a3239a89963d021897c85bdd5e650be012e5442f9a",
+      "bytes": 38315
+    },
+    "scripts/youspeed/road_advisories.py": {
+      "base_sha256": null,
+      "sha256": "48dd8b8df39aad19065f727b81186fdbd67ee952544cbc465afca8630ef3ebab",
+      "bytes": 2044
+    },
+    "tests/youspeed/test_road_advisories.py": {
+      "base_sha256": null,
+      "sha256": "35b43e27633a42233266cab00df95aec302888c999e400ba2799f7bc9a2ed4a5",
+      "bytes": 24832
+    },
+    "docs/youspeed/ROAD_ADVISORIES_V2.md": {
+      "base_sha256": null,
+      "sha256": "7b68fd3fe52acac53182f418e36a1ea34613d7b5c47ebc97ac7019c73c2f8b38",
+      "bytes": 11983
+    },
+    "tests/youspeed/fixtures/road-advisories-v2/README.md": {
+      "base_sha256": null,
+      "sha256": "7491e73ef48e9322b5cf0a1a3fcf370582d988a251f02aa2ddc26c2da60043af",
+      "bytes": 746
+    },
+    "tests/youspeed/fixtures/road-advisories-v2/manifest-v2.json": {
+      "base_sha256": null,
+      "sha256": "9310202fa65d09889f2c010b3f7932783efdd845ed5716a8cb1029a206a20980",
+      "bytes": 4785
+    },
+    "tests/youspeed/fixtures/road-advisories-v2/openapi.json": {
+      "base_sha256": null,
+      "sha256": "537ab587eac9356431958a155049f89aceedfab05aad525ac77c198aa1313272",
+      "bytes": 24747
+    },
+    "tests/youspeed/fixtures/road-advisories-v2/snapshot-v2.json": {
+      "base_sha256": null,
+      "sha256": "1ba051b6ee5294322cfaabea0bdb4e5b083dbbfde728faa76a95e521acb00489",
+      "bytes": 8986
+    },
+    "tests/youspeed/fixtures/road-advisories-v2/source-observations.json": {
+      "base_sha256": null,
+      "sha256": "fc4d33485e6f33c72f1d70e11ff6634f4ff20a2477720a7009eafb55e735e8f4",
+      "bytes": 2104
+    },
+    "scripts/youspeed/service.py": {
+      "base_sha256": "fa06fd34d319e135acc2c6f32791c2a41be48fcc13d6b4cd8be4a3b5c8bbb888",
+      "sha256": "73a4a29418e8dded26ed1daf728a9355843efa125b0f751a033007cbea7d1a7e",
+      "bytes": 4982
+    },
+    "deploy/onboarded-ingest/Caddyfile": {
+      "base_sha256": "0923fe4b80e5241f8b68be60b53937be9dc6c8c8aa06f603373b1f7635d01b7e",
+      "sha256": "09624dd7e7ee0c80b8dfbc88e2ebc9851e5a5eec7b06625877035bc21b4924c5",
+      "bytes": 4568
+    },
+    "deploy/onboarded-ingest/compose.yml": {
+      "base_sha256": "a197b6265172898c777de717a971a6b772c9742dabc78214b03115e8072c24b1",
+      "sha256": "282cf3137ed29a4076e91eb58642329efbd1e5e8ed4101cd71fae3917ab9fef5",
+      "bytes": 50611
+    }
+  }
+}

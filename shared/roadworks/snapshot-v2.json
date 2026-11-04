@@ -1,0 +1,312 @@
+{
+  "attributions": [
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: bemas"
+    },
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: incidents-bw"
+    },
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: autobahn-short-term"
+    },
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: autobahn-long-term"
+    }
+  ],
+  "evaluation_window": {
+    "end": "2026-11-05T00:00:00Z",
+    "start": "2026-10-28T00:00:00Z"
+  },
+  "features": [
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.0
+          ],
+          [
+            8.01,
+            48.0
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:bemas:roadworks-0",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-28T12:00:00Z",
+            "start": "2026-10-28T10:00:00Z"
+          }
+        ],
+        "advisory_source": "bemas",
+        "description": "Synthetic bemas roadworks",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "roadworks",
+        "operator_status": "implemented",
+        "outer_end": "2026-10-29T00:00:00Z",
+        "outer_start": "2026-10-28T00:00:00Z",
+        "quality_flags": [],
+        "revision": "ca3fe4f67f91da3c93ef9135b8b2a9e1205de7544347c329aa1d9302e2011e20",
+        "road_label": "Synthetic B 3",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "roadworks-0",
+        "source_subtype": null,
+        "source_type": "SYNTHETIC",
+        "source_version_time": "2026-10-28T09:59:00Z"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.001
+          ],
+          [
+            8.01,
+            48.001
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:incidents-bw:incident-1",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-28T12:00:00Z",
+            "start": "2026-10-28T10:00:00Z"
+          }
+        ],
+        "advisory_source": "incidents-bw",
+        "description": "Synthetic incidents-bw incident",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "incident",
+        "operator_status": "reported",
+        "outer_end": "2026-10-29T00:00:00Z",
+        "outer_start": "2026-10-28T00:00:00Z",
+        "quality_flags": [],
+        "road_label": "Synthetic A 5",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "incident-1",
+        "source_subtype": null,
+        "source_type": "SYNTHETIC",
+        "source_version_time": "2026-10-28T09:59:00Z",
+        "validity_basis": "scheduled",
+        "source_validity_status": "definedByValidityTimeSpec",
+        "source_validity_start": "2026-10-28T00:00:00Z",
+        "source_validity_end": "2026-10-29T00:00:00Z",
+        "revision": "e625a34658edda8c0c0f076a71f91b463fe721f69f08f3e17aaacff31884fec1"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.002
+          ],
+          [
+            8.01,
+            48.002
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:autobahn-short-term:closure-2",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-28T12:00:00Z",
+            "start": "2026-10-28T10:00:00Z"
+          }
+        ],
+        "advisory_source": "autobahn-short-term",
+        "description": "Synthetic autobahn-short-term closure",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "closure",
+        "operator_status": "reported",
+        "outer_end": "2026-10-29T00:00:00Z",
+        "outer_start": "2026-10-28T00:00:00Z",
+        "quality_flags": [],
+        "revision": "0bc50e087c392ef9fd06748630ac122eb2b89d86f99f56e7be0b60c4c38a9def",
+        "road_label": "Synthetic A 5",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "closure-2",
+        "source_subtype": null,
+        "source_type": "SYNTHETIC",
+        "source_version_time": "2026-10-28T09:59:00Z"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.003
+          ],
+          [
+            8.01,
+            48.003
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:autobahn-long-term:roadworks-3",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-28T12:00:00Z",
+            "start": "2026-10-28T10:00:00Z"
+          }
+        ],
+        "advisory_source": "autobahn-long-term",
+        "description": "Synthetic autobahn-long-term roadworks",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "roadworks",
+        "operator_status": "reported",
+        "outer_end": "2026-10-29T00:00:00Z",
+        "outer_start": "2026-10-28T00:00:00Z",
+        "quality_flags": [],
+        "revision": "8a685bb3b98f3aede3dbf67031c12a3a1f397492a601c63fcfb13ea05c2b9f99",
+        "road_label": "Synthetic A 5",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "roadworks-3",
+        "source_subtype": null,
+        "source_type": "SYNTHETIC",
+        "source_version_time": "2026-10-28T09:59:00Z"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.004
+          ],
+          [
+            8.01,
+            48.004
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:incidents-bw:hazard-4",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-28T12:00:00Z",
+            "start": "2026-10-28T10:00:00Z"
+          }
+        ],
+        "advisory_source": "incidents-bw",
+        "description": "Synthetic incidents-bw hazard",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "hazard",
+        "operator_status": "reported",
+        "outer_end": "2026-10-29T00:00:00Z",
+        "outer_start": "2026-10-28T00:00:00Z",
+        "quality_flags": [],
+        "road_label": "Synthetic A 5",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "hazard-4",
+        "source_subtype": null,
+        "source_type": "SYNTHETIC",
+        "source_version_time": "2026-10-28T09:59:00Z",
+        "validity_basis": "scheduled",
+        "source_validity_status": "definedByValidityTimeSpec",
+        "source_validity_start": "2026-10-28T00:00:00Z",
+        "source_validity_end": "2026-10-29T00:00:00Z",
+        "revision": "c5d674e25efbcf9ee19e05bc0b69736a1db00a125521b33bcfd78c62ea9bc8c0"
+      },
+      "type": "Feature"
+    },
+    {
+      "geometry": {
+        "coordinates": [
+          [
+            7.99,
+            48.005
+          ],
+          [
+            8.01,
+            48.005
+          ]
+        ],
+        "type": "LineString"
+      },
+      "id": "mobidata-bw:incidents-bw:congestion-5",
+      "properties": {
+        "active_intervals": [
+          {
+            "end": "2026-10-28T12:00:00Z",
+            "start": "2026-10-28T10:00:00Z"
+          }
+        ],
+        "advisory_source": "incidents-bw",
+        "description": "Synthetic incidents-bw congestion",
+        "description_language": "de",
+        "direction": "both",
+        "kind": "congestion",
+        "operator_status": "reported",
+        "outer_end": "2026-10-29T00:00:00Z",
+        "outer_start": "2026-10-28T00:00:00Z",
+        "quality_flags": [],
+        "road_label": "Synthetic A 5",
+        "schedule_status": "resolved",
+        "source_direction": "BOTH_DIRECTIONS",
+        "source_id": "congestion-5",
+        "source_subtype": null,
+        "source_type": "SYNTHETIC",
+        "source_version_time": "2026-10-28T09:59:00Z",
+        "validity_basis": "scheduled",
+        "source_validity_status": "definedByValidityTimeSpec",
+        "source_validity_start": "2026-10-28T00:00:00Z",
+        "source_validity_end": "2026-10-29T00:00:00Z",
+        "revision": "8019be0ec68ccf5c9e557ac7b30d0f2d80e118f438ee68c55f2d96b5a27c6c61"
+      },
+      "type": "Feature"
+    }
+  ],
+  "generated_at": "2026-10-28T10:00:00Z",
+  "normalization_version": "youspeed-advisories-v2-synthetic",
+  "schema_version": 2,
+  "source_ids": [
+    "bemas",
+    "incidents-bw",
+    "autobahn-short-term",
+    "autobahn-long-term"
+  ],
+  "type": "FeatureCollection"
+}

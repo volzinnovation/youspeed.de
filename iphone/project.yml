@@ -165,6 +165,10 @@ targets:
   SpeedConsumerTests:
     type: bundle.unit-test
     platform: iOS
+    postBuildScripts:
+      - name: Stage road advisory acceptance fixtures
+        basedOnDependencyAnalysis: false
+        script: '"${SRCROOT}/../scripts/iphone/stage_incident_qualification_fixture.sh"'
     sources:
       - path: ../tests/fixtures/tsr-ocr-32
         type: folder

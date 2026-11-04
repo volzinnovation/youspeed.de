@@ -1,4 +1,13 @@
-# Reported roadworks advisory, version 1
+# Reported road advisories
+
+Version 2 adds separately identified BW incidents and Autobahn short/long-term
+works while preserving the BEMaS-only v1 API and cached data. See the
+[v2 contract](CONTRACT_V2.md), shared synthetic
+[manifest](manifest-v2.json)/[snapshot](snapshot-v2.json), and
+[implementation and validation](../../docs/MOBIDATA_BW_ROAD_ADVISORIES_V2_IMPLEMENTATION.md).
+Deployment and source activation are postponed.
+
+## Version 1
 
 The fixture is shared by the Swift/Kotlin parsers, cache and relevance tests.
 The public contract is

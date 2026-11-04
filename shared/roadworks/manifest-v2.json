@@ -1,0 +1,129 @@
+{
+  "attributions": [
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: bemas"
+    },
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: incidents-bw"
+    },
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: autobahn-short-term"
+    },
+    {
+      "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+      "dataset_url": "https://api.mobidata-bw.de/",
+      "license_id": "fixture-only",
+      "license_url": "https://example.org/test-fixture-license",
+      "provider": "Synthetic parity fixture: autobahn-long-term"
+    }
+  ],
+  "coverage": {
+    "autobahn_included": true,
+    "complete_road_coverage": false,
+    "description": "Synthetic partial-coverage parity fixture.",
+    "region": "DE-BW",
+    "source_ids": [
+      "bemas",
+      "incidents-bw",
+      "autobahn-short-term",
+      "autobahn-long-term"
+    ]
+  },
+  "feature_enabled": true,
+  "freshness": {
+    "last_checked_at": "2026-10-28T09:59:30Z",
+    "last_ingested_at": "2026-10-28T10:00:00Z",
+    "server_time": "2026-10-28T10:00:00Z",
+    "source_modified_at": "2026-10-28T09:59:00Z",
+    "source_publication_at": "2026-10-28T09:59:00Z",
+    "status": "fresh"
+  },
+  "next_poll_after_seconds": 300,
+  "region": "DE-BW",
+  "schema_version": 2,
+  "snapshot_bytes": 9628,
+  "snapshot_id": "27aecaccfcdf74af2b17dc1d8ab1b90d5a85ee2b0286ebff34c525a1909e6a8d",
+  "snapshot_path": "/youspeed/live/v2/regions/DE-BW/snapshots/27aecaccfcdf74af2b17dc1d8ab1b90d5a85ee2b0286ebff34c525a1909e6a8d",
+  "sources": [
+    {
+      "attribution": {
+        "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+        "dataset_url": "https://api.mobidata-bw.de/",
+        "license_id": "fixture-only",
+        "license_url": "https://example.org/test-fixture-license",
+        "provider": "Synthetic parity fixture: bemas"
+      },
+      "enabled": true,
+      "freshness": {
+        "last_checked_at": "2026-10-28T09:59:30Z",
+        "source_modified_at": "2026-10-28T09:59:00Z",
+        "source_publication_at": "2026-10-28T09:59:00Z",
+        "status": "fresh"
+      },
+      "source_id": "bemas"
+    },
+    {
+      "attribution": {
+        "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+        "dataset_url": "https://api.mobidata-bw.de/",
+        "license_id": "fixture-only",
+        "license_url": "https://example.org/test-fixture-license",
+        "provider": "Synthetic parity fixture: incidents-bw"
+      },
+      "enabled": true,
+      "freshness": {
+        "last_checked_at": "2026-10-28T09:59:30Z",
+        "source_modified_at": "2026-10-28T09:59:00Z",
+        "source_publication_at": "2026-10-28T09:59:00Z",
+        "status": "fresh"
+      },
+      "source_id": "incidents-bw"
+    },
+    {
+      "attribution": {
+        "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+        "dataset_url": "https://api.mobidata-bw.de/",
+        "license_id": "fixture-only",
+        "license_url": "https://example.org/test-fixture-license",
+        "provider": "Synthetic parity fixture: autobahn-short-term"
+      },
+      "enabled": true,
+      "freshness": {
+        "last_checked_at": "2026-10-28T09:59:30Z",
+        "source_modified_at": "2026-10-28T09:59:00Z",
+        "source_publication_at": "2026-10-28T09:59:00Z",
+        "status": "fresh"
+      },
+      "source_id": "autobahn-short-term"
+    },
+    {
+      "attribution": {
+        "changes": "Synthetic test data; not a live report or a provider dataset licence.",
+        "dataset_url": "https://api.mobidata-bw.de/",
+        "license_id": "fixture-only",
+        "license_url": "https://example.org/test-fixture-license",
+        "provider": "Synthetic parity fixture: autobahn-long-term"
+      },
+      "enabled": false,
+      "freshness": {
+        "last_checked_at": "2026-10-28T09:59:30Z",
+        "source_modified_at": "2026-10-28T09:59:00Z",
+        "source_publication_at": "2026-10-28T09:59:00Z",
+        "status": "unavailable"
+      },
+      "source_id": "autobahn-long-term"
+    }
+  ]
+}

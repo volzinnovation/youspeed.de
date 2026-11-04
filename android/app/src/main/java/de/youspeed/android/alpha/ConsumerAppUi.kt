@@ -854,7 +854,7 @@ internal fun MainScreen(
                         compact = true,
                         onPreviewRequested = { previewSelected = true },
                     )
-                    RoadworksDrivingAdvisory()
+                    RoadworksDrivingAdvisory(foreground)
                     BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
                         val fittedMetricHeight = min(metricSlotMinHeight.value, maxHeight.value * 0.58f).dp
                         val metricScale = (fittedMetricHeight.value / metricSlotMinHeight.value).coerceIn(0.1f, 1f)

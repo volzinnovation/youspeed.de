@@ -1,0 +1,148 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "timezone": "Europe/Berlin",
+  "result": "passed_incidents_only_isolated_short_run",
+  "scope": {
+    "host": "live-eu.woladen.de",
+    "platform": "linux/amd64",
+    "docker_engine": "29.4.2",
+    "production_dockerfile_with_current_source": true,
+    "production_deployment": false,
+    "production_source_activation": false,
+    "production_configuration_or_scheduler_changes": false
+  },
+  "build": {
+    "candidate_image_sha256": "03bb9a6adc57f98a419febfafa37fe54f59c1354e4ca2d12aca531bdd4273060",
+    "copy_input_files": 477,
+    "copy_inputs_digest_sha256": "66f9f0e8011ccb3ad099596f1aa50da2f5aeb374459c686fcd148c2d75314e6a",
+    "copy_input_manifest_sha256": "eed500cc995d5a32d0d1a79496f4d3bed2fcf86060eb1abdf46cfcd88040c743",
+    "key_file_hash_map_sha256": "49033c2777e1628f33d345f07b3ca6ce20428f9afb79d07e4e2126cd65ca8404",
+    "source_archive_sha256": "8a72268feb355d53988626de9793d8eaa532daa1e5d01fda8f769ad9226f1ca5",
+    "elapsed_seconds": 4.722,
+    "dockerfile_and_requirements_match_existing_release": true
+  },
+  "isolation": {
+    "unique_temporary_image_container_and_staging": true,
+    "user": "10001:10001",
+    "cpu_limit": 1,
+    "memory_limit_bytes": 1073741824,
+    "memory_plus_swap_limit_bytes": 1073741824,
+    "effective_swap_limit_bytes": 0,
+    "pid_limit": 64,
+    "capabilities_dropped": [
+      "ALL"
+    ],
+    "no_new_privileges": true,
+    "read_only_root": true,
+    "tmpfs": {
+      "path": "/tmp",
+      "limit_bytes": 67108864,
+      "options": [
+        "rw",
+        "noexec",
+        "nosuid"
+      ]
+    },
+    "mounts": "Only owned temporary state and read-only qualification harness/configuration.",
+    "network": "Default bridge for public source fetch; no production Compose network attachment.",
+    "published_ports": [],
+    "production_volumes_or_secrets_mounted": false
+  },
+  "temporary_test_source_flags": {
+    "bemas": false,
+    "incidents-bw": true,
+    "autobahn-short-term": false,
+    "autobahn-long-term": false
+  },
+  "actual_http_capture": {
+    "checked_at_utc": "2026-10-28T19:33:55Z",
+    "checked_at_cet": "2026-10-28T20:33:55+01:00",
+    "source_publication_at_utc": "2026-10-28T19:31:49Z",
+    "source_modified_at_utc": "2026-10-28T19:31:49Z",
+    "response_codes": [
+      200,
+      304
+    ],
+    "raw_sha256": "0980e4c3fe6cac13e10ba658694cdd1eed599be280a3406b1f9debc909e9ec85",
+    "decoded_bytes": 1106529,
+    "snapshot_sha256": "d049ac7058e4b292574da4d3899dc276c90c46f8fd42d8ea2bb740c568b3a50d",
+    "snapshot_bytes": 222932,
+    "source_records": 119,
+    "exported_features": 112,
+    "vertices": 3936,
+    "reported_active_exports": 20,
+    "scheduled_exports": 92,
+    "quarantined_records": 4,
+    "explicitly_suspended_records": 3,
+    "conditional_304_preserves_raw_publication_and_modified_clocks": true,
+    "export_count_is_not_driving_eligible_count": true
+  },
+  "measurements": {
+    "primary_http_archive_parse_sqlite_snapshot_cli_seconds": 0.758,
+    "primary_cli_peak_rss_bytes": 51920896,
+    "whole_harness_seconds": 2.764,
+    "container_lifetime_seconds": 3.594932,
+    "cgroup_peak_memory_bytes": 95391744,
+    "cgroup_peak_memory_mib": 90.973,
+    "max_sampled_docker_memory_mib": 71.06,
+    "max_sampled_docker_cpu_percent": 98.65,
+    "exit_code": 0,
+    "oom_killed": false,
+    "cgroup_oom_events": 0,
+    "cgroup_memory_max_events": 0
+  },
+  "passed_checks": {
+    "actual_http_archive_hash_and_sqlite_integrity": true,
+    "manifest_snapshot_sizes_sha256_and_v1_compatibility": true,
+    "identity_gzip_etags_conditional_304_immutable_cache": true,
+    "unknown_region_id_and_absent_v2_nearby": true,
+    "all_sources_default_off_without_fetch": true,
+    "http503_partialxml_unsafe_xml_redirect_and_gzip_decoded_size_rejection": true,
+    "failed_refresh_preserves_accepted_source_generation_and_clocks": true,
+    "incident_source_expiry_after_900_seconds": true,
+    "no_reported_active_lease_extension_by_checks_or_failures": true,
+    "rollback_original_source_clocks_and_410_expired_snapshot": true,
+    "retention_pins_current_previous_generations_and_raw_provenance": true
+  },
+  "production_baseline": {
+    "original_containers": 12,
+    "all_original_ids_still_running": true,
+    "all_image_ids_unchanged": true,
+    "health_status_unchanged_including_absent_healthchecks": true,
+    "release_unchanged": true,
+    "existing_release_revision": "33198f6242c6a5917b3a29461d960fdbca638b57",
+    "existing_runtime_image_sha256": "c4dfffbbb7a9f8f50bd2f3a86eb33c9625eb34b534baf18e4e0571d71fbba927",
+    "verification": "Independent final inspection of all twelve original containers before and after cleanup."
+  },
+  "cleanup": {
+    "completed_at_utc": "2026-10-28T19:39:12.894519+00:00",
+    "qualification_containers_remaining": 0,
+    "candidate_image_removed": true,
+    "remote_temporary_stage_removed": true,
+    "complete_evidence_copied_and_verified_before_cleanup": true,
+    "local_orbstack_restored_to_initial_state": "Stopped"
+  },
+  "temporary_harness_and_reporting_corrections": [
+    "Initial temporary assertion incorrectly required a stable combined snapshot ID across a synthetic UTC-day rollover. Corrected timing/assertion; accepted source clocks remained unchanged. No production code changed.",
+    "Original runner summary omitted containers without healthchecks. Independent final verification covers all twelve original IDs, images, running states and optional health fields.",
+    "Same-second UUID filenames were unsuitable for ordering fetches. Canonical 200/304 sequence is verified from both raw receipts and HTTP Date headers; original reports remain preserved."
+  ],
+  "limitations": [
+    "One short observed incident payload plus controlled fault/rollback/retention cases; no sustained-load, availability or throughput guarantee.",
+    "Maximum-valid-size incident stress and BEMaS/Autobahn resource qualification were not performed.",
+    "API checks used ASGI TestClient inside the container; no public route, reverse-proxy change or hosted API deployment was tested.",
+    "Incident global completeness and physical event truth remain unverified; omission removes only the local positive-subset projection.",
+    "This receipt contains no attached-device test result; native acceptance is recorded separately."
+  ],
+  "private_evidence": {
+    "root": "/private/tmp/youspeed-device-acceptance-20261028/container",
+    "canonical_receipt": "LIVE_EU_CONTAINER_ACCEPTANCE_2026-10-28.json",
+    "canonical_receipt_sha256": "acbb26bdfe93369e5d6e7d4e68439db86cc4554c6a485e219e4896ba31e6e859",
+    "complete_archive": "live-eu-evidence-complete.tar.gz",
+    "complete_archive_sha256": "5894d890a45572b5278e42091075bce3ab34ee5a0c4b2e2bad03bccae026d974",
+    "container_result_sha256": "2dc7f57aff55fd61069f0cf7820f34d89863250861a7e3512f0324db4a28611e",
+    "runner_result_sha256": "bc9614216281b9eba3794a9de6613110e3613fe76f3510a5497195886e96b9d6",
+    "cleanup_receipt_sha256": "4f078811c0c7a5d3be0f0dbeffb7ff672c17074faaea6fd61be1ab168aee1c88"
+  }
+}

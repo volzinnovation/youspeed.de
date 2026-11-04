@@ -9,6 +9,11 @@ import androidx.compose.runtime.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.io.File
@@ -33,6 +38,8 @@ internal class RoadworksService internal constructor(context: Context, preferenc
     var status by mutableStateOf(if (enabled) "unavailable" else "off"); private set
     var card by mutableStateOf<RoadworksRelevance.Card?>(null); private set
     var nearby by mutableStateOf<List<Pair<RoadworksAdvisory.Feature, Double>>>(emptyList()); private set
+    internal data class SourceHealth(val id: String, val enabled: Boolean, val freshness: RoadworksAdvisory.Freshness, val ageMinutes: Long?, val attribution: Map<String, String>)
+    var sourceHealth by mutableStateOf<List<SourceHealth>>(emptyList()); private set
     private val handler = Handler(Looper.getMainLooper())
     private val worker = Executors.newSingleThreadExecutor { Thread(it, "roadworks-download").apply { isDaemon = true } }
     private val directory = File(context.cacheDir, preferencesName)
@@ -53,12 +60,9 @@ internal class RoadworksService internal constructor(context: Context, preferenc
         }
     }
     private fun uptime() = SystemClock.elapsedRealtime() / 1000.0
-    val sourceAgeMinutes: Long? get() {
-        val value = manifest ?: return null
-        val oldest = minOf(value.sourcePublication ?: return null, value.sourceModified ?: return null)
-        if (!receivedUptime.isFinite()) return null
-        return ((value.serverTime.toEpochMilli() - oldest.toEpochMilli()) / 1000.0 + uptime() - receivedUptime).takeIf { it.isFinite() && it >= 0 }?.let { (it / 60).toLong() }
-    }
+    val sourceAgeMinutes: Long? get() = sourceAgeMinutes(card?.feature?.advisorySource ?: "bemas")
+    fun sourceAgeMinutes(sourceId: String): Long? = manifest?.sourceAgeMinutes(sourceId, receivedUptime, uptime())
+    fun sourceStatus(sourceId: String): String = sourceHealth.firstOrNull { it.id == sourceId }?.let { if (it.enabled) it.freshness.name.lowercase() else "off" } ?: "unknown"
     init {
         val initialGeneration = generation
         worker.execute {
@@ -73,14 +77,14 @@ internal class RoadworksService internal constructor(context: Context, preferenc
     }
     fun updateEnabled(value: Boolean) {
         enabled = value; preferences.edit().putBoolean("enabled", value).apply()
-        generation++; connection?.disconnect(); loading = false; card = null; nearby = emptyList(); relevance.reset(); nextAttempt = 0.0; transportState = null
+        generation++; connection?.disconnect(); loading = false; card = null; nearby = emptyList(); sourceHealth = emptyList(); relevance.reset(); nextAttempt = 0.0; transportState = null
         handler.removeCallbacks(heartbeat)
         status = if (value) "unavailable" else "off"
         if (value) { session(driving, foreground); refresh(explicit = true) }
     }
     fun clearCache() {
         generation++; connection?.disconnect(); loading = false; manifest = null; etag = null; transportState = null
-        cache = RoadworksSnapshotCache(); relevance.reset(); card = null; nearby = emptyList()
+        cache = RoadworksSnapshotCache(); relevance.reset(); card = null; nearby = emptyList(); sourceHealth = emptyList()
         worker.execute { directory.deleteRecursively() }; status = if (enabled) "unavailable" else "off"
     }
     fun update(location: Location) {
@@ -99,9 +103,16 @@ internal class RoadworksService internal constructor(context: Context, preferenc
         evaluate(); if (driving && foreground) refresh()
     }
     private fun evaluate() {
-        val freshness = manifest?.freshness(receivedUptime, uptime()) ?: RoadworksAdvisory.Freshness.UNAVAILABLE
+        val time = uptime()
+        val freshness = manifest?.freshness(receivedUptime, time) ?: RoadworksAdvisory.Freshness.UNAVAILABLE
+        val sourceFreshness = manifest?.sourceFreshness(receivedUptime, time).orEmpty()
+        sourceHealth = manifest?.sourceList().orEmpty().map { source ->
+            SourceHealth(source.id, source.enabled, sourceFreshness[source.id] ?: RoadworksAdvisory.Freshness.UNAVAILABLE,
+                manifest?.sourceAgeMinutes(source.id, receivedUptime, time), source.attribution.ifEmpty { cache.snapshot?.attributions?.firstOrNull().orEmpty() })
+        }
         if (enabled && !loading) status = transportState ?: if (fix == null) "no_gps" else freshness.name.lowercase()
-        card = relevance.update(cache.snapshot, freshness, fix, Instant.now(), enabled, driving, foreground)
+        card = relevance.update(cache.snapshot, freshness, fix, Instant.now(), enabled && manifest?.enabled == true, driving, foreground, sourceFreshness,
+            manifest?.trustedNow(receivedUptime, time))
         nearby = if (enabled && manifest?.enabled == true && fix != null) cache.snapshot?.features.orEmpty().map { it to RoadworksAdvisory.distance(fix!!.point, it) }
             .filter { it.second <= 5000 }.sortedWith(compareBy<Pair<RoadworksAdvisory.Feature, Double>> { it.second }.thenBy { it.first.id }) else emptyList()
     }
@@ -113,12 +124,13 @@ internal class RoadworksService internal constructor(context: Context, preferenc
         worker.execute {
             var retryAfter = 0.0
             val result = runCatching {
-                val reply = (transport ?: ::fetch)("/youspeed/live/v1/regions/DE-BW", validator, 262144, token)
+                val reply = (transport ?: ::fetch)("/youspeed/live/v2/regions/DE-BW", validator, 262144, token)
                 retryAfter = reply.retryAfter
                 if (reply.code in 400..499 && reply.code !in setOf(408, 429)) retryAfter = maxOf(300.0, retryAfter)
-                if (reply.code == 304) { require(oldManifest != null); return@runCatching null }
+                if (reply.code == 304) { require(oldManifest?.schemaVersion == 2); return@runCatching null }
                 require(reply.code == 200) { "roadworks_http_${reply.code}" }
                 var candidate = RoadworksAdvisory.parseManifest(reply.bytes)
+                require(candidate.schemaVersion == 2) { "unsupported_roadworks_version" }
                 if (reply.date != null) candidate = candidate.validatedHttpClock(reply.date, reply.age)
                 val bytes = if (candidate.enabled && candidate.snapshotId != null) {
                     if (candidate.snapshotId == oldManifest?.snapshotId && oldBytes != null) oldBytes
@@ -152,7 +164,7 @@ internal class RoadworksService internal constructor(context: Context, preferenc
     }
     internal data class Reply(val code: Int, val bytes: ByteArray, val etag: String?, val date: Instant?, val age: Double, val retryAfter: Double)
     private fun fetch(path: String, validator: String?, limit: Int, token: Long): Reply {
-        require(path.startsWith("/youspeed/live/v1/regions/DE-BW") && !path.contains('?') && !path.contains('#') && !path.contains(".."))
+        require(path.startsWith("/youspeed/live/v2/regions/DE-BW") && !path.contains('?') && !path.contains('#') && !path.contains(".."))
         val request = URL("https://live-eu.woladen.de$path").openConnection() as HttpURLConnection
         connection = request
         try {
@@ -160,7 +172,7 @@ internal class RoadworksService internal constructor(context: Context, preferenc
             request.setRequestProperty("Accept", "application/json, application/geo+json")
             if (validator != null) request.setRequestProperty("If-None-Match", validator)
             val code = request.responseCode
-            require(request.contentLengthLong <= 2097152)
+            require(request.contentLengthLong <= limit.toLong())
             val bytes = if (code == 200) request.inputStream.use { input ->
                 val output = java.io.ByteArrayOutputStream(); val buffer = ByteArray(8192)
                 while (true) { check(token == generation); val count = input.read(buffer); if (count < 0) break; require(output.size() + count <= limit); output.write(buffer, 0, count) }
@@ -189,15 +201,28 @@ private fun roadworksStatusText(status: String): String = when (status) {
     "update_required" -> roadworksText("App update required for these reports", "App-Update für diese Meldungen erforderlich", "Mise à jour de l’app nécessaire", "App-update nodig voor deze meldingen")
     "no_gps" -> roadworksText("Location unavailable · parked BW download available", "Standort fehlt · BW-Download im Stand verfügbar", "Position indisponible · téléchargement BW à l’arrêt", "Locatie niet beschikbaar · BW-download bij stilstand")
     "requested", "approved" -> roadworksText("Reported as planned", "Als geplant gemeldet", "Signalé comme prévu", "Gemeld als gepland")
+    "reported" -> roadworksText("Reported by publisher", "Vom Anbieter gemeldet", "Signalé par le fournisseur", "Gemeld door de bron")
     "implemented" -> roadworksText("Reported as in effect", "Als wirksam gemeldet", "Signalé comme en cours", "Gemeld als van kracht")
-    "resolved" -> roadworksText("Work periods available", "Arbeitszeiträume verfügbar", "Périodes de travaux disponibles", "Werkperioden beschikbaar")
-    else -> roadworksText("Report availability or work period uncertain", "Verfügbarkeit oder Arbeitszeitraum ungewiss", "Disponibilité ou période de travaux incertaine", "Beschikbaarheid of werkperiode onzeker")
+    "resolved" -> roadworksText("Reported validity periods available", "Gemeldete Gültigkeitszeiträume verfügbar", "Périodes de validité signalées disponibles", "Gemelde geldigheidsperioden beschikbaar")
+    "unavailable" -> roadworksText("Source unavailable", "Quelle nicht verfügbar", "Source indisponible", "Bron niet beschikbaar")
+    else -> roadworksText("Report availability or validity uncertain", "Verfügbarkeit oder Gültigkeit ungewiss", "Disponibilité ou validité incertaine", "Beschikbaarheid of geldigheid onzeker")
 }
 
 private fun roadworksKindText(kind: String) = when (kind) {
     "closure" -> roadworksText("Reported closure", "Gemeldete Sperrung", "Fermeture signalée", "Gemelde afsluiting")
     "roadworks" -> roadworksText("Reported roadworks", "Gemeldete Baustelle", "Travaux signalés", "Gemelde wegwerkzaamheden")
+    "incident" -> roadworksText("Reported incident", "Gemeldetes Verkehrsereignis", "Incident signalé", "Gemeld verkeersincident")
+    "hazard" -> roadworksText("Reported hazard", "Gemeldete Gefahr", "Danger signalé", "Gemeld gevaar")
+    "congestion" -> roadworksText("Reported congestion", "Gemeldeter Stau", "Embouteillage signalé", "Gemelde file")
     else -> roadworksText("Report type uncertain", "Meldungsart ungewiss", "Type de signalement incertain", "Soort melding onzeker")
+}
+
+private fun roadworksSourceText(source: String): String = when (source) {
+    "bemas" -> "BEMaS · MobiData BW"
+    "incidents-bw" -> roadworksText("BW traffic reports", "BW-Verkehrsmeldungen", "Signalements routiers BW", "BW-verkeersmeldingen")
+    "autobahn-short-term" -> roadworksText("Autobahn short-term works", "Autobahn-Tagesbaustellen", "Travaux autoroutiers de courte durée", "Kortdurende snelwegwerkzaamheden")
+    "autobahn-long-term" -> roadworksText("Autobahn long-term works", "Autobahn-Dauerbaustellen", "Travaux autoroutiers de longue durée", "Langdurige snelwegwerkzaamheden")
+    else -> source
 }
 
 private fun roadworksAgeText(age: Long?): String =
@@ -215,39 +240,67 @@ private fun roadworksDirectionText(direction: String): String {
     return source + " · " + roadworksText("Your road/direction is unverified", "Eigene Straße/Fahrtrichtung nicht bestätigt", "Votre route et votre sens ne sont pas vérifiés", "Uw weg/rijrichting is niet bevestigd")
 }
 
+private fun roadworksValidityText(feature: RoadworksAdvisory.Feature): String {
+    if (feature.validityBasis != "reported_active") return "${feature.outer.start} – ${feature.outer.end}"
+    var text = roadworksText("Source reports active; report expires ", "Quelle meldet aktiv; Meldung verfällt ",
+        "Source : actif ; le signalement expire le ", "Bron meldt actief; melding vervalt ") + feature.outer.end
+    if (feature.sourceValidityStart != null || feature.sourceValidityEnd != null) {
+        val missing = roadworksText("not specified", "nicht angegeben", "non précisée", "niet opgegeven")
+        text += "\n" + roadworksText("Original source time specification: ", "Ursprüngliche Zeitangabe der Quelle: ",
+            "Période d’origine de la source : ", "Oorspronkelijke bronperiode: ") +
+            (feature.sourceValidityStart?.toString() ?: missing) + " – " + (feature.sourceValidityEnd?.toString() ?: missing)
+    }
+    return text
+}
+
 @Composable internal fun RoadworksSettingsSection() {
     val service = RoadworksService.get(LocalContext.current)
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(roadworksText("Live roadworks", "Live-Baustellen", "Travaux en direct", "Actuele wegwerkzaamheden"), style = MaterialTheme.typography.titleMedium)
-        Row { Text(roadworksText("Reported roadworks in BW", "Gemeldete Baustellen in BW", "Travaux signalés en BW", "Gemelde wegwerkzaamheden in BW"), Modifier.weight(1f)); Switch(service.enabled, service::updateEnabled) }
+        Text(roadworksText("Live road advisories", "Live-Verkehrshinweise", "Signalements routiers en direct", "Actuele verkeersmeldingen"), style = MaterialTheme.typography.titleMedium)
+        Row { Text(roadworksText("Reported road advisories in BW", "Gemeldete Verkehrshinweise in BW", "Signalements routiers en BW", "Gemelde verkeerssituaties in BW"), Modifier.weight(1f)); Switch(service.enabled, service::updateEnabled) }
         Text(roadworksText("Optional Wi-Fi/cellular updates. Proximity stays on this phone. Partial, possibly delayed reports; no change to speed limits.", "Optionale Updates über WLAN/Mobilfunk. Nähe wird auf dem Telefon berechnet. Unvollständige, möglicherweise verspätete Meldungen; keine Änderung der Tempolimits.", "Mises à jour facultatives Wi-Fi/mobile. Proximité calculée sur ce téléphone. Données partielles et parfois retardées ; aucun changement de limitation.", "Optionele wifi/mobiele updates. Nabijheid wordt op deze telefoon berekend. Onvolledige, mogelijk vertraagde meldingen; geen invloed op snelheidslimieten."), style = MaterialTheme.typography.bodySmall)
         if (service.enabled) {
             Text(roadworksStatusText(service.status), style = MaterialTheme.typography.bodySmall)
-            Text(roadworksAgeText(service.sourceAgeMinutes), style = MaterialTheme.typography.bodySmall)
+            service.sourceHealth.forEach { source ->
+                Text(listOf(roadworksSourceText(source.id), roadworksStatusText(if (source.enabled) source.freshness.name.lowercase() else "off"),
+                    roadworksAgeText(source.ageMinutes)).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                Text(listOf("provider", "dataset_url", "license_id", "license_url", "changes").mapNotNull { source.attribution[it] }
+                    .joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+            }
             OutlinedButton({ service.refresh(explicit = true) }) { Text(roadworksText("Refresh BW data", "BW-Daten aktualisieren", "Actualiser BW", "BW-gegevens vernieuwen")) }
             OutlinedButton(service::clearCache) { Text(roadworksText("Clear cached data", "Gespeicherte Daten löschen", "Effacer le cache", "Cache wissen")) }
-            if (service.nearby.isEmpty() && service.status in setOf("fresh", "delayed")) Text(roadworksText("No reported roadworks nearby in the available data (5 km).", "In den verfügbaren Daten keine gemeldeten Baustellen in der Nähe (5 km).", "Aucun chantier signalé à proximité dans les données disponibles (5 km).", "Geen wegwerkzaamheden in de beschikbare gegevens in de buurt (5 km)."), style = MaterialTheme.typography.bodySmall)
+            if (service.nearby.isEmpty() && service.status in setOf("fresh", "delayed")) Text(roadworksText("No reported road advisories nearby in the available data (5 km). Coverage is partial.", "In den verfügbaren Daten keine gemeldeten Verkehrshinweise in der Nähe (5 km). Abdeckung ist unvollständig.", "Aucun signalement routier à proximité dans les données disponibles (5 km). Couverture partielle.", "Geen verkeersmeldingen in de beschikbare gegevens in de buurt (5 km). De dekking is gedeeltelijk."), style = MaterialTheme.typography.bodySmall)
             service.nearby.forEach { (feature, distance) ->
                 Text(listOf("${feature.roadLabel} · ${distance.toInt()} m", roadworksKindText(feature.kind),
+                    roadworksSourceText(feature.advisorySource), roadworksStatusText(service.sourceStatus(feature.advisorySource)),
+                    roadworksAgeText(service.sourceAgeMinutes(feature.advisorySource)),
                     roadworksText("Source description (German)", "Quellbeschreibung (Deutsch)", "Description source (allemand)", "Bronbeschrijving (Duits)"),
-                    feature.description, "${feature.outer.start} – ${feature.outer.end}",
+                    feature.description, roadworksValidityText(feature),
                     "${roadworksStatusText(feature.operatorStatus)} · ${roadworksStatusText(feature.scheduleStatus)}",
                     roadworksDirectionText(feature.direction),
-                    roadworksText("Source ID", "Quell-ID", "Identifiant source", "Bron-ID") + ": " + feature.id).joinToString("\n"))
+                    roadworksText("Source ID", "Quell-ID", "Identifiant source", "Bron-ID") + ": " + feature.id,
+                    roadworksText("Publisher record", "Datensatz des Anbieters", "Enregistrement du fournisseur", "Bronrecord") + ": " + feature.publisherRecordId).joinToString("\n"))
             }
-            Text("Verkehrsministerium Baden-Württemberg · BEMaS via MobiData BW · dl-de/by-2-0", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
-@Composable internal fun RoadworksDrivingAdvisory() {
+@Composable internal fun RoadworksDrivingAdvisory(foreground: Color) {
     val service = RoadworksService.get(LocalContext.current)
     service.card?.let { card ->
-        Text(listOf(roadworksText("Reported nearby", "In der Nähe gemeldet", "Signalé à proximité", "In de buurt gemeld"),
-            roadworksKindText(card.feature.kind), card.feature.roadLabel, "${(ceil(card.distanceM / 10) * 10).toInt()} m",
-            roadworksAgeText(service.sourceAgeMinutes),
+        val summary = listOf(roadworksText("Reported nearby", "In der Nähe gemeldet", "Signalé à proximité", "In de buurt gemeld"),
+            roadworksKindText(card.feature.kind), "${(ceil(card.distanceM / 10) * 10).toInt()} m").joinToString(" · ")
+        val metadata = listOf(roadworksSourceText(card.feature.advisorySource), roadworksAgeText(service.sourceAgeMinutes(card.feature.advisorySource)),
             if (card.freshness == RoadworksAdvisory.Freshness.DELAYED) roadworksText("delayed", "verzögert", "retardé", "vertraagd") else "",
             if (service.status == "offline") roadworksText("offline", "offline", "hors ligne", "offline") else "")
-            .filter { it.isNotEmpty() }.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+            .filter { it.isNotEmpty() }.joinToString(" · ")
+        Column(Modifier.fillMaxWidth().testTag("dashboard-roadworks"), verticalArrangement = Arrangement.spacedBy(2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(summary, color = foreground, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("dashboard-roadworks-summary"))
+            Text(metadata, color = foreground, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center,
+                maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("dashboard-roadworks-metadata"))
+            if (card.feature.roadLabel.isNotEmpty()) Text(card.feature.roadLabel, color = foreground, style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.testTag("dashboard-roadworks-road"))
+        }
     }
 }

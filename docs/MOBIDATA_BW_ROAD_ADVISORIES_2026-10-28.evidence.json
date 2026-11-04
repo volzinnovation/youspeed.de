@@ -1,0 +1,210 @@
+{
+  "date": "2026-10-28",
+  "scope": "Read-only public samples; no deployment or source activation. This is a single observation, not a publication cadence or availability measurement.",
+  "sources": [
+    {
+      "source": "incidents",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/incidents/incidents_lmsbw.datex2.xml",
+      "sha256": "5437c4bb67ac538727b0b60f6c1051b2d4c69229b9d74fcd729dae43a57c4f4c",
+      "decoded_bytes": 1495703,
+      "publication_time": "2026-10-28T14:37:01Z",
+      "http_headers": {
+        "date": "Wed, 28 Oct 2026 14:38:24 GMT",
+        "last-modified": "Wed, 28 Oct 2026 14:37:02 GMT",
+        "etag": "\"dmgjq66etfo82909\"",
+        "content-length": "104985",
+        "content-encoding": "gzip",
+        "content-type": "text/xml; charset=utf-8"
+      }
+    },
+    {
+      "source": "mia-short",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_adb_short_term.datex2.xml",
+      "sha256": "a8151a1c9970225dca116ed34366c4a42a31edb00c03539d90e9daa888d3ade7",
+      "decoded_bytes": 50512307,
+      "publication_time": "2026-10-28T15:31:17+01:00",
+      "http_headers": {
+        "date": "Wed, 28 Oct 2026 14:38:24 GMT",
+        "last-modified": "Wed, 28 Oct 2026 14:31:40 GMT",
+        "etag": "\"dmgjooll4dhw26379\"",
+        "content-length": "3643317",
+        "content-encoding": "gzip",
+        "content-type": "text/xml; charset=utf-8"
+      }
+    },
+    {
+      "source": "mia-long",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_adb_long_term.datex2.xml",
+      "sha256": "3d496daa563f985297da1dc4c1c7ce6e5c75d720c93d6cf12d31c894627402fb",
+      "decoded_bytes": 229312195,
+      "publication_time": "2026-10-28T15:33:19+01:00",
+      "http_headers": {
+        "date": "Wed, 28 Oct 2026 14:38:43 GMT",
+        "last-modified": "Wed, 28 Oct 2026 14:33:48 GMT",
+        "etag": "\"dmgjoqfqmqxt5empa\"",
+        "content-length": "9080686",
+        "content-encoding": "gzip",
+        "content-type": "text/xml; charset=utf-8"
+      }
+    },
+    {
+      "source": "bemas-datex",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_svzbw.datex2.xml",
+      "sha256": "d85b72327e1672917f31135530f777ab8c5600d5e1b88cf6e12b2065724a730d",
+      "decoded_bytes": 29487270,
+      "publication_time": "2026-10-28T15:20:04.705+01:00",
+      "http_headers": {
+        "date": "Wed, 28 Oct 2026 14:41:03 GMT",
+        "last-modified": "Wed, 28 Oct 2026 14:40:06 GMT",
+        "etag": "\"dmgjs7yuqnqoprdz\"",
+        "content-length": "1201895",
+        "content-encoding": "gzip",
+        "content-type": "text/xml; charset=utf-8"
+      }
+    },
+    {
+      "source": "bemas-geojson",
+      "url": "https://api.mobidata-bw.de/datasets/traffic/roadworks/roadworks_geojson.json",
+      "sha256": "31cdb03e457a5ea2c789845e9755c71d2bd6be8a52032812b4a3c339dcc1b75e",
+      "decoded_bytes": 1094821,
+      "publication_time": null,
+      "http_headers": {
+        "date": "Wed, 28 Oct 2026 14:41:03 GMT",
+        "last-modified": "Wed, 28 Oct 2026 14:40:13 GMT",
+        "etag": "\"dmgjsajlm8kp4cny\"",
+        "content-length": "203038",
+        "content-encoding": "gzip",
+        "content-type": "application/json"
+      }
+    }
+  ],
+  "bemas_profile": {
+    "receipt": {
+      "geojson_sha256": "31cdb03e457a5ea2c789845e9755c71d2bd6be8a52032812b4a3c339dcc1b75e",
+      "datex_sha256": "d85b72327e1672917f31135530f777ab8c5600d5e1b88cf6e12b2065724a730d",
+      "source_modified_at": "2026-10-28T14:40:13Z",
+      "source_publication_at": "2026-10-28T14:20:04Z",
+      "last_checked_at": "2026-10-28T14:41:03Z",
+      "last_ingested_at": "2026-10-28T14:41:03Z",
+      "membership_count": 996,
+      "accepted_count": 852,
+      "quarantined_count": 4,
+      "issues": [
+        {
+          "source_id": "138434891-138481357-138481358-138492397-0-sperrung.001",
+          "code": "quarantined_coordinate_order"
+        },
+        {
+          "source_id": "138434891-138481357-138481358-138492397-1-sperrung.001",
+          "code": "quarantined_coordinate_order"
+        },
+        {
+          "source_id": "138434891-138481357-138492799-138492803-0-sperrung.001",
+          "code": "quarantined_coordinate_order"
+        },
+        {
+          "source_id": "138434891-138481357-138492799-138492803-1-sperrung.001",
+          "code": "quarantined_coordinate_order"
+        }
+      ],
+      "evaluation_window": {
+        "start": "2026-10-28T00:00:00Z",
+        "end": "2026-11-05T00:00:00Z"
+      }
+    },
+    "normalized_bytes": 1177509,
+    "schedule_counts": {
+      "resolved": 0,
+      "unknown": 852
+    }
+  },
+  "incident_license": {
+    "catalogue": "https://mobidata-bw.de/dataset/meldung",
+    "license_id": "http://dcat-ap.de/def/licenses/dl-by-de/2.0",
+    "license_url": "https://www.govdata.de/dl-de/by-2-0",
+    "metadata_query": "https://mobidata-bw.de/api/3/action/package_search?q=verkehrsmeldungen&rows=20",
+    "declared_refresh_interval_seconds": 600,
+    "publisher_context": "MobiData BW catalogue author; incident source Landesmeldestelle BW in the Ministry of the Interior."
+  },
+  "autobahn_license": "Not established from the MobiData catalogue queries in this session; requires authoritative per-feed review before activation.",
+  "new_source_profiles": [
+    {
+      "source_id": "incidents-bw",
+      "raw_sha256": "5437c4bb67ac538727b0b60f6c1051b2d4c69229b9d74fcd729dae43a57c4f4c",
+      "decoded_bytes": 1495703,
+      "snapshot_bytes": 161760,
+      "elapsed_seconds": 0.21,
+      "counts": {
+        "membership_count": 128,
+        "accepted_count": 92,
+        "quarantined_count": 33,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 3
+      },
+      "quarantine_reasons": {
+        "unbounded_incident_validity": 29,
+        "ambiguous_or_missing_pointByCoordinates": 4
+      },
+      "resolved": 92,
+      "unknown_schedules": 0,
+      "kinds": [
+        "closure",
+        "hazard",
+        "roadworks",
+        "unknown"
+      ],
+      "source_publication_at": "2026-10-28T14:37:01Z",
+      "source_modified_at": "2026-10-28T14:37:02Z"
+    },
+    {
+      "source_id": "autobahn-short-term",
+      "raw_sha256": "a8151a1c9970225dca116ed34366c4a42a31edb00c03539d90e9daa888d3ade7",
+      "decoded_bytes": 50512307,
+      "snapshot_bytes": 636092,
+      "elapsed_seconds": 2.81,
+      "counts": {
+        "membership_count": 3479,
+        "accepted_count": 229,
+        "quarantined_count": 0,
+        "coverage_excluded_count": 3127,
+        "cancelled_count": 0
+      },
+      "quarantine_reasons": {},
+      "resolved": 52,
+      "unknown_schedules": 177,
+      "kinds": [
+        "closure",
+        "roadworks",
+        "unknown"
+      ],
+      "source_publication_at": "2026-10-28T14:31:17Z",
+      "source_modified_at": "2026-10-28T14:31:40Z"
+    },
+    {
+      "source_id": "autobahn-long-term",
+      "raw_sha256": "3d496daa563f985297da1dc4c1c7ce6e5c75d720c93d6cf12d31c894627402fb",
+      "decoded_bytes": 229312195,
+      "snapshot_bytes": 831357,
+      "elapsed_seconds": 13.18,
+      "counts": {
+        "membership_count": 23343,
+        "accepted_count": 465,
+        "quarantined_count": 0,
+        "coverage_excluded_count": 19854,
+        "cancelled_count": 0
+      },
+      "quarantine_reasons": {},
+      "resolved": 415,
+      "unknown_schedules": 50,
+      "kinds": [
+        "closure",
+        "hazard",
+        "roadworks",
+        "unknown"
+      ],
+      "source_publication_at": "2026-10-28T14:33:19Z",
+      "source_modified_at": "2026-10-28T14:33:48Z"
+    }
+  ],
+  "profiling_limit": "Offline adapter run using a single public sample per source; exported features are not necessarily eligible. No production HTTP-ingestion benchmark or activation."
+}

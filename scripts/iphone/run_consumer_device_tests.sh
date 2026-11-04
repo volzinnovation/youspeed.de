@@ -19,6 +19,7 @@ Options:
   --skip-project-gen                 Skip scripts/iphone/generate_xcode_project.sh
   --allow-provisioning-updates       Pass provisioning update flags to xcodebuild
   --installed-app-ui-tests          Run only UI tests on the driver's installed app
+  --incident-qualification-dir <path> Bundle captured incident acceptance data in the isolated unit-test target
   -h, --help                         Show this help text
 
 EOF
@@ -36,6 +37,7 @@ skip_testing=()
 result_bundle=""
 development_team=""
 installed_app_ui_tests=0
+incident_qualification_dir=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -83,6 +85,10 @@ while [[ $# -gt 0 ]]; do
       installed_app_ui_tests=1
       shift
       ;;
+    --incident-qualification-dir)
+      incident_qualification_dir="${2:-}"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -94,6 +100,20 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "${incident_qualification_dir}" ]]; then
+  if [[ "${installed_app_ui_tests}" == "1" || "${scheme}" != "SpeedConsumer" ]]; then
+    echo "Captured incident data may only be bundled into the isolated SpeedConsumer unit-test host." >&2
+    exit 1
+  fi
+  incident_qualification_dir="$(cd "${incident_qualification_dir}" && pwd)"
+  for fixture in receipt.json manifest.json snapshot.json; do
+    if [[ ! -f "${incident_qualification_dir}/${fixture}" ]]; then
+      echo "Missing captured incident fixture: ${incident_qualification_dir}/${fixture}" >&2
+      exit 1
+    fi
+  done
+fi
 
 if [[ "${installed_app_ui_tests}" == "1" ]]; then
   if [[ "${scheme}" != "SpeedConsumer" ]]; then
@@ -134,6 +154,10 @@ if [[ "${scheme}" == "SpeedConsumer" && "${installed_app_ui_tests}" != "1" ]]; t
   build_cmd+=("YOUSPEED_TEST_BUNDLE_SUFFIX=.UnitTests")
   build_cmd+=("-skip-testing:SpeedConsumerUITests/ScreenOrientationUITests/testLiveSettingsDismissalReopenAndNestedDebugNavigation")
   build_cmd+=("-skip-testing:SpeedConsumerUITests/LiveDeviceRecordingUITests")
+fi
+
+if [[ -n "${incident_qualification_dir}" ]]; then
+  build_cmd+=("YOUSPEED_INCIDENT_QUALIFICATION_DIR=${incident_qualification_dir}")
 fi
 
 for test_identifier in ${only_testing[@]+"${only_testing[@]}"}; do

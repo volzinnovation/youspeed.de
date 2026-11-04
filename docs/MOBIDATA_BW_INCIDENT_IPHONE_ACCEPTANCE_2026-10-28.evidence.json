@@ -1,0 +1,819 @@
+{
+  "format": "youspeed.iphone.incident-client.physical-acceptance.v1",
+  "recorded_at_utc": "2026-10-28T22:35:50.022664+00:00",
+  "scope": "Physical isolated-client acceptance completed. Normal driver-app installation and postinstall acceptance remain pending; backend deployment and source activation remain postponed.",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "status": {
+    "isolated_physical_tests": "passed",
+    "actual_dashboard_visual_acceptance": "passed",
+    "normal_app_installation": "pending_after_failed_device_lookup",
+    "normal_app_postinstall_preservation": "pending",
+    "normal_app_smoke": "pending",
+    "backend_deployment": "postponed",
+    "live_source_activation": "disabled"
+  },
+  "device": {
+    "model": "iPhone 14 Pro",
+    "os_version": "26.6.2",
+    "os_build": "23G90",
+    "physical": true,
+    "identity_evidence": "Retained privately; no device identifier or personal device name published."
+  },
+  "application": {
+    "marketing_version": "1.5",
+    "tested_isolated_host": "de.youspeed.SpeedConsumer.TestHost",
+    "tested_build": 10080,
+    "normal_bundle_id": "de.youspeed.SpeedConsumer",
+    "last_verified_installed_normal_build": 10077,
+    "last_verified_installed_normal_marketing_version": "1.5"
+  },
+  "physical_tests": {
+    "result": "Passed",
+    "tests": 38,
+    "passed": 38,
+    "failed": 0,
+    "skipped": 0,
+    "started_at_utc": "2026-10-28T21:11:30.717000+00:00",
+    "finished_at_utc": "2026-10-28T21:11:43.810000+00:00",
+    "duration_seconds": 13.093,
+    "suite_counts": {
+      "RoadworksAdvisoryTests": 19,
+      "RoadworksServiceTests": 6,
+      "TripJournalDisplayConcurrencyTests": 2,
+      "TrafficSignPassageEvaluationTests_selected": 3,
+      "SpeedConsumerTests_controller_selected": 6,
+      "RoadworksComponentVisualAcceptanceTests": 2
+    },
+    "selected_test_identifiers": [
+      "SpeedConsumerTests/RoadworksAdvisoryTests",
+      "SpeedConsumerTests/RoadworksServiceTests",
+      "SpeedConsumerTests/TripJournalDisplayConcurrencyTests",
+      "SpeedConsumerTests/TrafficSignPassageEvaluationTests/testSlowPassagePreparationDoesNotBlockGenerationChangesAndRollsBack",
+      "SpeedConsumerTests/TrafficSignPassageEvaluationTests/testStalePassagePermitDoesNotCreateDatabase",
+      "SpeedConsumerTests/TrafficSignPassageEvaluationTests/testPassageAdmissionPreservesDuplicateAndEquivalentReceipts",
+      "SpeedConsumerTests/SpeedConsumerTests/testShadowDiagnosticIOLeavesGenerationUpdateResponsiveAndDropsStaleDelivery",
+      "SpeedConsumerTests/SpeedConsumerTests/testInFlightOldGenerationIsDroppedBeforeFusionAndNewGenerationContinues",
+      "SpeedConsumerTests/SpeedConsumerTests/testOldGenerationPersistenceContinuationCannotPublishAfterDisableOrReenable",
+      "SpeedConsumerTests/SpeedConsumerTests/testQueuedTerminalFailureCannotTearDownRapidlyReenabledGeneration",
+      "SpeedConsumerTests/SpeedConsumerTests/testTrafficSignRuntimeResetsFusionAcrossContextAndRecorderGenerations",
+      "SpeedConsumerTests/SpeedConsumerTests/testMountChangeWaitsForPreviousFrameAdmissionToComplete",
+      "SpeedConsumerTests/RoadworksComponentVisualAcceptanceTests/testCapturedIncidentActualDrivingAndParkedComponents",
+      "SpeedConsumerTests/RoadworksComponentVisualAcceptanceTests/testCapturedIncidentFullDashboardEvidence"
+    ],
+    "summary_receipt": {
+      "private_local_reference": "layout-10080-summary.json",
+      "bytes": 1166,
+      "sha256": "ece5207cd5d7e4fcf779f57dd1bb3db2c28d9d3b1165918a1c77ec0ff8c73103"
+    },
+    "test_log": {
+      "private_local_reference": "test-layout-10080.log",
+      "bytes": 20791,
+      "sha256": "f68dadef3750ebbbe67c06784209738d54a82e05bf956baa4bb580201df103d1"
+    },
+    "build_log": {
+      "private_local_reference": "build-layout-10080.log",
+      "bytes": 105417,
+      "sha256": "fb66a1d21404dc77570d70e629319620e7c742e8dfa1bc3df302c48b216180f5"
+    },
+    "attachment_manifest": {
+      "private_local_reference": "layout-10080-attachments/manifest.json",
+      "bytes": 12141,
+      "sha256": "8db7a7e4435d98fd9ec4f5d0e4105f5acfed071a42e8887acf0be13061e7c523"
+    },
+    "result_bundle_private_reference": "acceptance-layout-10080.xcresult",
+    "coverage": [
+      "Bundled actual qualification artifact:111 exported features,19 source-reported-active,78 eligible at the capture clock; isolated fixture enables incidents-bw only.",
+      "Parser schema/provenance/source-list/coverage/attribution/feature identity validation; integrity checks and corrupted-cache recovery.",
+      "Source-reported-active leases bind to their own source publication; half-open15-minute expiry; trusted server/monotonic clock tolerates handset wall offsets of plus/minus2hours while ordinary3-second GPS-age gating remains intact.",
+      "Two distinct fresh fixes, reentry rearm, stale GPS suppression,304 conditional revalidation without source/publication or lease freshening, offline cache behavior, source disable and opt-out cancellation.",
+      "Two actual TripJournal display/media reads remain nonblocking when storage work is busy; three selected passage admission/rollback/duplicate-receipt regressions; six selected controller generation/OCR/mount-interleaving regressions.",
+      "Actual MainView rendered at three existing warning telemetry states in real portrait and landscape scenes; OCR requires source, complete source-age label/value, distance and nonempty road pixels above the computed action row. Production parked settings/details components are attached separately."
+    ]
+  },
+  "visual_acceptance": {
+    "test_data_only": true,
+    "actual_main_view_layout": true,
+    "captured_publication_server_time": "2026-10-28T18:54:34Z",
+    "snapshot_sha256": "e923679be79ed2deabd37f549987ac8ecd4a2152b2a0f677162cc83d7a5f201a",
+    "captured_features": 111,
+    "reported_active_features": 19,
+    "eligible_features_at_capture": 78,
+    "transport": "Mocked captured source bytes in isolated host only; no live backend request or real-feed activation. A test-only fresh-fix stream preserves the ordinary GPS quality gate.",
+    "telemetry": "Existing warning-level screenshot fixtures with a clear test watermark; no claim of an actual recorded drive.",
+    "caption": "Three compact rows: summary(kind+distance), source/age/delay/offline metadata, optional one-line road label. Required rows wrap to at most2lines and retain intrinsic height; full road description remains parked. Existing dashboard contrast palette is inherited.",
+    "layout_fix": "MainView measures the intrinsic caption and reserves its height plus the extra section gap in portrait sign and workspace metric budgets. Empty caption reserves zero additional height.",
+    "review": "Final six actual dashboard images were inspected by the coordinating agent; source/age/distance are readable and the road row remains above the action controls. OCR pixel bounds enforce the same regression.",
+    "screens": [
+      {
+        "state": "warn-level-0",
+        "mount": "portrait",
+        "actual_interface_orientation": 1,
+        "viewport_points": [
+          393,
+          852
+        ],
+        "safe_area_insets_points": [
+          59,
+          0,
+          34,
+          0
+        ],
+        "controls_top_point_y": 758.7,
+        "image": {
+          "private_local_reference": "layout-10080-attachments/B096012C-9537-4EC8-84A7-D460959F5EE9.png",
+          "bytes": 937045,
+          "sha256": "c3ef2b98390017b011db0645daac38112f3a64babda1a681a5fcde90e651a759"
+        },
+        "metadata_crop": {
+          "private_local_reference": "layout-10080-attachments/0C72077C-335C-4825-AF60-46A581EA2A06.png",
+          "bytes": 41811,
+          "sha256": "483afd7d4c1eb3f8061402745d35621d1072327a53980a08576c738ddb7b2405"
+        },
+        "geometry_receipt": {
+          "private_local_reference": "layout-10080-attachments/5D0CAD4A-712E-45D4-B6E7-2FEB8666D12B.json",
+          "bytes": 3480,
+          "sha256": "e969fd4d2bf9b2a9a0dd949a6f225a0f181de14266b5ecb93b975115dec35ce6"
+        },
+        "rendered_pixel_assertions": {
+          "method": "Vision OCR of actual rendered dashboard image; no semantic/accessibility-only success",
+          "source_and_complete_source_age_recognized": true,
+          "distance_recognized": true,
+          "nonempty_road_prefix_recognized": true,
+          "expected_age_minutes": 4,
+          "expected_distance": "280 m",
+          "metadata_bounds_px": [
+            77.7321731705394,
+            2121.1774508766994,
+            1023.5129839363744,
+            50.020435333252074
+          ],
+          "road_bounds_px": [
+            51.90568018740375,
+            2180.773256818954,
+            1075.1886362884004,
+            52.22674369812023
+          ],
+          "caption_bounds_px": [
+            51.90568018740375,
+            2065.6046520992477,
+            1075.1886362884004,
+            167.39534841782643
+          ],
+          "controls_top_pixel_y": 2276.1000000000004,
+          "caption_clearance_above_controls_px": 43.09999948292625
+        },
+        "accessibility_frame_map_exposed": false,
+        "manual_image_review_completed": true
+      },
+      {
+        "state": "warn-level-1",
+        "mount": "portrait",
+        "actual_interface_orientation": 1,
+        "viewport_points": [
+          393,
+          852
+        ],
+        "safe_area_insets_points": [
+          59,
+          0,
+          34,
+          0
+        ],
+        "controls_top_point_y": 758.7,
+        "image": {
+          "private_local_reference": "layout-10080-attachments/382D64AE-58A0-4A63-8BF5-BA059F09B6B6.png",
+          "bytes": 768841,
+          "sha256": "f6041bdf930b69a88398241c7c4d094a0573334647f117b07e8e0caebee50530"
+        },
+        "metadata_crop": {
+          "private_local_reference": "layout-10080-attachments/8703ECBF-84A4-42CA-AACC-D5301AEB3C02.png",
+          "bytes": 40627,
+          "sha256": "d427870de54dc2238312ab97d877e678492a1517fa166ba4622a4898b1f736a1"
+        },
+        "geometry_receipt": {
+          "private_local_reference": "layout-10080-attachments/54E13578-B59E-48E7-B721-F328F06CDAC6.json",
+          "bytes": 3702,
+          "sha256": "098bf3f57414e2bf569c052fb45af7d296345d6f3bf8ff36fc2d913c3912c410"
+        },
+        "rendered_pixel_assertions": {
+          "method": "Vision OCR of actual rendered dashboard image; no semantic/accessibility-only success",
+          "source_and_complete_source_age_recognized": true,
+          "distance_recognized": true,
+          "nonempty_road_prefix_recognized": true,
+          "expected_age_minutes": 4,
+          "expected_distance": "280 m",
+          "metadata_bounds_px": [
+            74.15097376011475,
+            2125.0000000466016,
+            1023.2829544326008,
+            44.99999999999994
+          ],
+          "road_bounds_px": [
+            51.90569267960841,
+            2177.0000002349116,
+            1071.4810875844146,
+            55.99999999999996
+          ],
+          "caption_bounds_px": [
+            51.90569267960841,
+            2069.000000038111,
+            1071.4810875844146,
+            164.00000019680056
+          ],
+          "controls_top_pixel_y": 2276.1000000000004,
+          "caption_clearance_above_controls_px": 43.099999765088796
+        },
+        "accessibility_frame_map_exposed": false,
+        "manual_image_review_completed": true
+      },
+      {
+        "state": "warn-level-3",
+        "mount": "portrait",
+        "actual_interface_orientation": 1,
+        "viewport_points": [
+          393,
+          852
+        ],
+        "safe_area_insets_points": [
+          59,
+          0,
+          34,
+          0
+        ],
+        "controls_top_point_y": 758.7,
+        "image": {
+          "private_local_reference": "layout-10080-attachments/04B73948-2C19-40CF-B4BD-2FA7D36159C3.png",
+          "bytes": 787493,
+          "sha256": "0afa49de83ec68515406795a5dc315c012feecd55978f9208619f4c615867026"
+        },
+        "metadata_crop": {
+          "private_local_reference": "layout-10080-attachments/DE7F3174-1084-42FC-B1EB-80B27A45C360.png",
+          "bytes": 42008,
+          "sha256": "093c6829958dd67c842164968dbf376ebbc744f6c6a025acd0e834a7e5013e90"
+        },
+        "geometry_receipt": {
+          "private_local_reference": "layout-10080-attachments/83EEA1A0-37D3-44ED-A75A-6764B7CE653F.json",
+          "bytes": 3733,
+          "sha256": "0fcee4fb3372efad464de3ac76177b291bc155f5985dd4b102cc74b500f1c03b"
+        },
+        "rendered_pixel_assertions": {
+          "method": "Vision OCR of actual rendered dashboard image; no semantic/accessibility-only success",
+          "source_and_complete_source_age_recognized": true,
+          "distance_recognized": true,
+          "nonempty_road_prefix_recognized": true,
+          "expected_age_minutes": 4,
+          "expected_distance": "280 m",
+          "metadata_bounds_px": [
+            77.73173638526619,
+            2121.1768145172537,
+            1023.5278638936705,
+            50.02701950073243
+          ],
+          "road_bounds_px": [
+            51.90569260768643,
+            2180.7732560945065,
+            1075.1886362884004,
+            52.22674369812023
+          ],
+          "caption_bounds_px": [
+            51.90569260768643,
+            2065.6046520992477,
+            1075.1886362884004,
+            167.39534769337888
+          ],
+          "controls_top_pixel_y": 2276.1000000000004,
+          "caption_clearance_above_controls_px": 43.100000207373796
+        },
+        "accessibility_frame_map_exposed": false,
+        "manual_image_review_completed": true
+      },
+      {
+        "state": "warn-level-0",
+        "mount": "landscape_camera_lower_right",
+        "actual_interface_orientation": 4,
+        "viewport_points": [
+          852,
+          393
+        ],
+        "safe_area_insets_points": [
+          0,
+          59,
+          20,
+          59
+        ],
+        "controls_top_point_y": 324,
+        "image": {
+          "private_local_reference": "layout-10080-attachments/31049D94-9F29-451C-A82B-5D2448C47E73.png",
+          "bytes": 893169,
+          "sha256": "257ee68da60aacd3cb90800a7df196bbf15707635b3fdd70e02d1296e3a9a0d1"
+        },
+        "metadata_crop": {
+          "private_local_reference": "layout-10080-attachments/709B229A-17B5-4EA8-BB8D-0A262F0598DC.png",
+          "bytes": 34520,
+          "sha256": "b2e1247db3d43edf7505cb279a767855ca23bb559392ba93ce30941fce560a43"
+        },
+        "geometry_receipt": {
+          "private_local_reference": "layout-10080-attachments/D6EEAEFE-82C7-4E84-92A6-5C7EC73EF70D.json",
+          "bytes": 4145,
+          "sha256": "0bff1c21eac0c381a0520a3b7ac35ddba44cf90d832b4d5348ddff728e988886"
+        },
+        "rendered_pixel_assertions": {
+          "method": "Vision OCR of actual rendered dashboard image; no semantic/accessibility-only success",
+          "source_and_complete_source_age_recognized": true,
+          "distance_recognized": true,
+          "nonempty_road_prefix_recognized": true,
+          "expected_age_minutes": 4,
+          "expected_distance": "280 m",
+          "metadata_bounds_px": [
+            1385.7383865192987,
+            767.349152701837,
+            906.4883422851562,
+            40.96525423728808
+          ],
+          "road_bounds_px": [
+            1344.8721249065097,
+            878.2550846607444,
+            988.2208862304685,
+            48.958474576271136
+          ],
+          "caption_bounds_px": [
+            1344.8721249065097,
+            711.3966108002627,
+            988.2208862304683,
+            215.8169484367528
+          ],
+          "controls_top_pixel_y": 972,
+          "caption_clearance_above_controls_px": 44.78644076298451
+        },
+        "accessibility_frame_map_exposed": false,
+        "manual_image_review_completed": true
+      },
+      {
+        "state": "warn-level-1",
+        "mount": "landscape_camera_lower_right",
+        "actual_interface_orientation": 4,
+        "viewport_points": [
+          852,
+          393
+        ],
+        "safe_area_insets_points": [
+          0,
+          59,
+          20,
+          59
+        ],
+        "controls_top_point_y": 324,
+        "image": {
+          "private_local_reference": "layout-10080-attachments/8BB348D3-7516-4D95-9B11-9957F9FDA7A7.png",
+          "bytes": 735556,
+          "sha256": "20981fd5c64c0206e86e8c40489640651ae1ac0c747980daaaef2ed21731f6fb"
+        },
+        "metadata_crop": {
+          "private_local_reference": "layout-10080-attachments/55FE11AB-5E7E-4F66-9379-167EDCED84D2.png",
+          "bytes": 36662,
+          "sha256": "d5e1e82be2b2ca3cb04741fbe65794b30191e7bb257124ecaa3e7b85f23b9374"
+        },
+        "geometry_receipt": {
+          "private_local_reference": "layout-10080-attachments/457C72AE-5DCB-4391-886A-3F07D3B79193.json",
+          "bytes": 3905,
+          "sha256": "29fab129f2cfcc5788c60fcde7d3d3f0ca22048cb374906401bffe197a8642c0"
+        },
+        "rendered_pixel_assertions": {
+          "method": "Vision OCR of actual rendered dashboard image; no semantic/accessibility-only success",
+          "source_and_complete_source_age_recognized": true,
+          "distance_recognized": true,
+          "nonempty_road_prefix_recognized": true,
+          "expected_age_minutes": 4,
+          "expected_distance": "280 m",
+          "metadata_bounds_px": [
+            1382.0232535121913,
+            767.3491521995746,
+            910.2034912109374,
+            44.961864406779675
+          ],
+          "road_bounds_px": [
+            1344.5220272881545,
+            872.0725957856534,
+            988.8251953124998,
+            63.41123150001139
+          ],
+          "caption_bounds_px": [
+            1344.5220272881545,
+            708.141510413438,
+            988.8251953124998,
+            227.34231687222677
+          ],
+          "controls_top_pixel_y": 972,
+          "caption_clearance_above_controls_px": 36.5161727143352
+        },
+        "accessibility_frame_map_exposed": false,
+        "manual_image_review_completed": true
+      },
+      {
+        "state": "warn-level-3",
+        "mount": "landscape_camera_lower_right",
+        "actual_interface_orientation": 4,
+        "viewport_points": [
+          852,
+          393
+        ],
+        "safe_area_insets_points": [
+          0,
+          59,
+          20,
+          59
+        ],
+        "controls_top_point_y": 324,
+        "image": {
+          "private_local_reference": "layout-10080-attachments/8B761257-6854-4A7D-8D82-1D3BBA581E20.png",
+          "bytes": 761757,
+          "sha256": "c55817b5e3a363e2089ceefb6ce6d951fe87d88d623dd48aff16916564170e20"
+        },
+        "metadata_crop": {
+          "private_local_reference": "layout-10080-attachments/98BB9B1E-A7AB-4415-880B-0EE24F381E99.png",
+          "bytes": 38296,
+          "sha256": "e29f88f7aca89a6306944f9e389f3c109be211a65a04da2f7c14fda5879cfd8d"
+        },
+        "geometry_receipt": {
+          "private_local_reference": "layout-10080-attachments/6F82FFD3-31CC-4C30-9EBE-F0030934DF67.json",
+          "bytes": 4178,
+          "sha256": "d46be9d66c3c5a2269522caa262004c9616c8d0c50a3d5ce8ac74497b101c563"
+        },
+        "rendered_pixel_assertions": {
+          "method": "Vision OCR of actual rendered dashboard image; no semantic/accessibility-only success",
+          "source_and_complete_source_age_recognized": true,
+          "distance_recognized": true,
+          "nonempty_road_prefix_recognized": true,
+          "expected_age_minutes": 4,
+          "expected_distance": "280 m",
+          "metadata_bounds_px": [
+            1373.8499910160162,
+            754.1351345933751,
+            926.5499877929689,
+            53.18011932534684
+          ],
+          "road_bounds_px": [
+            1344.8721073154343,
+            874.9811326987224,
+            988.2208862304689,
+            55.61320769099859
+          ],
+          "caption_bounds_px": [
+            1344.8721073154343,
+            708.1415110344522,
+            988.2208862304688,
+            222.45282935526882
+          ],
+          "controls_top_pixel_y": 972,
+          "caption_clearance_above_controls_px": 41.40565961027903
+        },
+        "accessibility_frame_map_exposed": false,
+        "manual_image_review_completed": true
+      }
+    ],
+    "parked_component_evidence": [
+      {
+        "scope": "Production parked settings section component; not full settings-navigation acceptance",
+        "name": "captured-incidents-parked-settings-top-component",
+        "private_local_reference": "layout-10080-attachments/DBCF17BD-A979-4AD4-9979-C72EE20CB0C0.png",
+        "bytes": 1321010,
+        "sha256": "8e3d37c610c281018c1099cfb88f7f1fc9b8ebaaaff77370c7811f77245e6443"
+      },
+      {
+        "scope": "Production parked settings section component; not full settings-navigation acceptance",
+        "name": "captured-incidents-parked-report-details-component",
+        "private_local_reference": "layout-10080-attachments/88750BD2-A965-4A22-9D02-5E2AC271FE18.png",
+        "bytes": 1426476,
+        "sha256": "177670f0f3f6f01456b2324f633cec6cddcb99501088136b7adcde2b94e48b42"
+      }
+    ],
+    "scope_limit": "Component attachments alone do not prove a complete settings navigation flow; dashboard evidence uses actual MainView. Public accessibility frame maps were unavailable, so rendered-image OCR and actual viewport/safe-area geometry were used."
+  },
+  "qualification_history": [
+    {
+      "build": 10079,
+      "physical_result": {
+        "passed": 38,
+        "failed": 0,
+        "skipped": 0
+      },
+      "receipt": {
+        "private_local_reference": "physical-final-summary.json",
+        "bytes": 1167,
+        "sha256": "5cfea54445a80dbd9978d2c85b5bacb7b1674c131b828bf7f7471bc4db6cfdb7"
+      },
+      "finding": "Semantic/component acceptance passed, but manual full-dashboard review found that a long road label truncated the caption before distance/source/age. Existing contrast foreground had already been applied.",
+      "disposition": "Replaced the single line with separate summary, metadata and road rows; added rendered source/age/distance OCR assertions."
+    },
+    {
+      "build": 10080,
+      "stage": "initial_metadata_candidate",
+      "physical_result": {
+        "passed": 38,
+        "failed": 0,
+        "skipped": 0
+      },
+      "receipt": {
+        "private_local_reference": "metadata-10080-summary.json",
+        "bytes": 1167,
+        "sha256": "e816d4cb56dafb61a3c286c7a52d4175f7a38775b8125c87a268d958b95a63c1"
+      },
+      "finding": "Metadata pixels passed, but manual review found the road row overlapping the bottom action controls in both orientations.",
+      "disposition": "Measured full caption height and reserved it in actual MainView budgets; strengthened regression to include nonempty road pixels and complete-caption clearance above controls."
+    },
+    {
+      "build": 10080,
+      "stage": "final_measured_layout_candidate",
+      "physical_result": {
+        "passed": 38,
+        "failed": 0,
+        "skipped": 0
+      },
+      "receipt": {
+        "private_local_reference": "layout-10080-summary.json",
+        "bytes": 1166,
+        "sha256": "ece5207cd5d7e4fcf779f57dd1bb3db2c28d9d3b1165918a1c77ec0ff8c73103"
+      },
+      "finding": "Final actual portrait/landscape warning-state renders passed OCR clearance assertions and manual image review."
+    }
+  ],
+  "normal_app_update": {
+    "candidate": {
+      "bundle_id": "de.youspeed.SpeedConsumer",
+      "version": "1.5",
+      "build": "10080",
+      "executable_sha256": "24ae831f58f5eb114b84e684d08404149ec6da44cd62d1d9d2bbcf135b131e91",
+      "code_resources_sha256": "9a8699a53bf8357ef1e762f0cbbed3ceb3e6b1b5c73204cfd80113ccd16cacc9",
+      "private_capture_in_normal_app": false
+    },
+    "build_receipt": {
+      "private_local_reference": "normal-final-10080-build.json",
+      "bytes": 315,
+      "sha256": "784031bb6f037aabea81018c473dcd14826aa2ea0f1a1bda3dc57c2a7deeb37e"
+    },
+    "build_log": {
+      "private_local_reference": "build-normal-final-10080.log",
+      "bytes": 41847,
+      "sha256": "2999ace65eda71f63ec3d0566f86aab3f03288c0b3f0482df0080ab18d6fd56a"
+    },
+    "signature_verification": {
+      "exit_code": 0,
+      "reported_by": "Coordinating agent local codesign verification"
+    },
+    "private_qualification_capture_in_normal_app": false,
+    "installation_completed": false,
+    "install_attempt": {
+      "outcome": "Failed before device action: CoreDevice could not locate the requested device; error1011.",
+      "log": {
+        "private_local_reference": "install-normal-10080.log",
+        "bytes": 460,
+        "sha256": "cd815c831748dd8111a84c1fbdaeafd07c195f6da2d1f885aeb4ee61f1e48f08"
+      },
+      "normal_installed_build_changed": false
+    },
+    "current_connection": "Device disconnected; device tunnel unavailable at handoff.",
+    "pending": [
+      "Reconnect/unlock device or leave update for a later session as requested from the user.",
+      "Install the verified normal1.5/10080 candidate without removing app data.",
+      "Before first normal launch, compare full support inventory and copied critical hashes/pointers/manifests against the stopped-app baseline.",
+      "Perform normal stationary dashboard/settings smoke and confirm the advisory switch remains as found."
+    ]
+  },
+  "preservation": {
+    "full_preinstall_backup": {
+      "files": 5681,
+      "bytes": 10070247943,
+      "manifest": {
+        "private_local_reference": "backup-before-manifest.json",
+        "bytes": 1712129,
+        "sha256": "8c80e747280e69c576a6dc1132766672431ef99474f64ac0ff18fccde32fd15b"
+      },
+      "app_stopped_before_copy": true,
+      "scope": "Full selected user state/media/log archive retained privately; immutable installed map databases were inventoried instead of redundantly copied."
+    },
+    "critical_preinstall_subset": {
+      "files": 17,
+      "bytes": 571897132,
+      "manifest": {
+        "private_local_reference": "critical-before-manifest.json",
+        "bytes": 4255,
+        "sha256": "3546fed2f1d1ff1aa109e25f581e5883bb86fc9be6f506f1092e2539924a3ddb"
+      },
+      "source_bytes_verified": true,
+      "storage": "Hardlinks to verified before-backup bytes; no backup content modified.",
+      "scope": "Preferences, journal, sign collection, sign encounter log, root observation SQLite files and sidecars, active bundle pointer, and all six normal bundle manifests."
+    },
+    "preinstall_sqlite_integrity": {
+      "passed": true,
+      "checks": 3,
+      "results": [
+        {
+          "role": "journal",
+          "quick_check": [
+            "ok"
+          ],
+          "journal_mode": "wal",
+          "input_bytes_unchanged": true
+        },
+        {
+          "role": "observations",
+          "quick_check": [
+            "ok"
+          ],
+          "journal_mode": "delete",
+          "input_bytes_unchanged": true
+        },
+        {
+          "role": "sign_collection",
+          "quick_check": [
+            "ok"
+          ],
+          "journal_mode": "wal",
+          "input_bytes_unchanged": true
+        }
+      ],
+      "method": "Standard SQLite quick_check on disposable database/WAL/SHM copies; backup inputs never opened by SQLite.",
+      "receipt": {
+        "private_local_reference": "backup-sqlite-check.json",
+        "bytes": 2506,
+        "sha256": "a8fcd0c9b017867faade72cdb227208fe2428fbd8cb7ab845fed2c692744e25d"
+      }
+    },
+    "stopped_app_inventory": {
+      "baseline_entries": 8479,
+      "final_stop_entries": 8479,
+      "identical_before_install_attempt": true,
+      "baseline_receipt": {
+        "private_local_reference": "support-inventory-stable-before.json",
+        "bytes": 7502079,
+        "sha256": "701d9db939a5cb2be10788119c7bc3f387932f9942d21ae2123f211eb1ee6a84"
+      },
+      "final_stop_receipt": {
+        "private_local_reference": "support-inventory-after-final-stop.json",
+        "bytes": 7502071,
+        "sha256": "e7d0852a30e35950e55a657c55b3d019157b29b5126b9456a2c5680271a13cab"
+      }
+    },
+    "postinstall_verification": {
+      "status": "pending; no successful normal update occurred",
+      "planned_critical_files": 17,
+      "planned_critical_bytes": 571897132,
+      "planned_full_support_inventory_entries": 8479,
+      "content_scope": "After installation, hash the critical subset; compare all other map/media/log path metadata. Full before media/log bytes are archived privately. No postinstall media/map/log content-hash claim is made."
+    }
+  },
+  "provenance": {
+    "commands": [
+      {
+        "receipt": {
+          "private_local_reference": "command-build-layout-10080.json",
+          "bytes": 2118,
+          "sha256": "7a92fc83f48702b1755d76c28c8dd38208796141d101f86d2837ddb014da40b3"
+        },
+        "sanitized_argv": [
+          "xcodebuild",
+          "build-for-testing",
+          "-project",
+          "iphone/SpeedDBBench.xcodeproj",
+          "-scheme",
+          "SpeedConsumer",
+          "-derivedDataPath",
+          "<private-acceptance-root>/DerivedData",
+          "-hideShellScriptEnvironment",
+          "DEVELOPMENT_TEAM=<configured-team>",
+          "YOUSPEED_TEST_BUNDLE_SUFFIX=.TestHost",
+          "YOUSPEED_INCIDENT_QUALIFICATION_DIR=<private-captured-qualification-directory>",
+          "-destination",
+          "platform=iOS,id=<attached-physical-iPhone>",
+          "-only-testing:SpeedConsumerTests/RoadworksAdvisoryTests",
+          "-only-testing:SpeedConsumerTests/RoadworksServiceTests",
+          "-only-testing:SpeedConsumerTests/TripJournalDisplayConcurrencyTests",
+          "-only-testing:SpeedConsumerTests/TrafficSignPassageEvaluationTests/testSlowPassagePreparationDoesNotBlockGenerationChangesAndRollsBack",
+          "-only-testing:SpeedConsumerTests/TrafficSignPassageEvaluationTests/testStalePassagePermitDoesNotCreateDatabase",
+          "-only-testing:SpeedConsumerTests/TrafficSignPassageEvaluationTests/testPassageAdmissionPreservesDuplicateAndEquivalentReceipts",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testShadowDiagnosticIOLeavesGenerationUpdateResponsiveAndDropsStaleDelivery",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testInFlightOldGenerationIsDroppedBeforeFusionAndNewGenerationContinues",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testOldGenerationPersistenceContinuationCannotPublishAfterDisableOrReenable",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testQueuedTerminalFailureCannotTearDownRapidlyReenabledGeneration",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testTrafficSignRuntimeResetsFusionAcrossContextAndRecorderGenerations",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testMountChangeWaitsForPreviousFrameAdmissionToComplete",
+          "-only-testing:SpeedConsumerTests/RoadworksComponentVisualAcceptanceTests/testCapturedIncidentActualDrivingAndParkedComponents",
+          "-only-testing:SpeedConsumerTests/RoadworksComponentVisualAcceptanceTests/testCapturedIncidentFullDashboardEvidence"
+        ]
+      },
+      {
+        "receipt": {
+          "private_local_reference": "command-test-layout-10080.json",
+          "bytes": 1966,
+          "sha256": "95c41b53430087947cc86c592368c0dc4cc64c4a4b66abe4286f66d6759afa0f"
+        },
+        "sanitized_argv": [
+          "xcodebuild",
+          "test-without-building",
+          "-xctestrun",
+          "<private-acceptance-root>/DerivedData/Build/Products/SpeedConsumer_iphoneos26.5-arm64.xctestrun",
+          "-resultBundlePath",
+          "<private-acceptance-root>/acceptance-layout-10080.xcresult",
+          "-destination",
+          "platform=iOS,id=<attached-physical-iPhone>",
+          "-only-testing:SpeedConsumerTests/RoadworksAdvisoryTests",
+          "-only-testing:SpeedConsumerTests/RoadworksServiceTests",
+          "-only-testing:SpeedConsumerTests/TripJournalDisplayConcurrencyTests",
+          "-only-testing:SpeedConsumerTests/TrafficSignPassageEvaluationTests/testSlowPassagePreparationDoesNotBlockGenerationChangesAndRollsBack",
+          "-only-testing:SpeedConsumerTests/TrafficSignPassageEvaluationTests/testStalePassagePermitDoesNotCreateDatabase",
+          "-only-testing:SpeedConsumerTests/TrafficSignPassageEvaluationTests/testPassageAdmissionPreservesDuplicateAndEquivalentReceipts",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testShadowDiagnosticIOLeavesGenerationUpdateResponsiveAndDropsStaleDelivery",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testInFlightOldGenerationIsDroppedBeforeFusionAndNewGenerationContinues",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testOldGenerationPersistenceContinuationCannotPublishAfterDisableOrReenable",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testQueuedTerminalFailureCannotTearDownRapidlyReenabledGeneration",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testTrafficSignRuntimeResetsFusionAcrossContextAndRecorderGenerations",
+          "-only-testing:SpeedConsumerTests/SpeedConsumerTests/testMountChangeWaitsForPreviousFrameAdmissionToComplete",
+          "-only-testing:SpeedConsumerTests/RoadworksComponentVisualAcceptanceTests/testCapturedIncidentActualDrivingAndParkedComponents",
+          "-only-testing:SpeedConsumerTests/RoadworksComponentVisualAcceptanceTests/testCapturedIncidentFullDashboardEvidence"
+        ]
+      }
+    ],
+    "source_file_hashes": [
+      {
+        "path": "iphone/SpeedConsumerApp/MainView.swift",
+        "bytes": 231743,
+        "sha256": "a0ddac4440b138e0e7007d57388acd1b134e817372115872211cad114ad6dc43"
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/RoadworksAdvisory.swift",
+        "bytes": 26183,
+        "sha256": "2fe74a86c2199dcdea0a26fd0807f3e9ba55ab442cc323cc2756711e39c39b98"
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/RoadworksService.swift",
+        "bytes": 27840,
+        "sha256": "c9ecb3021b1f543342b636dede665f9690bf207d64a7adbf32dadda244165d5f"
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/DriveSessionViewModel.swift",
+        "bytes": 548212,
+        "sha256": "9e939b5b8638abbd6f40238efa4afaeac8d95dcf5bd174f7092b919e9c1a950b"
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/TrafficSignPassageEvaluation.swift",
+        "bytes": 113415,
+        "sha256": "b8b303db5da8eb559e839a3d79d2110a63daf0799bce64127c5753188bbc02b0"
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/TripJournal.swift",
+        "bytes": 159998,
+        "sha256": "e2be31ad6437a4546317bf6480153b78e25750357cd1c13e3c73bb7dd7e068e6"
+      },
+      {
+        "path": "iphone/SpeedConsumerApp/SpeedConsumerTests.swift",
+        "bytes": 1185971,
+        "sha256": "222d0c1e1eead5e5035a0b5313d635f74f76aae3986a584b62fc2f166b7f48bc"
+      },
+      {
+        "path": "iphone/SpeedConsumerTests/RoadworksAdvisoryTests.swift",
+        "bytes": 29000,
+        "sha256": "83591d98887907114d4caec8ed699c747dcb59952733b35bfbed40e3c28a59e6"
+      },
+      {
+        "path": "iphone/SpeedConsumerTests/RoadworksServiceTests.swift",
+        "bytes": 46404,
+        "sha256": "7f28d82e578121f97a140333dee94d9f4533aa098f54d5510f7ea89b25e0274a"
+      },
+      {
+        "path": "iphone/SpeedConsumerTests/TripJournalTests.swift",
+        "bytes": 75662,
+        "sha256": "b59d2c3c33db0c5214f990ad1bc89a6d76535c2aedafe5663993a083b683f948"
+      },
+      {
+        "path": "scripts/iphone/run_consumer_device_tests.sh",
+        "bytes": 5939,
+        "sha256": "e28d228d2e94c2d0f6e7e2ec394bb751d6cf2071a709d21bd2c8ce1393070a0b"
+      },
+      {
+        "path": "scripts/iphone/stage_incident_qualification_fixture.sh",
+        "bytes": 2362,
+        "sha256": "09cc75087e737d308e77e7706493698bd01a957b85b79941a03c2e23987555b9"
+      },
+      {
+        "path": "iphone/project.yml",
+        "bytes": 10035,
+        "sha256": "ac0a7139d90a785b4ce361988749de38659d72f5ebb678027141586f99769572"
+      },
+      {
+        "path": "iphone/SpeedDBBench.xcodeproj/project.pbxproj",
+        "bytes": 147235,
+        "sha256": "ff74108e2ece2911e17fb4e8194fce2d4b2bf27bb632f5e117c9be95c3a512a5"
+      }
+    ],
+    "source_hash_collection": "Recorded after final acceptance. No tested isolated executable digest was retained; these source hashes and original command/xcresult receipts must not be presented as an immutable tested-binary digest.",
+    "tested_binary_retention_limit": "The isolated DerivedData products were subsequently modified by a later10081 build without the qualified fixture plugin. Current isolated app/test products are not the accepted10080 binary. The retained final xcresult, screenshots, logs and command receipts are the acceptance evidence; do not rerun from the current products and assume equivalence.",
+    "normal_candidate_distinction": "The separately built normal10080 candidate is identified by its own executable and CodeResources hashes; isolated physical tests do not establish that it was installed or normally smoke-tested."
+  },
+  "limits": [
+    "No live pilot feed activation, backend deployment, scheduler start, motorway/BEMaS enablement, or protected speed-reference-policy change.",
+    "No real-driving acceptance, regional completeness/recall guarantee, or cancellation-by-absence claim.",
+    "Normal iPhone update and postinstall preservation/smoke remain pending because the device became unavailable.",
+    "Device identifiers, personal device names, raw user GPS and private backup contents are intentionally excluded from this public receipt."
+  ],
+  "private_evidence_root": "/private/tmp/youspeed-device-acceptance-20261028/iphone"
+}

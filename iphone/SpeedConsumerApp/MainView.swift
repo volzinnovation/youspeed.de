@@ -11,6 +11,13 @@ private let drivingBanPulseCycleSeconds: Double = 2.2
 private let gpsBadgeSlotMinHeight: CGFloat = 58
 private let cityBadgeSlotMinHeight: CGFloat = 84
 
+private struct RoadworksAdvisoryHeightPreference: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 enum SpeedLimitSignPalette {
     static let borderRed = 0.76
     static let borderGreen = 0.07
@@ -133,6 +140,7 @@ enum LegalDisclaimerText {
 struct MainView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
     var tripJournal: TripJournal = .shared
+    var roadworksService: RoadworksService? = nil
     @Environment(\.requestReview) private var requestReview
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
@@ -163,6 +171,7 @@ struct MainView: View {
     // once and then incorrectly stays hidden.
     @State private var driveRecorderWorkspaceSelection: DriveRecorderWorkspaceSelection = .preview
     @State private var driveRecorderPreviewDismissalAllowedAt = Date.distantPast
+    @State private var roadworksAdvisoryHeight: CGFloat = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -186,10 +195,11 @@ struct MainView: View {
                 : 52
             let locationReserve = viewModel.isInSpeedCaptureMode ? CGFloat(0)
                 : (landscape ? 68 : max(cityBadgeSlotMinHeight, minDimension * 0.225))
+            let advisoryReserve = roadworksAdvisoryHeight > 0 ? roadworksAdvisoryHeight + sectionGap : 0
             let signWidthBudget = min(paneWidth * 0.82, paneWidth - horizontalPadding * 2)
             // Preserve the pre-OCR circle size; the workspace accommodates visible text.
             let portraitSignHeight = (proxy.size.height - contentTopInset - contentBottomInset
-                - locationReserve - sectionGap * 2)
+                - locationReserve - sectionGap * 2 - advisoryReserve)
                 / (1 + speedLimitNumberScale * (1.05 + secondaryTextRatio * 1.2))
             let signSize = landscape
                 ? max(60, min(signWidthBudget, proxy.size.height - contentTopInset - screenInset))
@@ -221,7 +231,7 @@ struct MainView: View {
             let signTop = landscape ? (signPaneHeight - signSize) / 2 : contentTopInset
             let workspaceBudget = max(0, workspacePaneHeight - contentBottomInset - workspaceTopInset)
             let primaryMetricFontSize = min(signSize * speedLimitNumberScale,
-                max(0, (workspaceBudget - locationReserve - sectionGap) / (1.05 + secondaryTextRatio * 1.2)))
+                max(0, (workspaceBudget - locationReserve - sectionGap - advisoryReserve) / (1.05 + secondaryTextRatio * 1.2)))
             let baseSecondaryFont = primaryMetricFontSize * secondaryTextRatio
             let secondaryFont = baseSecondaryFont * sharedSecondaryScale(
                 baseSecondaryFont: baseSecondaryFont, availableWidth: paneWidth - horizontalPadding * 2)
@@ -425,6 +435,10 @@ struct MainView: View {
                     .environment(\.layoutDirection, .leftToRight)
             }
 
+        }
+        .onPreferenceChange(RoadworksAdvisoryHeightPreference.self) { height in
+            let measured = max(0, height)
+            if abs(roadworksAdvisoryHeight - measured) > 0.25 { roadworksAdvisoryHeight = measured }
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { tripStopCandidate = nil; return }
@@ -1294,7 +1308,8 @@ struct MainView: View {
         availableHeight: CGFloat
     ) -> some View {
         let metricSlotMinHeight = (primaryFont * 1.05) + (secondaryFont * 1.2)
-        let workspaceHeight = metricSlotMinHeight + reservedHeight + sectionGap
+        let advisoryReserve = roadworksAdvisoryHeight > 0 ? roadworksAdvisoryHeight + sectionGap : 0
+        let workspaceHeight = metricSlotMinHeight + reservedHeight + sectionGap + advisoryReserve
         let previewSession = viewModel.driveRecorderPreviewSession
         let previewPresentation = DriveRecorderPreviewPresentation.resolve(
             sessionAvailable: previewSession != nil,
@@ -1316,7 +1331,15 @@ struct MainView: View {
                     reservedHeight: reservedHeight,
                     compact: landscape
                 )
-                RoadworksDrivingAdvisoryView().allowsHitTesting(false)
+                RoadworksDrivingAdvisoryView(service: roadworksService)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear.preference(key: RoadworksAdvisoryHeightPreference.self, value: geometry.size.height)
+                        }
+                    }
+                    .foregroundStyle(primaryForegroundColor)
+                    .allowsHitTesting(false)
             }
             .frame(maxWidth: .infinity, minHeight: workspaceHeight, alignment: .center)
             .contentShape(Rectangle())

@@ -30,9 +30,17 @@ import SwiftUI
     private let download: Download
     private let defaults: UserDefaults
     var sourceAgeMinutes: Int? {
-        guard receivedUptime.isFinite, let value = manifest, let a = value.sourcePublication, let b = value.sourceModified else { return nil }
-        let seconds = value.serverTime.addingTimeInterval(ProcessInfo.processInfo.systemUptime - receivedUptime).timeIntervalSince(min(a, b))
-        return seconds.isFinite && seconds >= 0 ? Int(seconds / 60) : nil
+        sourceAgeMinutes(for: card?.feature.advisorySource ?? "bemas")
+    }
+    func sourceAgeMinutes(for sourceID: String) -> Int? {
+        manifest?.ageMinutes(sourceID: sourceID, receivedUptime: receivedUptime, nowUptime: ProcessInfo.processInfo.systemUptime)
+    }
+    func sourceStatus(for sourceID: String) -> RoadworksAdvisory.Freshness {
+        manifest?.freshness(sourceID: sourceID, receivedUptime: receivedUptime, nowUptime: ProcessInfo.processInfo.systemUptime) ?? .unavailable
+    }
+    var sources: [RoadworksAdvisory.Source] { manifest?.sourceRecords ?? [] }
+    func sourceAttribution(for sourceID: String) -> [String: String] {
+        sources.first(where: { $0.id == sourceID })?.attribution ?? [:]
     }
 
     init(directory: URL? = nil, defaults: UserDefaults = .standard, download: Download? = nil) {
@@ -93,9 +101,12 @@ import SwiftUI
         if driving && foreground { refresh() }
     }
     private func evaluate() {
-        let freshness = manifest?.freshness(receivedUptime: receivedUptime, nowUptime: ProcessInfo.processInfo.systemUptime) ?? .unavailable
+        let nowUptime = ProcessInfo.processInfo.systemUptime
+        let freshness = manifest?.freshness(receivedUptime: receivedUptime, nowUptime: nowUptime) ?? .unavailable
         if enabled && task == nil { status = transportState ?? (fix == nil ? "no_gps" : freshness.rawValue) }
-        card = relevance.update(snapshot: cache.snapshot, freshness: freshness, fix: fix, now: Date(), enabled: enabled, driving: driving, foreground: foreground)
+        let statuses = Dictionary(uniqueKeysWithValues: sources.map { ($0.id, sourceStatus(for: $0.id)) })
+        card = relevance.update(snapshot: cache.snapshot, freshness: freshness, fix: fix, now: Date(), enabled: enabled, driving: driving, foreground: foreground, sourceFreshness: statuses,
+            eligibilityNow: manifest?.trustedNow(receivedUptime: receivedUptime, nowUptime: nowUptime))
         if enabled, manifest?.enabled == true, let point = fix?.point {
             nearby = (cache.snapshot?.features ?? []).map { ($0, RoadworksAdvisory.distance(from: point, to: $0)) }
                 .filter { $0.1 <= 5000 }.sorted { ($0.1, $0.0.id) < ($1.1, $1.0.id) }
@@ -114,18 +125,20 @@ import SwiftUI
             guard let self else { return }
             var retryAfter = 0.0
             do {
-                let reply = try await download(URL(string: origin + "/youspeed/live/v1/regions/DE-BW")!, validator, 262_144)
+                let reply = try await download(URL(string: origin + "/youspeed/live/v2/regions/DE-BW")!, validator, 262_144)
                 if let raw = reply.response.value(forHTTPHeaderField: "Retry-After") {
                     retryAfter = Double(raw) ?? Self.httpDate(raw).map { max(0, $0.timeIntervalSinceNow) } ?? 0
                 }
                 if (400..<500).contains(reply.response.statusCode), ![408, 429].contains(reply.response.statusCode) { retryAfter = max(300, retryAfter) }
                 guard !Task.isCancelled, token == generation else { return }
                 if reply.response.statusCode == 304 {
-                    guard manifest != nil else { throw URLError(.badServerResponse) }
+                    guard let manifest else { throw URLError(.badServerResponse) }
+                    guard manifest.schemaVersion == 2 else { throw RoadworksAdvisory.Failure.unsupportedVersion }
                     failures = 0; task = nil; transportState = nil; evaluate(); return
                 }
                 guard reply.response.statusCode == 200 else { throw URLError(.badServerResponse) }
                 var candidate = try RoadworksAdvisory.parseManifest(reply.bytes)
+                guard candidate.schemaVersion == 2 else { throw RoadworksAdvisory.Failure.unsupportedVersion }
                 if let date = reply.response.value(forHTTPHeaderField: "Date").flatMap(Self.httpDate) {
                     candidate = try candidate.validatedHTTPClock(date: date, age: Double(reply.response.value(forHTTPHeaderField: "Age") ?? "0") ?? 0)
                 }
@@ -167,7 +180,7 @@ import SwiftUI
     }
     private nonisolated static func fetch(url: URL, etag: String?, limit: Int) async throws -> (bytes: Data, response: HTTPURLResponse) {
         guard url.scheme == "https", url.host == "live-eu.woladen.de", url.user == nil, url.password == nil, url.query == nil,
-              url.path.hasPrefix("/youspeed/live/v1/regions/DE-BW") else { throw URLError(.unsupportedURL) }
+              url.path.hasPrefix("/youspeed/live/v2/regions/DE-BW") else { throw URLError(.unsupportedURL) }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
         request.setValue("application/json, application/geo+json", forHTTPHeaderField: "Accept")
         if let etag { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
@@ -233,8 +246,10 @@ func roadworksStatusText(_ status: String) -> String {
     case "update_required": return roadworksText("App update required for these reports", "App-Update für diese Meldungen erforderlich", "Mise à jour de l’app nécessaire", "App-update nodig voor deze meldingen")
     case "requested", "approved": return roadworksText("Reported as planned", "Als geplant gemeldet", "Signalé comme prévu", "Gemeld als gepland")
     case "implemented": return roadworksText("Reported as in effect", "Als wirksam gemeldet", "Signalé comme en cours", "Gemeld als van kracht")
-    case "resolved": return roadworksText("Work periods available", "Arbeitszeiträume verfügbar", "Périodes de travaux disponibles", "Werkperioden beschikbaar")
-    default: return roadworksText("Report availability or work period uncertain", "Verfügbarkeit oder Arbeitszeitraum ungewiss", "Disponibilité ou période de travaux incertaine", "Beschikbaarheid of werkperiode onzeker")
+    case "reported": return roadworksText("Reported by publisher", "Vom Anbieter gemeldet", "Signalé par le fournisseur", "Gemeld door de bron")
+    case "resolved": return roadworksText("Report periods available", "Meldezeiträume verfügbar", "Périodes du signalement disponibles", "Meldingsperioden beschikbaar")
+    case "unavailable": return roadworksText("Reports unavailable", "Meldungen nicht verfügbar", "Signalements indisponibles", "Meldingen niet beschikbaar")
+    default: return roadworksText("Report availability or period uncertain", "Verfügbarkeit oder Meldezeitraum ungewiss", "Disponibilité ou période du signalement incertaine", "Beschikbaarheid of meldingsperiode onzeker")
     }
 }
 
@@ -242,7 +257,20 @@ private func roadworksKindText(_ kind: String) -> String {
     switch kind {
     case "closure": return roadworksText("Reported closure", "Gemeldete Sperrung", "Fermeture signalée", "Gemelde afsluiting")
     case "roadworks": return roadworksText("Reported roadworks", "Gemeldete Baustelle", "Travaux signalés", "Gemelde wegwerkzaamheden")
+    case "incident": return roadworksText("Reported incident", "Gemeldetes Verkehrsereignis", "Incident signalé", "Gemeld verkeersincident")
+    case "hazard": return roadworksText("Reported hazard", "Gemeldete Gefahr", "Danger signalé", "Gemeld gevaar")
+    case "congestion": return roadworksText("Reported congestion", "Gemeldeter Stau", "Embouteillage signalé", "Gemelde file")
     default: return roadworksText("Report type uncertain", "Meldungsart ungewiss", "Type de signalement incertain", "Soort melding onzeker")
+    }
+}
+
+private func roadworksSourceText(_ sourceID: String) -> String {
+    switch sourceID {
+    case "bemas": return "BEMaS · MobiData BW"
+    case "incidents-bw": return roadworksText("BW traffic incidents", "BW-Verkehrsmeldungen", "Incidents routiers BW", "BW-verkeersmeldingen")
+    case "autobahn-short-term": return roadworksText("Autobahn short-term works", "Autobahn-Tagesbaustellen", "Travaux autoroutiers de courte durée", "Kortdurende snelwegwerkzaamheden")
+    case "autobahn-long-term": return roadworksText("Autobahn long-term works", "Autobahn-Dauerbaustellen", "Travaux autoroutiers de longue durée", "Langdurige snelwegwerkzaamheden")
+    default: return sourceID
     }
 }
 
@@ -263,51 +291,95 @@ private func roadworksDirectionText(_ direction: String) -> String {
     return source + " · " + roadworksText("Your road/direction is unverified", "Eigene Straße/Fahrtrichtung nicht bestätigt", "Votre route et votre sens ne sont pas vérifiés", "Uw weg/rijrichting is niet bevestigd")
 }
 
+private func roadworksValidityText(_ feature: RoadworksAdvisory.Feature) -> String {
+    guard feature.validityBasis == "reported_active" else { return "\(feature.outer.start.formatted()) – \(feature.outer.end.formatted())" }
+    let expiry = feature.outer.end.formatted()
+    var text = roadworksText("Source reports active; report expires ", "Quelle meldet aktiv; Meldung verfällt ",
+        "Source : actif ; le signalement expire le ", "Bron meldt actief; melding vervalt ") + expiry
+    if feature.sourceValidityStart != nil || feature.sourceValidityEnd != nil {
+        let missing = roadworksText("not specified", "nicht angegeben", "non précisée", "niet opgegeven")
+        text += "\n" + roadworksText("Original source time specification: ", "Ursprüngliche Zeitangabe der Quelle: ",
+            "Période d’origine de la source : ", "Oorspronkelijke bronperiode: ")
+            + (feature.sourceValidityStart?.formatted() ?? missing) + " – " + (feature.sourceValidityEnd?.formatted() ?? missing)
+    }
+    return text
+}
+
 struct RoadworksSettingsSection: View {
-    @ObservedObject private var service = RoadworksService.shared
+    @ObservedObject private var service: RoadworksService
+    @MainActor init(service: RoadworksService? = nil) {
+        _service = ObservedObject(wrappedValue: service ?? .shared)
+    }
     var body: some View {
-        Section(roadworksText("Live roadworks", "Live-Baustellen", "Travaux en direct", "Actuele wegwerkzaamheden")) {
-            Toggle(roadworksText("Reported roadworks in BW", "Gemeldete Baustellen in BW", "Travaux signalés en BW", "Gemelde wegwerkzaamheden in BW"), isOn: Binding(get: { service.enabled }, set: { service.setEnabled($0) }))
+        Section(roadworksText("Live road advisories", "Live-Verkehrsmeldungen", "Signalements routiers en direct", "Actuele verkeersmeldingen")) {
+            Toggle(roadworksText("Reported road advisories in BW", "Gemeldete Straßenereignisse in BW", "Signalements routiers en BW", "Verkeersmeldingen in BW"), isOn: Binding(get: { service.enabled }, set: { service.setEnabled($0) }))
                 .accessibilityIdentifier("settings.roadworks.enabled")
             Text(roadworksText("Optional internet updates over Wi-Fi or cellular. Proximity stays on your phone. Coverage is partial and reports may be delayed. No speed limit is inferred.", "Optionale Updates über WLAN oder Mobilfunk. Die Nähe wird auf dem Telefon berechnet. Daten sind unvollständig und können verspätet sein. Daraus wird kein Tempolimit abgeleitet.", "Mises à jour facultatives par Wi-Fi ou réseau mobile. La proximité est calculée sur le téléphone. Données partielles et parfois retardées. Aucun changement de limitation.", "Optionele updates via wifi of mobiel. Nabijheid wordt op de telefoon berekend. Gegevens zijn onvolledig en kunnen vertraagd zijn. Geen invloed op de snelheidslimiet.")).font(.caption)
             if service.enabled {
                 Text(roadworksStatusText(service.status)).font(.caption).accessibilityIdentifier("settings.roadworks.status")
-                Text(roadworksAgeText(service.sourceAgeMinutes)).font(.caption)
+                ForEach(service.sources, id: \.id) { source in
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(roadworksSourceText(source.id)).font(.caption.bold())
+                        Text(roadworksStatusText(source.enabled ? service.sourceStatus(for: source.id).rawValue : "off") + " · " + roadworksAgeText(service.sourceAgeMinutes(for: source.id))).font(.caption)
+                        if !source.attribution.isEmpty {
+                            Text([source.attribution["provider"], source.attribution["license_id"], source.attribution["dataset_url"], source.attribution["license_url"], source.attribution["changes"]].compactMap { $0 }.joined(separator: " · ")).font(.caption)
+                        }
+                    }.accessibilityElement(children: .combine)
+                }
                 Button(roadworksText("Refresh BW data", "BW-Daten aktualisieren", "Actualiser les données BW", "BW-gegevens vernieuwen")) { service.refresh(explicit: true) }
                 Button(roadworksText("Clear cached data", "Gespeicherte Daten löschen", "Effacer le cache", "Cache wissen")) { service.clearCache() }
                 if service.nearby.isEmpty, ["fresh", "delayed"].contains(service.status) {
-                    Text(roadworksText("No reported roadworks nearby in the available data (5 km).", "In den verfügbaren Daten keine gemeldeten Baustellen in der Nähe (5 km).", "Aucun chantier signalé à proximité dans les données disponibles (5 km).", "Geen wegwerkzaamheden in de beschikbare gegevens in de buurt (5 km)." )).font(.caption)
+                    Text(roadworksText("No reported road advisories nearby in the available data (5 km).", "In den verfügbaren Daten keine gemeldeten Straßenereignisse in der Nähe (5 km).", "Aucun signalement routier à proximité dans les données disponibles (5 km).", "Geen verkeersmeldingen in de beschikbare gegevens in de buurt (5 km)." )).font(.caption)
                 }
                 ForEach(service.nearby, id: \.0.id) { feature, distance in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(feature.roadLabel) · \(Int(distance.rounded())) m").font(.headline)
                         Text(roadworksKindText(feature.kind)).font(.subheadline)
+                        Text(roadworksSourceText(feature.advisorySource) + " · " + roadworksStatusText(service.sourceStatus(for: feature.advisorySource).rawValue) + " · " + roadworksAgeText(service.sourceAgeMinutes(for: feature.advisorySource))).font(.caption)
                         Text(roadworksText("Source description (German)", "Quellbeschreibung (Deutsch)", "Description source (allemand)", "Bronbeschrijving (Duits)")).font(.caption)
                         Text(feature.description)
-                        Text("\(feature.outer.start.formatted()) – \(feature.outer.end.formatted())").font(.caption)
+                        Text(roadworksValidityText(feature)).font(.caption)
                         Text("MobiData BW · \(roadworksStatusText(feature.operatorStatus)) · \(roadworksStatusText(feature.scheduleStatus))").font(.caption)
                         Text(roadworksDirectionText(feature.direction)).font(.caption)
                         Text(roadworksText("Source ID", "Quell-ID", "Identifiant source", "Bron-ID") + ": " + feature.id).font(.caption).textSelection(.enabled)
+                        if let sourceID = feature.sourceID { Text(sourceID).font(.caption).textSelection(.enabled) }
                     }.accessibilityElement(children: .combine)
                 }
-                Text("Verkehrsministerium Baden-Württemberg · BEMaS via MobiData BW · dl-de/by-2-0").font(.caption)
+                if service.sources.first?.attribution.isEmpty == true { Text("Verkehrsministerium Baden-Württemberg · BEMaS via MobiData BW · dl-de/by-2-0").font(.caption) }
             }
         }
     }
 }
 
 struct RoadworksDrivingAdvisoryView: View {
-    @ObservedObject private var service = RoadworksService.shared
+    @ObservedObject private var service: RoadworksService
+    @MainActor init(service: RoadworksService? = nil) {
+        _service = ObservedObject(wrappedValue: service ?? .shared)
+    }
     var body: some View {
         if let card = service.card {
             let heading = roadworksText("Reported nearby", "In der Nähe gemeldet", "Signalé à proximité", "In de buurt gemeld")
             let distance = "\(Int((card.distanceM / 10).rounded(.up)) * 10) m"
             let delay = card.freshness == .delayed ? roadworksText("delayed", "verzögert", "retardé", "vertraagd") : ""
             let offline = service.status == "offline" ? roadworksText("offline", "offline", "hors ligne", "offline") : ""
-            let label = [heading, roadworksKindText(card.feature.kind), card.feature.roadLabel, distance,
-                         roadworksAgeText(service.sourceAgeMinutes), delay, offline].filter { !$0.isEmpty }.joined(separator: " · ")
-            Text(label)
-                .font(.caption).multilineTextAlignment(.center).accessibilityIdentifier("dashboard.roadworks")
+            let summary = [heading, roadworksKindText(card.feature.kind), distance].joined(separator: " · ")
+            let metadata = [roadworksSourceText(card.feature.advisorySource),
+                            roadworksAgeText(service.sourceAgeMinutes(for: card.feature.advisorySource)), delay, offline]
+                .filter { !$0.isEmpty }.joined(separator: " · ")
+            VStack(spacing: 2) {
+                Text(summary)
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("dashboard.roadworks.summary")
+                Text(metadata)
+                    .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("dashboard.roadworks.metadata")
+                if !card.feature.roadLabel.isEmpty {
+                    Text(card.feature.roadLabel).lineLimit(1).truncationMode(.tail)
+                        .accessibilityIdentifier("dashboard.roadworks.road")
+                }
+            }
+            .font(.caption).multilineTextAlignment(.center)
+            .accessibilityElement(children: .combine).accessibilityIdentifier("dashboard.roadworks")
         }
     }
 }

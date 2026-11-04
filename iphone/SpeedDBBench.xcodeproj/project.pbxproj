@@ -1040,6 +1040,7 @@
 			buildPhases = (
 				C8A65BCC3EA0829CC96A487C /* Sources */,
 				3A131D84678494BF7F050E24 /* Resources */,
+				8AC373EC354E3169152869D6 /* Stage road advisory acceptance fixtures */,
 			);
 			buildRules = (
 			);
@@ -1215,6 +1216,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		8AC373EC354E3169152869D6 /* Stage road advisory acceptance fixtures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Stage road advisory acceptance fixtures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/../scripts/iphone/stage_incident_qualification_fixture.sh\"";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7230287AAFBD9C64DE6164DF /* Sources */ = {

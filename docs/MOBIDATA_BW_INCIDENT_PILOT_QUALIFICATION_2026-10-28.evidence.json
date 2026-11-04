@@ -1,0 +1,482 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-28",
+  "timezone": "Europe/Berlin",
+  "owner_decision": "BW incidents first pilot after qualification; BEMaS and Autobahn remain disabled; deployment postponed.",
+  "functional_qualification": "passed_for_latest_publication_positive_subset",
+  "qualification_limits": [
+    "No guarantee of regional completeness, complete recall or physical event truth",
+    "Missing membership is projection removal, not a publisher cancellation or a cleared road",
+    "Observed allElementUpdate is per-situation, not a global snapshot guarantee",
+    "Unsupported geometry, unknown meanings/statuses and non-real messages cannot produce driving cards; unknown meanings may remain in parked details.",
+    "Short qualification window is not an SLA/cadence guarantee"
+  ],
+  "observed_window": {
+    "first_capture_utc": "2026-10-28T18:37:33Z",
+    "last_capture_utc": "2026-10-28T18:54:34Z",
+    "actual_captures": 4,
+    "distinct_publications": 3,
+    "conditional_304_preserved_source_clocks": true
+  },
+  "source_urls": {
+    "dataset": "https://mobidata-bw.de/dataset/meldung",
+    "datex": "https://api.mobidata-bw.de/datasets/traffic/incidents/incidents_lmsbw.datex2.xml",
+    "license": "https://www.govdata.de/dl-de/by-2-0",
+    "datex_v2_validity": "https://docs.datex2.eu/_static/data/v2.2/umlmodel/html/EARoot/EA2/EA3/EA6/EA315.htm",
+    "datex_v2_user_guide": "https://docs.datex2.eu/v3.4/_static/data/v2.3/DATEXII-UserGuide.pdf"
+  },
+  "rights": {
+    "license_id": "dl-de/by-2-0",
+    "evidence": "MobiData BW dataset attribution plus official GovData licence; commercial processing and redistribution permitted under stated attribution/changes requirements",
+    "provider": {
+      "provider": "MobiData BW; Landesmeldestelle BW (Ministerium des Inneren, für Digitalisierung und Kommunen)",
+      "dataset_url": "https://mobidata-bw.de/dataset/meldung",
+      "license_id": "dl-de/by-2-0",
+      "license_url": "https://www.govdata.de/dl-de/by-2-0",
+      "changes": "Normalized explicit geometry, supported schedules and reported-active observation leases; unsupported records quarantined."
+    }
+  },
+  "semantics": {
+    "active": "Explicit DATEX source observation lease tied to publicationTime, <=900seconds, half-open; not a physical event end",
+    "scheduled": "Existing strict bounded source-period compiler",
+    "full_source_completeness": "unverified; pilot does not rely on it",
+    "expiry_clock": "Validated manifest server/HTTP anchor plus monotonic elapsed; GPS age remains on its original handset clock domain",
+    "snapshot_source_binding": "Native install validates lease start against that source publication, never aggregate clocks"
+  },
+  "capture_samples": [
+    {
+      "checked_at_utc": "2026-10-28T18:37:33Z",
+      "http_status": 200,
+      "raw_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+      "decoded_bytes": 1255695,
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+        "source_modified_at": "2026-10-28T18:33:10Z",
+        "source_publication_at": "2026-10-28T18:33:10Z",
+        "last_checked_at": "2026-10-28T18:37:33Z",
+        "last_ingested_at": "2026-10-28T18:37:33Z",
+        "membership_count": 120,
+        "accepted_count": 92,
+        "quarantined_count": 27,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 1,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "record_delta_from_previous_sample": null,
+      "fetch_seconds": 2.842,
+      "total_seconds": 3.122,
+      "process_peak_rss_bytes": 54657024,
+      "backend_adapter_sha256": "7c1322f8a6dadb72374668a3239a89963d021897c85bdd5e650be012e5442f9a",
+      "validity_basis": null,
+      "eligible_by_basis": null,
+      "eligible_by_kind": null,
+      "information_status": null,
+      "update_methods": null,
+      "capture_receipt_sha256": "cbdc7f9b8ee96d1737da490af51a10a836e648b8264ef36b7658c431d43883c0",
+      "capture_receipt_path": "/private/tmp/youspeed-qualification-20261028/incidents/sample-20261028T183733Z.json"
+    },
+    {
+      "checked_at_utc": "2026-10-28T18:39:30Z",
+      "http_status": 304,
+      "raw_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+      "decoded_bytes": 1255695,
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+        "source_modified_at": "2026-10-28T18:33:10Z",
+        "source_publication_at": "2026-10-28T18:33:10Z",
+        "last_checked_at": "2026-10-28T18:39:30Z",
+        "last_ingested_at": "2026-10-28T18:39:30Z",
+        "membership_count": 120,
+        "accepted_count": 92,
+        "quarantined_count": 27,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 1,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "record_delta_from_previous_sample": {
+        "added": 0,
+        "disappeared": 0,
+        "changed": 0,
+        "unchanged": 120
+      },
+      "fetch_seconds": 0.742,
+      "total_seconds": 1.012,
+      "process_peak_rss_bytes": 50626560,
+      "backend_adapter_sha256": "7c1322f8a6dadb72374668a3239a89963d021897c85bdd5e650be012e5442f9a",
+      "validity_basis": null,
+      "eligible_by_basis": null,
+      "eligible_by_kind": null,
+      "information_status": null,
+      "update_methods": null,
+      "capture_receipt_sha256": "130bcdaae0f92678dc3fbb1b31dc9cc7ee54b0048bcd4609116ff1d1ed4838f3",
+      "capture_receipt_path": "/private/tmp/youspeed-qualification-20261028/incidents/sample-20261028T183930Z.json"
+    },
+    {
+      "checked_at_utc": "2026-10-28T18:44:07Z",
+      "http_status": 200,
+      "raw_sha256": "ba08eab67010fe438ce2c4aebdb12defa24750d72eb6caffcf8ffb3f9cb5aae6",
+      "decoded_bytes": 1268809,
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "ba08eab67010fe438ce2c4aebdb12defa24750d72eb6caffcf8ffb3f9cb5aae6",
+        "source_modified_at": "2026-10-28T18:41:47Z",
+        "source_publication_at": "2026-10-28T18:41:47Z",
+        "last_checked_at": "2026-10-28T18:44:07Z",
+        "last_ingested_at": "2026-10-28T18:44:07Z",
+        "membership_count": 121,
+        "accepted_count": 92,
+        "quarantined_count": 25,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 4,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "record_delta_from_previous_sample": {
+        "added": 2,
+        "disappeared": 1,
+        "changed": 3,
+        "unchanged": 116
+      },
+      "fetch_seconds": 3.643,
+      "total_seconds": 3.92,
+      "process_peak_rss_bytes": 55427072,
+      "backend_adapter_sha256": "7c1322f8a6dadb72374668a3239a89963d021897c85bdd5e650be012e5442f9a",
+      "validity_basis": null,
+      "eligible_by_basis": null,
+      "eligible_by_kind": null,
+      "information_status": null,
+      "update_methods": null,
+      "capture_receipt_sha256": "6a6282c0f0d2130f86505156316ee268aee2ab62edfe9bdc22f0668ca3312169",
+      "capture_receipt_path": "/private/tmp/youspeed-qualification-20261028/incidents/sample-20261028T184407Z.json"
+    },
+    {
+      "checked_at_utc": "2026-10-28T18:54:34Z",
+      "http_status": 200,
+      "raw_sha256": "51928451cc208ffb8fccdc89761450e21302e272b86c85e1b0a72f2ca5bf4ff1",
+      "decoded_bytes": 1255462,
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "51928451cc208ffb8fccdc89761450e21302e272b86c85e1b0a72f2ca5bf4ff1",
+        "source_modified_at": "2026-10-28T18:49:57Z",
+        "source_publication_at": "2026-10-28T18:49:56Z",
+        "last_checked_at": "2026-10-28T18:54:34Z",
+        "last_ingested_at": "2026-10-28T18:54:34Z",
+        "membership_count": 120,
+        "accepted_count": 111,
+        "quarantined_count": 4,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 5,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "record_delta_from_previous_sample": {
+        "added": 0,
+        "disappeared": 1,
+        "changed": 3,
+        "unchanged": 117
+      },
+      "fetch_seconds": 1.67,
+      "total_seconds": 1.957,
+      "process_peak_rss_bytes": 54525952,
+      "backend_adapter_sha256": "68ef106e02700ffa9d2c12bf2609a8165d21c44d160566cf4182bf8643b0b041",
+      "validity_basis": {
+        "reported_active": 19,
+        "scheduled": 92
+      },
+      "eligible_by_basis": {
+        "reported_active": 15,
+        "scheduled": 63
+      },
+      "eligible_by_kind": {
+        "roadworks": 42,
+        "hazard": 7,
+        "closure": 26,
+        "congestion": 3
+      },
+      "information_status": {
+        "real": 42
+      },
+      "update_methods": [
+        "allElementUpdate"
+      ],
+      "capture_receipt_sha256": "600fb78e27cc6a9c821551cbd8bfce996751d18d6c446cc845a6a99a7e659550",
+      "capture_receipt_path": "/private/tmp/youspeed-qualification-20261028/incidents/sample-20261028T185434Z.json"
+    }
+  ],
+  "replayed_with_repaired_adapter": [
+    {
+      "checked_at_utc": "2026-10-28T18:37:33Z",
+      "http_status": 200,
+      "raw_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+        "source_modified_at": "2026-10-28T18:33:10Z",
+        "source_publication_at": "2026-10-28T18:33:10Z",
+        "last_checked_at": "2026-10-28T18:37:33Z",
+        "last_ingested_at": "2026-10-28T18:37:33Z",
+        "membership_count": 120,
+        "accepted_count": 115,
+        "quarantined_count": 4,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 1,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "active_supported_features": 81,
+      "kinds": {
+        "roadworks": 42,
+        "hazard": 8,
+        "closure": 26,
+        "unknown": 34,
+        "congestion": 5
+      },
+      "schedule_status": {
+        "resolved": 115
+      },
+      "feature_flags": {
+        "source_reported_active_observation": 23,
+        "expiry_is_not_event_end": 23,
+        "unsupported_source_meaning": 34
+      },
+      "backend_adapter_sha256": "68ef106e02700ffa9d2c12bf2609a8165d21c44d160566cf4182bf8643b0b041",
+      "receipt_sha256": "90b18053f10dfa09a24f6f991405b3e6c592d8299205dc20e30da00616ac60c9"
+    },
+    {
+      "checked_at_utc": "2026-10-28T18:39:30Z",
+      "http_status": 304,
+      "raw_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "84a3802110f3796d08b26b8deb61efdbaefe0cc9da25649017a5b84d91da1b61",
+        "source_modified_at": "2026-10-28T18:33:10Z",
+        "source_publication_at": "2026-10-28T18:33:10Z",
+        "last_checked_at": "2026-10-28T18:39:30Z",
+        "last_ingested_at": "2026-10-28T18:39:30Z",
+        "membership_count": 120,
+        "accepted_count": 115,
+        "quarantined_count": 4,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 1,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "active_supported_features": 81,
+      "kinds": {
+        "roadworks": 42,
+        "hazard": 8,
+        "closure": 26,
+        "unknown": 34,
+        "congestion": 5
+      },
+      "schedule_status": {
+        "resolved": 115
+      },
+      "feature_flags": {
+        "source_reported_active_observation": 23,
+        "expiry_is_not_event_end": 23,
+        "unsupported_source_meaning": 34
+      },
+      "backend_adapter_sha256": "68ef106e02700ffa9d2c12bf2609a8165d21c44d160566cf4182bf8643b0b041",
+      "receipt_sha256": "7544a53d75ae1cccf8a6a71a093ae0d957dc82877954a6d14fbd1b92c72783f5"
+    },
+    {
+      "checked_at_utc": "2026-10-28T18:44:07Z",
+      "http_status": 200,
+      "raw_sha256": "ba08eab67010fe438ce2c4aebdb12defa24750d72eb6caffcf8ffb3f9cb5aae6",
+      "receipt": {
+        "geojson_sha256": null,
+        "datex_sha256": "ba08eab67010fe438ce2c4aebdb12defa24750d72eb6caffcf8ffb3f9cb5aae6",
+        "source_modified_at": "2026-10-28T18:41:47Z",
+        "source_publication_at": "2026-10-28T18:41:47Z",
+        "last_checked_at": "2026-10-28T18:44:07Z",
+        "last_ingested_at": "2026-10-28T18:44:07Z",
+        "membership_count": 121,
+        "accepted_count": 113,
+        "quarantined_count": 4,
+        "coverage_excluded_count": 0,
+        "cancelled_count": 4,
+        "evaluation_window": {
+          "start": "2026-10-28T00:00:00Z",
+          "end": "2026-11-05T00:00:00Z"
+        }
+      },
+      "active_supported_features": 80,
+      "kinds": {
+        "roadworks": 42,
+        "hazard": 9,
+        "closure": 26,
+        "unknown": 33,
+        "congestion": 3
+      },
+      "schedule_status": {
+        "resolved": 113
+      },
+      "feature_flags": {
+        "source_reported_active_observation": 21,
+        "expiry_is_not_event_end": 21,
+        "unsupported_source_meaning": 33
+      },
+      "backend_adapter_sha256": "68ef106e02700ffa9d2c12bf2609a8165d21c44d160566cf4182bf8643b0b041",
+      "receipt_sha256": "8ed0ce43a6060b6808be15152f0ba40c0eb0c11556862cbc5c9c88104e0bb571"
+    }
+  ],
+  "native_acceptance_fixture": {
+    "checked_at_utc": "2026-10-28T18:54:34Z",
+    "exported_features": 111,
+    "reported_active_features": 19,
+    "eligible_features": 78,
+    "source_receipt": "/private/tmp/youspeed-qualification-20261028/incidents/sample-20261028T185434Z.json",
+    "raw_sha256": "51928451cc208ffb8fccdc89761450e21302e272b86c85e1b0a72f2ca5bf4ff1",
+    "snapshot_sha256": "e923679be79ed2deabd37f549987ac8ecd4a2152b2a0f677162cc83d7a5f201a",
+    "purpose": "Inert local native acceptance fixture. Only its test manifest marks incidents enabled; no runtime configuration was changed.",
+    "files": {
+      "snapshot.json": {
+        "path": "/private/tmp/youspeed-qualification-20261028/acceptance/snapshot.json",
+        "sha256": "e923679be79ed2deabd37f549987ac8ecd4a2152b2a0f677162cc83d7a5f201a"
+      },
+      "manifest.json": {
+        "path": "/private/tmp/youspeed-qualification-20261028/acceptance/manifest.json",
+        "sha256": "7e12a1e7fa6810a1cfc75768711370c65a686c9a8061bd387544ad7b79ab9f0f"
+      },
+      "receipt.json": {
+        "path": "/private/tmp/youspeed-qualification-20261028/acceptance/receipt.json",
+        "sha256": "aee86a7561465631678dc2463300a5ca4b937ecc9b48fb530b7869d1f193eb33"
+      }
+    }
+  },
+  "tests": {
+    "backend": {
+      "passed": 70,
+      "failures": 0,
+      "skipped": 0,
+      "log_sha256": "0e7318054aa0273554b237bee75f4c4db4d523d315cc9d895df62545f6e7d93a"
+    },
+    "iphone_simulator": {
+      "passed": 24,
+      "failures": 0,
+      "skipped": 0,
+      "os": "iOS26.5",
+      "isolated_bundle": "de.youspeed.SpeedConsumer.TestHost",
+      "result_bundle": "/private/tmp/youspeed-incident-qualification-ios-final.xcresult",
+      "log_sha256": "91fa797b58a19fd3a15492acda6f6b67299dcfe517899196251afa88bab9b235"
+    },
+    "android_jvm": {
+      "passed": 19,
+      "failures": 0,
+      "skipped": 0,
+      "result_xml_sha256": "3c164d49dbab5419b0ae3abaa7e30529310a72b6479532f83ee8e4db64dfefaa",
+      "log_sha256": "952de37d0c27bc15d7ba389bb4228ebb86874ebd910ed9a320078ee4c293a7cb"
+    },
+    "shared_contract": {
+      "passed": 6,
+      "subtests": 23,
+      "failures": 0,
+      "log_sha256": "142270a019e8ab145161ba177fc00f0e12298a186af663bc74aaa7ead6587d9e"
+    }
+  },
+  "default_registry_observed": [
+    {
+      "source_id": "bemas",
+      "enabled": false,
+      "active": false,
+      "blockers": [
+        "feature_disabled"
+      ]
+    },
+    {
+      "source_id": "incidents-bw",
+      "enabled": false,
+      "active": false,
+      "blockers": [
+        "feature_disabled",
+        "production_schema_unverified"
+      ]
+    },
+    {
+      "source_id": "autobahn-short-term",
+      "enabled": false,
+      "active": false,
+      "blockers": [
+        "feature_disabled",
+        "license_unverified",
+        "production_schema_unverified"
+      ]
+    },
+    {
+      "source_id": "autobahn-long-term",
+      "enabled": false,
+      "active": false,
+      "blockers": [
+        "feature_disabled",
+        "license_unverified",
+        "production_schema_unverified"
+      ]
+    }
+  ],
+  "deployment_preflight_pending": [
+    "Actual production image HTTP-ingestion/container resource limits (local Docker daemon unavailable; local observed RSS/time is not container acceptance)",
+    "Updated native builds delivered and verified before any reported_active activation",
+    "Exact runtime configuration, job cadence/resource/rollback and host approved when deployment resumes"
+  ],
+  "runtime_operations": {
+    "source_activated": false,
+    "backend_deployed": false,
+    "scheduler_started": false,
+    "phone_installed": false,
+    "source_selection_approval_already_given": true
+  },
+  "related_evidence": [
+    "MOBIDATA_BW_BEMAS_TIMING_2026-10-28.evidence.json",
+    "MOBIDATA_BW_AUTOBAHN_LICENSING_2026-10-28.evidence.json"
+  ],
+  "source_sha256": {
+    "scripts/research/qualify_bw_incidents.py": "5bc307e0069bd0d0392d04b53c474f327b62a47fb039a63ca9e79e530791f1b4",
+    "shared/roadworks/CONTRACT_V2.md": "654ac5f673b22f088be1904fd8bba25ed6b1926b7240be1a434cbce061eaf29f",
+    "shared/roadworks/snapshot-v2.json": "27aecaccfcdf74af2b17dc1d8ab1b90d5a85ee2b0286ebff34c525a1909e6a8d",
+    "shared/roadworks/manifest-v2.json": "8d93382049dd6cba4afc58807389924a8c410abb867ca2b9bc1861f93ad3408f",
+    "docs/MOBIDATA_BW_ROAD_ADVISORIES_API_V2.openapi.json": "6a5f9a3aa64854f7f8f7de71de9fcc1d602e932149d5d2bc73e7ebb3602fc216",
+    "iphone/SpeedConsumerApp/RoadworksAdvisory.swift": "2fe74a86c2199dcdea0a26fd0807f3e9ba55ab442cc323cc2756711e39c39b98",
+    "iphone/SpeedConsumerApp/RoadworksService.swift": "211e5f3d69204802536f5724cd12749df8163298591f1dfb26797c6d6e118bf2",
+    "iphone/SpeedConsumerTests/RoadworksAdvisoryTests.swift": "fc906b200b9b89ef4e04af73b44a6bdf0dd9f38d1c7cb0b3a6980973233f7ce1",
+    "android/app/src/main/java/de/youspeed/android/alpha/RoadworksAdvisory.kt": "c646018fea0770e99ed18f27412c63c7babfc0cfe866da048bffb25cdaaa3419",
+    "android/app/src/main/java/de/youspeed/android/alpha/RoadworksService.kt": "7395ccbd0aa0cae42d91ea93f6a78f5c9358a5b43bca4a7b5f8ab3581d1f4678",
+    "android/app/src/test/java/de/youspeed/android/alpha/RoadworksAdvisoryTests.kt": "cd4feaf22be2d2ef4988071d90bbe1fc7184f17e0d7b1320f3b7169f279f4ad8",
+    "tests/map/test_road_advisory_contract.py": "5d4ac2194762e0022129772952f729f3f5449d25b8300e4d7d4f7e42ced1269a"
+  },
+  "backend_source_sha256": {
+    "commercial_backend/youspeed/road_advisories.py": "68ef106e02700ffa9d2c12bf2609a8165d21c44d160566cf4182bf8643b0b041",
+    "tests/youspeed/test_road_advisories.py": "62053da3fe68b3c8eee1cdf7fbe955e242440c8b65b8e17c57be455b28334cba",
+    "docs/youspeed/ROAD_ADVISORIES_V2.md": "b51e60d9f671d22b86d8d237b8ea8e2526c225c4341e9fc87b52ec68d073851a"
+  },
+  "private_evidence_root": "/private/tmp/youspeed-qualification-20261028",
+  "related_evidence_sha256": {
+    "MOBIDATA_BW_BEMAS_TIMING_2026-10-28.evidence.json": "2161f28fe766c4e6ce944466f493d84d2c0f0cd84cb9324e17e15a66aa930b7c",
+    "MOBIDATA_BW_AUTOBAHN_LICENSING_2026-10-28.evidence.json": "ee76774e8e5b739dd338f2449a158bbe9e00d1a6609f2b26b867a290db232026"
+  },
+  "global_completeness_investigation": {
+    "result": "Unverified for the exact IPL DATEX representation; positive-subset qualification does not rely on global completeness.",
+    "official_general_dataset": "https://www.govdata.de/suche/daten/kopie-von-verkehrsmeldungsdaten-der-landesmeldestelle-bw-aktualisierung-alle-10-minuten",
+    "official_general_dataset_scope": "Describes all current LMS events as a Gesamtdatensatz; exact mapping to the IPL DATEX URL is unproven.",
+    "referenced_mobilithek_offer": "https://mobilithek.info/offers/857132682132226048",
+    "official_integration_config": "https://github.com/mobidata-bw/ipl-orchestration/blob/main/docker-compose.yml#L439",
+    "integration_limit": "IPL_INCIDENTS_LMSBW_DATEX2_DOWNLOAD_URL is supplied externally; checked public config does not disclose its value."
+  },
+  "protected_speed_reference_policy_changed": false
+}

@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "observed_at_utc": "2026-10-28T18:42:21.901470Z",
+  "scope": "Public, read-only MIA licence/access investigation for YouSpeed; separate from incidents-first pilot qualification.",
+  "method": "Rendered official Mobilithek offer and terms pages with Playwright; preserved public metadata responses used by the official frontend; bounded MobiData CKAN metadata searches.",
+  "offers": [
+    {
+      "source_id": "autobahn-short-term",
+      "publication_id": "641235133820284928",
+      "title": "Arbeitsstellen kürzerer Dauer (AkD) auf BAB in DE - Planungsdaten",
+      "offer_url": "https://mobilithek.info/offers/641235133820284928",
+      "public_metadata_url": "https://mobilithek.info/mdp-api/mdp-msa-metadata/v2/offers/641235133820284928",
+      "metadata_modified_at": "2026-10-15T10:50:35.978Z",
+      "rights_category": {
+        "uri": "https://w3id.org/mdp/schema/license#LICENSE_RESTRICTED_USE_FREE_OF_CHARGE",
+        "rendered_label": "Lizenz, eingeschränkte Nutzung, kostenfrei",
+        "meaning": "Restricted-use, free-of-charge category; it is not a verified open licence or a complete permission grant."
+      },
+      "required_source_note": "Die Autobahn GmbH des Bundes | MIA",
+      "access": {
+        "provider_approval_required": true,
+        "anonymous_single_data_portal_access_allowed": false,
+        "rendered_api_access_condition": "Datenzugriff über die API erst nach Freigabe des Abonnements erlaubt: Ja",
+        "rendered_anonymous_portal_condition": "Einzeldatenzugriff über das Portal für anonyme Nutzer erlaubt: Nein",
+        "public_metadata_access_rights": "http://publications.europa.eu/resource/authority/access-right/PUBLIC",
+        "note": "Public metadata visibility does not override the explicit data-access conditions."
+      },
+      "publication_cadence_uri": "https://w3id.org/idsa/code/EVERY_15_MINUTES",
+      "public_licence_fields": {
+        "standardLicense": null,
+        "customLicenseAsResource": null,
+        "conditionForUse": null,
+        "retentionPeriod": [
+          null
+        ]
+      },
+      "null_field_interpretation": "The public response supplies no applicable licence document, additional use conditions or retention duration in these fields. Null is unresolved evidence, not permission or unlimited retention.",
+      "commercial_use": "unresolved",
+      "derived_public_redistribution": "unresolved",
+      "normalization_and_regional_filtering": "unresolved",
+      "cache_archive_and_retention": "unresolved",
+      "activation_recommendation": "Keep this source disabled until authoritative per-feed terms establish the intended rights and access route.",
+      "raw_evidence": {
+        "path": "/private/tmp/youspeed-mia-rights-20261028/short-metadata.json",
+        "bytes": 18230,
+        "sha256": "26807485dadff25bce2f6f68d6577751aa56db00c29ac53162fc80f1b5bc7b86"
+      }
+    },
+    {
+      "source_id": "autobahn-long-term",
+      "publication_id": "641228542228467712",
+      "title": "Arbeitsstellen längerer Dauer (AlD) auf BAB in DE - aktuelle und in den nächsten 14 Tagen beginnende",
+      "offer_url": "https://mobilithek.info/offers/641228542228467712",
+      "public_metadata_url": "https://mobilithek.info/mdp-api/mdp-msa-metadata/v2/offers/641228542228467712",
+      "metadata_modified_at": "2026-10-08T12:33:14.339Z",
+      "rights_category": {
+        "uri": "https://w3id.org/mdp/schema/license#LICENSE_RESTRICTED_USE_FREE_OF_CHARGE",
+        "rendered_label": "Lizenz, eingeschränkte Nutzung, kostenfrei",
+        "meaning": "Restricted-use, free-of-charge category; it is not a verified open licence or a complete permission grant."
+      },
+      "required_source_note": "Die Autobahn GmbH des Bundes | MIA",
+      "access": {
+        "provider_approval_required": true,
+        "anonymous_single_data_portal_access_allowed": false,
+        "rendered_api_access_condition": "Datenzugriff über die API erst nach Freigabe des Abonnements erlaubt: Ja",
+        "rendered_anonymous_portal_condition": "Einzeldatenzugriff über das Portal für anonyme Nutzer erlaubt: Nein",
+        "public_metadata_access_rights": "http://publications.europa.eu/resource/authority/access-right/PUBLIC",
+        "note": "Public metadata visibility does not override the explicit data-access conditions."
+      },
+      "publication_cadence_uri": "https://w3id.org/idsa/code/EVERY_15_MINUTES",
+      "public_licence_fields": {
+        "standardLicense": null,
+        "customLicenseAsResource": null,
+        "conditionForUse": null,
+        "retentionPeriod": [
+          null
+        ]
+      },
+      "null_field_interpretation": "The public response supplies no applicable licence document, additional use conditions or retention duration in these fields. Null is unresolved evidence, not permission or unlimited retention.",
+      "commercial_use": "unresolved",
+      "derived_public_redistribution": "unresolved",
+      "normalization_and_regional_filtering": "unresolved",
+      "cache_archive_and_retention": "unresolved",
+      "activation_recommendation": "Keep this source disabled until authoritative per-feed terms establish the intended rights and access route.",
+      "raw_evidence": {
+        "path": "/private/tmp/youspeed-mia-rights-20261028/long-metadata.json",
+        "bytes": 17797,
+        "sha256": "6e4e408a705d65857dfd34e00e9e7819d5b379b2f9ce6d6ee0e371ce81fc1620"
+      }
+    }
+  ],
+  "primary_references": [
+    {
+      "url": "https://mobilithek.info/terms-and-conditions",
+      "title": "Allgemeine Nutzungsbedingungen der Mobilithek",
+      "document_date": "2024-09-19",
+      "relevant_sections": [
+        "Präambel, second paragraph",
+        "§1(5)",
+        "§6, Client Pull paragraph",
+        "§7(1)"
+      ],
+      "finding": "Dataset-use conditions are agreed between provider and recipient; the platform is not the contracting party for dataset licences. Provider terms are normally accepted through use/subscription. Client Pull must avoid redundant data transfer or observe agreed retrieval intervals. No dataset redistribution licence is supplied by these platform terms.",
+      "retained_rendered_text": "/private/tmp/youspeed-mia-rights-20261028/platform-terms-rendered.txt"
+    },
+    {
+      "url": "https://mobilithek.info/blog/statische-daten-suchen-und-nutzen",
+      "title": "Schritt für Schritt: Statische Daten suchen und nutzen",
+      "published_date": "2026-09-24",
+      "relevant_section": "Statische Daten mit Abonnement herunterladen",
+      "finding": "The documented subscription process requires a registered user, membership of an activated organisation and the Bestellmanagement role. Subscribing requires accepting provider licence conditions and transmits the request, name and email to the provider; download follows provider approval. This is a procedural reference, not a licence grant for either MIA feed."
+    },
+    {
+      "url": "https://www.autobahn.de/betrieb-verkehr/baustellenkarte",
+      "title": "Baustellenkarte der Autobahn GmbH",
+      "finding": "Confirms MIA is the source of construction-site information, that coverage is not guaranteed complete, and that information is also provided through Mobilithek. It supplies no per-feed redistribution/cache licence."
+    },
+    {
+      "url": "https://api.mobidata-bw.de/",
+      "title": "MobiData BW Integrationsplattform",
+      "finding": "Lists both MIA DATEX II mirror endpoints and states IPL endpoints are open without credentials. This verifies technical mirror access, not a downstream grant for commercial use, normalization, redistribution or archival retention."
+    }
+  ],
+  "mobidata_catalogue_searches": [
+    {
+      "url": "https://mobidata-bw.de/api/3/action/package_search?q=MIA&rows=20",
+      "result_count": 0,
+      "raw_path": "/private/tmp/youspeed-mia-rights-20261028/mobidata-catalogue-mia.json"
+    },
+    {
+      "url": "https://mobidata-bw.de/api/3/action/package_search?q=autobahn&rows=20",
+      "result_count": 6,
+      "matching_mia_feed_licence_found": false,
+      "raw_path": "/private/tmp/youspeed-mia-rights-20261028/mobidata-catalogue-autobahn.json"
+    }
+  ],
+  "questions_requiring_authoritative_publisher_terms": [
+    {
+      "topic": "Use and redistribution",
+      "question": "Do the exact terms for each offer permit YouSpeed to use the data in its app, including commercial use if applicable, and redistribute normalized regional JSON/GeoJSON snapshots to unregistered end users without each user obtaining a separate provider subscription or agreement?"
+    },
+    {
+      "topic": "Transformations",
+      "question": "Are regional filtering, coordinate and schedule normalization, exclusion of unsupported records and localized status labels permitted? Must any original source wording remain unmodified, complete or exclusively current?"
+    },
+    {
+      "topic": "Caching and retention",
+      "question": "What durations and deletion duties apply to upstream raw XML, immutable derived API snapshots, rollback/provenance archives and offline phone caches, including source withdrawal or subscription termination? Does the proposed 30-day archive plus pinned current/previous generations comply?"
+    },
+    {
+      "topic": "Attribution",
+      "question": "Is the published source note sufficient, where must it appear in app/API outputs, and what licence link, modification notice or additional wording is required?"
+    },
+    {
+      "topic": "Access route and approvals",
+      "question": "Does access through MobiData BW carry authorization for this downstream use, or does YouSpeed need its own Mobilithek organisation, approved subscription, provider agreement or other permission for each feed? Supply the applicable per-offer agreement/terms and effective version."
+    }
+  ],
+  "conclusion": "The restricted/free category, attribution and approval/access conditions are now established from current official metadata. The intended commercial/derived redistribution, transformation, cache and retention permissions remain unresolved; both Autobahn source toggles must remain off. No Autobahn App or other dataset licence is imported into these MIA offers.",
+  "actions_not_performed": [
+    "No contact or messages",
+    "No registration or login",
+    "No subscription request or terms acceptance",
+    "No source activation",
+    "No deployment or scheduler",
+    "No sibling repository changes"
+  ],
+  "retained_raw_evidence": [
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/long-metadata.headers",
+      "bytes": 328,
+      "sha256": "d40e63f76ca051c1e0c7bb0b72f3189189d982207a51d2618646e0be9dae804c"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/long-metadata.json",
+      "bytes": 17797,
+      "sha256": "6e4e408a705d65857dfd34e00e9e7819d5b379b2f9ce6d6ee0e371ce81fc1620"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/mobidata-catalogue-autobahn.json",
+      "bytes": 269608,
+      "sha256": "085e03628445a776ae22c985921b1bb27ef1be977dd842d58531f8041b08d29c"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/mobidata-catalogue-mia.json",
+      "bytes": 214,
+      "sha256": "50cec8b90d4923fa59076fa408af5c5baf941ddcdd30b07f38cd2e065f74a3f0"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/page-2026-10-28T18-37-02-836Z.yml",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/page-2026-10-28T18-37-50-602Z.yml",
+      "bytes": 5858,
+      "sha256": "1b0ddf38a673054c620cff1384b5b3da62aeb0038048624f059d5302ce250e0d"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/page-2026-10-28T18-38-39-243Z.yml",
+      "bytes": 2671,
+      "sha256": "6a5d44133791e2f664857315cc3f2020730d9885fbbb274262142c6e5d835628"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/page-2026-10-28T18-39-21-534Z.yml",
+      "bytes": 3210,
+      "sha256": "581da980671d25c3d713fb9f0c2a31cfc785a146f91229b4bd3404fc1ac63e0a"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/platform-terms-rendered.tool.json",
+      "bytes": 20560,
+      "sha256": "61ebedd8db5f6665cd9a2579903be8154910f6f556717d329a905ee720130e08"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/platform-terms-rendered.txt",
+      "bytes": 20148,
+      "sha256": "9ec788561e1827f3e6f73fe5d7c48dc34f3a4083a77ab7ba7f70c8c5043eab63"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/rights-findings.json",
+      "bytes": 3757,
+      "sha256": "27e52ed56aff3d408148f99816a85880d2e13f709b5f4a6069dcf9dacef9a102"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/short-metadata.headers",
+      "bytes": 328,
+      "sha256": "6dbe54057e914c81deee6a25aa4c80a576dfb6014c92e8cac3ea83c6f082c3db"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/short-metadata.json",
+      "bytes": 18230,
+      "sha256": "26807485dadff25bce2f6f68d6577751aa56db00c29ac53162fc80f1b5bc7b86"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/short-offer.headers",
+      "bytes": 372,
+      "sha256": "a5f0e9403ecb528fb709624fff4a6d87e02649a82ac70d7c1c29767846f2d7fd"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/short-offer.html",
+      "bytes": 1102,
+      "sha256": "dba9e7020e64cfee874c6c0bc1c2fa565f69dc86e31d71a3e4585d7beb4e824f"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/short-terms-rendered.tool.json",
+      "bytes": 542,
+      "sha256": "0b24bfab93c3490744e717981bc0341134662f2ff8061d2a90d9f71c69cf7e32"
+    },
+    {
+      "path": "/private/tmp/youspeed-mia-rights-20261028/short-terms-rendered.txt",
+      "bytes": 350,
+      "sha256": "fb08098724dbe0e8d8acb218c0d033dddab2b477415900f568384da1c3253cec"
+    }
+  ]
+}
