@@ -256,7 +256,7 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
     private var acceptedEndSign: InventorySign? = null
     private var selectedSecondary: InventorySign? = null
     private var secondaryTriggeredAt: Instant? = null
-    private val cameraReplacedSecondaryIds = mutableSetOf<String>()
+    private var lastSecondaryCandidateId: String? = null
     private var acceptedTownResetWayId: String? = null
     private var endResetWayId: String? = null
     private var endResetDirection = 0
@@ -284,7 +284,6 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
         departedBoundaries.forEach(boundarySources::remove)
         val nearby = snapshot.signs.filter { distance(fix.latitude, fix.longitude, it.latitude, it.longitude) <= it.radiusMeters + 1e-6 }
         val nearbyIds = nearby.map { it.id }.toSet()
-        cameraReplacedSecondaryIds.retainAll(nearbyIds)
         encounters.keys.filter { it !in nearbyIds }.toList().forEach { key ->
             val encounter = encounters.getValue(key)
             if (encounter.outcome == null) recordBestEffort(encounter, if (encounter.analyzedFrames >= 2 && encounter.firstAnalyzedAt?.let { first -> encounter.lastAnalyzedAt?.let { Duration.between(first, it).toMillis() >= 100 } } == true) "not_observed" else "camera_unavailable", now, "encounter_ended")
@@ -392,9 +391,12 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
         val previousSecondaryId = selectedSecondary?.id
         val heldOpposite = nearby.firstOrNull { it.id == previousSecondaryId && it.isKnownOppositeFace(fix) } != null
         if (heldOpposite) { selectedSecondary = null; secondaryTriggeredAt = null }
-        val candidate = eligibleSigns.filter { it.kind != "speed_limit" && it.id !in cameraReplacedSecondaryIds }
+        val candidate = eligibleSigns.filter { it.kind != "speed_limit" }
             .sortedWith(compareBy<InventorySign> { distance(fix.latitude, fix.longitude, it.latitude, it.longitude) }.thenBy { it.id }).firstOrNull()
-        if (candidate != null && candidate.id != selectedSecondary?.id) { selectedSecondary = candidate; secondaryTriggeredAt = fix.at }
+        // Match iPhone: the same already-triggered inventory card cannot replace
+        // a camera sign, while a different nearest candidate starts a new trigger.
+        if (candidate != null && candidate.id != lastSecondaryCandidateId) { selectedSecondary = candidate; secondaryTriggeredAt = fix.at }
+        lastSecondaryCandidateId = candidate?.id
         val displayChanged = selectedSecondary?.id != previousSecondaryId
         val passedNodes=amendedNodePassages.evaluate(snapshot.amendedNodes,rawFix,now,snapshot.chainage,snapshot.localHeading)
         return InventorySignDecision(selectedSecondary, rule, boundary, boundarySign,
@@ -491,9 +493,9 @@ internal class InventorySignRuntime(private val persist: (JsonObject) -> Unit) {
         ids.mapNotNull(encounters::get).forEach { persistEvent(event(it, "capture_failed", at, reason)) }
     }
     @Synchronized fun finish(at: Instant) { closeEncounters("camera_unavailable", "session_ended", at); reset() }
-    @Synchronized fun replaceSecondaryWithCamera() { selectedSecondary?.id?.let(cameraReplacedSecondaryIds::add); selectedSecondary = null; secondaryTriggeredAt = null }
+    @Synchronized fun replaceSecondaryWithCamera() { selectedSecondary = null; secondaryTriggeredAt = null }
     @Synchronized fun isCurrentSecondary(id: String?, triggeredAt: Instant?): Boolean = selectedSecondary?.id == id && secondaryTriggeredAt == triggeredAt
-    private fun reset() { amendedNodePassages.reset(); encounters.clear(); boundaryApplied.clear(); boundarySources.clear(); knownDirections.clear(); priorWay = null; priorDirection = 0; priorChainage = null; priorAt = null; activeCancellation = null; pendingBoundary = null; acceptedInsideCity = null; acceptedCitySign = null; acceptedEndSign = null; selectedSecondary = null; secondaryTriggeredAt = null; cameraReplacedSecondaryIds.clear(); acceptedTownResetWayId = null; endResetWayId = null; endResetDirection = 0 }
+    private fun reset() { amendedNodePassages.reset(); encounters.clear(); boundaryApplied.clear(); boundarySources.clear(); knownDirections.clear(); priorWay = null; priorDirection = 0; priorChainage = null; priorAt = null; activeCancellation = null; pendingBoundary = null; acceptedInsideCity = null; acceptedCitySign = null; acceptedEndSign = null; selectedSecondary = null; secondaryTriggeredAt = null; lastSecondaryCandidateId = null; acceptedTownResetWayId = null; endResetWayId = null; endResetDirection = 0 }
     private fun closeEncounters(outcome: String, reason: String, at: Instant) {
         encounters.values.filter { it.outcome == null }.forEach { recordBestEffort(it, outcome, at, reason) }; encounters.clear()
     }

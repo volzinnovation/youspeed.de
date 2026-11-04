@@ -50,7 +50,10 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
         if (abs((heading - expected + 540) % 360 - 180) > 35) return null
         val chainage = projection.first
         val length = points.zipWithNext().sumOf { distance(it.first, it.second) }
-        var segment = if (topology) currentSegment(way, direction, chainage) ?: return null else Segment(null, way, direction, 0.0, length, length)
+        val initial = if (topology) currentSegment(way, direction, chainage) else null
+        if (topology && initial == null) return UpcomingSpeedLimitSnapshot(way, direction, chainage, groups,
+            emptyList(), emptyList(), "ambiguous_path", (System.nanoTime() - began) / 1e6, true, lookaheadDistanceM)
+        var segment = initial ?: Segment(null, way, direction, 0.0, length, length)
         var entryDistance = -direction * (chainage - if (direction > 0) segment.start else segment.end)
         var common = groups
         val paths = mutableListOf<UpcomingSpeedLimitPath>()
@@ -68,7 +71,10 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
                 common = common.intersect(memberships)
                 if (common.isEmpty()) { reason = "relation_exit"; break }
             }
-            val path = UpcomingSpeedLimitPath(segment.id, segment.way, segment.direction, segment.start, segment.end, entryDistance, memberships)
+            val entry = if (segment.direction > 0) segment.start else segment.end
+            val first = entry + segment.direction * max(0.0, -entryDistance)
+            val last = entry + segment.direction * min(segment.length, lookaheadDistanceM - entryDistance)
+            val path = UpcomingSpeedLimitPath(segment.id, segment.way, segment.direction, min(first, last), max(first, last), max(0.0, entryDistance), common)
             paths += path
             // SQL already bounds stations to the horizon. Clamp cancellation at a reverse boundary
             // so subtraction cannot turn an exactly included station into a just-outside event.
@@ -84,7 +90,7 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
                 offset += cluster.size
                 val numeric = cluster.filter { it.first.kind == "speed_limit" }
                 val targets = if (numeric.isNotEmpty()) numeric else cluster.filter { it.first.townEntry }
-                val eligible = targets.mapNotNull { (event, remaining) -> candidate(event, segment, remaining, memberships, index < UpcomingSpeedLimitHorizon.maxPathSegments - 1) }
+                val eligible = targets.mapNotNull { (event, remaining) -> candidate(event, segment, remaining, common) }
                 // Read every actionable event. A rejected association or unsupported rule blocks targets beyond it.
                 if (cluster.any { it.first.status != "accepted" || it.first.direction != segment.direction } ||
                     targets.size != eligible.size || eligible.map { it.speedKmh }.distinct().size > 1 ||
@@ -95,7 +101,22 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
             }
             if (blocked) break
             val exitDistance = entryDistance + segment.length
-            if (exitDistance >= lookaheadDistanceM && candidates.none { it.originWayID == segment.way && abs(it.distanceM-exitDistance) < 1e-6 }) break
+            if (exitDistance >= lookaheadDistanceM) {
+                // Like iPhone, retain a certified far-side entry only for a target at the
+                // horizon endpoint. It records passage without reading beyond the horizon.
+                val exit = if (segment.direction > 0) segment.end else segment.start
+                if (abs(exitDistance - lookaheadDistanceM) <= 0.01 && topology && common.isNotEmpty() &&
+                    paths.size < UpcomingSpeedLimitHorizon.maxPathSegments && candidates.any {
+                        it.originWayID == segment.way && it.direction == segment.direction && abs(it.stationM - exit) <= 0.01
+                    }) {
+                    successor(segment)?.takeIf { it.id !in visited }?.let { next ->
+                        val nextGroups = common.intersect(relations(next.way))
+                        if (nextGroups.isNotEmpty()) paths += UpcomingSpeedLimitPath(next.id, next.way, next.direction,
+                            next.start, next.end, exitDistance, nextGroups)
+                    }
+                }
+                break
+            }
             if (!topology || common.isEmpty()) { reason = if (!topology) "same_way_only" else "no_relation"; break }
             val next = successor(segment) ?: sameWaySuccessor(segment)
             if (next == null) { reason = "topology_stop"; break }
@@ -110,18 +131,17 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
             (System.nanoTime() - began) / 1e6, topology, lookaheadDistanceM)
     }.getOrNull()
 
-    private fun relations(way: String): Set<Long> = relationCache.getOrPut(way) { db.rawQuery("SELECT m.continuity_group_id FROM way_continuity_membership m JOIN way_continuity_group g USING(continuity_group_id) WHERE m.way_id=? AND m.continuity_kind='route_relation_connected' AND g.continuity_kind='route_relation_connected'", arrayOf(way)).use { c -> buildSet { while (c.moveToNext()) add(c.getLong(0)) } } }
+    private fun relations(way: String): Set<Long> = relationCache.getOrPut(way) { db.rawQuery("SELECT m.continuity_group_id FROM way_continuity_membership m JOIN way_continuity_group g USING(continuity_group_id) WHERE m.way_id=? AND g.continuity_kind='route_relation_connected'", arrayOf(way)).use { c -> buildSet { while (c.moveToNext()) if (c.getLong(0) > 0) add(c.getLong(0)) } } }
     private fun number(c: android.database.Cursor, index: Int): Boolean = c.getType(index) in setOf(android.database.Cursor.FIELD_TYPE_INTEGER,android.database.Cursor.FIELD_TYPE_FLOAT) && c.getDouble(index).isFinite()
     private fun decodeSegment(c: android.database.Cursor): Segment? {
         if(listOf(0,1,6,7).any { c.getType(it)!=android.database.Cursor.FIELD_TYPE_INTEGER || c.getLong(it)<=0 } ||
             c.getType(2)!=android.database.Cursor.FIELD_TYPE_INTEGER || listOf(3,4,5).any { !number(c,it) }) return null
         val value = Segment(c.getString(0),c.getString(1),c.getInt(2),c.getDouble(3),c.getDouble(4),c.getDouble(5),c.getString(6),c.getString(7))
-        return value.takeIf { it.direction in setOf(-1,1) && it.start.isFinite() && it.end.isFinite() && it.length.isFinite() && it.start >= 0 && it.end > it.start && it.length > 0 && abs(it.end-it.start-it.length) < 0.5 && !it.startNode.isNullOrBlank() && !it.endNode.isNullOrBlank() }
+        return value.takeIf { it.direction in setOf(-1,1) && it.start.isFinite() && it.end.isFinite() && it.length.isFinite() && it.start >= 0 && it.end > it.start && it.length > 0 && abs(it.end-it.start-it.length) <= 0.5 && !it.startNode.isNullOrBlank() && !it.endNode.isNullOrBlank() }
     }
-    private fun currentSegment(way: String, direction: Int, station: Double): Segment? = db.rawQuery("SELECT segment_id,way_id,direction,start_chainage_m,end_chainage_m,length_m,start_node_id,end_node_id FROM upcoming_path_segment WHERE way_id=? AND direction=? AND permission_status='allowed' AND start_chainage_m<=? AND end_chainage_m>=? ORDER BY start_chainage_m LIMIT 3", arrayOf(way, "$direction", "$station", "$station")).use { c ->
+    private fun currentSegment(way: String, direction: Int, station: Double): Segment? = db.rawQuery("SELECT segment_id,way_id,direction,start_chainage_m,end_chainage_m,length_m,start_node_id,end_node_id FROM upcoming_path_segment WHERE way_id=? AND direction=? AND permission_status='allowed' AND ${if (direction > 0) "start_chainage_m<=? AND end_chainage_m>?" else "start_chainage_m<? AND end_chainage_m>=?"} LIMIT 2", arrayOf(way, "$direction", "$station", "$station")).use { c ->
         val found = mutableListOf<Segment>(); while(c.moveToNext()) found += decodeSegment(c) ?: return null
-        val owners = found.filter { if(direction>0) station < it.end-1e-6 else station > it.start+1e-6 }
-        owners.singleOrNull() ?: if(owners.isEmpty()) found.singleOrNull() else null
+        found.singleOrNull()
     }
     private fun successor(segment: Segment): Segment? = db.rawQuery("SELECT s.segment_id,s.way_id,s.direction,s.start_chainage_m,s.end_chainage_m,s.length_m,s.start_node_id,s.end_node_id,n.via_node_id FROM upcoming_path_successor n JOIN upcoming_path_segment s ON s.segment_id=n.to_segment_id WHERE n.from_segment_id=? AND n.status='certified' AND n.proof='source_node_unbranched_unmerged_v1' AND s.permission_status='allowed'", arrayOf(segment.id)).use { c ->
         if(!c.moveToFirst() || c.getType(8)!=android.database.Cursor.FIELD_TYPE_INTEGER || c.getLong(8)<=0) null else decodeSegment(c)?.takeIf { segment.endNode == c.getString(8) && it.startNode == c.getString(8) }
@@ -157,35 +177,41 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
         check(result.size <= 256) { "upcoming_preview_event_cap" }
         return result
     }
-    private fun candidate(event: Event, segment: Segment, remaining: Double, groups: Set<Long>, mayContinue: Boolean): UpcomingSpeedLimitCandidate? {
+    private fun candidate(event: Event, segment: Segment, remaining: Double, groups: Set<Long>): UpcomingSpeedLimitCandidate? {
         val townEntry = event.townEntry
-        // The town rule supplies locality, while a separate posted limit at this station wins.
-        // Unresolved/conditional OSM evidence cannot promise an unconditional implied 50.
         if (townEntry && event.source == "osm-settlement" && ConditionalSpeedRules.resolve(db, segment.way,
                 segment.direction, 50, false, countryCode = "DE") != null) return null
         val speed = (if (townEntry) 50.0 else event.speed)?.takeIf { it.isFinite() && it in 1.0..300.0 && it == floor(it) }?.toInt() ?: return null
-        if (event.status != "accepted" || (if (townEntry) event.parameter != "not_applicable" else event.parameter != "parsed_source_value" || event.unit != "km/h") || event.direction != segment.direction || event.source.isBlank() || event.snapshot.isBlank()) return null
-        // The unique physical origin must own the post-station interval. Child-entry propagation is excluded.
-        val wayLength=geometry(segment.way)?.zipWithNext()?.sumOf { distance(it.first,it.second) } ?: return null
-        val normal = db.rawQuery("SELECT rule_id,sign_id,speed_kmh,station_chainage_m,association_status,lane_scope,start_chainage_m,end_chainage_m,${if (hasCityRule) "inside_city" else "NULL"} FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND ((direction=1 AND start_chainage_m<=? AND end_chainage_m>?) OR (direction=-1 AND start_chainage_m<? AND end_chainage_m>=?)) LIMIT 3", arrayOf(segment.way, "${segment.direction}", "${event.station}", "${event.station}", "${event.station}", "${event.station}")).use { c ->
-            if (c.count != 1 || !c.moveToFirst() || listOf(3,6,7).any { !number(c,it) } || c.getString(1) != event.sign ||
-                (if (townEntry) !c.isNull(2) || !number(c,8) || c.getInt(8) != 1 else !number(c,2) || c.getDouble(2) != speed.toDouble()) || abs(c.getDouble(3) - event.station) > 1e-6 || c.getString(4) != "accepted" || c.getString(5) != "all" || c.getDouble(6)<0 || c.getDouble(7)>wayLength+0.01 || c.getDouble(7)<=c.getDouble(6) || event.station<c.getDouble(6) || event.station>c.getDouble(7)) null
-            else UpcomingSpeedLimitCandidate(event.sign, event.source, event.snapshot, c.getString(0), segment.way, segment.direction, event.station, speed, remaining)
-        }
-        if(normal != null) return normal
-        if(!topology || !mayContinue || groups.isEmpty() || abs(event.station-(if(segment.direction>0) segment.end else segment.start)) > 1e-6) return null
-        val next = successor(segment) ?: return null
-        if(next.way == segment.way || groups.intersect(relations(next.way)).isEmpty()) return null
-        val entry = if(next.direction>0) next.start else next.end
-        val origin = db.rawQuery("SELECT rule_id,start_chainage_m,end_chainage_m,speed_kmh,association_status,lane_scope,${if (hasCityRule) "inside_city" else "NULL"} FROM traffic_sign_way_rule WHERE sign_id=? AND way_id=? AND direction=? AND abs(station_chainage_m-?)<0.000001 LIMIT 3", arrayOf(event.sign,segment.way,"${segment.direction}","${event.station}")).use { c ->
-            if(c.count!=1 || !c.moveToFirst() || listOf(1,2).any { !number(c,it) } || c.getDouble(1)!=event.station || c.getDouble(2)!=event.station ||
-                (if (townEntry) !c.isNull(3) || !number(c,6) || c.getInt(6) != 1 else !number(c,3) || c.getDouble(3)!=speed.toDouble()) || c.getString(4)!="accepted" || c.getString(5)!="all") null else c.getString(0)
+        if (event.status != "accepted" || (if (townEntry) event.parameter != "not_applicable" else event.parameter != "parsed_source_value" || event.unit != "km/h") || event.direction != segment.direction || event.sign.isBlank() || event.source.isBlank() || event.snapshot.isBlank()) return null
+        // Match iPhone's source-station tolerance, then verify the actual offer just
+        // after the station. An overlapping or unrelated rule blocks the preview.
+        data class Origin(val id: String, val start: Double, val end: Double)
+        val origin = db.rawQuery("SELECT rule_id,start_chainage_m,end_chainage_m,speed_kmh,${if (hasCityRule) "inside_city" else "NULL"} FROM traffic_sign_way_rule WHERE sign_id=? AND way_id=? AND direction=? AND association_status='accepted' AND lane_scope='all' AND abs(station_chainage_m-?)<=0.01 LIMIT 3", arrayOf(event.sign,segment.way,"${segment.direction}","${event.station}")).use { c ->
+            val origins = mutableListOf<Origin>()
+            while (c.moveToNext()) {
+                if (listOf(1,2).any { !number(c,it) } || c.getDouble(1) < 0 || c.getDouble(2) < c.getDouble(1) ||
+                    (if (townEntry) !c.isNull(3) || !number(c,4) || c.getDouble(4) != 1.0 else !number(c,3) || c.getDouble(3) != speed.toDouble())) continue
+                origins += Origin(c.getString(0),c.getDouble(1),c.getDouble(2))
+            }
+            origins.singleOrNull()
         } ?: return null
-        val nextLength=geometry(next.way)?.zipWithNext()?.sumOf { distance(it.first,it.second) } ?: return null
-        val post = db.rawQuery("SELECT sign_id,speed_kmh,association_status,lane_scope,start_chainage_m,end_chainage_m,station_chainage_m,${if (hasCityRule) "inside_city" else "NULL"} FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND ((direction=1 AND start_chainage_m<=? AND end_chainage_m>?) OR (direction=-1 AND start_chainage_m<? AND end_chainage_m>=?)) LIMIT 3", arrayOf(next.way,"${next.direction}","$entry","$entry","$entry","$entry")).use { c -> c.count==1 && c.moveToFirst() && listOf(4,5,6).all { number(c,it) } && c.getString(0)==event.sign &&
-            (if (townEntry) c.isNull(1) && number(c,7) && c.getInt(7)==1 else number(c,1) && c.getDouble(1)==speed.toDouble()) && c.getString(2)=="accepted" && c.getString(3)=="all" && c.getDouble(4)>=0 && c.getDouble(5)>c.getDouble(4) && c.getDouble(5)<=nextLength+0.01 && abs(c.getDouble(6)-entry)<1e-6 }
-        return if(post) UpcomingSpeedLimitCandidate(event.sign,event.source,event.snapshot,origin,segment.way,segment.direction,event.station,speed,remaining)
-            else if(!townEntry) mappedBoundary(next,remaining)?.takeIf {it.speedKmh==speed} else null
+        val probe = event.station + segment.direction * 0.001
+        val normal = db.rawQuery("SELECT rule_id FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND ${if (segment.direction > 0) "start_chainage_m<=? AND end_chainage_m>?" else "start_chainage_m<? AND end_chainage_m>=?"} LIMIT 3", arrayOf(segment.way,"${segment.direction}","$probe","$probe")).use { c ->
+            c.count == 1 && c.moveToFirst() && c.getString(0) == origin.id
+        }
+        fun physical() = UpcomingSpeedLimitCandidate(event.sign,event.source,event.snapshot,origin.id,segment.way,segment.direction,event.station,speed,remaining)
+        if (normal) return physical()
+        if (!topology || groups.isEmpty() || abs(event.station - (if (segment.direction > 0) segment.end else segment.start)) > 0.01) return null
+        val next = successor(segment) ?: return null
+        if (groups.intersect(relations(next.way)).isEmpty()) return null
+        val nextProbe = (if (next.direction > 0) next.start else next.end) + next.direction * 0.001
+        val post = db.rawQuery("SELECT sign_id,speed_kmh,association_status,lane_scope,${if (hasCityRule) "inside_city" else "NULL"} FROM traffic_sign_way_rule WHERE way_id=? AND direction=? AND start_chainage_m<=? AND end_chainage_m>=? LIMIT 3", arrayOf(next.way,"${next.direction}","$nextProbe","$nextProbe")).use { c ->
+            c.count == 1 && c.moveToFirst() && c.getString(0) == event.sign &&
+                (if (townEntry) c.isNull(1) && number(c,4) && c.getDouble(4) == 1.0 else number(c,1) && c.getDouble(1) == speed.toDouble()) &&
+                c.getString(2) == "accepted" && c.getString(3) == "all"
+        }
+        return if (post) physical()
+            else if (!townEntry && origin.start == origin.end) mappedBoundary(next,remaining)?.takeIf { it.speedKmh == speed } else null
     }
     private fun geometry(way: String): List<Pair<Double,Double>>? {
         geometryCache[way]?.let { return it }

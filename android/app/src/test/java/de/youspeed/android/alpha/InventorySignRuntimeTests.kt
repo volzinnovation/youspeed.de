@@ -419,6 +419,24 @@ class InventorySignRuntimeTests {
         assertNull(evaluation(original,fix(20.0,2)).display)
         assertEquals(original,evaluation(original,fix(seconds=3)).display)
     }
+    @Test fun differentNearestInventorySignRearmsCameraReplacedCardLikeIPhone() {
+        val first = sign("first")
+        val next = sign("next", "DE:206").copy(latitude = first.latitude + 4.0 / 111195.0802335329)
+        val snapshot = InventorySignSnapshot(true,listOf(first,next),localHeading=0.0)
+        fun at(meters: Double, seconds: Long): InventorySignDecision {
+            val position = fix(meters,seconds)
+            return runtime.evaluate(snapshot,position,position.at,false,false)
+        }
+        assertEquals(first,at(0.0,0).display)
+        runtime.replaceSecondaryWithCamera()
+        assertNull("An unchanged nearest inventory sign must preserve camera replacement",at(0.0,1).display)
+        assertEquals(next,at(4.0,2).display)
+        val originalAgain = at(0.0,3)
+        assertEquals("A different intervening nearest sign rearms the original even while both remain in range",
+            first,originalAgain.display)
+        assertTrue(originalAgain.displayChanged)
+        assertEquals(time.plusSeconds(3),originalAgain.displayTriggeredAt)
+    }
     @Test fun sessionAndBundleTransitionsClearHeldSecondaryWithoutAffectingLegacyRegions() {
         evaluation(sign());runtime.finish(time.plusSeconds(1))
         assertNull(runtime.evaluate(InventorySignSnapshot(true),fix(seconds=2),time.plusSeconds(2),false,false).display)

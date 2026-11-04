@@ -74,6 +74,56 @@ class UpcomingSpeedLimitReaderInstrumentedTest {
     }
     private fun read(db: SQLiteDatabase, direction: Int = 1) = UpcomingSpeedLimitReader(db).read(0.0,0.001,"1",direction,true,5.0,if(direction>0)90.0 else 270.0,5.0,setOf(10))
 
+    @Test fun retainedPathContainsOnlyTheQueriedApproachInterval() {
+        database().use { db ->
+            val reader = UpcomingSpeedLimitReader(db)
+            fun lookup(direction: Int) = reader.read(0.0,0.005,"1",direction,true,1.0,
+                if (direction > 0) 90.0 else 270.0,1.0,setOf(10))
+            for (direction in listOf(1,-1)) {
+                lookup(direction)
+                val result = requireNotNull(lookup(direction))
+                val path = result.path.single()
+                assertEquals(result.chainageM,if (direction > 0) path.startM else path.endM,1e-6)
+                assertEquals(300.0,path.endM - path.startM,1e-6)
+                assertEquals(0.0,path.entryDistanceM,0.0)
+            }
+        }
+    }
+
+    @Test fun sourceStationToleranceAndImmediatelyAfterOfferMatchIPhone() {
+        database().use { db ->
+            db.sign("ahead",200.0,50)
+            db.execSQL("UPDATE traffic_sign_way_rule SET station_chainage_m=200.005")
+            val reader = UpcomingSpeedLimitReader(db)
+            fun lookup() = reader.read(0.0,0.001,"1",1,true,1.0,90.0,1.0,setOf(10))
+            lookup()
+            assertEquals("ahead",requireNotNull(lookup()).candidates.single().signID)
+            db.execSQL("INSERT INTO traffic_sign_way_rule VALUES('overlap','another-origin',1,1,200.0005,1100,200.0005,70,'accepted','all')")
+            assertTrue("An overlapping rule immediately after the station must block the target",
+                requireNotNull(lookup()).candidates.isEmpty())
+        }
+    }
+
+    @Test fun ambiguousCurrentTopologyReplacesTheFormerContinuationProof() {
+        database().use { db ->
+            topology(db)
+            db.execSQL("INSERT INTO upcoming_path_segment VALUES(1,1,1,0,1000,1000,'allowed',1,2)")
+            val reader = UpcomingSpeedLimitReader(db)
+            fun lookup() = reader.read(0.0,0.001,"1",1,true,1.0,90.0,1.0,setOf(10))
+            lookup()
+            val proved = requireNotNull(lookup())
+            val tracker = UpcomingSpeedLimitTracker()
+            tracker.consume(proved,"bundle",1000,1000)
+            assertTrue(tracker.certifiesContinuation(proved,"bundle"))
+            db.execSQL("INSERT INTO upcoming_path_segment VALUES(2,1,1,0,1000,1000,'allowed',1,2)")
+            val ambiguous = requireNotNull(lookup())
+            assertEquals("ambiguous_path",ambiguous.reason)
+            assertTrue(ambiguous.path.isEmpty())
+            tracker.consume(ambiguous,"bundle",2000,2000)
+            assertFalse(tracker.certifiesContinuation(proved,"bundle"))
+        }
+    }
+
     @Test fun thirtySecondHorizonsReadBeyondThreeHundredMetresAndExcludeJustOutside() {
         for ((speed, distance) in listOf(50.0 to 400.0, 100.0 to 800.0, 130.0 to 1050.0)) {
             database().use { db ->

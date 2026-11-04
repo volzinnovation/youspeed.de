@@ -569,9 +569,16 @@ class ConsumerSessionController(
         val snapshot = result.upcomingSpeedLimits?.takeIf { result.matchedWayStable || upcomingSpeedLimitTracker.certifiesContinuation(it,identity) }
         upcomingSpeedLimitTracker.consume(snapshot, identity, location.time, clock.millis())
         upcomingSpeedLimitExpiry?.let(mainHandler::removeCallbacks)
-        val callback = Runnable { if (epoch == upcomingSpeedLimitEpoch) { upcomingSpeedLimitTracker.hide(); updateState { this } } }
+        upcomingSpeedLimitExpiry = null
+        val acceptedFixAt = upcomingSpeedLimitTracker.fixTimestampMs ?: return
+        val callback = Runnable {
+            if (epoch == upcomingSpeedLimitEpoch && upcomingSpeedLimitTracker.fixTimestampMs == acceptedFixAt) {
+                upcomingSpeedLimitTracker.hide()
+                updateState { this }
+            }
+        }
         upcomingSpeedLimitExpiry = callback
-        mainHandler.postDelayed(callback, (location.time + 3000 - clock.millis()).coerceAtLeast(1))
+        mainHandler.postDelayed(callback, (acceptedFixAt + 3000 - clock.millis()).coerceAtLeast(1))
     }
     private val preciseLocationIntake = PreciseLocationIntake()
     private var lastPreciseLocationDiagnosticAtMs = 0L

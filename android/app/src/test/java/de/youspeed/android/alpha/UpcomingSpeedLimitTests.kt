@@ -100,6 +100,55 @@ class UpcomingSpeedLimitTests {
         assertFalse(tracker.certifiesContinuation(snapshot,"new-bundle"))
     }
 
+    @Test fun provisionalContinuationRequiresBothTopologyAndTheRetainedPathRelation() {
+        val tracker = UpcomingSpeedLimitTracker()
+        val current = fix(100.0)
+        tracker.consume(current, "bundle", 1000, 1000)
+        assertFalse("A topology-free prior read cannot prove another directed segment", tracker.certifiesContinuation(
+            current.copy(topologyAvailable = true), "bundle"))
+
+        val outsideRelation = UpcomingSpeedLimitPath("other", "20", 1, 0.0, 300.0, 100.0, setOf(2))
+        tracker.consume(current.copy(topologyAvailable = true, path = current.path + outsideRelation), "bundle", 2000, 2000)
+        val next = current.copy(wayID = "20", chainageM = 50.0, topologyAvailable = true)
+        assertFalse("Coincident way and raw group IDs cannot bypass the path's own relation", tracker.certifiesContinuation(next, "bundle"))
+    }
+
+    @Test fun lateFixCannotHideANewerPreviewOrRestoreOneAfterANewerInvalidFix() {
+        val tracker = UpcomingSpeedLimitTracker()
+        tracker.consume(fix(100.0), "bundle", 2000, 2000)
+        tracker.consume(fix(90.0), "bundle", 1500, 2000)
+        assertEquals(150.0, requireNotNull(tracker.presentation(100, false, true, 2000)).distanceM, 0.0)
+        assertEquals(2000L, tracker.fixTimestampMs)
+        tracker.consume(null, "bundle", 2500, 2500)
+        tracker.consume(fix(110.0), "bundle", 2300, 2500)
+        assertNull(tracker.presentation(100, false, true, 2500))
+        assertNull(tracker.fixTimestampMs)
+    }
+
+    @Test fun newBundleStartsItsOwnFixOrderingWithoutLosingOldPassageMemory() {
+        val tracker = UpcomingSpeedLimitTracker()
+        tracker.consume(fix(100.0), "old-bundle", 4000, 4000)
+        tracker.consume(fix(251.0, emptyList()), "old-bundle", 5000, 5000)
+        tracker.consume(fix(100.0), "new-bundle", 1000, 1000)
+        assertEquals("speed", tracker.presentation(100, false, true, 1000)?.signID)
+        assertEquals(1000L, tracker.fixTimestampMs)
+        tracker.consume(fix(100.0), "old-bundle", 2000, 2000)
+        assertNull("Switching away and back cannot resurrect the old passage", tracker.presentation(100, false, true, 2000))
+    }
+
+    @Test fun downstreamDirectionFlipCannotRearmAPassedTargetFromTheOriginalWay() {
+        val tracker = UpcomingSpeedLimitTracker()
+        val downstream = UpcomingSpeedLimitPath("child", "20", 1, 0.0, 300.0, 100.0, setOf(1))
+        val original = fix(100.0).copy(topologyAvailable = true, path = fix(100.0).path + downstream)
+        tracker.consume(original, "bundle", 1000, 1000)
+        tracker.consume(original.copy(chainageM = 251.0, candidates = emptyList()), "bundle", 2000, 2000)
+        val flippedChild = UpcomingSpeedLimitSnapshot("20", -1, 100.0, setOf(1),
+            listOf(downstream.copy(direction = -1)), emptyList(), "match_flip", topologyAvailable = true)
+        tracker.consume(flippedChild, "bundle", 3000, 3000)
+        tracker.consume(original.copy(chainageM = 249.0, candidates = listOf(candidate.copy(distanceM = 1.0))), "bundle", 4000, 4000)
+        assertNull("A downstream match flip is not a proved reversal on the original way", tracker.presentation(100, false, true, 4000))
+    }
+
     private val candidate = UpcomingSpeedLimitCandidate("speed", "source", "snapshot", "rule", "10", 1, 250.0, 70, 150.0)
     private fun fix(chain: Double, candidates: List<UpcomingSpeedLimitCandidate> = listOf(candidate.copy(distanceM=250-chain))) = UpcomingSpeedLimitSnapshot(
         "10", 1, chain, setOf(1), listOf(UpcomingSpeedLimitPath(null,"10",1,0.0,600.0,-chain,setOf(1))), candidates,"test")

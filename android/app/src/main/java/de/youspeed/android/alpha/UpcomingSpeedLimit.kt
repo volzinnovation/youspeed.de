@@ -42,7 +42,8 @@ internal class UpcomingSpeedLimitTracker {
     private data class Encounter(val candidate: UpcomingSpeedLimitCandidate, val path: List<UpcomingSpeedLimitPath>)
     private var bundle: String? = null
     private var latest: UpcomingSpeedLimitSnapshot? = null
-    private var lastPath: List<UpcomingSpeedLimitPath>? = null
+    private var previous: UpcomingSpeedLimitSnapshot? = null
+    private var lastFixAtMs = Long.MIN_VALUE
     private var acceptedAtMs = Long.MIN_VALUE
     private var frozenGroups = emptySet<Long>()
     private val encountered = linkedMapOf<String, Encounter>()
@@ -51,25 +52,38 @@ internal class UpcomingSpeedLimitTracker {
     private var exhausted = false
     private var scopeLost = false
 
-    fun reset() { bundle = null; latest = null; lastPath = null; acceptedAtMs = Long.MIN_VALUE; frozenGroups = emptySet(); encountered.clear(); consumed.clear(); departed = false; exhausted = false; scopeLost = false }
+    fun reset() { bundle = null; latest = null; previous = null; lastFixAtMs = Long.MIN_VALUE; acceptedAtMs = Long.MIN_VALUE; frozenGroups = emptySet(); encountered.clear(); consumed.clear(); departed = false; exhausted = false; scopeLost = false }
     fun hide() { latest = null }
-    fun certifiesContinuation(snapshot: UpcomingSpeedLimitSnapshot, bundleIdentity: String): Boolean = bundle == bundleIdentity && snapshot.topologyAvailable &&
-        frozenGroups.intersect(snapshot.relationGroupIDs).isNotEmpty() && lastPath?.any {
-            it.wayID == snapshot.wayID && it.direction == snapshot.direction &&
-                snapshot.chainageM >= it.startM-1e-6 && snapshot.chainageM <= it.endM+1e-6
-        } == true
+    val fixTimestampMs: Long? get() = acceptedAtMs.takeIf { latest != null }
+    fun certifiesContinuation(snapshot: UpcomingSpeedLimitSnapshot, bundleIdentity: String): Boolean {
+        val previous = previous ?: return false
+        return bundle == bundleIdentity && previous.topologyAvailable && snapshot.topologyAvailable && !scopeLost &&
+            frozenGroups.isNotEmpty() && frozenGroups.intersect(snapshot.relationGroupIDs).isNotEmpty() && previous.path.any {
+                it.wayID == snapshot.wayID && it.direction == snapshot.direction &&
+                    snapshot.chainageM >= it.startM - 0.01 && snapshot.chainageM <= it.endM + 0.01 &&
+                    frozenGroups.intersect(it.relationGroupIDs).isNotEmpty()
+            }
+    }
 
     fun consume(snapshot: UpcomingSpeedLimitSnapshot?, bundleIdentity: String, fixAtMs: Long, nowMs: Long) {
-        if (nowMs - fixAtMs !in 0 until 3000 || fixAtMs < acceptedAtMs || snapshot == null || !snapshot.chainageM.isFinite() || snapshot.direction !in setOf(-1,1) || snapshot.path.size > UpcomingSpeedLimitHorizon.maxPathSegments || !snapshot.lookaheadDistanceM.isFinite() || snapshot.lookaheadDistanceM < UpcomingSpeedLimitHorizon.minimumDistanceM) { hide(); return }
+        if (nowMs - fixAtMs !in 0..3000) { hide(); return }
         if (bundle != bundleIdentity) {
             // A bundle replacement cannot resurrect a consumed station from that bundle.
-            latest = null; lastPath = null; encountered.clear(); frozenGroups = emptySet(); scopeLost = false; bundle = bundleIdentity
+            latest = null; previous = null; lastFixAtMs = Long.MIN_VALUE; acceptedAtMs = Long.MIN_VALUE
+            encountered.clear(); frozenGroups = emptySet(); scopeLost = false; bundle = bundleIdentity
         }
-        val previous = latest
-        val scopePath = previous?.path?.takeIf { it.isNotEmpty() } ?: lastPath
-        val matchingPath = scopePath?.any { it.wayID == snapshot.wayID && it.direction == snapshot.direction } == true
-        val sameWay = scopePath?.firstOrNull()?.let { it.wayID == snapshot.wayID && it.direction == snapshot.direction } == true
-        val reversed = scopePath?.any { it.wayID == snapshot.wayID && it.direction != snapshot.direction } == true
+        // A late worker completion cannot hide a more recent accepted preview. Invalid
+        // newer fixes still advance ordering, so an older result cannot restore one.
+        if (fixAtMs < lastFixAtMs) return
+        lastFixAtMs = fixAtMs
+        if (snapshot == null || !snapshot.chainageM.isFinite() || snapshot.direction !in setOf(-1,1) ||
+            snapshot.path.size > UpcomingSpeedLimitHorizon.maxPathSegments || !snapshot.lookaheadDistanceM.isFinite() ||
+            snapshot.lookaheadDistanceM < UpcomingSpeedLimitHorizon.minimumDistanceM) { hide(); return }
+        val scopePath = previous?.path
+        val matchingPath = previous?.topologyAvailable == true && snapshot.topologyAvailable &&
+            scopePath?.any { it.wayID == snapshot.wayID && it.direction == snapshot.direction } == true
+        val sameWay = previous?.let { it.wayID == snapshot.wayID && it.direction == snapshot.direction } == true
+        val reversed = previous?.let { it.wayID == snapshot.wayID && it.direction != snapshot.direction } == true
         val groups = if (frozenGroups.isEmpty()) emptySet() else frozenGroups.intersect(snapshot.relationGroupIDs)
         val continuation = sameWay || (matchingPath && groups.isNotEmpty())
         if (scopePath != null && !matchingPath && !sameWay && groups.isNotEmpty() && !reversed) {
@@ -108,7 +122,7 @@ internal class UpcomingSpeedLimitTracker {
             if (it.distanceM <= 0 || (snapshot.wayID == it.originWayID && snapshot.direction == it.direction && it.direction * (snapshot.chainageM - it.stationM) >= -1e-6)) consumed += key(it)
         }
         latest = snapshot.copy(path = allowedPath, candidates = accepted)
-        if(allowedPath.isNotEmpty()) lastPath = allowedPath
+        previous = snapshot
         acceptedAtMs = fixAtMs
     }
 

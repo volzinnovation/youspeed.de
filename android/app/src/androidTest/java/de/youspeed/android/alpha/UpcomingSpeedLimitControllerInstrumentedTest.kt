@@ -148,9 +148,16 @@ class UpcomingSpeedLimitControllerInstrumentedTest {
             refresh(controller)
             assertEquals("target",controller.uiState.upcomingSpeedLimit?.signID)
             assertEquals(100,reference.output()?.value?.kmh)
+            ConsumerSessionController::class.java.getDeclaredMethod("consumeUpcomingSpeedLimit",SpeedLookupResult::class.java,
+                String::class.java,Location::class.java,java.lang.Long.TYPE).apply { isAccessible=true }.invoke(controller,result,
+                "/tmp/screenshot-fixture.sqlite|screenshot-fixture|snapshot",Location("gps").apply { time=at-2800 },field("upcomingSpeedLimitEpoch").getLong(controller))
         }
         try {
-            Thread.sleep(3200)
+            Thread.sleep(500)
+            instrumentation.runOnMainSync {
+                assertEquals("A late lookup cannot shorten the newer preview's lifetime", "target", controller.uiState.upcomingSpeedLimit?.signID)
+            }
+            Thread.sleep(2700)
             instrumentation.runOnMainSync {
                 assertNull("The scheduled main-thread timer clears presentation",controller.uiState.upcomingSpeedLimit)
                 testClock.skewMs=-2000
