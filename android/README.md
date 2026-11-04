@@ -103,6 +103,21 @@ This installs `de.youspeed.android.testhost`; the normal debug application remai
 
 The wrapper targets Gradle `8.7`, which is already present in the local cache on this machine.
 
+For a normal driver update, use the guarded installer with an explicit device:
+
+```sh
+python3 android/scripts/deploy_consumer_to_device.py --serial <device-serial> \
+  --apk android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+Run this from the repository root after building and obtaining authorization for
+a device update. The
+helper reads the APK's actual identity with SDK `aapt2`, checks installed packages,
+and uses `adb install -r`. It refuses test-host APKs and other installed YouSpeed
+identities; preserve and consolidate their data before retrying. It never
+uninstalls or clears data. Installation alone is the default; add `--launch` to
+open the updated app. `--sdk` overrides the SDK location when needed.
+
 The default connected suite also checks replay lookup correctness and latency
 against a synthetic SQLite fixture. Optional field-trace and external-database
 benchmarks skip when their inputs are absent.

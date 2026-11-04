@@ -12,7 +12,7 @@ Options:
   --scheme <name>            App scheme/product name (default: SpeedConsumer)
   --app-path <path>          Explicit .app path (skip latest-build lookup)
   --device <identifier>      Device UUID/UDID/name for devicectl (default: first connected device)
-  --bundle-id <id>           Bundle identifier to launch (default: from app Info.plist, fallback de.youspeed.SpeedConsumer)
+  --bundle-id <id>           Expected app identifier (must match app Info.plist)
   --no-launch                Install only; do not launch app
   --no-terminate-existing    Launch without --terminate-existing
   --timeout <seconds>        devicectl timeout in seconds (default: 1800)
@@ -135,13 +135,25 @@ if [[ -z "${device}" ]]; then
   exit 3
 fi
 
-if [[ -z "${bundle_id}" ]]; then
-  bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${app_path}/Info.plist" 2>/dev/null || true)"
+artifact_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${app_path}/Info.plist")"
+if [[ -z "${artifact_bundle_id}" ]]; then
+  echo "Built app has no bundle identifier; installation stopped." >&2
+  exit 4
 fi
+if [[ -n "${bundle_id}" && "${bundle_id}" != "${artifact_bundle_id}" ]]; then
+  echo "Expected app '${bundle_id}', but built app is '${artifact_bundle_id}'; installation stopped." >&2
+  exit 4
+fi
+bundle_id="${artifact_bundle_id}"
 
-if [[ -z "${bundle_id}" ]]; then
-  bundle_id="de.youspeed.SpeedConsumer"
-fi
+# A different identifier creates another sandbox instead of updating user data.
+# Inspect the phone before installing; never resolve a conflict by uninstalling.
+inventory_path="$(mktemp -t youspeed-install-inventory)"
+trap 'rm -f "${inventory_path}"' EXIT
+xcrun devicectl --timeout "${timeout_seconds}" --json-output "${inventory_path}" \
+  device info apps --device "${device}" --include-all-apps >/dev/null
+python3 "${repo_root}/scripts/iphone/check_consumer_install_identity.py" \
+  --inventory "${inventory_path}" --bundle-id "${bundle_id}"
 
 echo "Deploying app:"
 echo "  app:      ${app_path}"
