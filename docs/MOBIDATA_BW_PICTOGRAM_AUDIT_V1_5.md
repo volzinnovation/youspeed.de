@@ -2,6 +2,22 @@
 
 Updated 2026-10-21. The source contains **163,504 records and 53 exact codes**. [JSON mapping](MOBIDATA_BW_PICTOGRAM_AUDIT_V1_5.json) preserves source identity, counts, pinned artwork and model capability.
 
+Reverified 2026-11-04 against the current shared catalog: all **53 source classes**
+are accounted for, with **117 pinned SVG/transparent PNG pairs** and their shared
+source contours verified. The compact [coverage receipt](MOBIDATA_BW_PICTOGRAM_COVERAGE_2026-11-04.json)
+records each source code, count, presentation decision, artwork key and input hashes.
+There are 35 exact pictogram classes, 3 reviewed aliases and 12 numeric speed
+classes; 2 annotated classes remain blocked and 1 generic class uses its explicit
+fallback. These counts describe the pinned integrated snapshot, not a newer download.
+
+Generic `DE:278` still lacks a printed speed in all 9,769 source records. The
+[shared display contract](../shared/tsr/sign-pictograms/README.md#display-contract)
+records the owner-confirmed plain `DE:278` text fallback. All 14 reviewed numeric
+`DE:278-x` artworks are present; neither the current reference nor vehicle speed
+may supply a missing number. The historical pilot's 43-pair
+`sign-pictograms/coverage.json` remains unchanged for provenance. Its six
+missing-artwork entries are superseded by this current coverage receipt.
+
 The six previously missing source artworks have now been acquired as official-work SVG renditions, pinned with Commons revisions/licence/hashes, and rendered as transparent shared PNGs: DE:101-15, DE:156-10, DE:223.1-50, DE:325.1, DE:325.2 and DE:460-20. Both clients package the same shared bytes. This does not add model outputs.
 
 Town signs already have artwork but the pinned classifier has no town-entry/exit outputs. DE:274-90 also has no exact classifier class. Family-only, absent and reference-only labels cannot confirm the exact inventory sign. The runtime overlay therefore gives these records an empty exact-model label list and logs unsupported classes honestly.
