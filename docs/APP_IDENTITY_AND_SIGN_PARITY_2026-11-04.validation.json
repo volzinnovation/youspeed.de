@@ -1,0 +1,239 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "timezone": "Europe/Berlin",
+  "marketing_version": "1.5",
+  "build_number": 10085,
+  "status": "Both attached phones updated in place to build 10085, with one consumer app on each. Android labels verified live on startup, log review and Info. iPhone installed/launch verified; live label verification unavailable over the current network connection.",
+  "changes": {
+    "version_display": {
+      "format": "Version 1.5 (Build 10085)",
+      "source": "Runtime application metadata; Android retains its existing debug version suffix.",
+      "screens": [
+        "startup",
+        "startup log review",
+        "in-app Info"
+      ],
+      "iphone_locales": 4,
+      "android_locales": 10
+    },
+    "upcoming_speed_limit_parity": [
+      "Clip Android retained path proof to the queried horizon, with the same certified endpoint passage exception as iPhone.",
+      "Use iPhone's directional segment ownership, source-station tolerance and immediately-after-station offer verification.",
+      "Require previous and current topology plus the retained path's relation certificate for provisional continuation.",
+      "Ignore older fresh lookup completions and expire the accepted preview using its own fix timestamp.",
+      "Replace prior continuation proof with an explicit empty snapshot when current topology is ambiguous.",
+      "Use the previous directed road, rather than an arbitrary downstream path segment, for reversal/rearming decisions."
+    ],
+    "secondary_sign_parity": "Android now follows iPhone's nearest-candidate trigger: camera replacement survives an unchanged nearest sign, while A -> camera -> B -> A can trigger A again.",
+    "deployment_guards": "Both platform helpers verify actual artifact identity and installed consumer identities before an in-place update; conflicting copies stop installation without uninstalling or clearing data.",
+    "protected_speed_reference_policy_changed": false,
+    "new_map_or_model_bytes": false
+  },
+  "pictograms": {
+    "coverage_receipt": "docs/MOBIDATA_BW_PICTOGRAM_COVERAGE_2026-11-04.json",
+    "source_scope": "Pinned integrated MobiData BW snapshot, not a newer live download.",
+    "source_classes": 53,
+    "source_records": 163504,
+    "exact_pictogram_classes": 35,
+    "reviewed_alias_classes": 3,
+    "numeric_speed_schematic_classes": 12,
+    "blocked_source_annotation_classes": 2,
+    "generic_DE278_without_printed_speed_classes": 1,
+    "generic_DE278_records": 9769,
+    "generic_DE278_behavior": "Previously owner-confirmed plain DE:278 text fallback. No printed number is inferred or artwork fabricated.",
+    "reviewed_numeric_DE278_variants": 14,
+    "shared_artwork_pairs": 117,
+    "iphone_packaged_svg_png_files_hash_verified": 234,
+    "android_packaged_svg_png_files_hash_verified": 234,
+    "missing_or_mismatched_packaged_artworks": 0
+  },
+  "verification": {
+    "iphone": {
+      "signed_device_build": "passed",
+      "code_signature_verification": "passed with normal local certificate trust access",
+      "bundle_id": "de.youspeed.SpeedConsumer.TestHost",
+      "version": "1.5",
+      "build": "10085",
+      "device": "iPhone14Pro",
+      "os_version": "26.6.2",
+      "connection": "localNetwork",
+      "installed_identity_and_build_verified": true,
+      "installed_consumer_app_count": 1,
+      "guarded_update": "passed",
+      "launch_check": "passed",
+      "executable_sha256": "982ce79059f0d29ebf0c4998319e3b00483fa6573b26c211a4ca05b375b0943b",
+      "test_plugins_present": false,
+      "runtime_label_format": "Version 1.5 (Build 10085)",
+      "version_display_source_surfaces": [
+        "StartupView startup.appVersion",
+        "StartupLogReviewView startup.appVersion",
+        "LegalInformationView info.appVersion"
+      ],
+      "packaged_version_locale_formats_verified": 4,
+      "live_label_assertions": {
+        "passed": 0,
+        "status": "not_executed",
+        "reason": "UI test runner failed to initialize: Timed out while enabling automation mode",
+        "log": "/tmp/youspeed-iphone-10085-version-ui.log",
+        "result_bundle": "/private/tmp/youspeed-iphone-version-ui-10085/results.xcresult"
+      },
+      "visual_check": {
+        "status": "unavailable",
+        "reason": "iPhone connected over local network; QuickTime has no iPhone Screen source. USB reconnection is required."
+      },
+      "test_scope": "External UI harness initialized no test methods and performed no taps because enabling automation timed out. No live label check is claimed.",
+      "private_receipt": "/private/tmp/youspeed-iphone-10085-final-receipt.json"
+    },
+    "android": {
+      "normal_debug_assembly": "passed",
+      "package": "de.youspeed.android.debug",
+      "version": "1.5-debug",
+      "build": 10085,
+      "apk_sha256": "3b11f15e774eaa6eb11b0f7bc7ac1013098ca76773f500b39a15ca4b58a4afcc",
+      "upcoming_tracker_unit_tests_passed": 12,
+      "inventory_runtime_unit_tests_passed": 66,
+      "isolated_emulator_tests": {
+        "discovered": 20,
+        "passed": 19,
+        "skipped": 1,
+        "failed": 0,
+        "skipped_test": "optionalRealBadenWuerttembergProbe: external real-region fixture unavailable",
+        "classes": [
+          "UpcomingSpeedLimitReaderInstrumentedTest",
+          "UpcomingSpeedLimitControllerInstrumentedTest"
+        ],
+        "test_container": "de.youspeed.android.testhost",
+        "saved_emulator_data_preserved": true,
+        "emulator_shut_down_after_tests": true
+      },
+      "physical_device": "moto g86 5G",
+      "os_version": "16",
+      "installed_identity_and_build_verified": true,
+      "installed_consumer_app_count": 1,
+      "updated_in_place": true,
+      "launch_check": true,
+      "fresh_unit_tests": {
+        "classes": {
+          "UpcomingSpeedLimitTests": 12,
+          "InventorySignRuntimeTests": 66
+        },
+        "passed": 78,
+        "skipped": 0,
+        "failed": 0
+      },
+      "physical_tests": {
+        "classes": [
+          "UpcomingSpeedLimitReaderInstrumentedTest",
+          "UpcomingSpeedLimitControllerInstrumentedTest"
+        ],
+        "discovered": 20,
+        "passed": 19,
+        "skipped": 1,
+        "failed": 0,
+        "skipped_test": "optionalRealBadenWuerttembergProbe: no external real-region fixture supplied",
+        "runner_result": "OK (20 tests)"
+      },
+      "live_version_labels": {
+        "startup": true,
+        "startup_log_review": true,
+        "info": true,
+        "text": "Version 1.5-debug (Build 10085)"
+      },
+      "private_receipt": "/private/tmp/youspeed-android-deployment-10085-20261104.json"
+    },
+    "shared_and_deployment_python_checks": {
+      "passed": 58,
+      "subtests_passed": 29,
+      "failed": 0
+    },
+    "whitespace_check": "passed",
+    "fresh_support_checks": {
+      "command": "XONSH_HISTORY_BACKEND=dummy python3 -m pytest -q tests/test_android_install_identity.py tests/test_iphone_install_identity.py tests/tsr/test_mobidata_pictogram_coverage.py tests/tsr/test_sign_pictogram_sets.py tests/tsr/test_mobile_sign_catalog.py",
+      "passed": 41,
+      "failed": 0,
+      "subtests_reported": 0,
+      "elapsed_seconds": 0.34
+    },
+    "fresh_label_format_checks": {
+      "iphone_locale_count": 4,
+      "android_locale_count": 10,
+      "passed": true
+    },
+    "complete_changed_file_credential_check": {
+      "files": 40,
+      "findings": 0,
+      "scope": "Repository credential checker over all changed/new files; no raw private evidence or device identifiers committed."
+    }
+  },
+  "device_consolidation": {
+    "iphone": {
+      "normal_driver_identity": "de.youspeed.SpeedConsumer.TestHost",
+      "duplicate_identity": "de.youspeed.PackedRuntimeIntegrationTestHost",
+      "duplicate_version": "1.6 (10074)",
+      "duplicate_data": "Eight system cache/saved-state files; no recordings, trips, maps or saved app preferences.",
+      "duplicate_backup_files_verified": 8,
+      "duplicate_backup_bytes": 10012600,
+      "driver_backup_status": "Partial backup retained: 1512 complete files. Device file service could not read protected crop-interest.json; no claim of a complete driver backup.",
+      "duplicate_removed": true,
+      "driver_updated_in_place": true,
+      "remaining_consumer_app_count": 1,
+      "app_owned_files_verified_preserved": 1516,
+      "app_owned_bytes_verified_preserved": 3322449698,
+      "preservation_check": "Before launch, every preexisting file under Documents, Application Support, Preferences and tmp retained the same size and modification time; the normal app preferences were also compared byte-for-byte. This is not a full before/after content-hash audit.",
+      "preferences_byte_identical": true,
+      "system_cache_changes": "iOS removed five old SplashBoard launch snapshots and created four replacements; no app-owned file was missing or changed in the metadata comparison.",
+      "private_backups_outside_repository": true
+    },
+    "android": {
+      "status": "Completed on the physical phone; normal driver updated in place.",
+      "normal_driver_identity": "de.youspeed.android.debug",
+      "duplicate_identity": "de.youspeed.android.testhost",
+      "duplicate_removed": true,
+      "instrumentation_runner_removed": true,
+      "remaining_consumer_app_count": 1,
+      "driver_updated_in_place": true,
+      "data_preservation": {
+        "driver_files_metadata_preserved_except_profile_installer_marker": true,
+        "preference_and_active_bundle_files_byte_identical": 8,
+        "regular_files_in_metadata": 119,
+        "profile_installer_marker_change": "Only the24-byte profileInstalled marker modification timestamp changed before first launch. All other recorded file metadata matched.",
+        "all_recordings_maps_trips_observations_preserved": true,
+        "verification_limit": "Metadata comparison covers files/databases/shared_prefs before first app launch; preferences and active bundle pointer were additionally content-hash compared. No full media content-hash backup was made.",
+        "startup_logs_kept": true
+      },
+      "driver_first_install_date_unchanged": true,
+      "duplicate_backup": {
+        "testhost_removed": true,
+        "testhost_runner_removed": true,
+        "remaining_launchable_consumer_apps": 1,
+        "backup_sha256": "a581f5472beda8d30f6dff83df54312c45a8c68579e88953c3f8b67ac1f19c94",
+        "regular_files_verified": 531,
+        "uncompressed_file_bytes": 108745936,
+        "existing_trip_count": 0,
+        "existing_observation_count": 0,
+        "existing_movie_count": 0,
+        "external_files_verified": 3,
+        "external_contents": "Prior smoke screenshots only",
+        "private_backups_outside_repository": true
+      },
+      "private_backups_outside_repository": true
+    }
+  },
+  "limits": [
+    "No road-drive validation was performed.",
+    "The optional physical real-region probe was skipped because its external fixture was absent.",
+    "iPhone startup/log-review/Info version labels are implemented and packaged, but live label assertions and QuickTime screen inspection could not be completed over the current local-network connection. USB reconnection is required for QuickTime verification."
+  ],
+  "latest_device_verification_at_utc": "2026-11-04T17:32:31.264897+00:00",
+  "implementation_commit": "3f02070662d914f63cbe4159984dce1910771bd2",
+  "cleanup": {
+    "android": {
+      "temporary_apk_copy_and_sqlite_inspection_removed_bytes": 636883345,
+      "backups_and_small_receipts_retained": true
+    },
+    "iphone": "Only external temporary harness build products removed. Preexisting runner identity and driver data retained; small test source/log/result evidence retained privately. Unused QuickTime preview closed without recording.",
+    "historical_build_10084_receipt_preserved": true,
+    "raw_device_identifiers_backups_and_screenshots_excluded_from_git": true
+  }
+}
