@@ -1,0 +1,128 @@
+% !TEX program = xelatex
+% Compile with XeLaTeX. All content and layout are editable in this file.
+% Exactly two slides. The weekly format is the Profilprojekt (IMO) adaptation.
+% Source for the Scrum principles on slide 1:
+% https://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-German.pdf
+% Weekly timing and the agenda on slide 2 are facilitation recommendations.
+\documentclass[12pt,aspectratio=169]{beamer}
+
+\usepackage{fontspec}
+\usepackage[ngerman]{babel}
+\usepackage[absolute,overlay]{textpos}
+\setsansfont{texgyreheros-regular.otf}[
+  BoldFont=texgyreheros-bold.otf,
+  ItalicFont=texgyreheros-italic.otf,
+  BoldItalicFont=texgyreheros-bolditalic.otf]
+\setmainfont{texgyreheros-regular.otf}[
+  BoldFont=texgyreheros-bold.otf,
+  ItalicFont=texgyreheros-italic.otf,
+  BoldItalicFont=texgyreheros-bolditalic.otf]
+\usefonttheme{professionalfonts}
+
+\geometry{paperwidth=320mm,paperheight=180mm}
+\setlength{\TPHorizModule}{1mm}
+\setlength{\TPVertModule}{1mm}
+\setlength{\parindent}{0pt}
+
+\definecolor{Paper}{HTML}{F4F2EB}
+\definecolor{Ink}{HTML}{0B2F38}
+\definecolor{Muted}{HTML}{50646A}
+\definecolor{Accent}{HTML}{A66F08}
+\definecolor{Line}{HTML}{C9D3D2}
+\setbeamercolor{background canvas}{bg=Paper}
+\setbeamercolor{normal text}{fg=Ink,bg=Paper}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+\setbeamertemplate{frametitle}{}
+\title{Weekly Scrum im Profilprojekt (IMO)}
+\author{Prof. Dr. Raphael Volz (HSPF)}
+\date{2. November 2026}
+\hypersetup{
+  pdftitle={Weekly Scrum im Profilprojekt (IMO)},
+  pdfauthor={Prof. Dr. Raphael Volz (HSPF)},
+  pdfsubject={Leitfaden und Scrum-Prinzipien, 2. November 2026},
+  pdfkeywords={Weekly Scrum, Standup, Profilprojekt, IMO, HSPF},
+  colorlinks=true,urlcolor=Muted,
+  pdfdisplaydoctitle=true
+}
+
+% Absolute placement in millimetres on a 320 x 180 mm slide.
+% Arguments: x, y, width, font size, line spacing, color, content.
+\newcommand{\Place}[7]{%
+  \begin{textblock}{#3}(#1,#2)
+    \raggedright\color{#6}\fontsize{#4}{#5}\selectfont #7\par
+  \end{textblock}%
+}
+\newcommand{\SlideHeader}[2]{%
+  \Place{18}{11}{284}{12}{14}{Muted}{Profilprojekt (IMO)}%
+  \Place{18}{22}{284}{32}{36}{Ink}{\bfseries #1}%
+  \Place{18}{40}{284}{19}{24}{Muted}{#2}%
+}
+\newcommand{\SlideFooter}[1]{%
+  \Place{18}{165}{284}{9}{11}{Line}{\rule{284mm}{0.35pt}}%
+  \Place{18}{169}{173}{10}{12}{Muted}{Prof. Dr. Raphael Volz (HSPF)}%
+  \Place{203}{169}{80}{10}{12}{Muted}{2. November 2026}%
+  \Place{293}{169}{9}{10}{12}{Muted}{\hfill #1/2}%
+}
+
+\begin{document}
+
+% SLIDE 1 -- Scrum principles, applied to this project's weekly format.
+% Deliberately does not present "Weekly Scrum" as a prescribed Scrum event.
+\begin{frame}[plain]
+  \SlideHeader{Weekly Scrum im Profilprojekt (IMO)}%
+    {\textbf{Scrum} ist ein agiles Rahmenwerk für die schrittweise Lösung komplexer Aufgaben.\\
+     Teams arbeiten in kurzen Zyklen (Sprints), prüfen Ergebnisse und passen ihr Vorgehen an.}
+
+  \Place{18}{61}{284}{13}{17}{Accent}{\bfseries DREI SCRUM-PRINZIPIEN IM WÖCHENTLICHEN PROJEKTRHYTHMUS}
+
+  \Place{18}{74}{86}{24}{29}{Ink}{\bfseries Transparenz}
+  \Place{18}{90}{86}{19}{25}{Ink}{Ergebnisse, offene Aufgaben und Hindernisse im gemeinsamen Board sichtbar machen.}
+
+  \Place{118}{74}{86}{24}{29}{Ink}{\bfseries Überprüfung}
+  \Place{118}{90}{86}{19}{25}{Ink}{Den Fortschritt zum Projektziel prüfen und Abweichungen früh erkennen.}
+
+  \Place{218}{74}{84}{24}{29}{Ink}{\bfseries Anpassung}
+  \Place{218}{90}{84}{19}{25}{Ink}{Arbeit priorisieren, Unterstützung vereinbaren und die nächsten Schritte festlegen.}
+
+  \Place{18}{130}{284}{19}{25}{Ink}{\bfseries Selbstorganisation: Alle Teammitglieder stimmen ihre Arbeit gemeinsam ab.}
+  \Place{18}{143}{284}{18}{24}{Ink}{Ergebnis: ein gemeinsamer Wochenplan mit Zuständigkeiten und Terminen.}
+  \Place{18}{156}{284}{10}{13}{Muted}{Projektformat: wöchentlich angepasst. Grundlage: \href{https://scrumguides.org/docs/scrumguide/v2020/2020-Scrum-Guide-German.pdf}{Schwaber \& Sutherland, Scrum Guide (2020), Definition, Theorie und Team, S. 3--5}.}
+  \SlideFooter{1}
+\end{frame}
+
+% SLIDE 2 -- Reusable, projected facilitation guide.
+\begin{frame}[plain]
+  \SlideHeader{Weekly Scrum: Leitfaden für das Standup}%
+    {Gemeinsam Ergebnisse prüfen, die nächste Woche planen und Unterstützung klären}
+
+  \Place{18}{59}{12}{24}{28}{Accent}{\bfseries 01}
+  \Place{36}{59}{181}{22}{27}{Ink}{\bfseries Was ist seit letzter Woche fertig?}
+  \Place{36}{72}{177}{18}{23}{Muted}{Zeigen Sie ein Ergebnis und benennen Sie offene Aufgaben.}
+
+  \Place{18}{88}{12}{24}{28}{Accent}{\bfseries 02}
+  \Place{36}{88}{181}{22}{27}{Ink}{\bfseries Was erreichen Sie bis nächste Woche?}
+  \Place{36}{101}{177}{18}{23}{Muted}{Nennen Sie Ihren nächsten Schritt und das erwartete Ergebnis.}
+
+  \Place{18}{117}{12}{24}{28}{Accent}{\bfseries 03}
+  \Place{36}{117}{181}{22}{27}{Ink}{\bfseries Wo brauchen Sie Unterstützung?}
+  \Place{36}{130}{177}{18}{23}{Muted}{Machen Sie Hindernisse und Abhängigkeiten sichtbar.}
+
+  \Place{234}{59}{68}{22}{27}{Ink}{\bfseries 15 Minuten}
+  \Place{234}{71}{68}{12}{16}{Muted}{Ablaufvorschlag pro Team}
+  \Place{234}{87}{23}{17}{22}{Accent}{\bfseries 2 Min.}
+  \Place{259}{87}{43}{17}{22}{Ink}{Ziel \& Board}
+  \Place{234}{100}{23}{17}{22}{Accent}{\bfseries 8 Min.}
+  \Place{259}{100}{43}{17}{22}{Ink}{Teamrunde}
+  \Place{234}{113}{23}{17}{22}{Accent}{\bfseries 3 Min.}
+  \Place{259}{113}{43}{17}{22}{Ink}{Hilfe klären}
+  \Place{234}{126}{23}{17}{22}{Accent}{\bfseries 2 Min.}
+  \Place{259}{126}{43}{17}{22}{Ink}{Abschluss}
+
+  \Place{18}{147}{284}{17}{22}{Ink}{\bfseries Im Board festhalten: nächster Schritt, verantwortliche Person und Termin.}
+  \Place{18}{157}{284}{14}{18}{Muted}{Details klären Sie im Anschluss. Hindernisse sprechen Sie auch zwischen den Treffen an.}
+  \SlideFooter{2}
+\end{frame}
+
+\end{document}
