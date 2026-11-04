@@ -13,6 +13,46 @@ import org.junit.runner.RunWith
 class SettlementContextInstrumentedTest {
     private val geometry = "[[49.0,7.999],[49.0,8.001]]"
 
+    @Test fun completeCityNameStillReadsUnnamedResidentialPolygonForLegacySettlement() {
+        val file = fixture(residentialRing = "[[7.99,48.99],[8.01,48.99],[8.01,49.01],[7.99,49.01],[7.99,48.99]]")
+        addCompleteCityPolygons(file)
+        for (model in matchingModels) {
+            val result = lookup(file, model = model)
+            assertEquals("Municipality (District)", result.cityName)
+            assertEquals(true, result.insideCity)
+            assertEquals("settlement:landuse:low", result.citySource)
+            assertNull(result.speedLimitKmh)
+        }
+    }
+
+    @Test fun versionedAndUnsupportedSettlementDoNotReviveLegacyResidentialFallback() {
+        for (version in listOf("1", "2", "")) {
+            val file = fixture(capability = version,
+                residentialRing = "[[7.99,48.99],[8.01,48.99],[8.01,49.01],[7.99,49.01],[7.99,48.99]]")
+            addCompleteCityPolygons(file)
+            for (model in matchingModels) {
+                val result = lookup(file, model = model)
+                assertEquals("Municipality (District)", result.cityName)
+                assertNull(result.insideCity)
+                assertNull(result.speedLimitKmh)
+                assertEquals("settlement:missing:unknown", result.citySource)
+            }
+        }
+    }
+
+    private fun addCompleteCityPolygons(file: File) {
+        SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+            db.execSQL("CREATE TABLE city_boundary(row_id INTEGER PRIMARY KEY,admin_level INTEGER,name TEXT,min_lon REAL,min_lat REAL,max_lon REAL,max_lat REAL)")
+            db.execSQL("CREATE TABLE city_ring(boundary_row_id INTEGER,ring_index INTEGER,outer_index INTEGER,is_hole INTEGER,points_json TEXT)")
+            for ((level, name, extent) in listOf(Triple(6, "District", 0.03), Triple(8, "Municipality", 0.02))) {
+                db.execSQL("INSERT INTO city_boundary VALUES(?,?,?,?,?,?,?)",
+                    arrayOf(level, level, name, 8 - extent, 49 - extent, 8 + extent, 49 + extent))
+                val ring = "[[${8-extent},${49-extent}],[${8+extent},${49-extent}],[${8+extent},${49+extent}],[${8-extent},${49+extent}],[${8-extent},${49-extent}]]"
+                db.execSQL("INSERT INTO city_ring VALUES(?,0,0,0,?)", arrayOf(level, ring))
+            }
+        }
+    }
+
     private fun fixture(maxspeed: String? = null, type: String? = null, source: String? = null,
                         capability: String? = null, segments: List<Array<Any?>> = emptyList(),
                         residentialRing: String? = null, highway: String = "secondary"): File {

@@ -9658,7 +9658,12 @@ final class V3SpeedLimitService: @unchecked Sendable {
             polygonResult = nil
         }
 
-        let hasAreasTables = tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
+        // A named admin polygon with a district already has the maximum score
+        // (50 + 2 + 1). Ties retain it, so an areas scan cannot improve this
+        // result. On packed regional maps that scan can exceed the GPS interval
+        // and make every otherwise valid lookup superseded before publication.
+        let needsAreaFallback = polygonResult.map { cityContextResolutionScore($0) < 53 } ?? true
+        let hasAreasTables = needsAreaFallback && tableExists(db: db, name: "areas") && tableExists(db: db, name: "areas_rtree")
         let areaResult: ResolvedCityContext? = hasAreasTables
             ? resolveCityContextFromAreas(db: db, lat: lat, lon: lon)
             : nil
@@ -9921,19 +9926,39 @@ final class V3SpeedLimitService: @unchecked Sendable {
         limitRows: Int = 512
     ) -> ResolvedCityContext {
         let hasPointsColumn = columnExists(db: db, table: "areas", column: "points_json")
+        // Keep the two RTree searches separate. An OR involving a.place makes
+        // SQLite read every landuse row in the nearby window through the packed
+        // VFS before it can reject it. Intersect IDs with the covering place
+        // index first, then load only the selected area records. OFFSET 0 keeps
+        // the spatial subquery from being flattened into thousands of random
+        // RTree row-ID probes. Reserve the bounded candidate set for point
+        // overlaps before nearby places, so a crowded window cannot evict a
+        // containing administrative polygon. Android uses the same ordering.
         let sql = """
-        SELECT a.name, a.place, a.boundary, a.admin_level, a.min_lon, a.min_lat, a.max_lon, a.max_lat, \(hasPointsColumn ? "a.points_json" : "NULL")
-        FROM areas_rtree r
-        JOIN areas a ON a.row_id = r.row_id
-        WHERE (
-            r.min_lon <= ?1 AND r.max_lon >= ?2
-            AND r.min_lat <= ?3 AND r.max_lat >= ?4
-        ) OR (
-            a.place IN ('city','town','village','hamlet')
-            AND r.min_lon <= ?5 AND r.max_lon >= ?6
-            AND r.min_lat <= ?7 AND r.max_lat >= ?8
+        SELECT a.name, a.place, a.boundary, a.admin_level, a.min_lon, a.min_lat, a.max_lon, a.max_lat,
+               \(hasPointsColumn ? "CASE WHEN a.boundary='administrative' AND CAST(a.admin_level AS INTEGER) IN (6,8,9) THEN a.points_json END" : "NULL")
+        FROM areas a
+        WHERE a.row_id IN (
+            SELECT row_id FROM (
+                SELECT row_id, 0 AS priority FROM areas_rtree
+                WHERE min_lon <= ?1 AND max_lon >= ?2
+                  AND min_lat <= ?3 AND max_lat >= ?4
+                UNION ALL
+                SELECT row_id, 1 AS priority FROM (
+                    SELECT row_id FROM areas_rtree
+                    WHERE min_lon <= ?5 AND max_lon >= ?6
+                      AND min_lat <= ?7 AND max_lat >= ?8
+                    LIMIT -1 OFFSET 0
+                ) spatial
+                WHERE row_id IN (
+                    SELECT row_id FROM areas WHERE place IN ('city','town','village','hamlet')
+                )
+            )
+            GROUP BY row_id
+            ORDER BY MIN(priority), row_id
+            LIMIT ?9
         )
-        LIMIT ?9
+        ORDER BY a.row_id
         """
 
         var stmt: OpaquePointer?

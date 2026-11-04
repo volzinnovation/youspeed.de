@@ -111,6 +111,8 @@ internal class SettlementContextResolver(private val db: RuntimeSqlDatabase) {
         "SELECT value FROM metadata WHERE key='settlement_context_version'", null,
     ).use { if (it.moveToFirst()) it.getString(0) ?: "" else null } else null
     private val hasSegments = tableExists("settlement_segment")
+    /** Versioned segment lookup never consumes the legacy residential-polygon fallback. */
+    val requiresResidentialAreaFallback: Boolean get() = version == null
     private val wayColumns = if (tableExists("ways")) db.rawQuery("PRAGMA table_info(ways)", null).use { cursor ->
         buildSet { while (cursor.moveToNext()) add(cursor.getString(1)) }
     } else emptySet()

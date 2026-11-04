@@ -85,6 +85,9 @@ internal class V3SpeedLimitLookup(
     countryCode: String? = null,
     private val matchingModel: LookupMatchingModel = LookupMatchingModel.CORRIDOR_HMM,
     private val regulationRegion: ((Double, Double) -> String?)? = null,
+    // Tests may exercise the production native SQL adapter without a packed
+    // fixture. The default retains normal map selection and ownership.
+    databaseOverride: RuntimeSqlDatabase? = null,
 ) : Closeable {
     private enum class CandidateNetwork(val wireName: String) {
         SURFACE("surface"),
@@ -97,8 +100,8 @@ internal class V3SpeedLimitLookup(
     }
 
     private val countryCode = normalizedCountryCode(countryCode) ?: inferCountryCodeFromDbPath(dbPath)
-    private val runtimeDatabase = RuntimeMapDatabase.open(dbPath)
-    private val db: RuntimeSqlDatabase = runtimeDatabase.database
+    private val runtimeDatabase = if (databaseOverride == null) RuntimeMapDatabase.open(dbPath) else null
+    private val db: RuntimeSqlDatabase = databaseOverride ?: requireNotNull(runtimeDatabase).database
     private val tablePresence = mutableMapOf<String, Boolean>()
     private val tableColumns = mutableMapOf<String, Set<String>>()
     private val wayGeometry = DecodedGeometryCache<String, LatLonPoint>(1024, 16_384)
@@ -351,7 +354,6 @@ internal class V3SpeedLimitLookup(
                 } && candidate.distanceM.isFinite() && candidate.distanceM <= commonRadiusM
             }
         }
-        val areaCandidates = if (includePresentationDetails) queryAreaCandidates(lat = lat, lon = lon) else null
         val polygonCityContext = if (includePresentationDetails && hasCityBoundaryTable && hasCityRingTable) {
             resolveCityContextFromPolygons(
                 lat = lat,
@@ -361,8 +363,11 @@ internal class V3SpeedLimitLookup(
         } else {
             null
         }
-        val areaCityContext = if (includePresentationDetails && hasAreasTable) {
-            resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates.orEmpty())
+        // Share one query only when it can affect city naming or legacy
+        // residential fallback. Settlement-v1 segments never consume areas.
+        val areaCandidates by lazy(LazyThreadSafetyMode.NONE) { queryAreaCandidates(lat = lat, lon = lon) }
+        val areaCityContext = if (includePresentationDetails && hasAreasTable && cityAreaFallbackCanImprove(polygonCityContext)) {
+            resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates)
         } else {
             null
         }
@@ -419,12 +424,13 @@ internal class V3SpeedLimitLookup(
             best.speedSource != DerivedSpeedSource.EXPLICIT_TAG && best.highway?.lowercase() != "living_street" &&
             allowsResidentialAreaFallback(best.highway))
         val settlement = SettlementContextPolicy.residential(if (needsSettlement) {
-            val residential = resolveResidentialContext(lat = lat, lon = lon,
-                areas = areaCandidates ?: queryAreaCandidates(lat = lat, lon = lon))
+            val residentialInside = if (settlementContextResolver.requiresResidentialAreaFallback) {
+                resolveResidentialContext(lat = lat, lon = lon, areas = areaCandidates).insideCity
+            } else null
             settlementContextResolver.resolve(
                 wayId = best?.wayId, lat = lat, lon = lon,
                 heading = SettlementContextPolicy.reliableHeading(headingDeg, speedKmh, headingAccuracyDeg),
-                residentialInside = residential.insideCity,
+                residentialInside = residentialInside,
             )
         } else {
             SettlementContext.unknown()
@@ -523,14 +529,13 @@ internal class V3SpeedLimitLookup(
      * county, but must never select a road or speed limit for the drive.
      */
     fun lookupCityContext(lat: Double, lon: Double): CityContextLookupResult {
-        val areaCandidates = queryAreaCandidates(lat = lat, lon = lon)
         val polygonContext = if (hasCityBoundaryTable && hasCityRingTable) {
             resolveCityContextFromPolygons(lat = lat, lon = lon, hasPlaceTables = hasCityPlaceTable)
         } else {
             null
         }
-        val areaContext = if (hasAreasTable) {
-            resolveCityContextFromAreas(lat = lat, lon = lon, areas = areaCandidates)
+        val areaContext = if (hasAreasTable && cityAreaFallbackCanImprove(polygonContext)) {
+            resolveCityContextFromAreas(lat = lat, lon = lon, areas = queryAreaCandidates(lat = lat, lon = lon))
         } else {
             null
         }
@@ -638,7 +643,7 @@ internal class V3SpeedLimitLookup(
         ringGeometry.clear()
         wayCandidateSql.clear()
         if (db.isOpen) {
-            runtimeDatabase.close()
+            runtimeDatabase?.close() ?: db.close()
         }
     }
 
@@ -650,6 +655,9 @@ internal class V3SpeedLimitLookup(
     /** Uses the production SQL before matcher scoring, for the shared dense-candidate fixture. */
     internal fun admittedWayIdsForTesting(lat: Double, lon: Double, radiusM: Double, maxCandidates: Int): List<String> =
         queryWayCandidatesForNetwork(lat, lon, radiusM, maxCandidates, null, CandidateNetwork.SURFACE).mapNotNull { it.wayId }
+
+    internal fun areaCandidateIdsForTesting(lat: Double, lon: Double): List<String> =
+        queryAreaCandidates(lat, lon).map { it.areaId }
 
     private fun selectCandidate(
         candidates: List<WayCandidate>,
@@ -5918,33 +5926,54 @@ internal class V3SpeedLimitLookup(
             return emptyList()
         }
         val residentialSelect = if (hasAreaResidentialColumn) "a.residential" else "NULL"
-        val pointsSelect = if (hasAreaPointsColumn) "a.points_json" else "NULL"
+        val geometryRequired = "(a.boundary = 'administrative' AND CAST(a.admin_level AS INTEGER) IN (6,8,9))" +
+            if (hasAreaResidentialColumn) " OR (a.residential IS NOT NULL AND trim(a.residential) <> '')" else ""
+        val pointsSelect = if (hasAreaPointsColumn) "CASE WHEN $geometryRequired THEN a.points_json ELSE NULL END" else "NULL"
         val useRtree = allowAreasRtreeQueries && hasAreasRtreeTable
-        val fromClause = if (useRtree) {
-            "FROM areas_rtree r JOIN areas a ON a.row_id = r.row_id"
-        } else {
-            "FROM areas a"
-        }
-        val boundsSource = if (useRtree) "r" else "a"
+        // Select spatial IDs before fetching area records. The previous broad
+        // OR joined every landuse record in the place window, decompressing
+        // most of a packed region on every incomplete administrative match.
+        // OFFSET prevents SQLite from flattening the nearby subquery into
+        // thousands of individual Rtree lookups for all regional place IDs.
+        val candidateClause = if (useRtree) """
+            WHERE a.row_id IN (
+              SELECT row_id FROM (
+                SELECT row_id, 0 AS priority FROM areas_rtree
+                WHERE min_lon <= ?1 AND max_lon >= ?2
+                  AND min_lat <= ?3 AND max_lat >= ?4
+                UNION ALL
+                SELECT row_id, 1 AS priority FROM (
+                  SELECT row_id FROM areas_rtree
+                  WHERE min_lon <= ?5 AND max_lon >= ?6
+                    AND min_lat <= ?7 AND max_lat >= ?8
+                  LIMIT -1 OFFSET 0
+                ) spatial
+                WHERE row_id IN (
+                  SELECT row_id FROM areas
+                  WHERE place IN ('city','town','village','hamlet')
+                )
+              )
+              GROUP BY row_id
+              ORDER BY MIN(priority), row_id
+              LIMIT ?9
+            )
+            ORDER BY a.row_id
+        """.trimIndent() else """
+            WHERE (a.min_lon <= ?1 AND a.max_lon >= ?2 AND a.min_lat <= ?3 AND a.max_lat >= ?4)
+              OR (a.place IN ('city','town','village','hamlet')
+                AND a.min_lon <= ?5 AND a.max_lon >= ?6 AND a.min_lat <= ?7 AND a.max_lat >= ?8)
+            ORDER BY CASE WHEN a.min_lon <= ?1 AND a.max_lon >= ?2 AND a.min_lat <= ?3 AND a.max_lat >= ?4
+              THEN 0 ELSE 1 END, a.area_id
+            LIMIT ?9
+        """.trimIndent()
         val sql = """
             SELECT
               a.area_id, a.geometry_type, a.name, a.place, a.boundary, a.admin_level,
               a.min_lon, a.min_lat, a.max_lon, a.max_lat,
               $residentialSelect AS residential,
               $pointsSelect AS points_json
-            $fromClause
-            WHERE
-              (
-                $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
-                AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
-              )
-              OR
-              (
-                a.place IN ('city','town','village','hamlet')
-                AND $boundsSource.min_lon <= ? AND $boundsSource.max_lon >= ?
-                AND $boundsSource.min_lat <= ? AND $boundsSource.max_lat >= ?
-              )
-            LIMIT ?
+            FROM areas a
+            $candidateClause
         """.trimIndent()
         val placeWindowDeg = 0.3
         val params = arrayOf(
@@ -5962,19 +5991,27 @@ internal class V3SpeedLimitLookup(
         try {
             db.rawQuery(sql, params).use { cursor ->
                 while (cursor.moveToNext()) {
+                    val boundary = cursor.stringOrNull(4)
+                    val adminLevel = cursor.stringOrNull(5)
+                    val residential = cursor.stringOrNull(10)
+                    // Place selection uses bounding boxes and their centers.
+                    // Only administrative containment and the unchanged legacy
+                    // residential fallback need polygon geometry.
+                    val needsGeometry = (boundary == "administrative" && cityBoundaryPriority(adminLevel?.toIntOrNull()) != null)
+                        || !residential.isNullOrBlank()
                     out += AreaCandidate(
                         areaId = cursor.stringOrNull(0).orEmpty(),
                         geometryType = cursor.stringOrNull(1),
                         name = cursor.stringOrNull(2),
                         place = cursor.stringOrNull(3),
-                        boundary = cursor.stringOrNull(4),
-                        adminLevel = cursor.stringOrNull(5),
+                        boundary = boundary,
+                        adminLevel = adminLevel,
                         minLon = cursor.getDouble(6),
                         minLat = cursor.getDouble(7),
                         maxLon = cursor.getDouble(8),
                         maxLat = cursor.getDouble(9),
-                        residential = cursor.stringOrNull(10),
-                        points = cursor.stringOrNull(0)?.let { id ->
+                        residential = residential,
+                        points = if (!needsGeometry) emptyList() else cursor.stringOrNull(0)?.let { id ->
                             ringGeometry.getOrDecode("area:$id") { parseRingPoints(cursor.stringOrNull(11)) }
                         } ?: parseRingPoints(cursor.stringOrNull(11)),
                     )
@@ -6381,6 +6418,12 @@ internal class V3SpeedLimitLookup(
         val fallbackScore = cityContextResolutionScore(fallback)
         return if (fallbackScore > primaryScore) fallback else primary
     }
+
+    // Match iPhone's precedence: 50 + a named place (2) + district (1) is
+    // maximal, and ties retain the primary polygon. Incomplete polygons still
+    // consult areas because a more complete administrative match can win.
+    private fun cityAreaFallbackCanImprove(primary: CityContext?): Boolean =
+        primary == null || cityContextResolutionScore(primary) < 53
 
     private fun cityContextResolutionScore(context: CityContext): Int {
         val baseScore = when (context.citySource) {

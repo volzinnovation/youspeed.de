@@ -150,6 +150,7 @@
 		8DF0D8BD2FF5A6E2BC2E19AE /* TrafficSignOCRTextFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C843AA69418AA6D6B53319C7 /* TrafficSignOCRTextFormatting.swift */; };
 		8F6CA29E60F49D9477F26E88 /* ConsumerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50DFC9695D5BC8CA1E3F2976 /* ConsumerModels.swift */; };
 		90E6AA8C6EAA235DF5279794 /* BackgroundDownloadCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C1D195FA30679288FABB9AA /* BackgroundDownloadCenter.swift */; };
+		9197F700BD32257AF187C154 /* CityLookupPublicationRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09924459CE499DD424626993 /* CityLookupPublicationRegressionTests.swift */; };
 		928F5C48A6B186706C9C300C /* berlin.poly in Resources */ = {isa = PBXBuildFile; fileRef = 898DCF45AF918F33ECAF906A /* berlin.poly */; };
 		92E4C8A08551F13E8BDCD50D /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 9DBEBD28290F598DC72E8DFB /* README.md */; };
 		9342A71A11B815BBA3156A01 /* SignCollectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F9C534BBF22F8C6B5DB1D10 /* SignCollectionStore.swift */; };
@@ -299,6 +300,7 @@
 		07397DB47DB917288A4ABBD8 /* TrafficSignPassageEvaluation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignPassageEvaluation.swift; sourceTree = "<group>"; };
 		07CADACCA7BAE0E107F9D5FB /* RoadPathSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPathSession.swift; sourceTree = "<group>"; };
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
+		09924459CE499DD424626993 /* CityLookupPublicationRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CityLookupPublicationRegressionTests.swift; sourceTree = "<group>"; };
 		09D11F15BE94BE98CEE272AA /* InventorySignRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InventorySignRuntime.swift; sourceTree = "<group>"; };
 		0C37DB03A3AAA79ED104121D /* BundleDownloadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleDownloadQueue.swift; sourceTree = "<group>"; };
 		0DBC61BE4404AA5DD74A305E /* de.lproj */ = {isa = PBXFileReference; path = de.lproj; sourceTree = "<group>"; };
@@ -747,6 +749,7 @@
 			children = (
 				9C7EC41B2369882B24D01C21 /* AppReviewPromptTests.swift */,
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
+				09924459CE499DD424626993 /* CityLookupPublicationRegressionTests.swift */,
 				25977260953DEC2D70A20069 /* ConditionalOCRInterpretationTests.swift */,
 				2E3BB4E1D5FD051D299D3B3D /* ConditionalSpeedRulesTests.swift */,
 				0666C48A5CBB5499F30B5F03 /* ConsumerTestHost.swift */,
@@ -1330,6 +1333,7 @@
 			files = (
 				A90F43FF340CEE032B22D5AF /* AppReviewPromptTests.swift in Sources */,
 				6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */,
+				9197F700BD32257AF187C154 /* CityLookupPublicationRegressionTests.swift in Sources */,
 				19B30FCD5E08E64855C3BEE3 /* ConditionalOCRInterpretationTests.swift in Sources */,
 				119498778A404FCAFBDA297D /* ConditionalSpeedRulesTests.swift in Sources */,
 				EAE9069C576C781C2FF7F806 /* ConsumerTestHost.swift in Sources */,
@@ -1777,6 +1781,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = F4CT29PZS5;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"YSP_NODES_PACKED_ONLY=1",
@@ -1809,6 +1814,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = F4CT29PZS5;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"YSP_NODES_PACKED_ONLY=1",

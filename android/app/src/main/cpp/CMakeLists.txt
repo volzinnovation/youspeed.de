@@ -10,6 +10,10 @@ add_library(youspeed_packed_runtime SHARED
     "${REPO_ROOT}/shared/runtime-storage-prototype/packed_sqlite_vfs.cpp"
     "${REPO_ROOT}/shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp")
 target_compile_features(youspeed_packed_runtime PRIVATE cxx_std_17)
+# Full regional SQLite scans and block decompression also run in device Debug
+# builds. Keep native code optimized there while retaining the debug symbols;
+# an unoptimized decoder can make validation and ordinary map lookups unusable.
+target_compile_options(youspeed_packed_runtime PRIVATE "$<$<CONFIG:Debug>:-O2>")
 target_compile_definitions(youspeed_packed_runtime PRIVATE _FILE_OFFSET_BITS=64 YSP_NODES_PACKED_ONLY=1
     SQLITE_ENABLE_RTREE=1 SQLITE_OMIT_LOAD_EXTENSION=1 SQLITE_THREADSAFE=1)
 set_target_properties(youspeed_packed_runtime PROPERTIES C_VISIBILITY_PRESET hidden CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES)

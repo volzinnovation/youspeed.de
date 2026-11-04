@@ -88,6 +88,7 @@ targets:
     settings:
       base:
         "SWIFT_OPTIMIZATION_LEVEL[sdk=iphoneos*]": "-O"
+        GCC_OPTIMIZATION_LEVEL: "2"
         PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.SpeedConsumer$(YOUSPEED_TEST_BUNDLE_SUFFIX)
         PRODUCT_NAME: SpeedConsumer
         CLANG_CXX_LANGUAGE_STANDARD: c++17

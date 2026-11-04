@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-28",
+  "timezone": "Europe/Berlin",
+  "status": "complete",
+  "branch": "codex/youspeed-v1.5-mobidata-bw",
+  "bundle": {
+    "version": "2026-10-27-packed-v1",
+    "region": "baden-wuerttemberg",
+    "format": "youspeed.v4.bundle.manifest",
+    "context_sha256": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5"
+  },
+  "iphone": {
+    "version": "1.5",
+    "build": 10081,
+    "installed": true,
+    "live_fixes": 123,
+    "live_errors": 0,
+    "all_live_results_matched": true,
+    "place_resolved": true,
+    "street_resolved": true,
+    "query_ms": {
+      "median": 2.588,
+      "p95": 17.718,
+      "max": 505.707
+    },
+    "recent_60_query_ms_max": 19.322,
+    "selected_tests_passed": 22,
+    "bundle_identity_preserved": true,
+    "preferences_preserved": true,
+    "photos_and_videos_preserved": true,
+    "diagnostic_logs_preserved": true,
+    "completed_trips_before_update": 0,
+    "stationary_journal_recovery": "Existing under100m retention rule discarded the unfinished stationary diagnostic session; its complete pre-update snapshot is retained privately.",
+    "private_evidence": "/private/tmp/youspeed-place-install-10081"
+  },
+  "android": {
+    "version": "1.5-debug",
+    "build": 10082,
+    "installed": true,
+    "apk_sha256": "fb68c92f4941838317856dd8327eadb4ad38c7d732c6e935c62f131a56a4c9b7",
+    "fixes": [
+      "Optimize native Debug SQLite, Zstandard and packed reader with -O2 while retaining debug symbols.",
+      "Resolve polygons before areas; skip a fallback that cannot improve the maximum-ranked city result; retain legacy residential-area fallback."
+    ],
+    "full_region_checks_passed": true,
+    "full_region_install_seconds": 470.768185567,
+    "full_region_checks": "artifact hashes, packed generation, PRAGMA quick_check, settlement capability",
+    "baseline_warm_packed_query_ms": [
+      3657.011769,
+      3646.129231,
+      3638.794461,
+      3642.034154
+    ],
+    "fixed_warm_packed_query_ms": [
+      14.329846,
+      13.652308,
+      13.350769,
+      13.209
+    ],
+    "legacy_and_packed_semantics_equal": true,
+    "normal_app_foreground": true,
+    "normal_live_matches": 120,
+    "normal_live_query_ms": {
+      "median": 10.2775,
+      "p95": 12.575,
+      "minimum": 8.63,
+      "maximum": 15.057
+    },
+    "normal_live_errors": 0,
+    "normal_place_and_street_resolved": true,
+    "tests": {
+      "jvm_passed": 15,
+      "physical_native_regressions_passed": 35,
+      "physical_native_ignored": 1,
+      "fixed_coordinate_comparison_passed": true,
+      "public_loffenau_passed": true,
+      "live_activity_real_gps_passed": true
+    },
+    "preservation": {
+      "original_active_pointer_backup_identical": true,
+      "original_legacy_map_retained": true,
+      "settings_values_identical": true,
+      "dashcam_file_metadata_identical": true,
+      "completed_trips_retained": 5,
+      "completed_trip_event_counts_identical": true,
+      "preexisting_logs_retained": true,
+      "app_uninstalled": false,
+      "app_data_cleared": false,
+      "gps_injected_by_test": false
+    },
+    "stationary_journal_recovery": "The existing under100m retention rule pruned one unfinished zero-distance session; all five prior historical trips retain their event counts. A complete pre-update journal backup is retained privately.",
+    "task_owned_cache_bytes_removed": 868356395,
+    "private_evidence": "/private/tmp/youspeed-android-packed-20261028",
+    "normal_foreground_verified_at_utc": "2026-10-28T22:02:48.078105+00:00",
+    "full_region_validated_on_build": 10081,
+    "baseline_first_packed_lookup_ms": 3717.444,
+    "fixed_first_packed_lookup_ms": 85.213538
+  },
+  "source_sha256": {
+    "iphone/SpeedConsumerApp/V3SpeedLimitService.swift": "2f5b6a54a6b46a5c23356676c341fffb032c12f7c68eb2b9d18ed90c82f5113e",
+    "android/app/src/main/cpp/CMakeLists.txt": "b6fdaf60ad9b4409c72870a4780fc56e3ee5ddfa650ef32c75215dc01d3b0d8d",
+    "android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt": "0a24b0ed7e23fc06c830c0c9b1464d6d37f4fc6a8941ea6b11de41504ea65d3c",
+    "android/app/src/main/java/de/youspeed/android/alpha/SettlementContext.kt": "9060ed4b28c8704a34b6fb0068aeabc42656e46bdbbf5f4217cdd8a5308f65a1",
+    "iphone/SpeedConsumerApp/SpeedConsumerTests.swift": "222d0c1e1eead5e5035a0b5313d635f74f76aae3986a584b62fc2f166b7f48bc",
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/CityContextInstrumentedTest.kt": "d0b966a148e90db974968f872f5cbaa88f467744c2d2a49bbf89c09c46a58443",
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/SettlementContextInstrumentedTest.kt": "31267f62c345e795b997f3ea2508b2194dafb4658eca81cb49841208e8c0482b",
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/LocalPackedBundleDeploymentInstrumentedTest.kt": "3ea04de603a8763955ae0748fa5c7931f90b5b85f7476b86f9258e4831bbaf88"
+  },
+  "protected_speed_limit_reference_policy_changed": false,
+  "merge_or_store_publication_performed": false,
+  "limitations": [
+    "The unchanged full-regional native integrity checks took about eight minutes on Android even with optimized native code. This is a one-time installation cost, separate from live query performance.",
+    "An incomplete administrative match still consults the original area fallback. Its selection semantics are unchanged.",
+    "Device validation was stationary with real GPS; no road drive was performed."
+  ]
+}

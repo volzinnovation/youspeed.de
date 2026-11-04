@@ -13740,6 +13740,49 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNil(result.speedLimitKmh)
     }
 
+    func testLookupCompleteCityPolygonAvoidsUnneededAreaGeometry() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("city-complete-\(UUID())")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let baseline = directory.appendingPathComponent("baseline.sqlite")
+        let extraAreas = directory.appendingPathComponent("extra-areas.sqlite")
+        try createCityPolygonFixtureDB(at: baseline, fixLat: 52, fixLon: 13,
+            adminLevel6Name: "District", adminLevel8Name: "Town", includeAreaAdminRows: true)
+        try FileManager.default.copyItem(at: baseline, to: extraAreas)
+        try executeSQL(at: extraAreas, sql: """
+        INSERT INTO areas(row_id,area_id,name,points_json,min_lon,min_lat,max_lon,max_lat)
+        VALUES(200,'park','Unrelated park','[[12.99,51.99],[13.01,51.99],[13.01,52.01],[12.99,52.01],[12.99,51.99]]',12.99,51.99,13.01,52.01);
+        INSERT INTO areas_rtree VALUES(200,12.99,13.01,51.99,52.01);
+        """)
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            let first = V3SpeedLimitService(dbPath: baseline.path, matchingModel: model)
+            let second = V3SpeedLimitService(dbPath: extraAreas.path, matchingModel: model)
+            let expected = try first.lookupSpeedLimit(lat: 52, lon: 13)
+            let actual = try second.lookupSpeedLimit(lat: 52, lon: 13)
+            XCTAssertEqual(actual.cityName, "Town (District)")
+            XCTAssertEqual(actual.cityName, expected.cityName)
+            XCTAssertEqual(actual.cityDistrictName, expected.cityDistrictName)
+            XCTAssertEqual(actual.speedLimitKmh, expected.speedLimitKmh)
+            XCTAssertEqual(second.resourceStatistics.geometryDecodes, first.resourceStatistics.geometryDecodes,
+                "Unrelated areas must not add geometry work after the best city context is resolved")
+        }
+    }
+
+    func testLookupIncompleteCityPolygonStillGetsDistrictFromAreas() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("city-incomplete-\(UUID()).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try createCityPolygonFixtureDB(at: url, fixLat: 52, fixLon: 13,
+            adminLevel6Name: "District", adminLevel8Name: "Town", includeAreaAdminRows: true)
+        try executeSQL(at: url, sql: "DELETE FROM city_boundary WHERE admin_level=6")
+        for model in [V3SpeedLimitService.MatchingModel.connectedBaseline, .corridorHMM] {
+            let result = try V3SpeedLimitService(dbPath: url.path, matchingModel: model)
+                .lookupSpeedLimit(lat: 52, lon: 13)
+            XCTAssertEqual(result.cityName, "Town (District)")
+            XCTAssertEqual(result.cityPlaceName, "Town")
+            XCTAssertEqual(result.cityDistrictName, "District")
+        }
+    }
+
     func testLookupCityPolygonFormatsAdminLevel9WithAdminLevel6Qualifier() throws {
         let fm = FileManager.default
         let tempDir = fm.temporaryDirectory.appendingPathComponent("speedconsumer-city-polygon-\(UUID().uuidString)", isDirectory: true)

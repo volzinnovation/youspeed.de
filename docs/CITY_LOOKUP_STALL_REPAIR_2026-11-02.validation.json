@@ -1,0 +1,310 @@
+{
+  "date": "2026-11-02",
+  "timezone": "Europe/Berlin",
+  "status": "complete",
+  "version": "1.5",
+  "iphone_build": 10083,
+  "installed_bundle_identifier": "de.youspeed.SpeedConsumer.TestHost",
+  "protected_speed_limit_reference_policy_changed": false,
+  "map_replaced": false,
+  "iphone": {
+    "tests_passed": 35,
+    "test_failures": 0,
+    "test_skips": 0,
+    "full_packed_samples": [
+      {
+        "case": "pforzheim-current",
+        "iteration": 0,
+        "wall_ms": 200.708417,
+        "query_ms": 199.956542,
+        "city_ms": 120.80295799999999
+      },
+      {
+        "case": "pforzheim-current",
+        "iteration": 1,
+        "wall_ms": 126.0665,
+        "query_ms": 125.358042,
+        "city_ms": 113.221375
+      },
+      {
+        "case": "pforzheim-current",
+        "iteration": 2,
+        "wall_ms": 125.841584,
+        "query_ms": 125.126875,
+        "city_ms": 113.077958
+      },
+      {
+        "case": "pforzheim-current",
+        "iteration": 3,
+        "wall_ms": 125.638666,
+        "query_ms": 124.932791,
+        "city_ms": 112.862792
+      },
+      {
+        "case": "pforzheim-centre-road",
+        "iteration": 0,
+        "wall_ms": 187.234667,
+        "query_ms": 185.312916,
+        "city_ms": 123.57233199999999
+      },
+      {
+        "case": "pforzheim-centre-road",
+        "iteration": 1,
+        "wall_ms": 143.327917,
+        "query_ms": 141.436917,
+        "city_ms": 116.362375
+      },
+      {
+        "case": "pforzheim-centre-road",
+        "iteration": 2,
+        "wall_ms": 142.85675,
+        "query_ms": 140.974125,
+        "city_ms": 115.974542
+      },
+      {
+        "case": "pforzheim-centre-road",
+        "iteration": 3,
+        "wall_ms": 142.870208,
+        "query_ms": 140.994042,
+        "city_ms": 116.03441699999999
+      },
+      {
+        "case": "neuenbuerg-centre",
+        "iteration": 0,
+        "wall_ms": 65.455125,
+        "query_ms": 64.28725,
+        "city_ms": 3.614583
+      },
+      {
+        "case": "neuenbuerg-centre",
+        "iteration": 1,
+        "wall_ms": 3.053792,
+        "query_ms": 3.031833,
+        "city_ms": 0.077834
+      },
+      {
+        "case": "neuenbuerg-centre",
+        "iteration": 2,
+        "wall_ms": 2.949917,
+        "query_ms": 2.930083,
+        "city_ms": 0.06845899999999999
+      },
+      {
+        "case": "neuenbuerg-centre",
+        "iteration": 3,
+        "wall_ms": 2.930125,
+        "query_ms": 2.908458,
+        "city_ms": 0.068333
+      },
+      {
+        "case": "neuenbuerg-approach",
+        "iteration": 0,
+        "wall_ms": 59.116917,
+        "query_ms": 56.864416,
+        "city_ms": 3.986917
+      },
+      {
+        "case": "neuenbuerg-approach",
+        "iteration": 1,
+        "wall_ms": 0.839,
+        "query_ms": 0.817208,
+        "city_ms": 0.08375
+      },
+      {
+        "case": "neuenbuerg-approach",
+        "iteration": 2,
+        "wall_ms": 0.738917,
+        "query_ms": 0.720125,
+        "city_ms": 0.071876
+      },
+      {
+        "case": "neuenbuerg-approach",
+        "iteration": 3,
+        "wall_ms": 0.725042,
+        "query_ms": 0.706333,
+        "city_ms": 0.071709
+      },
+      {
+        "case": "birkenfeld-last-good",
+        "iteration": 0,
+        "wall_ms": 61.571166,
+        "query_ms": 59.6515,
+        "city_ms": 4.476458
+      },
+      {
+        "case": "birkenfeld-last-good",
+        "iteration": 1,
+        "wall_ms": 1.28175,
+        "query_ms": 1.264625,
+        "city_ms": 0.087667
+      },
+      {
+        "case": "birkenfeld-last-good",
+        "iteration": 2,
+        "wall_ms": 1.187458,
+        "query_ms": 1.172125,
+        "city_ms": 0.07975
+      },
+      {
+        "case": "birkenfeld-last-good",
+        "iteration": 3,
+        "wall_ms": 1.147958,
+        "query_ms": 1.133083,
+        "city_ms": 0.078209
+      }
+    ],
+    "continuous_one_hertz_publications": 10,
+    "continuous_one_hertz_all_published": true,
+    "isolated_test_bundle": "de.youspeed.SpeedConsumer.CityLookupTests",
+    "isolated_test_app_removed": true,
+    "final_result_bundle_sha256_info": "See private xcresult bundle and log hashes; bundle directory is not a single file.",
+    "first_run_note": "An original centre sample was outside the 40m drivable-road search radius. It was replaced by the nearest mapped secondary-road point; final complete selection passes.",
+    "live_smoke_status": "Passed: fresh current results and direct owner confirmation of the visible dashboard.",
+    "live_smoke": {
+      "status": "passed",
+      "date": "2026-11-02",
+      "timezone": "Europe/Berlin",
+      "version": "1.5",
+      "build": 10083,
+      "accepted_results": 93,
+      "foreground_accepted_results": 60,
+      "first_fix_utc": "2026-11-02T12:50:40.605Z",
+      "last_fix_utc": "2026-11-02T12:57:34.816Z",
+      "first_fix_id": 2,
+      "last_fix_id": 177,
+      "all_matched": true,
+      "all_current": true,
+      "all_city_and_street_resolved": true,
+      "effective_speed_limits_kmh": [
+        50
+      ],
+      "query_ms": {
+        "median": 157.115167,
+        "max": 335.72725,
+        "warm_min": 128.23675,
+        "warm_max": 169.717917
+      },
+      "foreground_state_restored_at_utc": "2026-11-02T12:57:20.373Z",
+      "foreground_primary_speed_visible_event": true,
+      "visual_observation": {
+        "quicktime": "Black preview despite fresh source selection and restart",
+        "standalone_readonly_ui_test": "Failed before test method: timed out enabling automation mode",
+        "native_screenshot_service": "Unavailable: Invalid service",
+        "user_confirmation": "Owner confirmed the visible current 50 km/h limit and the expected resolved city/street.",
+        "confirmation_method": "Direct owner observation on the attached iPhone; automated screen capture remained unavailable."
+      },
+      "read_only_device_controls": {
+        "preferences_changed": false,
+        "location_injected": false,
+        "recording_controls_tapped": false,
+        "driver_reinstalled": false,
+        "temporary_ui_runner_removed": true
+      },
+      "scope": "Stationary live smoke check, not another city-entry drive. Observation includes a brief background interval while the failed UI-test runner started.",
+      "evidence_sha256": {
+        "matcher-final.ndjson": "78804e348f6175d68f72d6007de36f06efec0856d5c74d070e440e5ce8a8a766",
+        "tsr-final.ndjson": "fb3372e53d46c0fff5d8166f157ca80f7b186e7ad18573f893634c4dbb385204",
+        "installed-version.json": "dca042f4346bbf8b1a48a694b9b22549ed22b67d649e6085eebc7d8d5c44ba39"
+      }
+    }
+  },
+  "android": {
+    "status": "passed",
+    "android_normal_app_installed_or_updated": false,
+    "physical_android_used": false,
+    "emulator": "Pixel_API_36 API36 arm64 read-only temporary AVD",
+    "isolated_package": "de.youspeed.android.testhost",
+    "regression_instrumented_passed": 30,
+    "regression_instrumented_skipped": 1,
+    "skip_reason": "Full packed test is opt-in and executed separately after fixture staging",
+    "full_packed_instrumented_passed": 1,
+    "full_packed_lookups": 9,
+    "full_packed_max_query_ms": 322.241709,
+    "full_packed_all_city_names_expected": true,
+    "full_packed_hash_verified_in_test": "66bff716fa57500f482f7a8707fb1fcfa059beadcecab260b34934b7576666e5",
+    "jvm_suites": [
+      {
+        "suite": "de.youspeed.android.alpha.DirectionalSpeedLimitTests",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "de.youspeed.android.alpha.TrafficSignCityEntryTrackerTests",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "de.youspeed.android.alpha.V3SpeedLimitLookupTests",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "de.youspeed.android.alpha.BundleMatcherHistoryTests",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "de.youspeed.android.alpha.SettlementContextTests",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ],
+    "jvm_passed": 27,
+    "source_sha256": {
+      "android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt": "bbc1a69113abd17eb249f9f5c40c6b55803b99fc0c507ada13d3825bba22e341",
+      "android/app/src/androidTest/java/de/youspeed/android/alpha/CityContextInstrumentedTest.kt": "71edcad5aebcb261e89ceb7cb2400e0cfb8845208d2875274c8e1a04352bc510"
+    },
+    "notes": [
+      "Existing dirty source edits retained.",
+      "No protected speed-limit-reference policy files changed.",
+      "Optional internal RuntimeSqlDatabase constructor injection executes native SQLite fixture semantics on Android versions whose framework SQLite omits Rtree; production default unchanged.",
+      "Full packed acceptance uses real native Rtree and VFS plus the complete exact regional map, not the bounds-table fixture."
+    ]
+  },
+  "preservation": {
+    "persistent_file_count": 119,
+    "persistent_bytes": 1365439270,
+    "missing": [],
+    "size_differences": []
+  },
+  "source_sha256": {
+    "iphone/SpeedConsumerApp/V3SpeedLimitService.swift": "c2d9ccadab1c54789174db6fb800709dc0aa421f3ddd4e9e9da9674d085a79f8",
+    "iphone/project.yml": "a65a21c5fc0d01eebcdf9d5cc02001ef5f783f7be124d96808cfb2e6d4a712be",
+    "iphone/SpeedConsumerTests/CityLookupPublicationRegressionTests.swift": "e224d9c0adacf89ed7e23364450967909c786f173234ade290611ebcfa7c8ed9",
+    "iphone/SpeedConsumerTests/ConsumerTestHost.swift": "f21ae9f859235433f63aa0bba13af4961efcb7effbdc8ec382afd7ee134cd710",
+    "scripts/iphone/run_consumer_device_tests.sh": "9501360bd5ef2da006da2e90084ecde0652d8df7377eb3bd87c4ff8d81912d60",
+    "scripts/iphone/stage_incident_qualification_fixture.sh": "9871fd467b236a3baf8963cf9ecd1b07fda67b32feb103dfa15d7b3a802a2ba1",
+    "android/app/src/main/java/de/youspeed/android/alpha/V3SpeedLimitLookup.kt": "bbc1a69113abd17eb249f9f5c40c6b55803b99fc0c507ada13d3825bba22e341",
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/CityContextInstrumentedTest.kt": "71edcad5aebcb261e89ceb7cb2400e0cfb8845208d2875274c8e1a04352bc510"
+  },
+  "validation_log_sha256": {
+    "city-tests-final.log": "35a4cae57571a7c556c8e9cffb07446d89ab7f6d1cea83e63a6c2d144b2fd480",
+    "driver-build.log": "521761bd72598dce62ea0b5d8065401394a242524a7a0890624c30636e9453c2",
+    "driver-install.log": "795c9f5932f8bf9c944519a38dbc5b61b8d43906ab9b6ff639c29bbaffa7bddd",
+    "android-full-packed-acceptance.log": "12c1722bd337ee51de37fd16ddb478d8ba7f1a278fdb4f539c140502ac810154"
+  },
+  "backup": {
+    "bytes": 2106864769,
+    "file_count": 187,
+    "database_integrity_checks": "Trip journal, sign collection, and local observations: PRAGMA quick_check all ok."
+  },
+  "durable_core_files_hash_identical": 7,
+  "built_app": {
+    "CFBundleIdentifier": "de.youspeed.SpeedConsumer.TestHost",
+    "CFBundleShortVersionString": "1.5",
+    "CFBundleVersion": "10083",
+    "executable_sha256": "a03fce4e7aae1a34c46429162927890863126561a17521b80624415857862a73",
+    "dwarf_uuid": "UUID: EFBC63AF-CB6B-3162-ACA3-B62225DF8BE4 (arm64)"
+  },
+  "private_evidence": "/private/tmp/youspeed-city-fix-20261102"
+}
