@@ -1,6 +1,14 @@
 import SwiftUI
 import UIKit
 
+enum AppVersionDisplay {
+    static var text: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        return String(format: NSLocalizedString("app.version_build", comment: "App version and build number"), version, build)
+    }
+}
+
 struct StartupView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
 
@@ -13,6 +21,12 @@ struct StartupView: View {
                 Text("YouSpeed")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
+
+                Text(AppVersionDisplay.text)
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(.white.opacity(0.9))
+                    .accessibilityIdentifier("startup.appVersion")
 
                 Text("startup.loading_map_data")
                     .font(.system(size: 20, weight: .semibold, design: .rounded))
@@ -474,6 +488,10 @@ struct StartupLogReviewView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         Text("YouSpeed").font(.largeTitle.bold())
+                        Text(AppVersionDisplay.text)
+                            .font(.headline)
+                            .monospacedDigit()
+                            .accessibilityIdentifier("startup.appVersion")
                         switch viewModel.startupLogReviewState {
                         case .checking, .clearing:
                             ProgressView().tint(.red)

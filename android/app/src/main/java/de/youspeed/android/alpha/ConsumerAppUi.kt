@@ -445,6 +445,7 @@ internal fun StartupScreen(
                 .testTag("startup-content"),
         ) {
             Text("YouSpeed", color = Color.White, style = roundedUiTextStyle(size = 42.sp, weight = FontWeight.Bold))
+            AppVersionLabel(color = Color.White, modifier = Modifier.testTag("startup.appVersion"))
             Text(stringResource(R.string.startup_loading_map_data), color = Color.White, style = roundedUiTextStyle(size = 20.sp, weight = FontWeight.SemiBold))
             LinearProgress(ui.startupProgress)
             Text(
@@ -475,6 +476,17 @@ internal fun StartupScreen(
             }
         }
     }
+}
+
+@Composable
+private fun AppVersionLabel(color: Color, modifier: Modifier = Modifier) {
+    Text(
+        stringResource(R.string.app_version_build, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+        color = color,
+        style = MaterialTheme.typography.titleMedium,
+        textAlign = TextAlign.Center,
+        modifier = modifier,
+    )
 }
 
 private fun roundedUiTextStyle(
@@ -2102,6 +2114,8 @@ private fun LegalSheet(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            Text("YouSpeed", color = Color.Black, style = MaterialTheme.typography.headlineSmall)
+            AppVersionLabel(color = Color.Black, modifier = Modifier.testTag("info.appVersion"))
             OutlinedButton(onClick = { openPenaltyDocumentation = true }, modifier = Modifier.fillMaxWidth().testTag("penalty-documentation-button")) {
                 Text(stringResource(R.string.penalty_documentation_title))
             }
@@ -2551,6 +2565,7 @@ private fun StartupLogReviewScreen(ui: ConsumerUiState, controller: ConsumerSess
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Text("YouSpeed", color = Color.White, style = MaterialTheme.typography.headlineLarge)
+            AppVersionLabel(color = Color.White, modifier = Modifier.testTag("startup.appVersion"))
             when (ui.startupLogReviewState) {
                 StartupLogReviewState.CHECKING, StartupLogReviewState.CLEARING -> {
                     CircularProgressIndicator(color = Color.Red)

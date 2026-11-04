@@ -1,6 +1,7 @@
 "legal.disclaimer.short" = "Note: Displayed fines, points, and driving-ban information are advisory only and are not legal advice. Official notices and the law in force at the time are authoritative.";
 "legal.disclaimer.long" = "The fines, points, and driving-ban information shown in YouSpeed are advisory only. They are not legal advice or a binding legal assessment. Official notices and the law in force at the time are authoritative; additional fees and costs may apply.";
 "startup.loading_map_data" = "Loading local map data";
+"app.version_build" = "Version %@ (Build %@)";
 "startup.retry" = "Try again";
 "welcome.title" = "Welcome to YouSpeed";
 "welcome.copy" = "Arrive safely. YouSpeed shows the detected speed limit live and indicates when fines, points, or driving-ban warnings may become relevant. YouSpeed can be wrong - keep your eyes on the road.";

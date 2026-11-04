@@ -1,6 +1,7 @@
 "legal.disclaimer.short" = "Opmerking: getoonde boetes, punten en rijverboden zijn alleen indicatief en geen juridisch advies. Officiele besluiten en de geldende wet zijn bepalend.";
 "legal.disclaimer.long" = "De in YouSpeed getoonde waarden voor boetes, punten en rijverboden zijn alleen indicatief. Ze vormen geen juridisch advies en geen bindende juridische informatie. Alleen officiele besluiten en de wet die op dat moment geldt zijn bepalend; extra kosten kunnen van toepassing zijn.";
 "startup.loading_map_data" = "Lokale kaartgegevens laden";
+"app.version_build" = "Versie %@ (Build %@)";
 "startup.retry" = "Opnieuw proberen";
 "welcome.title" = "Welkom bij YouSpeed";
 "welcome.copy" = "Kom veilig aan. YouSpeed toont live de herkende snelheidslimiet en geeft aan wanneer waarschuwingen voor boetes, punten of rijverboden relevant kunnen worden. YouSpeed kan fouten maken - houd je ogen op de weg.";

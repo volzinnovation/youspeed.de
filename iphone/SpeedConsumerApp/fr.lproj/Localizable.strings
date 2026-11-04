@@ -1,6 +1,7 @@
 "legal.disclaimer.short" = "Remarque : les amendes, points et interdictions de conduire affiches sont indicatifs et ne constituent pas un conseil juridique. Les avis officiels et le droit applicable font foi.";
 "legal.disclaimer.long" = "Les valeurs d'amende, de points et d'interdiction de conduire affichees dans YouSpeed sont uniquement indicatives. Elles ne constituent ni un conseil juridique ni une information juridique contraignante. Seuls les avis officiels et le droit applicable au moment des faits font foi ; des frais supplementaires peuvent s'appliquer.";
 "startup.loading_map_data" = "Chargement des cartes locales";
+"app.version_build" = "Version %@ (Build %@)";
 "startup.retry" = "Reessayer";
 "welcome.title" = "Bienvenue dans YouSpeed";
 "welcome.copy" = "Arrivez en securite. YouSpeed affiche en direct la limitation detectee et indique quand les alertes d'amende, de points ou d'interdiction de conduire peuvent devenir pertinentes. YouSpeed peut se tromper : gardez les yeux sur la route.";

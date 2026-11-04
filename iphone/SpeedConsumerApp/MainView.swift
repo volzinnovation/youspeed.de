@@ -2353,6 +2353,17 @@ private struct LegalInformationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("YouSpeed")
+                        .font(.title.bold())
+                    Text(AppVersionDisplay.text)
+                        .font(.title3.weight(.semibold))
+                        .monospacedDigit()
+                        .textSelection(.enabled)
+                        .accessibilityIdentifier("info.appVersion")
+                }
+                .padding(.bottom, 6)
+
                 NavigationLink {
                     PenaltyDocumentationView(activeRules: activePenaltyRules)
                 } label: {
