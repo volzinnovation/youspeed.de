@@ -5,10 +5,12 @@ Consumer iPhone app scaffold for on-road speed + speed-limit display.
 ## Test isolation
 
 Run tests through `scripts/iphone/run_consumer_device_tests.sh`. Its default
-SpeedConsumer run uses the separate `de.youspeed.SpeedConsumer.TestHost` app and
+SpeedConsumer run uses the separate `de.youspeed.SpeedConsumer.UnitTests` app and
 container on simulators and physical phones. Unit tests do not start the live
 dashboard or camera; their map fixtures cannot touch the driver's installed app.
 The map-fixture suite skips if invoked directly in the normal app container.
+The historical `.TestHost` identifier belongs to the installed driver app on
+the attached iPhone and must not be used as an isolated physical-device host.
 
 The live Settings UI flow needs the driver's installed map. Run it separately
 with `--installed-app-ui-tests --only-testing

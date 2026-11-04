@@ -164,6 +164,9 @@ internal class LocalObservationStore(
      * Persists one finalized camera passage at most once. The runtime assertion
      * is already committed before this call, so storage failure is deliberately
      * reported to the caller instead of changing live speed state.
+     * [writeAdmission] may wrap the final permission check and success marker
+     * in the owner's authority lock. It must invoke the supplied admission at
+     * most once and return its result; SQLite I/O stays outside that wrapper.
      */
     fun recordComputerVisionPassageIfNeeded(
         event: TrafficSignPassageEvent,
@@ -172,6 +175,7 @@ internal class LocalObservationStore(
         writeGate: TrafficSignWriteGate? = null,
         generationIsCurrent: (Long) -> Boolean = { it == event.generation },
         writePermitted: () -> Boolean = { true },
+        writeAdmission: ((() -> Boolean) -> Boolean)? = null,
     ): LocalObservation? = synchronized(serializedStoreGate) {
         if (!event.permitsApplicability()) return@synchronized null
         if (!event.overrideEligible || event.action.kind !in SHARED_PASSAGE_ACTION_KINDS) return@synchronized null
@@ -230,8 +234,29 @@ internal class LocalObservationStore(
         withDatabase { db ->
             db.beginTransaction()
             try {
+                // Only the in-memory success marker is generation-gated. The
+                // owner may wrap admission in its authority lock so mutable OCR
+                // permission and the generation are checked atomically in the
+                // same state -> generation order used by runtime invalidation.
+                // No SQLite begin/read/write/end operation runs under either
+                // controller lock. Invalidation before admission rolls back;
+                // physical commit may finish after a later invalidation.
+                fun admitTransaction(): Boolean {
+                    val markSuccessful = {
+                        if (!generationIsCurrent(event.generation) || !writePermitted()) false
+                        else if (writeGate != null) {
+                            writeGate.withPermit(event.generation) {
+                                db.setTransactionSuccessful()
+                                true
+                            } == true
+                        } else {
+                            db.setTransactionSuccessful()
+                            true
+                        }
+                    }
+                    return writeAdmission?.invoke(markSuccessful) ?: markSuccessful()
+                }
                 if (!generationIsCurrent(event.generation) || !writePermitted()) {
-                    db.setTransactionSuccessful()
                     return@withDatabase null
                 }
                 val priorReceipt = db.rawQuery(
@@ -242,8 +267,7 @@ internal class LocalObservationStore(
                 }
                 if (priorReceipt != null) {
                     val prior = priorReceipt.first?.let { fetchObservation(db, it) }
-                    db.setTransactionSuccessful()
-                    return@withDatabase prior.takeIf { priorReceipt.second }
+                    return@withDatabase if (admitTransaction()) prior.takeIf { priorReceipt.second } else null
                 }
 
                 event.applicabilityDecision?.let { applicability ->
@@ -266,12 +290,11 @@ internal class LocalObservationStore(
                         """.trimIndent(),
                         arrayOf(event.finalizedEventId, processedAtUtc, requireNotNull(latestCorrection).id, evidenceJson),
                     )
-                    db.setTransactionSuccessful()
+                    admitTransaction()
                     return@withDatabase null
                 }
 
                 if (!generationIsCurrent(event.generation) || !writePermitted()) {
-                    db.setTransactionSuccessful()
                     return@withDatabase null
                 }
                 stalePendingExportsForIncomingTarget(
@@ -346,15 +369,15 @@ internal class LocalObservationStore(
                     )
                 }
                 val inserted = fetchObservation(db, observationId)
-                db.setTransactionSuccessful()
-                inserted
+                if (admitTransaction()) inserted else null
             } finally {
                 db.endTransaction()
             }
         }
         }
         if (writeGate != null) {
-            writeGate.withPermit(event.generation, writeTransaction)
+            val (generation, permitted) = writeGate.snapshot()
+            if (generation == event.generation && permitted) writeTransaction() else null
         } else if (generationIsCurrent(event.generation) && writePermitted()) {
             writeTransaction()
         } else {

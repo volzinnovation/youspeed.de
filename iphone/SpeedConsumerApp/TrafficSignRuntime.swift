@@ -1228,7 +1228,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
 
     private struct SuccessfulProcessingResult {
         let event: TrafficSignRecognitionEvent
-        let shadowEventV2: TrafficSignRecognitionEventV2?
+        var shadowEventV2: TrafficSignRecognitionEventV2?
         let passageUpdate: TrafficSignPassageFinalizerUpdate
         let applicabilityDiagnostic: TSRApplicabilityDiagnostic
         let roadPathDiagnostic: String?
@@ -1777,22 +1777,9 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         passage.applicabilityDecision = self.applicabilitySession.passageDecision(trackId: passage.physicalTrackID)
                         passageUpdate = passage.permitsApplicability() ? .committed(passage) : .idle
                     }
-                    // Shadow QA must never disable the existing recognition
-                    // UI. The admission gate covers staging/JPEG/event sinks,
-                    // so invalidating a generation is a barrier after which an
-                    // old frame cannot write any diagnostic artifact.
-                    let shadowEventV2: TrafficSignRecognitionEventV2?
-                    do {
-                        shadowEventV2 = try self.processShadowV2(
-                            result: twoStageResult,
-                            item: item
-                        )
-                    } catch {
-                        shadowEventV2 = nil
-                    }
                     return SuccessfulProcessingResult(
                         event: event,
-                        shadowEventV2: shadowEventV2,
+                        shadowEventV2: nil,
                         passageUpdate: passageUpdate,
                         applicabilityDiagnostic: applicability,
                         roadPathDiagnostic: roadPathDiagnostic,
@@ -1818,9 +1805,28 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 } else {
                     processed = nil
                 }
-                guard let processed else {
+                guard var processed else {
                     self.roadPathSession?.invalidatePreparedOverlay(frameId: item.frameId)
                     notifyAdmissionMismatch(item, reason: "processing_gate_rejected")
+                    self.discardStaleWorkItem()
+                    return
+                }
+                // Core fusion/passage mutations are already admitted. Keep
+                // optional JPEG and QA file work on this same serial queue but
+                // outside the gate, so MainActor invalidation never waits for
+                // diagnostic I/O. An admitted diagnostic may finish after a
+                // later invalidation; its immutable source scope stays intact.
+                if self.canDeliverCallback && self.isWorkItemStillCurrent(item) {
+                    do {
+                        processed.shadowEventV2 = try self.processShadowV2(result: twoStageResult, item: item)
+                    } catch {
+                        // Optional shadow QA cannot disable live recognition.
+                        processed.shadowEventV2 = nil
+                    }
+                }
+                guard self.canDeliverCallback, self.isWorkItemStillCurrent(item) else {
+                    self.roadPathSession?.invalidatePreparedOverlay(frameId: item.frameId)
+                    notifyAdmissionMismatch(item, reason: "diagnostic_completion_stale_frame")
                     self.discardStaleWorkItem()
                     return
                 }

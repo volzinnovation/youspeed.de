@@ -4112,6 +4112,7 @@ class ConsumerSessionController(
                     uiState.trafficSignRecognitionEnabled && isDriving && event.driveSessionId == trafficSignDriveSessionId &&
                         synchronized(trafficSignStateLock) { !blocksUnverifiedOCRParent(event.physicalTrackId) && !blocksUnverifiedOCRParent(event.applicabilityDecision?.trackId) }
                 },
+                writeAdmission = { markSuccessful -> admitFinalizedTrafficSignPassageWrite(event, markSuccessful) },
             )
             // Persisted evidence never becomes a second runtime speed source.
             observation
@@ -4126,6 +4127,19 @@ class ConsumerSessionController(
                 details = mapOf("eventId" to event.finalizedEventId, "error" to (error.message ?: error.javaClass.simpleName)),
             )
         }
+    }
+
+    /** Recheck mutable OCR authority and lifecycle immediately before the store
+     * marks its transaction successful. The supplied closure takes only the
+     * short generation gate; disk commit happens after both locks are released. */
+    private fun admitFinalizedTrafficSignPassageWrite(
+        event: TrafficSignPassageEvent,
+        markSuccessful: () -> Boolean,
+    ): Boolean = synchronized(trafficSignStateLock) {
+        if (event.generation != trafficSignGeneration.get() || !uiState.trafficSignRecognitionEnabled || !isDriving ||
+            event.driveSessionId != trafficSignDriveSessionId || blocksUnverifiedOCRParent(event.physicalTrackId) ||
+            blocksUnverifiedOCRParent(event.applicabilityDecision?.trackId)
+        ) false else markSuccessful()
     }
 
     private fun offerCameraReference(

@@ -188,6 +188,9 @@ final class PackedBundleRuntimeTests: XCTestCase {
     }
 
     func testPackedCompanionGzipInstallIsAtomicAndMissingUpdateKeepsActiveGeneration() async throws {
+        guard ConsumerTestHost.isIsolated else {
+            throw XCTSkip("This install regression requires a separate unit-test app")
+        }
         let manager = V3BundleManager(fileManager: .default, session: Self.session())
         let support = try V3BundleManager.applicationSupportDirectory()
         let backup = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -277,8 +280,8 @@ final class PackedBundleRuntimeTests: XCTestCase {
     }
 
     func testLegacyDownloadAndDeltaCannotOverwriteSiblingJournalAndKeepHierarchicalActiveLayout() async throws {
-        guard Bundle.main.bundleIdentifier == "de.youspeed.SpeedConsumer.TestHost" else {
-            throw XCTSkip("This install regression requires the isolated TestHost")
+        guard ConsumerTestHost.isIsolated else {
+            throw XCTSkip("This install regression requires the separate unit-test app")
         }
         let fm = FileManager.default
         let support = try V3BundleManager.applicationSupportDirectory()

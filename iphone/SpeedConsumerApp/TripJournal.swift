@@ -9,6 +9,15 @@ import CryptoKit
 import UniformTypeIdentifiers
 import Darwin
 
+/// Immutable display data assembled on the journal queue, never while SwiftUI
+/// evaluates a body. Dictionary payloads are copied values from SQLite/JSON.
+struct TripJournalDisplaySnapshot: @unchecked Sendable {
+    let trip: [String: Any]
+    let events: [JournalEvent]
+    let points: [JournalEvent]
+    let media: [JournalMedia]
+}
+
 /// Private journal. This store never enables camera, contributions, uploads or location permissions.
 final class TripJournal: ObservableObject, @unchecked Sendable {
     static let shared = TripJournal()
@@ -176,6 +185,27 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         queue.sync { checkpoint(); return (rows("SELECT * FROM trips ORDER BY start DESC"), rows("SELECT * FROM counters").first ?? [:]) }
     }
     func events(_ id: String) -> [[String: Any]] { queue.sync { rows("SELECT * FROM events WHERE trip=? ORDER BY time,seq", [id]) } }
+    /// Awaiting this read suspends the caller; it never drains the journal queue
+    /// synchronously or checkpoints merely because a view needs to render.
+    func displaySnapshot(_ id: String) async -> TripJournalDisplaySnapshot {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                let trip = self.rows("SELECT * FROM trips WHERE id=?", [id]).first ?? [:]
+                let events = self.rows("SELECT * FROM events WHERE trip=? ORDER BY time,seq", [id]).map(JournalEvent.init)
+                continuation.resume(returning: TripJournalDisplaySnapshot(trip: trip, events: events,
+                    points: events.filter(\.trackEligible), media: JournalMedia.project(events, library: self.mediaLibrary)))
+            }
+        }
+    }
+    /// Deleting a trip's media needs only media identities, not its full GPS log.
+    func mediaSnapshot(_ id: String) async -> [JournalMedia] {
+        await withCheckedContinuation { continuation in
+            queue.async {
+                let events = self.rows("SELECT * FROM events WHERE trip=? AND kind='media' ORDER BY time,seq", [id]).map(JournalEvent.init)
+                continuation.resume(returning: JournalMedia.project(events, library: self.mediaLibrary))
+            }
+        }
+    }
     private func publishHistory() {
         let trips = rows("SELECT * FROM trips ORDER BY start DESC").filter { !hiddenShortTrips.contains($0["id"] as? String ?? "") }
         DispatchQueue.main.async { self.historyTrips = trips }
@@ -1238,8 +1268,9 @@ private struct TripEndOdometerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var reading = ""
     @State private var error: String?
+    @State private var saving = false
     var body: some View {
-        let trip = journal.snapshot().trips.first { $0["id"] as? String == id } ?? [:]
+        let trip = journal.historyTrips.first { $0["id"] as? String == id } ?? [:]
         Form {
             Section {
                 if let value = trip["odo_end"] as? Double {
@@ -1247,11 +1278,11 @@ private struct TripEndOdometerSheet: View {
                         .accessibilityIdentifier("journal.odometer.savedValue")
                 } else {
                     TextField(journalText("odo_end") + " (km)", text: $reading).keyboardType(.decimalPad)
-                        .accessibilityIdentifier("journal.odometer.input")
+                        .accessibilityIdentifier("journal.odometer.input").disabled(saving)
                     if let error { Text(error).foregroundStyle(.red).accessibilityIdentifier("journal.odometer.error") }
                 }
                 Button(journalText("save")) { if trip["odo_end"] != nil { dismiss() } else { save() } }
-                    .accessibilityIdentifier("journal.odometer.save")
+                    .accessibilityIdentifier("journal.odometer.save").disabled(saving)
             }
         }
         .navigationTitle(journalText("odo_end"))
@@ -1268,8 +1299,15 @@ private struct TripEndOdometerSheet: View {
         let separator = formatter.decimalSeparator ?? "."
         let normalized = text.replacingOccurrences(of: separator, with: ".")
         guard !normalized.contains(","), let value = Double(normalized), value.isFinite, value >= 0 else { error = journalText("invalid_odo"); return }
-        do { try journal.enterEndOdometer(id, kilometres: value); saved(); dismiss() }
-        catch { self.error = error.localizedDescription }
+        guard !saving else { return }
+        saving = true
+        Task { @MainActor in
+            do {
+                try await Task.detached(priority: .userInitiated) { try journal.enterEndOdometer(id, kilometres: value) }.value
+                saved(); dismiss()
+            } catch { self.error = error.localizedDescription }
+            saving = false
+        }
     }
 }
 
@@ -1348,9 +1386,9 @@ struct TripJournalView: View {
             if let deleteMedia {
                 Button(journalText("delete_with_media"), role: .destructive) {
                     guard let id = pendingDelete else { return }
-                    let media = JournalMedia.project(journal.events(id).map(JournalEvent.init), library: journal.mediaLibrary)
                     pendingDelete = nil; busy = true
                     Task { @MainActor in
+                        let media = await journal.mediaSnapshot(id)
                         let result = await deleteMedia(Set(media.filter { $0.type == "photo" }.map(\.id)), Set(media.filter { $0.type == "video" }.map(\.id)))
                         journal.delete(id)
                         operationStatus = String(format: journalText("deletion_result"), result.removed, result.protected, result.failed, result.unavailable)
@@ -1467,12 +1505,13 @@ private struct TripJournalDetailView: View {
     @State private var files: [URL] = []
     @State private var sharing = false
     @State private var error: String?
+    @State private var displaySnapshot: TripJournalDisplaySnapshot?
     var body: some View {
         TimelineView(.periodic(from: .now, by: 5)) { _ in
-            let trip = journal.snapshot().trips.first { $0["id"] as? String == id } ?? [:]
-            let events = journal.events(id).map(JournalEvent.init)
-            let points = events.filter(\.trackEligible)
-            let media = JournalMedia.project(events, library: journal.mediaLibrary)
+            let trip = displaySnapshot?.trip ?? journal.historyTrips.first { $0["id"] as? String == id } ?? [:]
+            let events = displaySnapshot?.events ?? []
+            let points = displaySnapshot?.points ?? []
+            let media = displaySnapshot?.media ?? []
             let selection = events.first { $0.id == selected }
             List {
                 Section {
@@ -1538,12 +1577,20 @@ private struct TripJournalDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $sharing) { TripShareSheet(urls: files) }
         .overlay { if busy { ProgressView().padding().background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12)) } }
+        .task(id: id) {
+            while !Task.isCancelled {
+                let snapshot = await journal.displaySnapshot(id)
+                guard !Task.isCancelled else { return }
+                displaySnapshot = snapshot
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
         .task(id: playing) {
             guard playing else { return }
             while playing && !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(400))
                 guard !Task.isCancelled else { return }
-                let count = journal.events(id).map(JournalEvent.init).filter(\.trackEligible).count
+                let count = displaySnapshot?.points.count ?? 0
                 if replayIndex >= Double(max(0, count - 1)) { playing = false }
                 else { replayIndex += 1 }
             }

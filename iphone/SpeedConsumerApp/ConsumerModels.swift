@@ -1217,236 +1217,244 @@ actor LocalObservationStore {
         return observation
     }
 
-    /// Consumes one finalized passage under the controller's generation gate.
-    /// The receipt and optional observation are committed in the same SQLite
-    /// transaction, making retries exactly-once even when the value already
-    /// exists as the newest correction for the typed target.
+    /// Saves the receipt and optional observation atomically, with a short
+    /// generation check at final commit admission. Disk I/O must never hold the
+    /// gate used by MainActor settings and road-context changes. Admission is
+    /// the logical ordering boundary; physical COMMIT may finish after a later
+    /// invalidation. A generation rejected before admission rolls back all rows.
     func recordComputerVisionPassageIfNeeded(
         event: TrafficSignPassageEvent,
         decision: TrafficSignPassagePersistenceDecision,
         writePermit: TrafficSignWritePermit
     ) throws -> LocalObservationComputerVisionRecordResult {
         guard event.permitsApplicability() else { throw ConsumerAppError.io("Ineligible sign applicability") }
+        let staleResult = LocalObservationComputerVisionRecordResult(decision: .staleGeneration, observation: nil)
+        guard writePermit.consume({ true }) == true else { return staleResult }
         var staleExportBatchIDs: [String] = []
-        let consumed = try writePermit.consume {
-            try withDatabase { db in
-                guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
-                    throw sqliteError(db: db, context: "begin computer-vision observation")
+        let consumed = try withDatabase { db in
+            guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
+                throw sqliteError(db: db, context: "begin computer-vision observation")
+            }
+            // Validate under the generation lock, then release it before
+            // SQLite can block on a filesystem write or physical COMMIT.
+            func commitIfCurrent(context: String) throws -> Bool {
+                guard writePermit.consume({ true }) == true else {
+                    guard sqlite3_exec(db, "ROLLBACK", nil, nil, nil) == SQLITE_OK else {
+                        throw sqliteError(db: db, context: "roll back stale computer-vision passage")
+                    }
+                    return false
                 }
-                do {
-                    if let existing = try computerVisionReceipt(
-                        db: db,
-                        finalizedEventID: event.finalizedEventID
-                    ) {
-                        guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
-                            throw sqliteError(db: db, context: "commit existing computer-vision receipt")
-                        }
-                        return existing
-                    }
+                guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
+                    throw sqliteError(db: db, context: context)
+                }
+                return true
+            }
+            do {
+                if let existing = try computerVisionReceipt(
+                    db: db,
+                    finalizedEventID: event.finalizedEventID
+                ) {
+                    guard try commitIfCurrent(context: "commit existing computer-vision receipt") else { return staleResult }
+                    return existing
+                }
 
-                    if let applicability = event.applicabilityDecision {
-                        let json = String(decoding: try JSONEncoder().encode(applicability), as: UTF8.self)
-                        guard sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS computer_vision_applicability_v1 (finalized_event_id TEXT PRIMARY KEY, decision_json TEXT NOT NULL)", nil, nil, nil) == SQLITE_OK else {
-                            throw sqliteError(db: db, context: "create applicability sidecar")
-                        }
-                        var stmt: OpaquePointer?
-                        defer { sqlite3_finalize(stmt) }
-                        guard sqlite3_prepare_v2(db, "INSERT INTO computer_vision_applicability_v1 VALUES (?, ?)", -1, &stmt, nil) == SQLITE_OK else {
-                            throw sqliteError(db: db, context: "prepare applicability sidecar")
-                        }
-                        sqlite3_bind_text(stmt, 1, event.finalizedEventID, -1, SQLITE_TRANSIENT)
-                        sqlite3_bind_text(stmt, 2, json, -1, SQLITE_TRANSIENT)
-                        guard sqlite3_step(stmt) == SQLITE_DONE else { throw sqliteError(db: db, context: "save applicability sidecar") }
+                if let applicability = event.applicabilityDecision {
+                    let json = String(decoding: try JSONEncoder().encode(applicability), as: UTF8.self)
+                    guard sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS computer_vision_applicability_v1 (finalized_event_id TEXT PRIMARY KEY, decision_json TEXT NOT NULL)", nil, nil, nil) == SQLITE_OK else {
+                        throw sqliteError(db: db, context: "create applicability sidecar")
                     }
+                    var stmt: OpaquePointer?
+                    defer { sqlite3_finalize(stmt) }
+                    guard sqlite3_prepare_v2(db, "INSERT INTO computer_vision_applicability_v1 VALUES (?, ?)", -1, &stmt, nil) == SQLITE_OK else {
+                        throw sqliteError(db: db, context: "prepare applicability sidecar")
+                    }
+                    sqlite3_bind_text(stmt, 1, event.finalizedEventID, -1, SQLITE_TRANSIENT)
+                    sqlite3_bind_text(stmt, 2, json, -1, SQLITE_TRANSIENT)
+                    guard sqlite3_step(stmt) == SQLITE_DONE else { throw sqliteError(db: db, context: "save applicability sidecar") }
+                }
 
-                    let activation = event.activationContext
-                    // A boundary match may be absent or explicitly unstable.
-                    // The finalizer's stabilized activation/rematch is the only
-                    // authoritative target; the boundary remains evidence.
-                    let primaryWayID = activation.wayId
-                    guard Self.isPositiveWayID(primaryWayID) else {
-                        throw ConsumerAppError.io("Computer-vision passage has no valid OSM way id")
-                    }
-                    let canonicalValue = Self.canonicalMaxspeedValue(decision.value)
-                    let evidenceData = try TrafficSignPassageWireEncoder.encode(
-                        event: event,
-                        decision: decision
-                    )
-                    guard let evidenceJSON = String(data: evidenceData, encoding: .utf8) else {
-                        throw ConsumerAppError.io("Could not encode computer-vision passage evidence")
-                    }
-                    let canCompareTypedTarget = decision.operation == .setMaxspeed
-                        && decision.runtimeApplicable
-                        && decision.directionScope != .unknown
-                        && canonicalValue != nil
-                    let equivalentCorrection: (value: String, observationID: String)?
-                    if canCompareTypedTarget {
-                        equivalentCorrection = try newestRuntimeCorrection(
-                            db: db,
-                            wayID: primaryWayID,
-                            direction: decision.directionScope
-                        )
-                    } else {
-                        equivalentCorrection = nil
-                    }
-                    let equivalent = equivalentCorrection?.value == canonicalValue
-
-                    let consumedAtUTC = Self.isoFormatter.string(from: nowProvider())
-                    if equivalent {
-                        try insertComputerVisionPassageEvidence(
-                            db: db,
-                            finalizedEventID: event.finalizedEventID,
-                            evidenceJSON: evidenceJSON,
-                            equivalentObservationID: equivalentCorrection?.observationID,
-                            consumedAtUTC: consumedAtUTC
-                        )
-                        try insertComputerVisionReceipt(
-                            db: db,
-                            finalizedEventID: event.finalizedEventID,
-                            decision: .equivalent,
-                            observationID: equivalentCorrection?.observationID,
-                            consumedAtUTC: consumedAtUTC
-                        )
-                        guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
-                            throw sqliteError(db: db, context: "commit equivalent computer-vision receipt")
-                        }
-                        return LocalObservationComputerVisionRecordResult(
-                            decision: .equivalent,
-                            observation: nil
-                        )
-                    }
-
-                    let observationID = UUID().uuidString.lowercased()
-                    let effectiveAtUTC = Self.isoFormatter.string(from: event.passageBoundaryTimestampUTC)
-                    let coordinate = event.passageBoundaryCoordinate ?? TrafficSignCoordinate(
-                        latitude: activation.latitude,
-                        longitude: activation.longitude
-                    )
-                    let roadIDsData = try JSONEncoder().encode([primaryWayID])
-                    let roadIDsJSON = String(data: roadIDsData, encoding: .utf8) ?? "[]"
-                    let intent: LocalObservationIntentType
-                    if decision.applicability == .temporary {
-                        intent = .temporary_restriction
-                    } else if decision.operation == .setMaxspeed {
-                        intent = .set_maxspeed
-                    } else {
-                        intent = .map_inconsistency
-                    }
-                    let exportDisposition: LocalObservationExportDisposition? = decision.operation == .setMaxspeed
-                        && decision.applicability == .permanent
-                        && decision.directionScope != .unknown
-                        ? .eligible
-                        : nil
-                    let bundleSHA = activation.sourceSignature.bundleSHA256 ?? "unverified"
-                    let sourceVersion = "tsr:\(event.packID)|artifact:\(event.artifactSHA256)|bundle_sha256:\(bundleSHA)"
-                    let insertSQL = """
-                    INSERT INTO observations (
-                      observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
-                      city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
-                      device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
-                      evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
-                      runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
-                    ) VALUES (
-                      ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, NULL, ?9, ?10, ?11, ?12, ?13, ?14,
-                      NULL, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, NULL, ?25, ?26
-                    )
-                    """
-                    var insertStmt: OpaquePointer?
-                    guard sqlite3_prepare_v2(db, insertSQL, -1, &insertStmt, nil) == SQLITE_OK,
-                          let insertStmt else {
-                        throw sqliteError(db: db, context: "prepare computer-vision observation insert")
-                    }
-                    sqlite3_bind_text(insertStmt, 1, observationID, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 2, LocalObservationModality.computer_vision.rawValue, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 3, intent.rawValue, -1, SQLITE_TRANSIENT)
-                    bindOptionalText(canonicalValue, stmt: insertStmt, index: 4)
-                    sqlite3_bind_double(insertStmt, 5, coordinate.latitude)
-                    sqlite3_bind_double(insertStmt, 6, coordinate.longitude)
-                    sqlite3_bind_double(insertStmt, 7, activation.headingDegrees)
-                    sqlite3_bind_text(insertStmt, 8, roadIDsJSON, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 9, effectiveAtUTC, -1, SQLITE_TRANSIENT)
-                    bindOptionalDouble(event.finalCalibratedConfidence, stmt: insertStmt, index: 10)
-                    sqlite3_bind_text(insertStmt, 11, sourceVersion, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 12, decision.initialState.rawValue, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 13, ensureDevicePseudoID(), -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 14, consumedAtUTC, -1, SQLITE_TRANSIENT)
-                    bindOptionalInt(decision.oldSpeedKmh, stmt: insertStmt, index: 15)
-                    bindOptionalInt(canonicalValue.flatMap(Int.init), stmt: insertStmt, index: 16)
-                    sqlite3_bind_text(insertStmt, 17, evidenceJSON, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 18, primaryWayID, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 19, effectiveAtUTC, -1, SQLITE_TRANSIENT)
-                    bindOptionalText(decision.operation?.rawValue, stmt: insertStmt, index: 20)
-                    sqlite3_bind_text(insertStmt, 21, decision.directionScope.rawValue, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_text(insertStmt, 22, decision.applicability.rawValue, -1, SQLITE_TRANSIENT)
-                    sqlite3_bind_int(insertStmt, 23, decision.runtimeApplicable ? 1 : 0)
-                    sqlite3_bind_text(insertStmt, 24, event.finalizedEventID, -1, SQLITE_TRANSIENT)
-                    bindOptionalText(exportDisposition?.rawValue, stmt: insertStmt, index: 25)
-                    bindOptionalText(decision.exportTagKey, stmt: insertStmt, index: 26)
-                    guard sqlite3_step(insertStmt) == SQLITE_DONE else {
-                        sqlite3_finalize(insertStmt)
-                        throw sqliteError(db: db, context: "execute computer-vision observation insert")
-                    }
-                    sqlite3_finalize(insertStmt)
-
-                    staleExportBatchIDs += try staleOverlappingPendingExportBatches(
+                let activation = event.activationContext
+                // A boundary match may be absent or explicitly unstable.
+                // The finalizer's stabilized activation/rematch is the only
+                // authoritative target; the boundary remains evidence.
+                let primaryWayID = activation.wayId
+                guard Self.isPositiveWayID(primaryWayID) else {
+                    throw ConsumerAppError.io("Computer-vision passage has no valid OSM way id")
+                }
+                let canonicalValue = Self.canonicalMaxspeedValue(decision.value)
+                let evidenceData = try TrafficSignPassageWireEncoder.encode(
+                    event: event,
+                    decision: decision
+                )
+                guard let evidenceJSON = String(data: evidenceData, encoding: .utf8) else {
+                    throw ConsumerAppError.io("Could not encode computer-vision passage evidence")
+                }
+                let canCompareTypedTarget = decision.operation == .setMaxspeed
+                    && decision.runtimeApplicable
+                    && decision.directionScope != .unknown
+                    && canonicalValue != nil
+                let equivalentCorrection: (value: String, observationID: String)?
+                if canCompareTypedTarget {
+                    equivalentCorrection = try newestRuntimeCorrection(
                         db: db,
                         wayID: primaryWayID,
-                        direction: decision.directionScope,
-                        incomingObservationID: observationID
+                        direction: decision.directionScope
                     )
+                } else {
+                    equivalentCorrection = nil
+                }
+                let equivalent = equivalentCorrection?.value == canonicalValue
 
-                    if decision.runtimeApplicable,
-                       decision.operation == .setMaxspeed,
-                       decision.applicability == .permanent,
-                       canonicalValue != nil {
-                        staleExportBatchIDs += try supersedeOlderTypedCorrections(
-                            db: db,
-                            wayID: primaryWayID,
-                            direction: decision.directionScope,
-                            effectiveAtUTC: effectiveAtUTC,
-                            keepingObservationID: observationID
-                        )
-                    }
-
+                let consumedAtUTC = Self.isoFormatter.string(from: nowProvider())
+                if equivalent {
                     try insertComputerVisionPassageEvidence(
                         db: db,
                         finalizedEventID: event.finalizedEventID,
                         evidenceJSON: evidenceJSON,
-                        equivalentObservationID: nil,
+                        equivalentObservationID: equivalentCorrection?.observationID,
                         consumedAtUTC: consumedAtUTC
                     )
-
                     try insertComputerVisionReceipt(
                         db: db,
                         finalizedEventID: event.finalizedEventID,
-                        decision: .inserted,
-                        observationID: observationID,
+                        decision: .equivalent,
+                        observationID: equivalentCorrection?.observationID,
                         consumedAtUTC: consumedAtUTC
                     )
-                    guard let observation = try fetchObservation(
-                        db: db,
-                        observationID: observationID
-                    ) else {
-                        throw ConsumerAppError.sqlite("Inserted computer-vision observation could not be decoded")
-                    }
-                    guard sqlite3_exec(db, "COMMIT", nil, nil, nil) == SQLITE_OK else {
-                        throw sqliteError(db: db, context: "commit computer-vision observation")
-                    }
+                    guard try commitIfCurrent(context: "commit equivalent computer-vision receipt") else { return staleResult }
                     return LocalObservationComputerVisionRecordResult(
-                        decision: .inserted,
-                        observation: observation
+                        decision: .equivalent,
+                        observation: nil
                     )
-                } catch {
-                    sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
-                    throw error
                 }
+
+                let observationID = UUID().uuidString.lowercased()
+                let effectiveAtUTC = Self.isoFormatter.string(from: event.passageBoundaryTimestampUTC)
+                let coordinate = event.passageBoundaryCoordinate ?? TrafficSignCoordinate(
+                    latitude: activation.latitude,
+                    longitude: activation.longitude
+                )
+                let roadIDsData = try JSONEncoder().encode([primaryWayID])
+                let roadIDsJSON = String(data: roadIDsData, encoding: .utf8) ?? "[]"
+                let intent: LocalObservationIntentType
+                if decision.applicability == .temporary {
+                    intent = .temporary_restriction
+                } else if decision.operation == .setMaxspeed {
+                    intent = .set_maxspeed
+                } else {
+                    intent = .map_inconsistency
+                }
+                let exportDisposition: LocalObservationExportDisposition? = decision.operation == .setMaxspeed
+                    && decision.applicability == .permanent
+                    && decision.directionScope != .unknown
+                    ? .eligible
+                    : nil
+                let bundleSHA = activation.sourceSignature.bundleSHA256 ?? "unverified"
+                let sourceVersion = "tsr:\(event.packID)|artifact:\(event.artifactSHA256)|bundle_sha256:\(bundleSHA)"
+                let insertSQL = """
+                INSERT INTO observations (
+                  observation_id, modality, intent_type, value, lat, lon, heading_deg, road_candidate_ids,
+                  city_context, street_context, captured_at_utc, confidence_calibrated, source_version, state,
+                  device_pseudo_id, updated_at_utc, export_id, old_speed_kmh, new_speed_kmh,
+                  evidence_json, primary_way_id, effective_at_utc, operation, direction_scope, applicability,
+                  runtime_applicable, finalized_event_id, approval_revision, export_disposition, export_tag_key
+                ) VALUES (
+                  ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, NULL, NULL, ?9, ?10, ?11, ?12, ?13, ?14,
+                  NULL, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, NULL, ?25, ?26
+                )
+                """
+                var insertStmt: OpaquePointer?
+                guard sqlite3_prepare_v2(db, insertSQL, -1, &insertStmt, nil) == SQLITE_OK,
+                      let insertStmt else {
+                    throw sqliteError(db: db, context: "prepare computer-vision observation insert")
+                }
+                sqlite3_bind_text(insertStmt, 1, observationID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 2, LocalObservationModality.computer_vision.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 3, intent.rawValue, -1, SQLITE_TRANSIENT)
+                bindOptionalText(canonicalValue, stmt: insertStmt, index: 4)
+                sqlite3_bind_double(insertStmt, 5, coordinate.latitude)
+                sqlite3_bind_double(insertStmt, 6, coordinate.longitude)
+                sqlite3_bind_double(insertStmt, 7, activation.headingDegrees)
+                sqlite3_bind_text(insertStmt, 8, roadIDsJSON, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 9, effectiveAtUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalDouble(event.finalCalibratedConfidence, stmt: insertStmt, index: 10)
+                sqlite3_bind_text(insertStmt, 11, sourceVersion, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 12, decision.initialState.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 13, ensureDevicePseudoID(), -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 14, consumedAtUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalInt(decision.oldSpeedKmh, stmt: insertStmt, index: 15)
+                bindOptionalInt(canonicalValue.flatMap(Int.init), stmt: insertStmt, index: 16)
+                sqlite3_bind_text(insertStmt, 17, evidenceJSON, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 18, primaryWayID, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 19, effectiveAtUTC, -1, SQLITE_TRANSIENT)
+                bindOptionalText(decision.operation?.rawValue, stmt: insertStmt, index: 20)
+                sqlite3_bind_text(insertStmt, 21, decision.directionScope.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_text(insertStmt, 22, decision.applicability.rawValue, -1, SQLITE_TRANSIENT)
+                sqlite3_bind_int(insertStmt, 23, decision.runtimeApplicable ? 1 : 0)
+                sqlite3_bind_text(insertStmt, 24, event.finalizedEventID, -1, SQLITE_TRANSIENT)
+                bindOptionalText(exportDisposition?.rawValue, stmt: insertStmt, index: 25)
+                bindOptionalText(decision.exportTagKey, stmt: insertStmt, index: 26)
+                guard sqlite3_step(insertStmt) == SQLITE_DONE else {
+                    sqlite3_finalize(insertStmt)
+                    throw sqliteError(db: db, context: "execute computer-vision observation insert")
+                }
+                sqlite3_finalize(insertStmt)
+
+                staleExportBatchIDs += try staleOverlappingPendingExportBatches(
+                    db: db,
+                    wayID: primaryWayID,
+                    direction: decision.directionScope,
+                    incomingObservationID: observationID
+                )
+
+                if decision.runtimeApplicable,
+                   decision.operation == .setMaxspeed,
+                   decision.applicability == .permanent,
+                   canonicalValue != nil {
+                    staleExportBatchIDs += try supersedeOlderTypedCorrections(
+                        db: db,
+                        wayID: primaryWayID,
+                        direction: decision.directionScope,
+                        effectiveAtUTC: effectiveAtUTC,
+                        keepingObservationID: observationID
+                    )
+                }
+
+                try insertComputerVisionPassageEvidence(
+                    db: db,
+                    finalizedEventID: event.finalizedEventID,
+                    evidenceJSON: evidenceJSON,
+                    equivalentObservationID: nil,
+                    consumedAtUTC: consumedAtUTC
+                )
+
+                try insertComputerVisionReceipt(
+                    db: db,
+                    finalizedEventID: event.finalizedEventID,
+                    decision: .inserted,
+                    observationID: observationID,
+                    consumedAtUTC: consumedAtUTC
+                )
+                guard let observation = try fetchObservation(
+                    db: db,
+                    observationID: observationID
+                ) else {
+                    throw ConsumerAppError.sqlite("Inserted computer-vision observation could not be decoded")
+                }
+                guard try commitIfCurrent(context: "commit computer-vision observation") else { return staleResult }
+                return LocalObservationComputerVisionRecordResult(
+                    decision: .inserted,
+                    observation: observation
+                )
+            } catch {
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                throw error
             }
         }
-        quarantineStaleExportBatches(staleExportBatchIDs)
-        return consumed ?? LocalObservationComputerVisionRecordResult(
-            decision: .staleGeneration,
-            observation: nil
-        )
+        if consumed.decision != .staleGeneration {
+            quarantineStaleExportBatches(staleExportBatchIDs)
+        }
+        return consumed
     }
 
     func fetchLatestRuntimeApplicableCorrection(

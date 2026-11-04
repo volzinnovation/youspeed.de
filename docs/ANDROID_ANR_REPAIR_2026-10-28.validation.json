@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-28",
+  "timezone": "Europe/Berlin",
+  "scope": "Android ANR diagnosis, targeted concurrency repair, testing before in-place phone installation. Backend deployment remains postponed.",
+  "failing_build": 10076,
+  "installed_android": {
+    "package": "de.youspeed.android.debug",
+    "version": "1.5-debug",
+    "build": 10078,
+    "apk_sha256": "1e9b9d79a0a8ee1183e8d4b4852b4f92f7d02388222b8c9957bcc1a64c63d872",
+    "apk_bytes": 637952933
+  },
+  "iphone": {
+    "version": "1.5",
+    "build": 10077,
+    "ordinary_crashes_today": 0,
+    "updated": false,
+    "cpu_resource_report": "18:20-18:23; Action taken: none; separate from reported Android ANRs"
+  },
+  "root_cause": "Controller-state -> generation gate and generation gate -> controller-state lock inversion during road-context boundary updates and CV observation persistence.",
+  "fix": "Rollback-capable SQL work outside controller/generation locks; short terminal admission atomically validates state and generation before marking success. Physical commit occurs outside both locks.",
+  "tests": {
+    "jvm": {
+      "tests": 913,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "instrumented": {
+      "emulator": {
+        "tests": 29,
+        "failures": 0,
+        "result": "passed",
+        "log_sha256": "81d30a707c61e1b9f47a154779d158b40fe9ebcc70db93f8388fea3f577a87db"
+      },
+      "moto": {
+        "tests": 29,
+        "failures": 0,
+        "result": "passed",
+        "log_sha256": "e8ade31960b316df896da9adf89d229559a47ae99e65403de41f58147967872c"
+      }
+    },
+    "new_concurrency_methods": 6,
+    "old_apk_red_control_run": false,
+    "field_drive_run": false
+  },
+  "preservation": {
+    "private_backup_verified": true,
+    "backed_up_files": 14,
+    "files_identical_after_update_before_launch": 14,
+    "preferences_identical_after_launch": true,
+    "active_map_pointer_identical_after_launch": true,
+    "logs_retained": true,
+    "app_uninstalled": false,
+    "data_cleared": false
+  },
+  "normal_smoke": {
+    "dashboard": true,
+    "settings_open_and_close": true,
+    "installed_apk_hash_verified": true,
+    "new_anr_found": false,
+    "new_fatal_exception_found": false
+  },
+  "protected_speed_reference_policy_changed": false,
+  "backend_deployed": false,
+  "private_evidence_root": "/private/tmp/youspeed-crash-20261028",
+  "source_sha256": {
+    "android/app/src/main/java/de/youspeed/android/alpha/ConsumerSessionController.kt": "6b1a3e5e8b6cd1fce175d5e426670035f96d00716a34570a3b12c701c2a85cc5",
+    "android/app/src/main/java/de/youspeed/android/alpha/LocalObservationStore.kt": "ee22eb4ef414c7fedcd68b73bcda159c94b3bfdcb22c79086833867368487697",
+    "android/app/src/main/java/de/youspeed/android/alpha/TrafficSignPassage.kt": "e2ac471069cdb91169d5170e381e777f354f1b5242d2ac7735346b61411948f6",
+    "android/app/src/androidTest/java/de/youspeed/android/alpha/TrafficSignObservationConcurrencyInstrumentedTest.kt": "b2f98e3153841a6256c9a73cee6ffd7dc0cfefd68850c1f8777693a25eb6d4dd",
+    "android/app/build.gradle.kts": "e8d99587bd47287d5fb19c03ab1b622122361597b9269afc69273db4ff2ef5d6"
+  },
+  "iphone_followup": {
+    "scope": "Scoped concurrency review and local storage-wait fixes; no iPhone installation.",
+    "reviewed_cycle_found": false,
+    "fixes": [
+      "Short CV transaction commit admission outside SQLite I/O with stale rollback",
+      "Optional shadow QA I/O outside processing gate; stale source delivery suppressed",
+      "Cached/async journal display, media read and odometer save"
+    ],
+    "logical_admission_limit": "An admitted transaction or diagnostic may physically finish after later invalidation; immutable source identity retained.",
+    "remaining_limits": [
+      "Debug-log-off waits for an admitted log write under the existing opt-out barrier",
+      "Bounded admitted core processing remains serialized with generation changes",
+      "Optional QA can still delay subsequent inference on its serial worker; actual-device I/O latency and peak memory were not benchmarked"
+    ],
+    "simulator": {
+      "model": "iPhone 17 Pro",
+      "os": "iOS 26.5",
+      "bundle": "de.youspeed.SpeedConsumer.TestHost",
+      "tests": 125,
+      "passed": 124,
+      "skipped": 1,
+      "failures": 0,
+      "result": "passed",
+      "result_bundle": "/private/tmp/youspeed-iphone-lock-review-accepted.xcresult",
+      "log": "/private/tmp/youspeed-iphone-lock-review-accepted.log",
+      "log_sha256": "280236c993bd8565edce1807104a75a8e3b9aa03c0b25bbfbb4e56914453320f",
+      "skipped_test": "TrafficSignShadowRuntimeV2Tests.testPhysicalIPhoneReviewedInputContractExactPanoramaxFramesWithoutCoreMLInference"
+    },
+    "new_concurrency_methods": 6,
+    "negative_control": {
+      "method": "TrafficSignPassageEvaluationTests.testSlowPassagePreparationDoesNotBlockGenerationChangesAndRollsBack",
+      "baseline_commit": "bec20f416c38c7984269988b8115aee9e6f7e564",
+      "baseline_method": "Original HEAD LocalObservationStore.recordComputerVisionPassageIfNeeded",
+      "result": "failed as expected: update blocked until preparation released, then stale observations/receipts/sidecar persisted",
+      "tests": 1,
+      "assertion_failures": 14,
+      "log": "/private/tmp/youspeed-iphone-lock-review-red.log",
+      "log_sha256": "37d386326787dc0a04e31c8dfb1c639155b444203b1d2d00470da28a5cef5a8c"
+    },
+    "initial_attempts": [
+      {
+        "tests": 67,
+        "failures": 1,
+        "log_sha256": "e872eea32394f9e7f9f6566a68f5b04faf26d5d56345ca567124f89e04c83986"
+      },
+      {
+        "tests": 125,
+        "skipped": 1,
+        "failures": 1,
+        "log_sha256": "e4ebb61106eb00e64ed9fbdae10c26d4eba5410a3c9f93acc6a905692bb2f62d"
+      }
+    ],
+    "initial_failure_resolution": "Existing persistence fixture waited for startup while retained test-host logs (100100821 bytes observed) triggered review. Reused existing ready-state fixture after init; no logs deleted and production startup unchanged.",
+    "device_installed": false,
+    "field_drive_run": false,
+    "source_sha256": {
+      "iphone/SpeedConsumerApp/ConsumerModels.swift": "a8dd762f5a74fca4288307e9dacfc98ec138c706f6f2f9c7816cbded1dec82c4",
+      "iphone/SpeedConsumerApp/TrafficSignRuntime.swift": "f9053bc4ee57f6b1d189fc847073761334d3d4618c49afe71730ca91267fff9e",
+      "iphone/SpeedConsumerApp/TripJournal.swift": "e2be31ad6437a4546317bf6480153b78e25750357cd1c13e3c73bb7dd7e068e6",
+      "iphone/SpeedConsumerApp/SpeedConsumerTests.swift": "d973004ce3f1933a0826e0a1bd03ec6b24b3ab460aa963931811f1f29dadc6ba",
+      "iphone/SpeedConsumerTests/TripJournalTests.swift": "b59d2c3c33db0c5214f990ad1bc89a6d76535c2aedafe5663993a083b683f948"
+    }
+  }
+}

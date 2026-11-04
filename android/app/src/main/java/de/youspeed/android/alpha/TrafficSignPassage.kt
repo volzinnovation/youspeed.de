@@ -8,7 +8,7 @@ import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** Linearizes generation invalidation with durable CV observation writes. */
+/** Linearizes generation invalidation with short CV observation commit admission. */
 internal class TrafficSignWriteGate(initialGeneration: Long = 0L) {
     private val lock = Any()
     @Volatile private var state = State(initialGeneration, false)
@@ -24,6 +24,8 @@ internal class TrafficSignWriteGate(initialGeneration: Long = 0L) {
         State(state.generation + 1L, permitWrites).also { state = it }.generation
     }
 
+    /** The block must be an in-memory admission marker, never disk I/O or an
+     * authority callback that acquires the controller state lock. */
     fun <T> withPermit(expectedGeneration: Long, block: () -> T): T? = synchronized(lock) {
         if (!state.writesPermitted || expectedGeneration != state.generation) null else block()
     }

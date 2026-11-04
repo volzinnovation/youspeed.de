@@ -940,3 +940,118 @@ extension TripJournalTests {
         }
     }
 }
+
+final class TripJournalDisplayConcurrencyTests: XCTestCase {
+    func testAsyncDisplayAndMediaReadsSuspendWhileJournalQueueIsBusy() async throws {
+        let pause = JournalDisplayQueuePause()
+        let fixture = try JournalDisplayFixture(promptClock: pause.now)
+        defer { pause.release.signal(); fixture.close() }
+        pause.arm()
+        fixture.journal.location(fixture.fix(latitude: 48, at: Date()))
+        XCTAssertEqual(pause.entered.wait(timeout: .now() + 2), .success)
+
+        let displayFinished = expectation(description: "Display snapshot resumed")
+        let mediaFinished = expectation(description: "Media identities resumed")
+        let mainResponsive = expectation(description: "Main actor remains responsive")
+        let displayResult = JournalDisplayResultBox()
+        let displayTask = Task { @MainActor in
+            let value = await fixture.journal.displaySnapshot(fixture.id)
+            displayResult.store(value)
+            displayFinished.fulfill()
+        }
+        let mediaTask = Task { @MainActor in
+            _ = await fixture.journal.mediaSnapshot(fixture.id)
+            mediaFinished.fulfill()
+        }
+        defer { displayTask.cancel(); mediaTask.cancel() }
+        DispatchQueue.main.async { mainResponsive.fulfill() }
+        await fulfillment(of: [mainResponsive], timeout: 1)
+        XCTAssertNil(displayResult.value(), "A blocked journal queue has not returned a display snapshot")
+        pause.release.signal()
+        await fulfillment(of: [displayFinished, mediaFinished], timeout: 3)
+        XCTAssertEqual(displayResult.value()?.trip["id"] as? String, fixture.id)
+    }
+
+    func testDisplaySnapshotIsReadOnlyIsolatedAndContainsCachedReplayAndMediaData() async throws {
+        let fixture = try JournalDisplayFixture()
+        defer { fixture.close() }
+        let at = Date()
+        fixture.journal.location(fixture.fix(latitude: 48, at: at))
+        fixture.journal.location(fixture.fix(latitude: 48.0002, at: at.addingTimeInterval(2)))
+        fixture.journal.bind("synthetic-display-session")
+        fixture.journal.media(session: "synthetic-display-session", id: "synthetic-photo",
+                              path: "https://example.invalid/synthetic-photo", kind: "photo", at: at)
+        fixture.journal.tsrEvent(["event": "synthetic-display-diagnostic"], at: at)
+        _ = fixture.journal.snapshot() // Flush test setup only, outside a view/main actor.
+        let before = try fixture.counterUsage()
+        try await Task.sleep(for: .milliseconds(50))
+        let snapshot = await fixture.journal.displaySnapshot(fixture.id)
+        let media = await fixture.journal.mediaSnapshot(fixture.id)
+        XCTAssertEqual(try fixture.counterUsage(), before, "Display reads must not checkpoint/write usage counters")
+        XCTAssertEqual(snapshot.trip["id"] as? String, fixture.id)
+        XCTAssertEqual(snapshot.points.map(\.id), snapshot.events.filter(\.trackEligible).map(\.id))
+        XCTAssertEqual(snapshot.points.count, 2)
+        XCTAssertEqual(snapshot.media.map(\.id), ["synthetic-photo"])
+        XCTAssertEqual(media.map(\.id), snapshot.media.map(\.id))
+        let oldEventCount = snapshot.events.count
+        fixture.journal.signEvent(["class_code": "DE:274-30", "source": "camera"], at: Date())
+        let updated = await fixture.journal.displaySnapshot(fixture.id)
+        XCTAssertGreaterThan(updated.events.count, oldEventCount)
+        XCTAssertEqual(snapshot.events.count, oldEventCount, "Previously displayed/replayed values stay immutable")
+        let missing = await fixture.journal.displaySnapshot("missing-synthetic-trip")
+        XCTAssertTrue(missing.trip.isEmpty && missing.events.isEmpty && missing.points.isEmpty && missing.media.isEmpty)
+    }
+}
+
+private final class JournalDisplayFixture: @unchecked Sendable {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let suite = "journal-display-\(UUID().uuidString)"
+    let preferences: UserDefaults
+    let journal: TripJournal
+    let id: String
+
+    init(promptClock: (() -> Double)? = nil) throws {
+        preferences = try XCTUnwrap(UserDefaults(suiteName: suite))
+        journal = TripJournal(directory: root, preferences: preferences, heartbeat: false, promptClock: promptClock)
+        journal.setEnabled(true); journal.start()
+        id = try XCTUnwrap(journal.snapshot().trips.first?["id"] as? String)
+    }
+    func fix(latitude: Double, at: Date) -> CLLocation {
+        CLLocation(coordinate: .init(latitude: latitude, longitude: 8), altitude: 0,
+                   horizontalAccuracy: 3, verticalAccuracy: 3, course: 0, speed: 10, timestamp: at)
+    }
+    func counterUsage() throws -> Double {
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open_v2(root.appendingPathComponent("trips.sqlite").path, &db, SQLITE_OPEN_READONLY, nil), SQLITE_OK)
+        defer { sqlite3_close_v2(db) }
+        var statement: OpaquePointer?
+        XCTAssertEqual(sqlite3_prepare_v2(db, "SELECT usage FROM counters WHERE id=1", -1, &statement, nil), SQLITE_OK)
+        defer { sqlite3_finalize(statement) }
+        XCTAssertEqual(sqlite3_step(statement), SQLITE_ROW)
+        return sqlite3_column_double(statement, 0)
+    }
+    func close() {
+        journal.close(); preferences.removePersistentDomain(forName: suite)
+        try? FileManager.default.removeItem(at: root)
+    }
+}
+
+private final class JournalDisplayQueuePause: @unchecked Sendable {
+    private let lock = NSLock()
+    private var armed = false
+    let entered = DispatchSemaphore(value: 0)
+    let release = DispatchSemaphore(value: 0)
+    func arm() { lock.lock(); armed = true; lock.unlock() }
+    func now() -> Double {
+        lock.lock(); let shouldPause = armed; armed = false; lock.unlock()
+        if shouldPause { entered.signal(); _ = release.wait(timeout: .now() + 5) }
+        return 0
+    }
+}
+
+private final class JournalDisplayResultBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var snapshot: TripJournalDisplaySnapshot?
+    func store(_ value: TripJournalDisplaySnapshot) { lock.lock(); snapshot = value; lock.unlock() }
+    func value() -> TripJournalDisplaySnapshot? { lock.lock(); defer { lock.unlock() }; return snapshot }
+}

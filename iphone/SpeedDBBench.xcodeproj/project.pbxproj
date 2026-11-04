@@ -240,6 +240,7 @@
 		E1EF1BCA331FB98A572431EC /* RoadBoundaryDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596FBCF04865A5176FFDE2A3 /* RoadBoundaryDetector.swift */; };
 		E59DF7E1FC536928DBF4394F /* RoadPathEvidenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21A9ACAE299BC122BBC183E /* RoadPathEvidenceTests.swift */; };
 		E79B104C239ECE5204DB66F2 /* RoadBoundaryMotionHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38532CE100FF815E74A1BB2F /* RoadBoundaryMotionHint.swift */; };
+		EAE9069C576C781C2FF7F806 /* ConsumerTestHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0666C48A5CBB5499F30B5F03 /* ConsumerTestHost.swift */; };
 		EB295A5EF92B103765FD9F12 /* TrafficSignCountryPackRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 451AB91452C045D0505BEBD1 /* TrafficSignCountryPackRegistry.swift */; };
 		EBBAE7DC4BD4EAE590C1D7BB /* V3SpeedLimitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103271F42FCA6C4AA0178AFB /* V3SpeedLimitService.swift */; };
 		EE2B86AC7A530911AB8F68C5 /* conditional-ocr in Resources */ = {isa = PBXBuildFile; fileRef = DF842DA15A5D2241BA324109 /* conditional-ocr */; };
@@ -294,6 +295,7 @@
 		03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignRuntime.swift; sourceTree = "<group>"; };
 		04C2F0D2C62B67E17CA605B3 /* penalty-documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "penalty-documentation"; path = "../shared/penalty-documentation"; sourceTree = SOURCE_ROOT; };
 		04E3DFEEB128C612F8014906 /* romania.poly */ = {isa = PBXFileReference; path = romania.poly; sourceTree = "<group>"; };
+		0666C48A5CBB5499F30B5F03 /* ConsumerTestHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsumerTestHost.swift; sourceTree = "<group>"; };
 		07397DB47DB917288A4ABBD8 /* TrafficSignPassageEvaluation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignPassageEvaluation.swift; sourceTree = "<group>"; };
 		07CADACCA7BAE0E107F9D5FB /* RoadPathSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadPathSession.swift; sourceTree = "<group>"; };
 		08D3FBD69E8CB7066027FB18 /* SpeedConsumerAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerAppDelegate.swift; sourceTree = "<group>"; };
@@ -747,6 +749,7 @@
 				A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */,
 				25977260953DEC2D70A20069 /* ConditionalOCRInterpretationTests.swift */,
 				2E3BB4E1D5FD051D299D3B3D /* ConditionalSpeedRulesTests.swift */,
+				0666C48A5CBB5499F30B5F03 /* ConsumerTestHost.swift */,
 				9EE7FBD20C2C207434E0A6A0 /* DebugLogPersistenceTests.swift */,
 				FEF3D26E1587E34923C84FDA /* DriveRecorderStartupTests.swift */,
 				ECF75D496D18133C8CEA6C81 /* DrivingControlAvailabilityTests.swift */,
@@ -1329,6 +1332,7 @@
 				6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */,
 				19B30FCD5E08E64855C3BEE3 /* ConditionalOCRInterpretationTests.swift in Sources */,
 				119498778A404FCAFBDA297D /* ConditionalSpeedRulesTests.swift in Sources */,
+				EAE9069C576C781C2FF7F806 /* ConsumerTestHost.swift in Sources */,
 				1211E93B1CB861C6794A1586 /* DebugLogPersistenceTests.swift in Sources */,
 				DEE9AE6EC2AFC05E6B12DDEF /* DriveRecorderStartupTests.swift in Sources */,
 				5F8296A6269F7BB82D9BA4FD /* DrivingControlAvailabilityTests.swift in Sources */,
