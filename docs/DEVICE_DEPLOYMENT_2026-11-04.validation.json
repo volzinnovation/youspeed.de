@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-04",
+  "timezone": "Europe/Berlin",
+  "recorded_at_utc": "2026-11-04T13:21:13.592028+00:00",
+  "status": "Both attached phones updated in place and launched; focused checks passed with the prerequisites and UI-runner limitation below.",
+  "branch_audit": {
+    "working_branch": "codex/youspeed-v1.5-mobidata-bw",
+    "source_base_commit": "bec20f416c38c7984269988b8115aee9e6f7e564",
+    "remote": "origin",
+    "remote_refreshed_before_commits_and_before_push": true,
+    "named_refs_checked": 32,
+    "named_refs_already_contained": 32,
+    "newer_app_work_to_consolidate": false,
+    "other_worktrees": {
+      "named_refs_checked": 32,
+      "named_refs_contained_in_active_branch": 32,
+      "active_branch": "codex/youspeed-v1.5-mobidata-bw",
+      "clean_worktrees": [
+        "crop-review-exit-context",
+        "lane-corpus-semantic-guidance",
+        "store-safety-marketing",
+        "fdroid-minify-1.0.4"
+      ],
+      "missing_camera_validation_detached_tip": {
+        "commit": "99d62f21f245e73747cbad20f0d7458f342deeb3",
+        "contained_in_active_branch": true
+      },
+      "historical_fdroid_detached_checkout": {
+        "commit": "e5f8880fa215a0df4f06c72b425126d1b4e50e11",
+        "relationship": "Old independent release history without a merge base; equivalent F-Droid metadata change already present as ancestor 04c55b0a.",
+        "dirty_scope": "Only staged .gitattributes change: two deletions removing French Android/iPhone model LFS rules.",
+        "consolidation": "Excluded historical attribute deletions; current bundled models retain their LFS rules."
+      },
+      "newer_app_work_to_consolidate": false,
+      "worktrees_modified_or_deleted": false
+    },
+    "consolidation_result": "All named local and remote branches were already included. The historical detached F-Droid attribute deletions were left in their original checkout; they are not newer app work."
+  },
+  "marketing_version": "1.5",
+  "build_number": 10084,
+  "android": {
+    "device": "moto g86 5G",
+    "os_version": "16",
+    "package": "de.youspeed.android.debug",
+    "installed_version": "1.5-debug",
+    "installed_build": 10084,
+    "previous_build": 10082,
+    "artifact_sha256": "ac08057cb430fea715bae6c709409d4d5b9e338dc6a2f464b246c5f2ca0b5611",
+    "installation": "adb install -r; installed version and foreground launch verified; original first-install timestamp unchanged.",
+    "data_handling": "No uninstall or app-data clear. Existing installed map and saved logs retained. Destructive fixtures ran in a separate testhost. This is not a full before/after content-hash audit.",
+    "unit_tests": {
+      "suites": 107,
+      "tests": 923,
+      "skipped": 2,
+      "failures": 0,
+      "errors": 0,
+      "skip_names": [
+        "de.youspeed.android.alpha.RoadworksAdvisoryTests/testCapturedIncidentQualificationArtifactWhenPresent",
+        "de.youspeed.android.alpha.SignCollectionRepeatCropTests/recordedDashcamTraceMatchesSwiftCropSelection"
+      ]
+    },
+    "lint": {
+      "fatal": 0,
+      "errors": 0,
+      "warnings": 177,
+      "information": 13
+    },
+    "physical_tests": {
+      "runner_result": "OK (55 tests)",
+      "tests": 55,
+      "passed": 52,
+      "skipped": 3,
+      "failed": 0,
+      "skipped_names": [
+        "CityContextInstrumentedTest/fullPackedPforzheimAndNeuenbuergLookupsStayWithinTheGpsInterval",
+        "RoadAdvisoryAcceptanceInstrumentedTest/capturedPublicationMatchesBackendReceiptOnDevice",
+        "RoadAdvisoryAcceptanceInstrumentedTest/capturedIncidentRendersExistingDashboardAndParkedDetails"
+      ],
+      "classes": [
+        "CityContextInstrumentedTest",
+        "SettlementContextInstrumentedTest",
+        "RoadworksServiceInstrumentedTest",
+        "TrafficSignObservationConcurrencyInstrumentedTest",
+        "InventorySignDatabaseInstrumentedTest",
+        "RoadAdvisoryAcceptanceInstrumentedTest",
+        "ConsumerSmokeTest"
+      ]
+    },
+    "visual_smoke": "Normal retained-map dashboard, numeric speed limit, stationary speed and controls verified; saved-log retention prompt answered by keeping logs.",
+    "launch_total_ms": 3402,
+    "private_receipt": "/private/tmp/youspeed-android-deployment-20261104.json"
+  },
+  "iphone": {
+    "device": "iPhone 14 Pro",
+    "os_version": "26.6.2",
+    "bundle_id": "de.youspeed.SpeedConsumer.TestHost",
+    "installed_version": "1.5",
+    "installed_build": 10084,
+    "previous_build": 10083,
+    "installation": "in-place update, no uninstall or app-data clear",
+    "launch_verified": true,
+    "test_plugins_in_final_app": false,
+    "artifacts": {
+      "Info.plist": {
+        "bytes": 2256,
+        "sha256": "2da29b2fd9425f4630fb55286a946515772910a04f31c40d62bc989d35872629"
+      },
+      "SpeedConsumer": {
+        "bytes": 22764672,
+        "sha256": "5a9dc893a1343afdf8ef1c2b6f48b99ba529a813faddec3163b0b2c363e46bf4"
+      },
+      "_CodeSignature/CodeResources": {
+        "bytes": 424157,
+        "sha256": "2103776abd99481c69f215b79891eb40d67eb4aa366401cd82b1db8c770a1df1"
+      }
+    },
+    "data_handling": "Updated the existing historical .TestHost driver identity. Isolated tests used .UnitTests; no driver uninstall or data clear. Retained-map dashboard verified. This is not a full before/after content-hash audit.",
+    "focused_tests": {
+      "executed": 115,
+      "passed": 113,
+      "skipped": 2,
+      "failures": 0,
+      "log": "/tmp/youspeed-iphone-focused-tests-20261104.log",
+      "result_bundle": "/tmp/youspeed-iphone-focused-tests-20261104.xcresult"
+    },
+    "detector_tests": {
+      "executed": 6,
+      "passed": 6,
+      "failures": 0,
+      "log": "/tmp/youspeed-iphone-coreml-aligned-20261104.log",
+      "result_bundle": "/tmp/youspeed-iphone-coreml-aligned-20261104.xcresult"
+    },
+    "prerequisites_and_ui_limitations": {
+      "city_fixture_tests": "two skipped because full-region city fixture absent",
+      "captured_incident_tests": "two explicitly excluded because private qualification artifact absent",
+      "live_settings_ui_test": "UI runner authentication canceled before test initialization"
+    },
+    "visual_smoke": "Attached iPhone screen viewed in QuickTime New Movie Recording preview without recording: retained-map dashboard, numeric limit, locality and main controls visible.",
+    "private_receipt": "/private/tmp/youspeed-iphone-deployment-receipt-10084-20261104.json"
+  },
+  "support_verification": {
+    "tests": [
+      {
+        "command": "python3 -m pytest -q tests/inspector/test_panoramax_annotation_statistics.py tests/tsr/test_annotation_training_intake.py tests/tsr/test_source_annotation_labels.py tests/tsr/test_student_crop_intake.py tests/tsr/test_mobile_sign_catalog.py lectures/tsr-sgblur-de-2026-10-26/praktikum/test_crawl_panoramax.py",
+        "status": "passed",
+        "tests_passed": 100,
+        "subtests_passed": 26,
+        "duration_seconds": 4.08
+      },
+      {
+        "command": "PYTHONPATH=/private/tmp/youspeed-de278-pydeps XONSH_HISTORY_BACKEND=dummy python3 -m pytest -q tests/map/test_traffic_sign_runtime.py",
+        "status": "passed",
+        "tests_passed": 20,
+        "subtests_passed": 5,
+        "duration_seconds": 0.89,
+        "dependency": "Existing pinned openlr 1.0.1 outside the repository"
+      }
+    ],
+    "tests_passed": 150,
+    "subtests_passed": 80,
+    "additional_command": "python3 -m pytest -q tests/map/test_road_advisory_contract.py tests/test_repository_secrets.py",
+    "additional_tests_passed": 30,
+    "additional_subtests_passed": 49,
+    "native_parity_review": {
+      "method": "Read-only inspection of pending Swift/Kotlin road-advisory V2 and exact DE278 presentation changes; no duplicate device builds or tests.",
+      "blocking_regressions_found": 0,
+      "road_advisory_agreement": [
+        "Allowlisted source IDs and v1 cache/v2 network schema handling",
+        "Per-source freshness; incident fresh window 600 seconds and unavailable cutoff 900 seconds",
+        "Reported-active lease at most 900 seconds, bound to manifest source publication",
+        "Two-fix card admission and 500/750 metre entry/retention radii"
+      ],
+      "sign_presentation": "Exact DE278 artwork comes from the shared reviewed asset catalog. Generic signs retain text fallback. Directional packed OSM presentation observations do not create speed rules or cancellation boundaries.",
+      "protected_speed_reference_policy": "No pending policy/interpreter changes found in reviewed paths."
+    },
+    "whitespace_check": "git diff --check passed",
+    "credential_check": "Repository credential checker applied to the complete changed/new file set; no findings. Private raw sources, logs, screenshots, backups and device identifiers excluded from this public receipt."
+  },
+  "test_fixture_cleanup": [
+    "Legacy all-configured-bundles mock now explicitly returns 404 for the optional packed catalog; production download behavior unchanged.",
+    "Legacy exact-frame Core ML assertions now match the contract already documented in TrafficSignDetectorInputTests: the clear frame must identify 70 km/h strongly; the weak distant frame must not confidently confirm a wrong maximum speed. No model bytes, runtime thresholds or protected reference policy changed.",
+    "Both Core ML tests and input-geometry tests passed after this alignment. The distant frame remains a known recognition limitation; JPEG decoder warnings observed for both fixture images were not established as its cause."
+  ],
+  "validation_scope": "Stationary device checks and synthetic/shared fixtures. No road-drive validation, new map deployment or backend feed activation was performed. Full regional city fixtures and private captured incident acceptance data were unavailable.",
+  "cleanup": {
+    "iphone": {
+      "isolated_unit_test_app_removed": true,
+      "driver_app_removed": false,
+      "task_build_tree_removed": true,
+      "small_logs_and_result_bundles_retained": true
+    },
+    "android": "No new large temporary copies or artifacts outside standard reused Android build outputs; no personal data or preexisting caches deleted.",
+    "private_small_logs_and_test_results_retained": true,
+    "archived_evidence_restore_records_preserved": true,
+    "other_worktrees_left_untouched": true,
+    "quicktime_preview": "No recording started. Preview may remain open because the Mac locked before the closing action."
+  },
+  "concurrent_followup": {
+    "chat": "Remove duplicate installs and show build",
+    "build_in_progress": 10085,
+    "scope": "New version-label, installation-identity and ahead-sign work appeared in the shared working tree after build 10084 deployment. It belongs to the separate active chat.",
+    "commit_scope": "This deployment commit records the validated build 10084. Later uncommitted work and build 10085 source files are preserved in the working tree for that chat; they were not included or redeployed by this task."
+  }
+}

@@ -2,6 +2,10 @@
 
 This directory contains the public technical documentation for YouSpeed.
 
+- [`DEVICE_DEPLOYMENT_2026-11-04.validation.json`](DEVICE_DEPLOYMENT_2026-11-04.validation.json): branch/worktree audit, version 1.5 build 10084 installation on both attached phones, focused regression checks and cleanup
+- [`CITY_LOOKUP_STALL_REPAIR_2026-11-02.md`](CITY_LOOKUP_STALL_REPAIR_2026-11-02.md): Pforzheim/Neuenbürg packed-map lookup stalls, shared query repair, physical iPhone and Android emulator acceptance, and data-preserving iPhone build 10083 installation
+- [`ANDROID_ANR_REPAIR_2026-10-28.md`](ANDROID_ANR_REPAIR_2026-10-28.md): two location-correlated Android ANRs, controller/write-permit deadlock repair, emulator/Moto regression tests and data-preserving build 10078 installation
+
 Historical links into `../output/` refer to local build and device evidence.
 That directory was removed at the owner's request on 24 October 2026 to reclaim
 disk space and is excluded from Git. The summaries and receipts in `docs/` and
@@ -38,7 +42,15 @@ the lightweight bundle metadata remain available.
 - [`FAHRTENBUCH_SPEC.md`](FAHRTENBUCH_SPEC.md): automatic trip journal with per-trip GPS/TSR logs, app kilometre/usage counters, deletable read-only trips with optional vehicle odometer, track/log exports and direct Panoramax photo/dashcam-session links; includes the German formal-Fahrtenbuch scope limitation
 - [`FAHRTENBUCH_IMPLEMENTATION.md`](FAHRTENBUCH_IMPLEMENTATION.md): implemented native history/detail, recording/recovery, private exports, encrypted backup and validation limits
 - [`MOBIDATA_BW_ROADWORKS_LIVE_SERVICE_SPEC.md`](MOBIDATA_BW_ROADWORKS_LIVE_SERVICE_SPEC.md): BEMaS source assessment, server caching and ingestion, public API contract, and GPS-based roadworks presentation with iPhone/Android parity
+- [`MOBIDATA_BW_ROAD_ADVISORIES_V2_IMPLEMENTATION.md`](MOBIDATA_BW_ROAD_ADVISORIES_V2_IMPLEMENTATION.md): local multi-source BW incident/Autobahn advisory integration, native parity, live-source profiling and postponed deployment
+- [`MOBIDATA_BW_INCIDENT_PILOT_QUALIFICATION_2026-10-28.evidence.json`](MOBIDATA_BW_INCIDENT_PILOT_QUALIFICATION_2026-10-28.evidence.json): incidents-first positive-subset qualification, captured-data native acceptance and deployment preflights
+- [`MOBIDATA_BW_CONTAINER_ACCEPTANCE_2026-10-28.validation.json`](MOBIDATA_BW_CONTAINER_ACCEPTANCE_2026-10-28.validation.json): isolated live-eu container checks, measured resource limits, cleanup and unchanged production baseline
+- [`MOBIDATA_BW_INCIDENT_ANDROID_ACCEPTANCE_2026-10-28.evidence.json`](MOBIDATA_BW_INCIDENT_ANDROID_ACCEPTANCE_2026-10-28.evidence.json): 15 physical tests, incident UI review and data-preserving build 10080 installation
+- [`MOBIDATA_BW_INCIDENT_IPHONE_ACCEPTANCE_2026-10-28.evidence.json`](MOBIDATA_BW_INCIDENT_IPHONE_ACCEPTANCE_2026-10-28.evidence.json): 38 physical tests and dashboard review; normal installation/postinstall checks pending device reconnection
+- [`MOBIDATA_BW_BEMAS_TIMING_2026-10-28.evidence.json`](MOBIDATA_BW_BEMAS_TIMING_2026-10-28.evidence.json): mirror timestamp/content divergence and phase-window investigation; feed remains disabled
+- [`MOBIDATA_BW_AUTOBAHN_LICENSING_2026-10-28.evidence.json`](MOBIDATA_BW_AUTOBAHN_LICENSING_2026-10-28.evidence.json): official restricted-use and publisher-approval findings; redistribution/cache terms remain unresolved
 - [`PANORAMAX_CROP_DATABASE_INTEGRATION_SPEC_2026-10-14.md`](PANORAMAX_CROP_DATABASE_INTEGRATION_SPEC_2026-10-14.md): complete Panoramax sign-crop backfill and nightly synchronization, downward-expanded crops, metadata and country-specific reverse class mappings
+- [`TSR_ANNOTATION_TRAINING_INTAKE.md`](TSR_ANNOTATION_TRAINING_INTAKE.md): Panoramax annotation statistics, source-label resolution and reviewed training/student-crop intake
 - [`LANE_DETECTION.md`](LANE_DETECTION.md): optional dashcam lane overlay, camera integration and validation protocol
 - [`TSR_LANE_TRAJECTORY_IMPLEMENTATION_2026-09-29.md`](TSR_LANE_TRAJECTORY_IMPLEMENTATION_2026-09-29.md): experimental visual path/trajectory fusion, dashcam diagnostics and live/replay overlays
 - [`ROAD_PATH_ANDROID_BENCHMARK.md`](ROAD_PATH_ANDROID_BENCHMARK.md): reproducible Moto g86 component benchmark and limits of its performance claim
