@@ -6986,7 +6986,7 @@ class ConsumerSessionController(
             val direction = when (result.travelDirection) {
                 TrafficSignTravelDirection.FORWARD -> 1; TrafficSignTravelDirection.REVERSE -> -1; else -> 0
             }
-            val snapshot = inventorySignDatabase?.read(location.latitude, location.longitude, result.wayId, direction) ?: InventorySignSnapshot()
+            val snapshot = inventorySignDatabase?.read(location.latitude, location.longitude, result.wayId, direction, trafficSignDisplayCatalog, country) ?: InventorySignSnapshot()
             val inventoryFix = InventorySignFix(location.latitude, location.longitude,
                 Instant.ofEpochMilli(location.time), if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
                 result.wayId, direction, result.matchedWayStable, sha256 ?: version, heading,
@@ -7013,7 +7013,7 @@ class ConsumerSessionController(
                     "heading_deg" to heading, "heading_accuracy_deg" to location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
                     "reason" to decision.displayChangeReason,
                     "face_relation" to decision.display?.secondaryFaceRelation(inventoryFix)))
-                copy(inventorySignPictogram = decision.display?.pictogram(), inventorySignParameterText = decision.display?.parameterText, inventorySignCode = decision.display?.code,
+                copy(inventorySignPictogram = decision.display?.pictogram(trafficSignDisplayCatalog), inventorySignParameterText = decision.display?.parameterText, inventorySignCode = decision.display?.code,
                     inventorySignSourceId = decision.display?.sourceId,
                     inventorySignPresentationId = decision.display?.let { "inventory:${it.id}:${decision.displayTriggeredAt}" })
                 }

@@ -71,6 +71,45 @@ class RuntimeTests(unittest.TestCase):
 
     def build(self):return runtime.build_runtime(self.db,self.meta)
 
+    def test_numeric_end_artwork_does_not_depend_on_snapshot_audit_or_camera_labels(self):
+        speeds=(5,10,20,30,40,50,60,70,80,90,100,110,120,130)
+        self.db.execute('DELETE FROM traffic_sign_inventory')
+        for index,speed in enumerate(speeds,1):
+            self.sign(index,f'DE:278-{speed}')
+        self.build()
+        rows=self.db.execute('''SELECT sign_code,numeric_value,pictogram_code,pictogram_path,model_classes_json
+            FROM traffic_sign_runtime ORDER BY numeric_value''').fetchall()
+        self.assertEqual(rows,[(f'DE:278-{speed}',speed,f'DE:278-{speed}',
+            f'tsr/sign-pictograms/png/de-278-{speed}.png','[]') for speed in speeds])
+
+    def test_end_artwork_uses_only_complete_explicit_source_values(self):
+        self.db.execute('DELETE FROM traffic_sign_inventory')
+        codes=('DE:278[70]','DE:278[50 km/h]','DE:278','DE:278-57',
+               'DE:278[70)','DE:278[road 70]','DE:278-70[WVZ]')
+        for index,code in enumerate(codes,1):
+            self.sign(index,code)
+        self.build()
+        rows={row[0]:row[1:] for row in self.db.execute('''SELECT sign_code,numeric_value,
+            parameter_status,pictogram_code,model_classes_json FROM traffic_sign_runtime''')}
+        self.assertEqual(rows['DE:278[70]'],(None,'annotation_unverified','DE:278-70','[]'))
+        self.assertEqual(rows['DE:278[50 km/h]'],(50,'parsed_source_value','DE:278-50','[]'))
+        for code in codes[2:]:
+            self.assertIsNone(rows[code][2],code)
+        # Selecting an image must not turn an unverified bracket annotation
+        # into a new rule or claim camera recognition of a numeric subtype.
+        self.assertEqual(self.db.execute('''SELECT a.status FROM traffic_sign_association a
+            JOIN traffic_sign_runtime s USING(sign_id) WHERE s.sign_code='DE:278[70]' ''').fetchone(),
+            ('unverified_source_annotation',))
+
+    def test_end_artwork_canonicalizes_only_one_to_three_source_digits(self):
+        self.db.execute('DELETE FROM traffic_sign_inventory')
+        for index,code in enumerate(('DE:278-070','DE:278[050km/h]','DE:278-0070','DE:278[0070]'),1):
+            self.sign(index,code)
+        self.build()
+        rows=dict(self.db.execute('SELECT sign_code,pictogram_code FROM traffic_sign_runtime'))
+        self.assertEqual(rows,{'DE:278-070':'DE:278-70','DE:278[050km/h]':'DE:278-50',
+                               'DE:278-0070':None,'DE:278[0070]':None})
+
     def test_decoded_direction_and_town_intervals_do_not_change_osm(self):
         self.sign(2,'DE:274-30',lon=8.0012)
         result=self.build()

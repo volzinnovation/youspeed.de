@@ -131,10 +131,19 @@ internal data class InventorySign(
         return if (delta > 90.0) "known_opposite_face" else "face_compatible"
     }
     fun isKnownOppositeFace(fix: InventorySignFix): Boolean = secondaryFaceRelation(fix) == "known_opposite_face"
-    val parameterText: String? get() = value?.let { "${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()} ${unit.orEmpty()}".trim() }
-    fun pictogram(): TrafficSignPictogram? = pictogramPath?.takeIf {
-        it.startsWith("tsr/sign-pictograms/") && it.endsWith(".png") && ".." !in it.split('/')
-    }?.let { TrafficSignPictogram("inventory:$id", it, mapOf("en" to code, "de" to code)) }
+    val parameterText: String? get() {
+        InventorySpeedEndCode.number(code)?.let { return "$it km/h" }
+        if (parameterStatus != "parsed_source_value") return null
+        return value?.let { "${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()} ${unit.orEmpty()}".trim() }
+    }
+    fun pictogram(catalog: TrafficSignDisplayCatalog): TrafficSignPictogram? {
+        if (code == "DE:278" || code.startsWith("DE:278-") || code.startsWith("DE:278[")) {
+            return catalog.inventorySpeedEnd(code, value, unit, parameterStatus)?.copy(classId = "inventory:$id")
+        }
+        return pictogramPath?.takeIf {
+            it.startsWith("tsr/sign-pictograms/") && it.endsWith(".png") && ".." !in it.split('/')
+        }?.let { TrafficSignPictogram("inventory:$id", it, mapOf("en" to code, "de" to code)) }
+    }
 }
 internal data class InventoryWayRule(
     val id: String, val sign: InventorySign, val wayId: String, val direction: Int,
@@ -582,9 +591,10 @@ internal class InventorySignDatabase(private val path: String,
             (current==null||record.sourceRevision!="node-json-sha256:"+MapDataAmendmentStore.sourceSHA256(current)))return null
         return (current?:record.nodeJSON)?.let{org.json.JSONObject(it)}
     }
-    fun read(latitude: Double, longitude: Double, wayId: String?, direction: Int): InventorySignSnapshot {
+    fun read(latitude: Double, longitude: Double, wayId: String?, direction: Int,
+             displayCatalog: TrafficSignDisplayCatalog? = null, countryCode: String? = null): InventorySignSnapshot {
         val amendments=if(wayId!=null&&generation!=null)amendmentStore?.confirmedNodeAmendments(wayId,generation).orEmpty() else emptyList()
-        if (!supported&&amendments.isEmpty()) return InventorySignSnapshot()
+        if (!supported&&amendments.isEmpty()&&genericNodes==null) return InventorySignSnapshot()
         val signs = if(!supported)emptyList() else db.rawQuery("SELECT s.*,a.way_id AS target_way_id,a.direction AS target_direction,a.status AS target_association_status,a.local_heading_deg AS target_heading_deg FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ?" + sourceFilter,
             arrayOf((latitude - .00065).toString(), (latitude + .00065).toString(), (longitude - .001).toString(), (longitude + .001).toString())).use { cursor -> buildList { while (cursor.moveToNext()) add(cursor.sign()) } }
         if (wayId == null) return InventorySignSnapshot(true, signs)
@@ -621,7 +631,17 @@ internal class InventorySignDatabase(private val path: String,
                 AmendedNodeObservationProjection.numericValue(record.rulesJSON,tags?.optString("maxspeed")),"km/h","parsed_source_value",
                 station.latitude,station.longitude,station.radius,null,emptySet(),station.wayId,station.direction,"accepted",bestHeading)
         }
-        return InventorySignSnapshot(true, signs+amendedSigns, rules + boundaryStations, bestChainage.takeIf { bestDistance <= 30 }, bestHeading.takeIf { bestDistance <= 30 },stations)
+        val nodeHeading = bestHeading
+        val nodeGeneration = generation
+        val osmPresentationSigns = if (direction in setOf(-1, 1) && bestDistance <= 25 && nodeHeading != null &&
+            displayCatalog != null && nodeGeneration != null && PenaltyCountryCodes.alpha2(countryCode) == "DE") {
+            runCatching { genericNodes?.nearby(latitude, longitude, 10.0).orEmpty().mapNotNull { node ->
+                InventoryOsmSpeedEndPresentation.sign(node.toString(), wayId, direction, nodeHeading, displayCatalog, nodeGeneration)
+            } }.getOrDefault(emptyList())
+        } else emptyList()
+        // These source nodes have presentation evidence only. Never add them to
+        // rules/boundaryStations, which are the independent speed authority.
+        return InventorySignSnapshot(true, signs+amendedSigns+osmPresentationSigns, rules + boundaryStations, bestChainage.takeIf { bestDistance <= 30 }, bestHeading.takeIf { bestDistance <= 30 },stations)
     }
     fun applyNodeAmendments(result:SpeedLookupResult,fix:InventorySignFix,decision:InventorySignDecision,country:String?,atMs:Long=System.currentTimeMillis()):SpeedLookupResult {
         val way=result.wayId?:return result

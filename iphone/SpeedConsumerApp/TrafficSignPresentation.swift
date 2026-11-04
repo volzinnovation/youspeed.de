@@ -1,5 +1,17 @@
 import Foundation
 
+enum InventorySpeedEndCode {
+    private static let expression = try! NSRegularExpression(
+        pattern: "^DE:278(?:-([0-9]{1,3})|\\[([0-9]{1,3})(?:\\s*km/h)?\\])$")
+
+    static func number(_ code: String) -> Int? {
+        guard let match = expression.firstMatch(in: code, range: NSRange(code.startIndex..., in: code)) else { return nil }
+        let captured = match.range(at: match.range(at: 1).location == NSNotFound ? 2 : 1)
+        guard let range = Range(captured, in: code) else { return nil }
+        return Int(code[range])
+    }
+}
+
 /// Reviewed presentation metadata. Reference aliases do not expand the model's
 /// real class vocabulary or authorize a speed-limit change.
 struct TrafficSignPresentationCatalog: Decodable, Sendable {
@@ -66,6 +78,26 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
 
     func canRecognize(_ classID: String) -> Bool { classLabels.contains(classID) }
     func sign(for classID: String) -> Sign? { signs.first { $0.classID == classID } }
+
+    /// Inventory codes and parsed source values are independent of the camera's
+    /// class vocabulary. Only a reviewed exact artwork may show the ended speed.
+    func sign(forInventory inventory: InventoryTrafficSign) -> Sign? {
+        let code: String?
+        if inventory.code == "DE:278" {
+            guard inventory.parameterStatus == "parsed_source_value",
+                  inventory.unit == nil || inventory.unit == "km/h",
+                  let value = inventory.numericValue, let speed = Int(exactly: value) else { return nil }
+            code = "DE:278-\(speed)"
+        } else if inventory.code.hasPrefix("DE:278") {
+            // The explicit source code takes precedence over conflicting metadata.
+            guard let speed = InventorySpeedEndCode.number(inventory.code) else { return nil }
+            code = "DE:278-\(speed)"
+        } else {
+            code = inventory.pictogramCode
+        }
+        guard let code else { return nil }
+        return signs.first { $0.signCode == code && $0.displayEligible && $0.imagePath != nil }
+    }
 
     func endSign(for classID: String) -> Sign? {
         // Use the recognized national artwork when available; numeric classes

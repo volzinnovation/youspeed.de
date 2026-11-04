@@ -11,6 +11,12 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+internal object InventorySpeedEndCode {
+    private val numbered = Regex("^DE:278(?:-([0-9]{1,3})|\\[([0-9]{1,3})(?:\\s*km/h)?\\])$")
+    fun number(code: String): Int? = numbered.matchEntire(code)?.groupValues?.drop(1)
+        ?.firstOrNull { it.isNotEmpty() }?.toIntOrNull()?.takeIf { it > 0 }
+}
+
 /** A catalog pictogram is presentation only; it never represents a speed assertion. */
 data class TrafficSignPictogram(
     val classId: String,
@@ -49,6 +55,23 @@ internal class TrafficSignDisplayCatalog private constructor(
     fun classId(index: Int): String = classLabels.getOrNull(index) ?: "classifier:$index"
     fun pictogram(classId: String): TrafficSignPictogram? = pictograms[classId].takeIf { classId in classLabels }
 
+    /** Bundle inventory can identify an exact sign independently of camera vocabulary. */
+    fun inventorySpeedEnd(signCode: String, value: Double?, unit: String?, parameterStatus: String): TrafficSignPictogram? {
+        val sourceNumber = InventorySpeedEndCode.number(signCode)
+        val exactCode = when {
+            sourceNumber != null -> "DE:278-$sourceNumber"
+            signCode == "DE:278" && parameterStatus == "parsed_source_value" && (unit == null || unit == "km/h") -> {
+                val number = value?.takeIf { it.isFinite() } ?: return null
+                val speed = number.toInt().takeIf { it.toDouble() == number } ?: return null
+                "DE:278-$speed"
+            }
+            else -> return null
+        }
+        // An absent reviewed variant stays unavailable. Never borrow another
+        // number or the DE:282 artwork when the source only says DE:278.
+        return pictograms[exactCode]?.takeIf { it.imagePath != null }
+    }
+
     companion object {
         const val ASSET_PATH = "tsr/prolix-de-class-catalog-v1.json"
 
@@ -69,7 +92,7 @@ internal class TrafficSignDisplayCatalog private constructor(
             val pictograms = signs.mapNotNull { sign ->
                 val classId = sign.getValue("class_id").jsonPrimitive.content
                 val imagePath = sign["image_path"]?.jsonPrimitive?.contentOrNull
-                if (!sign.getValue("display_eligible").jsonPrimitive.boolean || classId !in labels) {
+                if (!sign.getValue("display_eligible").jsonPrimitive.boolean) {
                     null
                 } else {
                     imagePath?.let { path ->

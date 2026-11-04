@@ -95,6 +95,11 @@ struct InventoryTrafficSign: Codable, Equatable, Sendable {
     var associatedDirection: Int? = nil
     var associationStatus: String? = nil
     var associatedHeadingDeg: Double? = nil
+    var parameterText: String? {
+        if let speed = InventorySpeedEndCode.number(code) { return "\(speed) km/h" }
+        guard parameterStatus == "parsed_source_value", let numericValue else { return nil }
+        return "\(numericValue.formatted(.number.precision(.fractionLength(0...2)))) \(unit ?? "")"
+    }
     var confirmationSemanticsVerified: Bool {
         ["not_applicable","parsed_source_value","missing_value"].contains(parameterStatus)
     }

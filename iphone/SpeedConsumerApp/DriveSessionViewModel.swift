@@ -630,16 +630,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     var trafficSignPictogramForDisplay: TrafficSignPresentationCatalog.Sign? {
         guard trafficSignPictogramEnabled else { return nil }
         if let inventorySecondarySign {
-            return trafficSignPresentationCatalog?.signs.first {
-                $0.signCode == inventorySecondarySign.pictogramCode && $0.displayEligible && $0.imagePath != nil
-            }
+            return trafficSignPresentationCatalog?.sign(forInventory: inventorySecondarySign)
         }
         return trafficSignPictogram
     }
     var inventorySecondaryValueText: String? {
-        guard let sign = inventorySecondarySign, let value = sign.numericValue,
-              sign.parameterStatus == "parsed_source_value" else { return nil }
-        return "\(value.formatted(.number.precision(.fractionLength(0...2)))) \(sign.unit ?? "") · MobiData BW"
+        guard let sign = inventorySecondarySign, let valueText = sign.parameterText else { return nil }
+        let provider = MobiDataSignSourcePresentation.isMobiData(sourceID: sign.sourceID) ? "MobiData BW"
+            : sign.sourceID == "osm-traffic-sign" ? "OSM" : nil
+        return provider.map { valueText + " · " + $0 } ?? valueText
     }
     lazy var signCollection = SignCollectionCoordinator(foundation: signCollectionFoundation)
     #if DEBUG

@@ -2265,7 +2265,7 @@
         "nl": "Einde maximumsnelheid 5 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-10",
@@ -2278,7 +2278,7 @@
         "nl": "Einde maximumsnelheid 10 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-20",
@@ -2291,7 +2291,7 @@
         "nl": "Einde maximumsnelheid 20 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-30",
@@ -2304,7 +2304,7 @@
         "nl": "Einde maximumsnelheid 30 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-40",
@@ -2317,7 +2317,7 @@
         "nl": "Einde maximumsnelheid 40 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-50",
@@ -2330,7 +2330,7 @@
         "nl": "Einde maximumsnelheid 50 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-60",
@@ -2343,7 +2343,7 @@
         "nl": "Einde maximumsnelheid 60 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-70",
@@ -2356,7 +2356,7 @@
         "nl": "Einde maximumsnelheid 70 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-80",
@@ -2369,7 +2369,7 @@
         "nl": "Einde maximumsnelheid 80 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-90",
@@ -2382,7 +2382,7 @@
         "nl": "Einde maximumsnelheid 90 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-100",
@@ -2395,7 +2395,7 @@
         "nl": "Einde maximumsnelheid 100 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-110",
@@ -2408,7 +2408,7 @@
         "nl": "Einde maximumsnelheid 110 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-120",
@@ -2421,7 +2421,7 @@
         "nl": "Einde maximumsnelheid 120 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:278-130",
@@ -2434,7 +2434,7 @@
         "nl": "Einde maximumsnelheid 130 km/u"
       },
       "display_eligible": true,
-      "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Requires a future model/pack to identify this numeric subtype."
+      "notes": "Exact inventory sign-code alias for OSM/MobiData records with an explicit printed speed; absent from the pinned classifier class_labels. Camera recognition of this numeric subtype requires a future model/pack."
     },
     {
       "class_id": "DE:281",

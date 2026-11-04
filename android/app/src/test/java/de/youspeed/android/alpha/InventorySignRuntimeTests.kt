@@ -1,6 +1,7 @@
 package de.youspeed.android.alpha
 
 import java.io.IOException
+import java.io.File
 import java.time.Instant
 import kotlin.io.path.createTempDirectory
 import kotlinx.serialization.json.*
@@ -8,6 +9,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class InventorySignRuntimeTests {
+    private val displayCatalog by lazy {
+        val root = listOf(File("../.."), File(".."), File(".")).first { File(it, "shared/tsr").isDirectory }
+        TrafficSignDisplayCatalog.decode(File(root, "shared/tsr/prolix-de-class-catalog-v1.json").readText(), "DE")
+    }
+
     @Test fun cameraTownLocalitySurvivesConflictingMapContextAndKeepsExactNumbers() {
         val latch = CameraTownLocalityLatch()
         val at = Instant.parse("2026-10-23T10:00:00Z")
@@ -247,7 +253,7 @@ class InventorySignRuntimeTests {
     @Test fun parameterWithoutArtworkStillHasTextualDisplayAndLoggedProvenance() {
         val height=sign(code="DE:265-3.8",kind="maximum_height",classes=emptySet()).copy(value=3.8,unit="m",parameterStatus="parsed_source_value",pictogramPath=null)
         val decision=evaluation(height)
-        assertEquals("3.8 m",decision.display?.parameterText); assertNull(decision.display?.pictogram())
+        assertEquals("3.8 m",decision.display?.parameterText); assertNull(decision.display?.pictogram(displayCatalog))
         assertEquals(3.8,events.single()["numeric_value"]?.jsonPrimitive?.double)
     }
     @Test fun lateFrameFromPriorBundleCannotConfirmNewEncounter() {
@@ -285,6 +291,72 @@ class InventorySignRuntimeTests {
         assertNull(evaluation(end,fix(10.1)).display)
         assertNull(evaluation(end,fix(direction=-1)).display)
         assertEquals("DE:278",evaluation(end,fix(9.9)).display?.code)
+    }
+    @Test fun sourceSpecificSpeedEndsDisplayReviewedArtworkWithoutCameraVocabularyOrStoredPath() {
+        for (source in listOf("mobidata-bw-vzk", "osm-traffic-sign")) {
+            for (speed in listOf(5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130)) {
+                for (code in listOf("DE:278-$speed", "DE:278[$speed]", "DE:278[$speed km/h]")) {
+                    val exact = sign(id = "$source:$code", code = code, classes = emptySet(), kind = "speed_limit_end")
+                        .copy(sourceId = source, pictogramPath = null)
+                    val inventory = InventorySignRuntime { }
+                    val decision = inventory.evaluate(InventorySignSnapshot(true, listOf(exact), localHeading = 0.0), fix(), time, false, false)
+                    assertEquals(exact, decision.display)
+                    assertEquals("tsr/sign-pictograms/png/de-278-$speed.png", decision.display?.pictogram(displayCatalog)?.imagePath)
+                    assertNull(displayCatalog.pictogram("DE:278-$speed")) // Inventory evidence never expands camera vocabulary.
+                }
+            }
+        }
+    }
+    @Test fun speedEndArtworkUsesExplicitSourceValueAndDoesNotTrustStalePictogramMetadata() {
+        val generic = sign(code = "DE:278", classes = emptySet(), kind = "speed_limit_end")
+            .copy(value = 70.0, unit = "km/h", parameterStatus = "parsed_source_value", pictogramPath = "tsr/sign-pictograms/png/de-278-30.png")
+        assertEquals("tsr/sign-pictograms/png/de-278-70.png", generic.pictogram(displayCatalog)?.imagePath)
+        assertEquals("tsr/sign-pictograms/png/de-278-70.png", generic.copy(unit = null).pictogram(displayCatalog)?.imagePath)
+        assertEquals("tsr/sign-pictograms/png/de-278-50.png", generic.copy(code = "DE:278-50").pictogram(displayCatalog)?.imagePath)
+        assertEquals("50 km/h", generic.copy(code = "DE:278-50").parameterText)
+        assertNull(generic.copy(parameterStatus = "missing_value").parameterText)
+        assertNull(generic.copy(parameterStatus = "annotation_unverified").parameterText)
+        assertEquals("50 km/h", generic.copy(code = "DE:278-50", parameterStatus = "missing_value").parameterText)
+        assertEquals("tsr/sign-pictograms/png/de-278-50.png", generic.copy(code = "DE:278[50]").pictogram(displayCatalog)?.imagePath)
+        for (unknown in listOf(
+            generic.copy(value = null), generic.copy(value = 70.5), generic.copy(value = Double.NaN),
+            generic.copy(value = Double.POSITIVE_INFINITY), generic.copy(unit = "mph"),
+            generic.copy(parameterStatus = "missing_value"), generic.copy(parameterStatus = "annotation_unverified"),
+            generic.copy(code = "DE:278-999"), generic.copy(code = "DE:278[70 mph]"),
+        )) assertNull(unknown.pictogram(displayCatalog))
+    }
+    @Test fun packedOsmDirectionalEndSignsRemainPresentationOnlyAndRequireDirectedPassageEvidence() {
+        val node = """{"osm_node_id":10789843,"latitude":48.0,"longitude":8.0,
+            "tags":{"traffic_sign:forward":"DE:101;278[70]","traffic_sign:backward":"DE:278-50"},
+            "memberships":[{"way_id":10,"proof":"explicit_source_way_node_membership","coordinate_verified":true}]}"""
+        val generation = "ysp-base-v1:${"a".repeat(64)}:${"b".repeat(64)}:${"c".repeat(64)}"
+        fun project(raw: String, way: String, direction: Int, heading: Double) =
+            InventoryOsmSpeedEndPresentation.sign(raw, way, direction, heading, displayCatalog, generation)
+        val forward = requireNotNull(project(node, "10", 1, 0.0))
+        assertEquals("DE:278-70", forward.code)
+        assertEquals("osm-traffic-sign", forward.sourceId)
+        assertEquals("c".repeat(64), forward.snapshotSha256)
+        assertTrue(forward.modelClasses.isEmpty())
+        val snapshot = InventorySignSnapshot(true, listOf(forward), chainage = 50.0, localHeading = 0.0)
+        fun assess(location: InventorySignFix) = InventorySignRuntime { }.evaluate(snapshot, location, location.at, false, false)
+        val shown = assess(fix())
+        assertEquals(forward, shown.display)
+        assertEquals("tsr/sign-pictograms/png/de-278-70.png", shown.display?.pictogram(displayCatalog)?.imagePath)
+        assertNull(shown.speedRule); assertNull(shown.boundary); assertNull(shown.boundaryAction)
+        assertTrue(shown.permitsPostedFallback("10"))
+        for (invalid in listOf(fix(10.1), fix(stable = false), fix(way = "20"), fix(direction = -1),
+            fix().copy(heading = 45.0), fix().copy(headingAccuracy = 36.0))) assertNull(assess(invalid).display)
+        assertEquals("DE:278-50", project(node, "10", -1, 0.0)?.code)
+        assertNull(project(node, "20", 1, 0.0))
+        assertNull(project(node, "10", 0, 0.0))
+        assertNull(project(node.replace("\"coordinate_verified\":true", "\"coordinate_verified\":false"), "10", 1, 0.0))
+        assertNull(project(node.replace("traffic_sign:forward", "traffic_sign"), "10", 1, 0.0))
+        assertNull(project(node.replace("DE:101;278[70]", "DE:278[70];278[50]"), "10", 1, 0.0))
+        assertNull(project(node.replace("DE:101;278[70]", "DE:278"), "10", 1, 0.0))
+        assertNull(project(node.replace("DE:101;278[70]", "DE:278[70];278-50,1042-30"), "10", 1, 0.0))
+        assertNull(project(node.replace("DE:101;278[70]", "DE:278[57]"), "10", 1, 0.0))
+        assertNull(InventoryOsmSpeedEndPresentation.sign(node, "10", 1, 0.0, displayCatalog, "unverified"))
+        assertNull(InventoryOsmSpeedEndPresentation.sign(node, "10", 1, 0.0, displayCatalog, generation.substringBeforeLast(':') + ":absent"))
     }
     @Test fun secondaryPersistsBeyondRadiusAndAcrossInvalidFixOrCameraOff() {
         val original=sign()

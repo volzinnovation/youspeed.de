@@ -1267,12 +1267,18 @@ final class V3SpeedLimitService: @unchecked Sendable {
             let upcoming = UpcomingSpeedLimitBundle.lookup(db: db, resources: resources, inventory: previewContext,
                 points: finalSelected?.points ?? [], relationGroupIDs: selectedRouteContinuity.memberships.map(\.groupID), speedKmh: speedKmh,
                 allowMobiData: allowMobiData)
+            let displayInventory = addingOSMEndObservations(to: inventory, db: db, selected: finalSelected,
+                lat: lat, lon: lon, heading: headingDeg, headingAccuracy: headingAccuracyDeg,
+                accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
+                stable: (matchContext?.matchedFixCount ?? 0) >= 1
+                    && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
+                observedAt: observationTimestamp)
             return SpeedLimitResult(
                 conditionalRuleContext: inventoryOffer == nil ? conditionalOffer?.reevaluation : nil,
                 upcomingSpeedLimits: upcoming,
                 bundleSpeedProvenance: inventoryRule?.provenance(wayID: finalSelected?.wayID)
                     ?? BundleSpeedProvenance.legacy(speedSource: settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue, wayID: finalSelected?.wayID),
-                inventorySigns: inventory,
+                inventorySigns: displayInventory,
                 applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
                 speedSource: inventoryRule == nil ? settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue : "INVENTORY_SIGN",
                 speedLimitKmh: effectiveSpeed,
@@ -1906,12 +1912,18 @@ final class V3SpeedLimitService: @unchecked Sendable {
             let upcoming = UpcomingSpeedLimitBundle.lookup(db: db, resources: resources, inventory: previewContext,
                 points: finalSelected?.points ?? [], relationGroupIDs: selectedRouteContinuity.memberships.map(\.groupID), speedKmh: speedKmh,
                 allowMobiData: allowMobiData)
+            let displayInventory = addingOSMEndObservations(to: inventory, db: db, selected: finalSelected,
+                lat: lat, lon: lon, heading: headingDeg, headingAccuracy: headingAccuracyDeg,
+                accuracy: inventoryFixUsable ? horizontalAccuracyM ?? .infinity : .infinity,
+                stable: (matchContext?.matchedFixCount ?? 0) >= 1
+                    && normalizedWayID(matchContext?.preferredWayID) == normalizedWayID(finalSelected?.wayID),
+                observedAt: observationTimestamp)
             return SpeedLimitResult(
                 conditionalRuleContext: inventoryOffer == nil ? conditionalOffer?.reevaluation : nil,
                 upcomingSpeedLimits: upcoming,
                 bundleSpeedProvenance: inventoryRule?.provenance(wayID: finalSelected?.wayID)
                     ?? BundleSpeedProvenance.legacy(speedSource: settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue, wayID: finalSelected?.wayID),
-                inventorySigns: inventory,
+                inventorySigns: displayInventory,
                 applicabilityGeometry: applicabilityGeometry(db: db, selected: finalSelected, candidates: rankedCandidates, links: wayLinksContext),
                 speedSource: inventoryRule == nil ? settlementSpeedSource(candidate: finalSelected, settlement: settlement)?.rawValue : "INVENTORY_SIGN",
                 speedLimitKmh: effectiveSpeed,
@@ -2330,6 +2342,27 @@ final class V3SpeedLimitService: @unchecked Sendable {
             points: selected?.points ?? [], wayLengthM: selected?.wayLengthM, lat: lat, lon: lon,
             heading: heading, headingAccuracy: headingAccuracy, accuracy: accuracy, matchStable: stable, at: timestamp)
         return (ids, amendmentPassages.observationLookup)
+    }
+
+    private static let inventoryPictogramCatalog = TrafficSignPresentationCatalog.bundled(countryCode: "DE")
+
+    /// Enrich only the final display result, after every current/ahead speed offer
+    /// has been calculated. These raw OSM signs do not become rule boundaries.
+    private func addingOSMEndObservations(to inventory: InventorySignLookup?, db: OpaquePointer, selected: WayCandidate?,
+                                         lat: Double, lon: Double, heading: Double?, headingAccuracy: Double?,
+                                         accuracy: Double, stable: Bool, observedAt: Date?) -> InventorySignLookup? {
+        guard stable, countryCode == "DE" || countryCode == "DEU",
+              accuracy.isFinite, (0...25).contains(accuracy),
+              let observedAt, observedAt.timeIntervalSince1970.isFinite,
+              (-1...3).contains(Date().timeIntervalSince(observedAt)),
+              let selected, let catalog = Self.inventoryPictogramCatalog,
+              let generation = resources.amendmentBaseIdentity(database: db),
+              let nodes = try? resources.genericSpeedSignNodes(lat: lat, lon: lon, radiusM: 10) else { return inventory }
+        let observations = PackedOSMSpeedEndPresentation.lookup(nodes: nodes, catalog: catalog,
+            wayID: selected.wayID, points: selected.points, lat: lat, lon: lon, heading: heading,
+            headingAccuracy: headingAccuracy, accuracy: accuracy, matchStable: stable,
+            observedAt: observedAt, sourceGeneration: generation)
+        return addingReviewedNodeObservations(observations, to: inventory)
     }
 
     private func addingReviewedNodeObservations(_ nodes: InventorySignLookup?, to lookup: InventorySignLookup?) -> InventorySignLookup? {

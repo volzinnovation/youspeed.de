@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "scope": "Local integrated BW snapshot; not a claim about newer source data.",
+  "database": {
+    "path": "mapdata/build/packed-v4-2026-10-27/pilot-bw/source.sqlite",
+    "sha256": "e973d279de2803b13037b9e87132be72f28a22d8f9c9bbef79d73093772b1849"
+  },
+  "osm_source": {
+    "path": "mapdata/build/packed-v4-2026-10-27/rollout-final/baden-wuerttemberg/work/sign-nodes.json",
+    "sha256": "9d3099db23b4f4ccd89887d29832fc4d0d9d232b08f95b85d169f63c8d5869dc",
+    "authority": "Source data only; all direction/legal bindings remain unverified. Incompatible older/newer way snapshots retain raw source memberships but no runtime chainage binding.",
+    "incompatible_source_ways": 0,
+    "membership_count": 49558,
+    "node_count": 73991,
+    "schema": "youspeed.generic-sign-nodes.v1",
+    "source_pbf_sha256": "1856f4ac7c18435e17d74c7ba24a7b21b3a1231e60449851890dc0109638ded3",
+    "source_pbf_timestamp": "2026-09-13T20:21:20Z",
+    "source_sqlite_sha256": "e973d279de2803b13037b9e87132be72f28a22d8f9c9bbef79d73093772b1849",
+    "unassociated_node_count": 39257
+  },
+  "packed_nodes_verification": {
+    "path": "mapdata/build/packed-v4-2026-10-27/rollout-final/baden-wuerttemberg/bundle/baden-wuerttemberg_2026-10-27-packed-v1.nodes.yspn",
+    "sha256": "1d56425b5628ce037e8e5a7e8b81e884adcc51f6af549c0b60aee3c3860358ec",
+    "verified_node_count": 73991,
+    "complete_source_records_identical": true
+  },
+  "mobidata": {
+    "snapshots": [
+      {
+        "source_id": "mobidata-bw-vzk",
+        "snapshot_sha256": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+        "snapshot_timestamp": "2026-10-17T22:00:00.013Z"
+      }
+    ],
+    "inventory_counts": [
+      {
+        "source_id": "mobidata-bw-vzk",
+        "sign_code": "DE:278",
+        "count": 9769
+      }
+    ],
+    "runtime_counts": [
+      {
+        "source_id": "mobidata-bw-vzk",
+        "sign_code": "DE:278",
+        "numeric_value": null,
+        "pictogram_code": null,
+        "pictogram_path": null,
+        "count": 9769
+      }
+    ],
+    "generic_end_source_property_keys": [
+      "ARS",
+      "AufstellungsDatum",
+      "GruppenAusrichtung",
+      "GruppenID",
+      "GruppenReihung",
+      "LetzteAktualisierung",
+      "OpenLRBinary",
+      "OpenLRConfidence",
+      "StandortAusfuehrung",
+      "StandortID",
+      "Verkehrszeichennummer",
+      "Verwaltungsebene"
+    ]
+  },
+  "osm": {
+    "numeric_token_occurrences": 621,
+    "unique_nodes_with_numeric_tokens": 618,
+    "unique_nodes_with_reviewed_artwork": 617,
+    "numeric_token_counts_by_speed": {
+      "20": 1,
+      "30": 39,
+      "40": 1,
+      "50": 66,
+      "57": 1,
+      "60": 35,
+      "70": 399,
+      "80": 43,
+      "100": 16,
+      "120": 16,
+      "130": 4
+    },
+    "token_counts_by_tag": {
+      "traffic_sign": 318,
+      "traffic_sign:backward": 149,
+      "traffic_sign:forward": 154
+    },
+    "token_counts_by_spelling": {
+      "suffix": 321,
+      "bracket": 300
+    },
+    "unreviewed_code_token_counts": {
+      "DE:278-57": 1
+    },
+    "unique_numeric_nodes_without_admitted_way_membership": 266,
+    "contains_25_kmh": false,
+    "examples": [
+      {
+        "osm_node_id": 593070,
+        "tag": "traffic_sign:forward",
+        "literal": "DE:278-120",
+        "memberships": [
+          {
+            "chainage_m": 0.0,
+            "coordinate_verified": true,
+            "direction": "unknown",
+            "proof": "explicit_source_way_node_membership",
+            "source_vertex_ordinal": 0,
+            "way_id": 23894880
+          },
+          {
+            "chainage_m": 118.72565029358526,
+            "coordinate_verified": true,
+            "direction": "unknown",
+            "proof": "explicit_source_way_node_membership",
+            "source_vertex_ordinal": 3,
+            "way_id": 942144866
+          }
+        ]
+      },
+      {
+        "osm_node_id": 2110388,
+        "tag": "traffic_sign:forward",
+        "literal": "DE:278-80",
+        "memberships": [
+          {
+            "chainage_m": 0.0,
+            "coordinate_verified": true,
+            "direction": "unknown",
+            "proof": "explicit_source_way_node_membership",
+            "source_vertex_ordinal": 0,
+            "way_id": 318448440
+          },
+          {
+            "chainage_m": 179.0084763502789,
+            "coordinate_verified": true,
+            "direction": "unknown",
+            "proof": "explicit_source_way_node_membership",
+            "source_vertex_ordinal": 4,
+            "way_id": 594654871
+          }
+        ]
+      },
+      {
+        "osm_node_id": 10789843,
+        "tag": "traffic_sign:backward",
+        "literal": "DE:278[70]",
+        "memberships": [
+          {
+            "chainage_m": 0.0,
+            "coordinate_verified": true,
+            "direction": "unknown",
+            "proof": "explicit_source_way_node_membership",
+            "source_vertex_ordinal": 0,
+            "way_id": 162604206
+          },
+          {
+            "chainage_m": 108.69358300872703,
+            "coordinate_verified": true,
+            "direction": "unknown",
+            "proof": "explicit_source_way_node_membership",
+            "source_vertex_ordinal": 2,
+            "way_id": 470506049
+          }
+        ]
+      }
+    ],
+    "interpretation": "Counts describe source tags, not legally applicable observations. Unreviewed codes may be legacy numbering and are not silently reinterpreted."
+  }
+}

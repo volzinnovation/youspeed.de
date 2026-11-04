@@ -491,12 +491,36 @@ def emit_intervals(db,graph):
     return inserted
 
 
+def inventory_pictogram(literal, mapping, artworks):
+    """Resolve a printed end-speed from shared artwork, independently of models.
+
+    The MobiData audit describes one pinned snapshot, not every future sign
+    value. Exact source variants can therefore be absent from that audit while
+    already having reviewed shared artwork. Brackets are OSM's explicit value
+    syntax; only a complete numeric code is accepted, never annotation text.
+    This lookup changes presentation metadata only, not normalized rule values.
+    """
+    if literal == 'DE:278' or literal.startswith(('DE:278-', 'DE:278[')):
+        match = re.fullmatch(r'DE:278(?:-([0-9]{1,3})|\[([0-9]{1,3})(?:\s*km/h)?\])', literal)
+        if match is None:
+            return {}
+        key = 'DE:278-' + str(int(match.group(1) or match.group(2)))
+        artwork = artworks.get(key)
+        if artwork is None:
+            return {}
+        return {'display_eligible': True, 'pictogram_key': key,
+                'pictogram_png_path': 'shared/tsr/sign-pictograms/' + artwork['png_path']}
+    return mapping.get(literal, {})
+
+
 def build_runtime(db,meta,audit_path=ROOT/'docs/MOBIDATA_BW_PICTOGRAM_AUDIT_V1_5.json'):
     import openlr
     if not callable(openlr.binary_decode):
         raise ImportError('A pinned OpenLR decoder is required before replacing runtime data')
     audit=json.loads(Path(audit_path).read_text())
     mapping={r['source_code']:r for r in audit['entries']}
+    artwork_manifest=json.loads((ROOT/'shared/tsr/sign-pictograms/manifest.json').read_text())
+    artworks={r['sign_code']:r for r in artwork_manifest['artworks']}
     road_sha=None
     if db.execute("SELECT 1 FROM sqlite_master WHERE name='metadata'").fetchone():
         road_path=dict(db.execute('SELECT key,value FROM metadata')).get('source_input_pbf')
@@ -520,7 +544,7 @@ def build_runtime(db,meta,audit_path=ROOT/'docs/MOBIDATA_BW_PICTOGRAM_AUDIT_V1_5
         source=dict(db.execute('SELECT source_id,snapshot_sha256 FROM traffic_sign_source'))
         for row in db.execute('SELECT * FROM traffic_sign_inventory ORDER BY latitude,longitude,row_id'):
             sign_id=f"{row['source_id']}:{row['record_key']}"
-            norm=normalize_sign(row['sign_code']);art=mapping.get(row['sign_code'],{})
+            norm=normalize_sign(row['sign_code']);art=inventory_pictogram(row['sign_code'],mapping,artworks)
             eligible=art.get('display_eligible',False)
             path=art.get('pictogram_png_path') if eligible else None
             if path and path.startswith('shared/'):path=path[len('shared/'):]

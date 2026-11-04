@@ -127,9 +127,34 @@ manifest and passage/state logic.
 
 The first 134 `signs` entries correspond exactly to `class_labels`. Additional
 exact `DE:278-x`, `DE:281`, `DE:282`, `DE:310`, `DE:311` and semantic aliases are
-marked reference-only in their notes. A consumer must not infer that the pinned
+inventory/reference entries, not model outputs. A consumer must not infer that the pinned
 model emits them. In particular, the checkpoint has no city-entry/city-exit
 class and cannot gain that capability from an asset or alias.
+
+The numeric `DE:278-x` aliases are also available to the OSM/MobiData inventory
+display independently of the camera vocabulary. Use the exact source sign code
+or its explicitly parsed printed speed to select the shared asset. A generic
+`DE:278` without a printed value cannot acquire a number from the vehicle speed,
+the current speed reference, or an adjacent sign. The owner-confirmed fallback
+is the plain `DE:278` text card when the printed value is missing. This affects presentation
+only; the speed-reference state-machine policy is unchanged.
+
+The DE:278 source review on 2026-11-03 confirmed 14 existing variants: 5, 10,
+20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120 and 130 km/h. They match the
+[BASt list of official designations, page 7, published in the ministry's VwV-StVO amendment material](https://www.bmv.de/SharedDocs/DE/Anlage/Gesetze/Gesetze-20/zwoelfte-allgemeine-vwv-zur-aenderung-vwv-stvo.pdf?__blob=publicationFile#page=58).
+No official-source `DE:278-25` artwork was identified. The classifier's
+`maxspeed:25` label is not evidence of such an official artwork; adding it
+requires a verifiable source SVG and provenance, rather than editing another
+sign's digits.
+
+The [integrated BW source audit](../../../docs/DE278_BW_SOURCE_COVERAGE_2026-11-03.json)
+records 9,769 generic MobiData `DE:278` entries without a printed value and 621
+numeric OSM sign tokens on 618 nodes. Of those OSM tokens, 620 have reviewed
+artwork; the remaining `DE:278-57` has no reviewed mapping. Neither snapshot
+contains a 25 km/h end sign. Packed OSM records retain their original tags and
+verified way memberships. Driving presentation admits only an exact reviewed
+variant with an explicit directional source tag and a matching current road;
+these observations do not create cancellation boundaries or speed offers.
 
 Blocked entries have `display_eligible: false` and `image_path: null`. They cover
 invalid/background/unknown classes, missing reviewed mappings, wildcard or

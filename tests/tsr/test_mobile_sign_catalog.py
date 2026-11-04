@@ -80,6 +80,25 @@ def test_display_artworks_are_local_and_all_labels_are_translated():
             assert image_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 
 
+def test_numeric_speed_end_inventory_artwork_is_independent_of_camera_vocabulary():
+    catalog = read_json(TSR / "prolix-de-class-catalog-v1.json")
+    signs = {entry["class_id"]: entry for entry in catalog["signs"]}
+    directory = TSR / "sign-pictograms"
+    artworks = {entry["sign_code"]: entry for entry in read_json(directory / "manifest.json")["artworks"]}
+    for speed in (5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130):
+        code = f"DE:278-{speed}"
+        sign = signs[code]
+        assert sign["sign_code"] == code
+        assert sign["display_eligible"] is True
+        assert sign["image_path"] == "tsr/sign-pictograms/" + artworks[code]["png_path"]
+        assert (directory / artworks[code]["original_path"]).is_file()
+        assert code not in catalog["class_labels"]
+
+    # A family-only camera result cannot establish which printed number ended.
+    assert signs["maxspeed:end"]["image_path"] is None
+    assert signs["maxspeed:end"]["display_eligible"] is False
+
+
 def test_pictogram_bytes_match_recorded_commons_provenance():
     directory = TSR / "sign-pictograms"
     manifest = read_json(directory / "manifest.json")

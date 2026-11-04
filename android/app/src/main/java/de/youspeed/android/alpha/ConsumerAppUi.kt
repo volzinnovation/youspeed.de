@@ -806,7 +806,7 @@ internal fun MainScreen(
                                         modifier = Modifier.widthIn(max = 150.dp).testTag("inventory-sign-parameter")) }
                                 }
                             }
-                            (ui.inventorySignPictogram ?: ui.lastTrafficSignPictogram)?.let { pictogram ->
+                            (if (hasInventorySecondary) ui.inventorySignPictogram else ui.lastTrafficSignPictogram)?.let { pictogram ->
                                 val eyeTipInset = if (landscape) {
                                     max(10f, (signPaneWidth.value - signSize.value) / 4f).dp
                                 } else {
