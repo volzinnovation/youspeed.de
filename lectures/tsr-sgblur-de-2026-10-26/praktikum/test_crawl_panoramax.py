@@ -137,6 +137,20 @@ class CollectionTests(unittest.TestCase):
                 manifest, _ = self.run_item(feature(code=code))
                 self.assertEqual(manifest["crops"][0]["suggested_label"], expected)
 
+    def test_specific_manual_town_code_survives_generic_yes_without_approval(self):
+        for code, expected in [("DE:310", "city:start"), ("DE:311", "city:end")]:
+            with self.subTest(code=code):
+                self.args.output = self.root / ("manual_" + code.replace(":", "_"))
+                item = feature(code=code)
+                sign = next(a for a in item["properties"]["annotations"] if a["id"] == SIGN)
+                sign["semantics"].append({"key": "osm|traffic_sign", "value": "yes"})
+                manifest, _ = self.run_item(item)
+                crop = manifest["crops"][0]
+                self.assertEqual(crop["suggested_label"], expected)
+                self.assertEqual(crop["osm_tags"], sign["semantics"])
+                self.assertEqual(crop["review_status"], "unreviewed")
+                self.assertFalse(crop["eligible_for_training"])
+
     def test_empty_and_unknown_only_annotations_do_not_download_or_use_image_budget(self):
         for annotation_list in [[], [{"id": SIGN, "shape": [2, 1, 6, 5], "semantics": [
                 {"key": "unverified_object", "value": "car"}]}]]:

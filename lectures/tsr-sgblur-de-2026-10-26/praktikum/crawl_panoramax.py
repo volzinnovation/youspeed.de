@@ -330,7 +330,9 @@ def process_item(feature, item_url, base, output, client, args, on_image_attempt
         codes = {tag.get("value") for tag in tags if tag.get("key") == "osm|traffic_sign"
                  and isinstance(tag.get("value"), str)}
         suggestions = {"DE:310": "city:start", "DE:311": "city:end"}
-        suggested = suggestions.get(next(iter(codes))) if len(codes) == 1 else None
+        # Generic sign-presence tags do not compete with an explicit town code.
+        specific_codes = codes - {"yes"}
+        suggested = suggestions.get(next(iter(specific_codes))) if len(specific_codes) == 1 else None
         path = "inbox/classifier/" + sample + ".png"
         crops.append({"sample_id": sample, "picture_id": pid, "annotation_id": aid,
                       "group_id": group, "crop_sha256": digest(cropped), "crop_path": path,
