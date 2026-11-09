@@ -25,7 +25,11 @@ const countryName = (lang, code) => new Intl.DisplayNames([lang], { type: "regio
 const slug = (name) => name.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 export const homeRoute = (lang) => lang === "de" ? "" : `${lang}/`;
 export const referenceRoute = (lang, type, country) => `${homeRoute(lang)}${referenceCopy[lang][`${type}Slug`]}${country ? `/${slug(countryName(lang, country))}` : ""}.html`;
-const localHref = (route, target) => path.posix.relative(path.posix.dirname(route), target || ".") || "./";
+function localHref(route, target) {
+  const relative = path.posix.relative(path.posix.dirname(route), target || ".");
+  if (!relative) return "./";
+  return !target || target.endsWith("/") ? `${relative}/` : relative;
+}
 const rootPrefix = (route) => "../".repeat(route.split("/").length - 1) || "./";
 const link = (url, text) => `<a href="${html(url)}" rel="noreferrer">${html(text)}</a>`;
 
@@ -117,8 +121,13 @@ export function renderPenaltyBody(lang, rules) {
 
 function renderPage({ lang, type, country, body }) {
   const copy = referenceCopy[lang], route = referenceRoute(lang, type, country), assetPrefix = rootPrefix(route);
-  const title = country ? `${copy[type === "signs" ? "signTitle" : "fineTitle"]} ${countryName(lang, country)}` : copy[type];
-  const description = `${title}. ${copy[type === "signs" ? "signsIntro" : "finesIntro"]}`;
+  const topic = type === "signs" ? "sign" : "fine";
+  const title = country
+    ? copy[`${topic}Titles`]?.[country] ?? `${copy[`${topic}Title`]} ${countryName(lang, country)}`
+    : copy[type];
+  const description = country
+    ? `${title}. ${copy[`${topic}CountryDescription`]}`
+    : copy[`${type}Description`];
   const breadcrumbs = [{ name: "YouSpeed", item: `${base}${homeRoute(lang)}` }, { name: copy[type], item: `${base}${referenceRoute(lang, type)}` }];
   if (country) breadcrumbs.push({ name: countryName(lang, country), item: `${base}${route}` });
   const schema = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: breadcrumbs.map((item, index) => ({ "@type": "ListItem", position: index + 1, ...item })) };

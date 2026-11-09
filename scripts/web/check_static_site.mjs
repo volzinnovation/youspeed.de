@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 const siteRoot = path.resolve(process.argv[2] ?? "sites");
+const siteUrl = "https://youspeed.de";
 const failures = [];
 
 const skippedSchemes = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
@@ -135,8 +136,41 @@ function checkLocalUrl(ownerFile, rawValue, attribute = "url") {
   }
 }
 
-function checkHtml(file) {
+function checkIndexing(file, html, sitemapUrls) {
+  const publishedPath = path.relative(siteRoot, file).split(path.sep).join("/");
+  const canonicalUrl = `${siteUrl}/${publishedPath.replace(/(^|\/)index\.html$/, "$1")}`;
+  if (!sitemapUrls.delete(canonicalUrl)) {
+    addFailure(file, `missing sitemap entry for ${canonicalUrl}`);
+  }
+
+  const canonicals = [];
+  const markup = html.replace(/<!--[\s\S]*?-->/g, "");
+  const tagPattern = /<(link|meta)\b(?:[^"'<>]|"[^"]*"|'[^']*')*>/gi;
+  const attributePattern = /\s([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>]+))/g;
+  for (const [tag, name] of markup.matchAll(tagPattern)) {
+    const attrs = new Map();
+    for (const [, key, doubleQuoted, singleQuoted, unquoted] of tag.matchAll(attributePattern)) {
+      attrs.set(key.toLowerCase(), doubleQuoted ?? singleQuoted ?? unquoted);
+    }
+    if (name.toLowerCase() === "link" && attrs.get("rel")?.toLowerCase() === "canonical") {
+      canonicals.push(attrs.get("href"));
+    }
+    if (
+      name.toLowerCase() === "meta" &&
+      /^(?:robots|googlebot)$/i.test(attrs.get("name") ?? "") &&
+      /(?:^|[\s,])(?:noindex|none)(?=$|[\s,])/i.test(attrs.get("content") ?? "")
+    ) {
+      addFailure(file, "sitemap page has a robots directive that blocks indexing");
+    }
+  }
+  if (canonicals.length !== 1 || canonicals[0] !== canonicalUrl) {
+    addFailure(file, `expected one canonical link to ${canonicalUrl}`);
+  }
+}
+
+function checkHtml(file, sitemapUrls) {
   const html = readFileSync(file, "utf8");
+  checkIndexing(file, html, sitemapUrls);
   const attrPattern = /\b(href|src)\s*=\s*(["'])(.*?)\2/gi;
   const srcsetPattern = /\bsrcset\s*=\s*(["'])(.*?)\1/gi;
 
@@ -168,12 +202,31 @@ if (!existsSync(siteRoot) || !statSync(siteRoot).isDirectory()) {
 const files = walk(siteRoot);
 const htmlFiles = files.filter((file) => file.endsWith(".html"));
 const cssFiles = files.filter((file) => file.endsWith(".css"));
+const sitemapFile = path.join(siteRoot, "sitemap.xml");
+const sitemapUrls = new Set();
+
+if (existsSync(sitemapFile)) {
+  const sitemap = readFileSync(sitemapFile, "utf8");
+  for (const [, entry] of sitemap.matchAll(/<loc>\s*([^<]+?)\s*<\/loc>/g)) {
+    if (sitemapUrls.has(entry)) {
+      addFailure(sitemapFile, `duplicate URL ${entry}`);
+    }
+    sitemapUrls.add(entry);
+  }
+} else {
+  addFailure(sitemapFile, "sitemap file is missing");
+}
 
 if (htmlFiles.length === 0) {
   failures.push(`${relative(siteRoot)}: no HTML files found`);
 }
 
-htmlFiles.forEach(checkHtml);
+for (const file of htmlFiles) {
+  checkHtml(file, sitemapUrls);
+}
+for (const entry of sitemapUrls) {
+  addFailure(sitemapFile, `no HTML page for ${entry}`);
+}
 cssFiles.forEach(checkCss);
 
 if (failures.length) {

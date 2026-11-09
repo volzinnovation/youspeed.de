@@ -77,6 +77,7 @@ const locales = {
       office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
       development: "Technische Entwicklung: Prof. Dr. Raphael Volz, Hochschule Pforzheim",
       privacy: "Datenschutz",
+      support: "Hilfe und Support",
       github: "Open Source auf GitHub",
     },
   },
@@ -145,6 +146,7 @@ const locales = {
       office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
       development: "Technical development: Prof. Dr. Raphael Volz, Pforzheim University",
       privacy: "Privacy",
+      support: "Help and support",
       github: "Open source on GitHub",
     },
   },
@@ -213,6 +215,7 @@ const locales = {
       office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
       development: "Développement technique : Prof. Dr. Raphael Volz, Hochschule Pforzheim",
       privacy: "Confidentialite",
+      support: "Aide et assistance",
       github: "Open source sur GitHub",
     },
   },
@@ -281,6 +284,7 @@ const locales = {
       office: "Office Berlin: Skalitzer Straße 85/86, 10997 Berlin, Germany",
       development: "Technische ontwikkeling: Prof. Dr. Raphael Volz, Hochschule Pforzheim",
       privacy: "Privacy",
+      support: "Hulp en ondersteuning",
       github: "Open source op GitHub",
     },
   },
@@ -666,6 +670,7 @@ ${renderLanguageSwitch(locale)}
           <p>${escapeHtml(content.footer.development)}</p>
           <p><a href="mailto:studios@moonshots.gmbh">studios@moonshots.gmbh</a></p>
           <p><a href="${assetPrefix}datenschutz.html">${escapeHtml(content.footer.privacy)}</a></p>
+          <p><a href="${assetPrefix}support/">${escapeHtml(content.footer.support)}</a></p>
           <p><a href="${guideUrl(locale)}" target="_blank" rel="noreferrer">${escapeHtml(content.guide)}</a></p>
           <p><a href="${rootRelative(locale, referenceRoute(locale, "signs"))}">${escapeHtml(referenceCopy[locale].signs)}</a> · <a href="${rootRelative(locale, referenceRoute(locale, "fines"))}">${escapeHtml(referenceCopy[locale].fines)}</a></p>
           <p><a href="https://github.com/volzinnovation/youspeed.de" target="_blank" rel="noreferrer">${escapeHtml(content.footer.github)}</a></p>
