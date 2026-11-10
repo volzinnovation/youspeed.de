@@ -57,3 +57,50 @@ bundled under `provenance/reviewed142-*.json`. Private images, decisions and
 per-image predictions remain in the ignored collection-evidence directory and
 the private KI experiment directory. `package_reviewed_de142.py` verifies
 checkpoint-bound parity and class order before packaging both platforms.
+
+
+## Device trial deployment
+
+YouSpeed version 1.5 build 10093 uses the reviewed classifier and the verified
+YOLO26n trial detector at 0.840783. The requested left/right trial is enabled
+only when that detector is active. Landscape source-height squares overlap;
+source-coordinate NMS at IoU 0.45 runs before classification. Portrait/square
+frames use one pass. Ultrawide frames add a whole-frame pass for center coverage.
+The bundled SGBlur detector remains the safe fallback.
+
+The attached phones passed physical-device checks for coordinate mapping and
+inference. Five measured iterations after three warmups on a public reference
+letterboxed into 1920×1080 gave these medians:
+
+| Device | Single total / detector | Two-window total / detector |
+| --- | --- | --- |
+| Moto g86 5G, LiteRT GPU | 232.07 / 126.26 ms | 382.98 / 253.43 ms |
+| iPhone 14 Pro, Core ML | 25.38 / 19.89 ms | 38.24 / 31.21 ms |
+
+Each run classified one merged proposal; Android classifier time was about
+84 ms and iPhone about 2.5 ms including Vision crop handling. This probe is
+neither a drive replay nor a sustained thermal, battery or worst-case benchmark.
+More retained proposals add classifier cost. Android camera analysis remains
+serial and drops stale camera frames rather than queuing this work.
+
+The iPhone detector configuration permits CPU and Neural Engine, and the
+classifier uses `.all`. Core ML logged an ANE compiler failure with fallback
+while detector inference completed. These timings cannot establish that all
+detector operations executed on the Neural Engine. The previous Metal failure
+still excludes GPU from the town detector's configuration.
+
+The device check also exposed an iOS `/var` versus `/private/var` alias mismatch
+in detector checksumming. Relative filesystem enumeration now preserves exact
+artifact verification across those aliases, without accepting a different model
+or allowing symlink substitution. Physical iPhone geometry and latency tests
+then passed (two tests, no skips or failures).
+
+Street Shots Map consumes the same classifier through opensign-core. Its Moto
+stable app and separate town-trial app use build 10; the stable app retains
+SGBlur and the debug trial loads verified YOLO26n. Both were updated in place.
+Maps' GPU fixture passed separately with the town detector active and the new
+classifier. The iPhone Maps host is build 10 of its initial development port;
+it has camera alignment, local observations/OCR and JSON sharing, with the
+remaining feature limitations documented in its repository. This does not
+establish full iOS/Android Maps parity. No production survey was created by the
+fixture checks, and no Panoramax database was modified.

@@ -648,10 +648,18 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private let mappingsByClassID: [String: TrafficSignModelPackManifest.ClassMapping]
     private let unknownThreshold: Double
     private let detectorThreshold: Double
+    private let usesTwoDetectorWindows: Bool
+    private let detectorContext = CIContext(options: [.cacheIntermediates: false])
+
+    private struct DetectorPass {
+        let handler: VNImageRequestHandler
+        let sourceRegion: (CGRect) -> CGRect?
+    }
 
     init(
         verifiedPack: TrafficSignVerifiedModelPack,
-        computeUnits: MLComputeUnits = .all
+        computeUnits: MLComputeUnits = .all,
+        useTwoDetectorWindows: Bool? = nil
     ) throws {
         guard verifiedPack.manifest.pipeline == .proposalClassification,
               verifiedPack.detectorArtifact.outputSchema == "vision_recognized_objects_v1",
@@ -689,6 +697,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
         detectorThreshold = verifiedPack.trialDetectorThreshold ?? unknownThreshold
+        usesTwoDetectorWindows = useTwoDetectorWindows ?? (verifiedPack.trialDetectorThreshold != nil)
     }
 
     func detections(
@@ -702,13 +711,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         in pixelBuffer: CVPixelBuffer,
         orientation: CGImagePropertyOrientation
     ) throws -> TrafficSignTwoStageInferenceResultV2 {
-        try perform(
-            VNImageRequestHandler(
-                cvPixelBuffer: pixelBuffer,
-                orientation: orientation,
-                options: [:]
-            )
-        )
+        try shadowInference(source: CIImage(cvPixelBuffer: pixelBuffer), orientation: orientation,
+                            context: detectorContext)
     }
 
     func detections(
@@ -722,57 +726,74 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         in cgImage: CGImage,
         orientation: CGImagePropertyOrientation
     ) throws -> TrafficSignTwoStageInferenceResultV2 {
-        try perform(
-            VNImageRequestHandler(
-                cgImage: cgImage,
-                orientation: orientation,
-                options: [:]
-            )
-        )
+        try shadowInference(source: CIImage(cgImage: cgImage), orientation: orientation,
+                            context: detectorContext)
     }
 
     func shadowInference(in input: TrafficSignDetectorInput) throws -> TrafficSignTwoStageInferenceResultV2 {
-        try perform(
+        if usesTwoDetectorWindows {
+            return try shadowInference(source: input.uprightSource, orientation: .up, context: detectorContext)
+        }
+        return try perform(
             VNImageRequestHandler(ciImage: input.uprightSource, options: [:]),
-            detectorHandler: VNImageRequestHandler(cgImage: input.image, options: [:]),
-            sourceRegion: input.geometry.sourceRegion(for:)
+            detectorPasses: [DetectorPass(handler: VNImageRequestHandler(cgImage: input.image, options: [:]),
+                                          sourceRegion: input.geometry.sourceRegion(for:))]
         )
+    }
+
+    func shadowInference(source: CIImage, orientation: CGImagePropertyOrientation,
+                         context: CIContext) throws -> TrafficSignTwoStageInferenceResultV2 {
+        let upright = TrafficSignDetectorInput.upright(source: source, orientation: orientation)
+        let width = Int(upright.extent.width), height = Int(upright.extent.height)
+        guard width > 0, height > 0 else { throw TrafficSignInferenceBackendError.incompatibleOutput }
+        let windows = usesTwoDetectorWindows
+            ? TrafficSignDetectorGeometry.twoEdgeWindows(width: width, height: height)
+            : [CGRect(x: 0, y: 0, width: width, height: height)]
+        let inputs = try windows.map { window in
+            try TrafficSignDetectorInput(source: upright, orientation: .up, context: context, window: window)
+        }
+        return try perform(VNImageRequestHandler(ciImage: upright, options: [:]),
+            detectorPasses: inputs.map { input in
+                DetectorPass(handler: VNImageRequestHandler(cgImage: input.image, options: [:]),
+                             sourceRegion: input.geometry.sourceRegion(for:))
+            })
     }
 
     private func perform(
         _ handler: VNImageRequestHandler,
-        detectorHandler: VNImageRequestHandler? = nil,
-        sourceRegion: (CGRect) -> CGRect? = { $0 }
+        detectorPasses: [DetectorPass]? = nil
     ) throws -> TrafficSignTwoStageInferenceResultV2 {
         inferenceLock.lock()
         defer { inferenceLock.unlock() }
 
-        let detectorRequest = VNCoreMLRequest(model: detectorModel)
-        detectorRequest.imageCropAndScaleOption = .scaleFit
+        let passes = detectorPasses ?? [DetectorPass(handler: handler, sourceRegion: { $0 })]
         let detectorStartedAt = ProcessInfo.processInfo.systemUptime
-        try (detectorHandler ?? handler).perform([detectorRequest])
+        var admittedProposals: [(confidence: Float, box: CGRect)] = []
+        var proposalsTruncated = false
+        for pass in passes {
+            let request = VNCoreMLRequest(model: detectorModel)
+            request.imageCropAndScaleOption = .scaleFit
+            try pass.handler.perform([request])
+            let results = request.results ?? []
+            guard results.allSatisfy({ $0 is VNRecognizedObjectObservation }) else {
+                throw TrafficSignInferenceBackendError.incompatibleOutput
+            }
+            let candidates = results.compactMap { result -> (confidence: Float, box: CGRect)? in
+                guard let object = result as? VNRecognizedObjectObservation,
+                      let label = object.labels.first, object.confidence.isFinite,
+                      Self.isSignProposal(label.identifier), Double(object.confidence) >= detectorThreshold,
+                      Self.isValidNormalizedRegion(object.boundingBox),
+                      let box = pass.sourceRegion(object.boundingBox), Self.isValidNormalizedRegion(box) else { return nil }
+                return (object.confidence, box)
+            }.sorted { $0.confidence > $1.confidence }
+            proposalsTruncated = proposalsTruncated || candidates.count > Self.maximumProposalsPerRole
+            admittedProposals += candidates.prefix(Self.maximumProposalsPerRole)
+        }
         let detectorLatencyMs = max(
             0,
             (ProcessInfo.processInfo.systemUptime - detectorStartedAt) * 1_000
         )
-        let results = detectorRequest.results ?? []
-        guard results.allSatisfy({ $0 is VNRecognizedObjectObservation }) else {
-            throw TrafficSignInferenceBackendError.incompatibleOutput
-        }
-
-        let objects = results.compactMap { $0 as? VNRecognizedObjectObservation }
-        let admittedProposals = objects.compactMap { object -> (confidence: Float, box: CGRect)? in
-            guard let label = object.labels.first,
-                  object.confidence.isFinite,
-                  Self.isSignProposal(label.identifier),
-                  Double(object.confidence) >= detectorThreshold,
-                  Self.isValidNormalizedRegion(object.boundingBox),
-                  let box = sourceRegion(object.boundingBox),
-                  Self.isValidNormalizedRegion(box) else { return nil }
-            return (object.confidence, box)
-        }
-        .sorted { $0.confidence > $1.confidence }
-        let signObjects = Array(admittedProposals.prefix(Self.maximumProposalsPerRole))
+        let signObjects = Self.mergedProposals(admittedProposals)
         var classified: [TrafficSignSpatialAssembly.ClassifiedDetection] = []
         classified.reserveCapacity(signObjects.count)
         var classifierLatencyMs: Double = 0
@@ -798,8 +819,21 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             detectorLatencyMs: detectorLatencyMs,
             classifierInvoked: !signObjects.isEmpty,
             classifierLatencyMs: classifierLatencyMs,
-            proposalsTruncated: admittedProposals.count > Self.maximumProposalsPerRole
+            proposalsTruncated: proposalsTruncated
         )
+    }
+
+    static func mergedProposals(_ proposals: [(confidence: Float, box: CGRect)]) -> [(confidence: Float, box: CGRect)] {
+        var retained: [(confidence: Float, box: CGRect)] = []
+        for proposal in proposals.sorted(by: { $0.confidence > $1.confidence }) {
+            if retained.allSatisfy({ previous in
+                let intersection = previous.box.intersection(proposal.box)
+                let area = intersection.isNull ? 0 : intersection.width * intersection.height
+                let union = previous.box.width * previous.box.height + proposal.box.width * proposal.box.height - area
+                return union <= 0 || area / union <= 0.45
+            }) { retained.append(proposal) }
+        }
+        return retained
     }
 
     private func classify(
@@ -1598,9 +1632,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 let rawDetections: [TrafficSignDetection]
                 let rawTwoStage: TrafficSignTwoStageInferenceResultV2?
                 if let twoStageBackend = self.backend as? TrafficSignVisionTwoStageCoreMLBackend {
-                    let input = try TrafficSignDetectorInput(source: Self.ciImage(item.image), orientation: item.orientation,
-                        context: self.inferenceCropContext)
-                    let result = try twoStageBackend.shadowInference(in: input)
+                    let result = try twoStageBackend.shadowInference(source: Self.ciImage(item.image),
+                        orientation: item.orientation, context: self.inferenceCropContext)
                     rawDetections = result.legacyDetections; rawTwoStage = result
                 } else if let twoStageBackend = self.backend as? any TrafficSignShadowInferenceBackendV2 {
                     let result: TrafficSignTwoStageInferenceResultV2
@@ -2546,7 +2579,8 @@ enum TrafficSignRuntimeBootstrap {
         }
     }
 
-    private static func townTrial(_ baseline: TrafficSignVerifiedModelPack, countryCode: String)
+    static func townTrial(_ baseline: TrafficSignVerifiedModelPack, countryCode: String,
+                          useTwoDetectorWindows: Bool? = nil)
         -> (TrafficSignVerifiedModelPack, TrafficSignVisionTwoStageCoreMLBackend)? {
         #if DEBUG
         let fileManager = FileManager.default
@@ -2554,29 +2588,35 @@ enum TrafficSignRuntimeBootstrap {
         let sha = "73a2818194be58673ba63fa7c92f6c12f9d0ef046f39649bd97d89e65578c026"
         guard countryCode.uppercased() == "DE", baseline.manifest.pipeline == .proposalClassification,
               let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
-        let model = directory.appendingPathComponent(name, isDirectory: true)
-        guard fileManager.fileExists(atPath: model.path) else { return nil }
+        let stagedModel = directory.appendingPathComponent(name, isDirectory: true)
+        guard fileManager.fileExists(atPath: stagedModel.path) else { return nil }
+        // iOS can return /var for Documents and /private/var for enumerated URLs.
+        // Enumerate relative names; the aliases can be bind mounts, not symlinks.
+        let model = stagedModel.resolvingSymlinksInPath()
         do {
             let keys: [URLResourceKey] = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
-            guard try model.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true,
-                  let children = fileManager.enumerator(at: model, includingPropertiesForKeys: keys) else {
+            guard try stagedModel.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true,
+                  let children = fileManager.enumerator(atPath: model.path) else {
                 throw TrafficSignInferenceBackendError.incompatibleOutput
             }
-            let files = try children.compactMap { item -> URL? in
-                guard let url = item as? URL else { return nil }
+            let files = try children.compactMap { item -> (path: String, url: URL)? in
+                guard let path = item as? String else { return nil }
+                let url = model.appendingPathComponent(path)
                 let values = try url.resourceValues(forKeys: Set(keys))
                 guard values.isSymbolicLink != true else { throw TrafficSignInferenceBackendError.incompatibleOutput }
-                return values.isRegularFile == true ? url : nil
+                return values.isRegularFile == true ? (path, url) : nil
             }.sorted { $0.path < $1.path }
             var digest = SHA256()
-            for url in files {
-                digest.update(data: Data(url.path.dropFirst(model.path.count + 1).utf8))
+            for file in files {
+                digest.update(data: Data(file.path.utf8))
                 digest.update(data: Data([0]))
-                digest.update(data: try Data(contentsOf: url, options: .mappedIfSafe))
+                digest.update(data: try Data(contentsOf: file.url, options: .mappedIfSafe))
                 digest.update(data: Data([0]))
             }
-            guard digest.finalize().map({ String(format: "%02x", $0) }).joined() == sha else {
-                throw TrafficSignInferenceBackendError.incompatibleOutput
+            let actualSHA256 = digest.finalize().map({ String(format: "%02x", $0) }).joined()
+            guard actualSHA256 == sha else {
+                throw TrafficSignRuntimeUnavailability(code: .modelLoadFailed,
+                    detail: "Town detector checksum mismatch (\(files.count) files, \(actualSHA256)).")
             }
             let original = baseline.detectorArtifact
             let artifact = TrafficSignModelPackManifest.Artifact(
@@ -2607,7 +2647,8 @@ enum TrafficSignRuntimeBootstrap {
                 detectorArtifact: artifact, detectorArtifactURL: model, classifierArtifact: baseline.classifierArtifact,
                 classifierArtifactURL: baseline.classifierArtifactURL, shadowRuntimeConfigurationV2: shadow,
                 manifestSHA256: baseline.manifestSHA256, trialDetectorThreshold: 0.840783)
-            let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack)
+            let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack,
+                useTwoDetectorWindows: useTwoDetectorWindows)
             NSLog("YouSpeedTSR town YOLO26n active at 0.840783 with CPU and Neural Engine enabled")
             return (pack, backend)
         } catch {

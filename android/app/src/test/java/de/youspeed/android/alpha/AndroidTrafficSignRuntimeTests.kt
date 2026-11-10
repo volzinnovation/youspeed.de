@@ -117,7 +117,7 @@ class AndroidTrafficSignRuntimeTests {
         assertEquals(TrafficSignArtifactFormat.TFLITE, classifier.format)
         assertEquals(listOf(1, 224, 224, 3), classifier.inputShape)
         assertEquals("classification_probabilities_v1", classifier.outputSchema)
-        assertEquals("f179b03a59aff8ceb8c0127077c595d0f1629d9b30d0cf487cfa11bf24f4b15a", classifier.sha256)
+        assertEquals("d33963edc6413b158f60bacae87e7ea6c552d0e9784f2de0bafa364bfd258bf6", classifier.sha256)
         assertTrue(File(root, detector.path).isFile)
         assertTrue(File(root, classifier.path).isFile)
         assertEquals(detector.sha256, sha256(File(root, detector.path)))
@@ -200,7 +200,7 @@ class AndroidTrafficSignRuntimeTests {
         assertEquals("sign", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["0"])
         assertEquals("plate", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["1"])
         assertEquals("face", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["2"])
-        val names = embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))
+        val names = embeddedModelNames(File(root, "classify_de_road_signs_float32.tflite"))
         assertEquals((0 until 142).map { names.getValue(it.toString()) }, catalog.classLabels)
         val baselineFile = listOf(File("../../shared"), File("../shared"), File("shared"))
             .map { File(it, "tsr/baselines/de134-expanded-reference-2026-11-09/catalog.json") }.first(File::isFile)
@@ -214,8 +214,8 @@ class AndroidTrafficSignRuntimeTests {
             .getValue("sha256").jsonPrimitive.content
         assertEquals(checkpoint, catalog.checkpointSha256)
         assertTrue(checkpoint != baseline.getValue("classifier_checkpoint_sha256").jsonPrimitive.content)
-        assertEquals("maxspeed:30", embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))["65"])
-        assertEquals("zone:30", embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))["129"])
+        assertEquals("maxspeed:30", embeddedModelNames(File(root, "classify_de_road_signs_float32.tflite"))["65"])
+        assertEquals("zone:30", embeddedModelNames(File(root, "classify_de_road_signs_float32.tflite"))["129"])
     }
 
     private fun displayCatalog(): TrafficSignDisplayCatalog {

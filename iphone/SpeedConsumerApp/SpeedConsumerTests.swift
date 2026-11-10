@@ -1754,7 +1754,7 @@ final class SpeedConsumerTests: XCTestCase {
         await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
         await model.testRefreshActiveBundleCountry(preferredCountryCode: "DEU")
         try await model.testWaitForTrafficSignModelLoad()
-        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-panoramax-bootstrap-live-v1")
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-youspeed-reviewed142-v1")
         await model.testRefreshActiveBundleCountry(preferredCountryCode: "BEL")
         try await model.testWaitForTrafficSignModelLoad()
         XCTAssertEqual(model.trafficSignRecognitionModelPackID, "be-panoramax-bootstrap-evaluation-v1")
@@ -1786,7 +1786,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertTrue(model.activeDBPath.isEmpty)
         XCTAssertEqual(model.testRequestedTrafficSignModelCountryCode, "DE")
         XCTAssertEqual(model.testTrafficSignCatalogCountryCode, "DE")
-        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-panoramax-bootstrap-live-v1")
+        XCTAssertEqual(model.trafficSignRecognitionModelPackID, "de-youspeed-reviewed142-v1")
     }
 
     @MainActor
@@ -2019,7 +2019,7 @@ final class SpeedConsumerTests: XCTestCase {
 
         XCTAssertEqual(
             pack.manifest.packId,
-            "de-panoramax-bootstrap-live-v1"
+            "de-youspeed-reviewed142-v1"
         )
         XCTAssertEqual(pack.manifest.pipeline, .proposalClassification)
         XCTAssertEqual(pack.detectorArtifact.path, "yolo11n_panoramax.mlmodelc")

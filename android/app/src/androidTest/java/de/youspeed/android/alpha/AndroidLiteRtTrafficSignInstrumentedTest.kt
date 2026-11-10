@@ -22,6 +22,55 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidLiteRtTrafficSignInstrumentedTest {
     @Test
+    fun townTwoWindowLatencyUsesGpuAndOriginalCoordinates() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val baseline = AndroidTrafficSignModelPackLoader.load(context)
+        val pack = requireNotNull(AndroidTrafficSignModelPackLoader.townTrial(context, baseline))
+        val reference = requireNotNull(instrumentation.context.assets
+            .open("tsr-panoramax-0906fc23.jpg").use(BitmapFactory::decodeStream))
+        val source = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888)
+        val scale = minOf(source.width.toFloat() / reference.width, source.height.toFloat() / reference.height)
+        val width = reference.width * scale
+        val height = reference.height * scale
+        val left = (source.width - width) / 2
+        val top = (source.height - height) / 2
+        android.graphics.Canvas(source).apply {
+            drawColor(Color.rgb(114, 114, 114))
+            drawBitmap(reference, null, android.graphics.RectF(left, top, left + width, top + height),
+                android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG))
+        }
+        reference.recycle()
+        val results = JSONObject()
+        try {
+            for (dual in listOf(false, true)) {
+                val samples = JSONArray()
+                AndroidLiteRtTrafficSignInferenceEngine(pack, useTwoDetectorWindows = dual).use { engine ->
+                    repeat(8) { iteration ->
+                        val result = engine.recognizeAllWithDiagnostics(source)
+                        assertEquals("gpu", result.executionBackend)
+                        assertEquals(null, result.accelerationFallbackReason)
+                        assertTrue(result.detections.all { detection ->
+                            val box = detection.candidate.boundingBox
+                            box.x >= 0 && box.y >= 0 && box.x + box.width <= 1.000001 && box.y + box.height <= 1.000001
+                        })
+                        assertEquals(result.detectorProposalCount, result.classifierInvocationCount)
+                        if (iteration >= 3) samples.put(JSONObject()
+                            .put("total_ms", result.inferenceMs)
+                            .put("detector_ms", result.detectorInferenceMs)
+                            .put("classifier_ms", result.classifierInferenceMs)
+                            .put("proposals", result.detectorProposalCount))
+                    }
+                }
+                results.put(if (dual) "dual" else "single", samples)
+            }
+            File(context.filesDir, "reviewed142-dual-window-latency.json").writeText(JSONObject()
+                .put("source_width", source.width).put("source_height", source.height)
+                .put("measurements", results).toString(2))
+        } finally { source.recycle() }
+    }
+
+    @Test
     fun measuredCameraCadenceCarriesRealModelResultsThroughTheFinalizedPassageForwarder() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val pack = AndroidTrafficSignModelPackLoader.load(instrumentation.targetContext)
@@ -289,7 +338,7 @@ class AndroidLiteRtTrafficSignInstrumentedTest {
     fun verifiedLiteRtPackRecognizesPinnedPanoramaxFixture() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val pack = AndroidTrafficSignModelPackLoader.load(instrumentation.targetContext)
-        assertEquals("de-youspeed-expanded142-v3", pack.modelPack.packId)
+        assertEquals("de-youspeed-reviewed142-v1", pack.modelPack.packId)
         assertEquals(142, pack.modelPack.classMapping.size)
         assertEquals("bus:stop", pack.modelPack.classMapping[136].classId)
         assertEquals("supplementary:plate", pack.modelPack.classMapping[137].classId)

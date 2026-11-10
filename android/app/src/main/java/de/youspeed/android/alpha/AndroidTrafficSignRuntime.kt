@@ -373,8 +373,12 @@ internal object AndroidYoloSignDecoder {
             }
         }.sortedByDescending(AndroidYoloProposal::score)
 
+        return merge(proposals, maximumProposals, nmsIou)
+    }
+
+    fun merge(proposals: List<AndroidYoloProposal>, maximumProposals: Int = 36, nmsIou: Double = .45): List<AndroidYoloProposal> {
         val retained = mutableListOf<AndroidYoloProposal>()
-        for (proposal in proposals) {
+        for (proposal in proposals.sortedByDescending(AndroidYoloProposal::score)) {
             if (retained.none { it.box.intersectionOverUnion(proposal.box) > nmsIou }) {
                 retained += proposal
                 if (retained.size == maximumProposals) break
@@ -414,9 +418,10 @@ internal data class AndroidTrafficSignInferenceResult(
 internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val verifiedPack: AndroidTrafficSignVerifiedPack,
     // CPU mode is a fixture-parity test control, not a user setting.
-    allowGpu: Boolean = true,
+    private val allowGpu: Boolean = true,
     // Keep the production precision until device fixture and preview benchmarks approve a change.
     val gpuPrecisionLossAllowed: Boolean = true,
+    private val useTwoDetectorWindows: Boolean = verifiedPack.trialDetectorThreshold != null,
 ) : AutoCloseable {
     private class InterpreterResources(val interpreter: Interpreter, private val delegate: GpuDelegate?) : AutoCloseable {
         override fun close() {
@@ -430,13 +435,13 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
 
     private data class GpuConfiguration(val options: GpuDelegateFactory.Options?, val unavailableReason: String?)
 
-    private val gpuConfiguration = if (!allowGpu) GpuConfiguration(null, null) else {
+    private fun gpuConfiguration(precisionLossAllowed: Boolean): GpuConfiguration = if (!allowGpu) GpuConfiguration(null, null) else {
         try {
             CompatibilityList().use { compatibility ->
                 if (compatibility.isDelegateSupportedOnThisDevice) {
                     GpuConfiguration(
                         compatibility.bestOptionsForThisDevice
-                            .setPrecisionLossAllowed(gpuPrecisionLossAllowed)
+                            .setPrecisionLossAllowed(precisionLossAllowed)
                             // Exhaustive OpenCL tuning can block in the Mali driver's
                             // profiling queue. Fast tuning avoids that startup path.
                             .setInferencePreference(GpuDelegateFactory.Options.INFERENCE_PREFERENCE_FAST_SINGLE_ANSWER),
@@ -473,6 +478,11 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val mappingsByClassId = verifiedPack.modelPack.classMapping.associateBy(TrafficSignClassMapping::classId)
 
     private fun createInterpreter(model: ByteBuffer, role: String): TrafficSignInferenceFallback<InterpreterResources> {
+        // Float32 classifier artifacts retain float32 GPU arithmetic. The detector
+        // keeps its independently selected precision and acceleration policy.
+        val precisionLossAllowed = gpuPrecisionLossAllowed &&
+            (role != "classifier" || verifiedPack.classifierArtifact.precision != TrafficSignPrecision.FLOAT32)
+        val gpuConfiguration = gpuConfiguration(precisionLossAllowed)
         fun options() = Interpreter.Options().apply {
             setNumThreads(4)
             setUseXNNPACK(true)
@@ -527,34 +537,43 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
 
     fun recognizeAllWithDiagnostics(source: Bitmap): AndroidTrafficSignInferenceResult {
         val startedAtNanos = System.nanoTime()
-        detectorWindow.prepare(source)
-        prepareDetectorInput(detectorWindow.bitmap)
-        val detectorPreprocessingMs = elapsedMs(startedAtNanos)
-        val detectorStartedAtNanos = System.nanoTime()
-        detector.run { resource ->
-            detectorInput.rewind()
-            detectorOutput.clear()
-            resource.interpreter.run(detectorInput, detectorOutput)
+        val windows: List<TrafficSignDetectorWindow?> = if (useTwoDetectorWindows)
+            TrafficSignDetectorWindow.twoEdges(source.width, source.height) else listOf(null)
+        val threshold = verifiedPack.trialDetectorThreshold ?: verifiedPack.modelPack.thresholds.unknown
+        val allProposals = mutableListOf<AndroidYoloProposal>()
+        var detectorPreprocessingMs = 0.0
+        var detectorInferenceMs = 0.0
+        var rawSignTopScore: Double? = null
+        var rawGlobalTopScore: Double? = null
+        var rawScoresAboveThreshold = 0
+        for (window in windows) {
+            val preparationStarted = System.nanoTime()
+            if (window == null) detectorWindow.prepare(source) else detectorWindow.prepare(source, window)
+            prepareDetectorInput(detectorWindow.bitmap)
+            detectorPreprocessingMs += elapsedMs(preparationStarted)
+            val detectorStarted = System.nanoTime()
+            detector.run { resource ->
+                detectorInput.rewind()
+                detectorOutput.clear()
+                resource.interpreter.run(detectorInput, detectorOutput)
+            }
+            detectorInferenceMs += elapsedMs(detectorStarted)
+            check(verifiedPack.trialDetectorThreshold == null || detectorUsesGpu) { "Town detector lost GPU acceleration" }
+            detectorOutput.rewind()
+            detectorOutput.asFloatBuffer().get(detectorOutputFloats)
+            val decoded = AndroidYoloSignDecoder.decode(detectorOutputFloats,
+                window?.width ?: source.width, window?.height ?: source.height, DETECTOR_SIZE, threshold)
+            allProposals += decoded.map { proposal ->
+                if (window == null) proposal else proposal.copy(box = window.sourceBox(proposal.box, source.width))
+            }
+            val raw = TrafficSignTensorDiagnostics.summarize(detectorOutputFloats,
+                signOffset = AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
+                signCount = AndroidYoloSignDecoder.OUTPUT_ELEMENTS, minimumScore = threshold)
+            rawSignTopScore = listOfNotNull(rawSignTopScore, raw.signTopScore).maxOrNull()
+            rawGlobalTopScore = listOfNotNull(rawGlobalTopScore, raw.globalTopScore).maxOrNull()
+            rawScoresAboveThreshold += raw.signScoresAboveThreshold
         }
-        check(verifiedPack.trialDetectorThreshold == null || detectorUsesGpu) {
-            "Town detector lost GPU acceleration"
-        }
-        val detectorInferenceMs = elapsedMs(detectorStartedAtNanos)
-        detectorOutput.rewind()
-        detectorOutput.asFloatBuffer().get(detectorOutputFloats)
-        val proposals = AndroidYoloSignDecoder.decode(
-            output = detectorOutputFloats,
-            sourceWidth = source.width,
-            sourceHeight = source.height,
-            inputSize = DETECTOR_SIZE,
-            minimumScore = verifiedPack.trialDetectorThreshold ?: verifiedPack.modelPack.thresholds.unknown,
-        )
-        val rawOutput = TrafficSignTensorDiagnostics.summarize(
-            detectorOutputFloats,
-            signOffset = AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
-            signCount = AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
-            minimumScore = verifiedPack.trialDetectorThreshold ?: verifiedPack.modelPack.thresholds.unknown,
-        )
+        val proposals = AndroidYoloSignDecoder.merge(allProposals)
         val lumaMean = sourceLumaMean(source)
 
         val classified = proposals.map { proposal -> classify(source, proposal) }
@@ -567,9 +586,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             classifiedDetectionCount = detections.size,
             classifierTopScore = classified.mapNotNull { it.classifierScore }.maxOrNull(),
             inferenceMs = (System.nanoTime() - startedAtNanos).coerceAtLeast(0L) / 1_000_000.0,
-            detectorRawSignTopScore = rawOutput.signTopScore,
-            detectorRawGlobalTopScore = rawOutput.globalTopScore,
-            detectorRawSignScoresAboveThreshold = rawOutput.signScoresAboveThreshold,
+            detectorRawSignTopScore = rawSignTopScore,
+            detectorRawGlobalTopScore = rawGlobalTopScore,
+            detectorRawSignScoresAboveThreshold = rawScoresAboveThreshold,
             sourceWidthPixels = source.width,
             sourceHeightPixels = source.height,
             sourceLumaMean = lumaMean,

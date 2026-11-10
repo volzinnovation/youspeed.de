@@ -26,5 +26,18 @@ internal class AndroidTrafficSignDetectorInput : AutoCloseable {
         return geometry
     }
 
+    fun prepare(source: Bitmap, window: TrafficSignDetectorWindow) {
+        require(window.left + window.width <= source.width && window.height == source.height)
+        val scale = TrafficSignDetectorGeometry.SIZE.toDouble() / maxOf(window.width, window.height)
+        val width = window.width * scale
+        val height = window.height * scale
+        val left = (TrafficSignDetectorGeometry.SIZE - width) / 2
+        val top = (TrafficSignDetectorGeometry.SIZE - height) / 2
+        canvas.drawColor(Color.rgb(114, 114, 114))
+        sourceBounds.set(window.left, 0, window.left + window.width, window.height)
+        destinationBounds.set(left.toFloat(), top.toFloat(), (left + width).toFloat(), (top + height).toFloat())
+        canvas.drawBitmap(source, sourceBounds, destinationBounds, paint)
+    }
+
     override fun close() { bitmap.recycle() }
 }

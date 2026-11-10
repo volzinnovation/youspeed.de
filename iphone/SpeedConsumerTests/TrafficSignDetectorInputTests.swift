@@ -8,6 +8,67 @@ import CoreML
 final class TrafficSignDetectorInputTests: XCTestCase {
     private let context = CIContext(options: [.cacheIntermediates: false])
 
+    func testTwoEdgeWindowsMapAndMergeOverlappingSourceProposals() throws {
+        let windows = TrafficSignDetectorGeometry.twoEdgeWindows(width: 1920, height: 1080)
+        XCTAssertEqual(windows.map(\.minX), [0, 840])
+        let left = TrafficSignDetectorGeometry(sourceWidth: 1920, sourceHeight: 1080, sourceWindow: windows[0])
+        let right = TrafficSignDetectorGeometry(sourceWidth: 1920, sourceHeight: 1080, sourceWindow: windows[1])
+        let a = try XCTUnwrap(left.sourceRegion(for: CGRect(x: 900.0 / 1080, y: 0.2, width: 0.05, height: 0.1)))
+        let b = try XCTUnwrap(right.sourceRegion(for: CGRect(x: 60.0 / 1080, y: 0.2, width: 0.05, height: 0.1)))
+        XCTAssertEqual(a.minX, b.minX, accuracy: 1e-9)
+        let merged = TrafficSignVisionTwoStageCoreMLBackend.mergedProposals([(0.9, a), (0.85, b)])
+        XCTAssertEqual(merged.count, 1)
+        XCTAssertEqual(merged.first?.confidence, 0.9)
+        XCTAssertEqual(TrafficSignDetectorGeometry.twoEdgeWindows(width: 1080, height: 1920).count, 1)
+        XCTAssertEqual(TrafficSignDetectorGeometry.twoEdgeWindows(width: 3000, height: 1000).count, 3)
+    }
+
+    @MainActor
+    func testPhysicalIPhoneTownTwoWindowLatency() throws {
+#if targetEnvironment(simulator)
+        throw XCTSkip("Town detector latency requires the attached iPhone")
+#else
+        let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
+        let baseline = try TrafficSignModelPackDirectoryLoader.load(from: directory,
+            runtimeVersion: UIDevice.current.systemVersion, appVersion: "1.5", countryCode: "DE")
+        let referenceURL = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "tsr-panoramax-0906fc23", withExtension: "jpg"))
+        let reference = try XCTUnwrap(UIImage(data: Data(contentsOf: referenceURL))?.cgImage)
+        let scale = min(1920.0 / Double(reference.width), 1080.0 / Double(reference.height))
+        let width = Double(reference.width) * scale, height = Double(reference.height) * scale
+        let square = CGRect(x: 0, y: 0, width: 1920, height: 1080)
+        let gray = CGFloat(114.0 / 255)
+        let background = CIImage(color: CIColor(red: gray, green: gray, blue: gray)).cropped(to: square)
+        let pixels = CIImage(cgImage: reference).transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+            .transformed(by: CGAffineTransform(translationX: (1920 - width) / 2, y: (1080 - height) / 2))
+        let image = try XCTUnwrap(CIContext().createCGImage(pixels.composited(over: background), from: square))
+        var measurements: [String: Any] = [:]
+        for dual in [false, true] {
+            let (_, backend) = try XCTUnwrap(TrafficSignRuntimeBootstrap.townTrial(baseline,
+                countryCode: "DE", useTwoDetectorWindows: dual))
+            var samples: [[String: Any]] = []
+            for iteration in 0..<8 {
+                let start = ProcessInfo.processInfo.systemUptime
+                let result = try backend.shadowInference(in: image, orientation: .up)
+                let elapsed = (ProcessInfo.processInfo.systemUptime - start) * 1000
+                XCTAssertTrue(elapsed.isFinite && elapsed > 0)
+                if iteration >= 3 {
+                    samples.append(["total_ms": elapsed, "detector_ms": result.detectorLatencyMs,
+                                    "classifier_ms": result.classifierLatencyMs,
+                                    "detections": result.legacyDetections.count])
+                }
+            }
+            measurements[dual ? "dual" : "single"] = samples
+        }
+        let report: [String: Any] = ["device": UIDevice.current.model, "source_width": image.width,
+            "source_height": image.height, "classifier_compute_units": "all",
+            "detector_compute_units": "cpuAndNeuralEngine", "measurements": measurements]
+        let documents = try XCTUnwrap(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first)
+        try JSONSerialization.data(withJSONObject: report, options: [.sortedKeys, .prettyPrinted])
+            .write(to: documents.appendingPathComponent("reviewed142-dual-window-latency.json"), options: .atomic)
+#endif
+    }
+
     @MainActor
     func testBundledCoreMLRunsAt1024AndClassifiesFullFrameReferences() throws {
         let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
