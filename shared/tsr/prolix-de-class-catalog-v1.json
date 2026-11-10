@@ -2656,6 +2656,19 @@
       "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
     },
     {
+      "class_id": "DE:278",
+      "sign_code": "DE:278",
+      "image_path": "tsr/sign-pictograms/png/de-282.png",
+      "label": {
+        "de": "Ende der Höchstgeschwindigkeit",
+        "en": "End of maximum speed restriction",
+        "fr": "Fin de limitation de vitesse",
+        "nl": "Einde maximumsnelheid"
+      },
+      "display_eligible": true,
+      "notes": "Owner-approved unnumbered presentation fallback for inventory DE:278 when its printed speed is missing. Reuses the shared national end-sign artwork, as the camera fallback does; the source code and speed-limit-end semantics remain DE:278. Not an additional classifier output."
+    },
+    {
       "class_id": "DE:625-20",
       "sign_code": "DE:625-20",
       "image_path": "tsr/sign-pictograms/png/de-625-20.png",

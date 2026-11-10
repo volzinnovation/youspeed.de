@@ -136,7 +136,9 @@ display independently of the camera vocabulary. Use the exact source sign code
 or its explicitly parsed printed speed to select the shared asset. A generic
 `DE:278` without a printed value cannot acquire a number from the vehicle speed,
 the current speed reference, or an adjacent sign. The owner-confirmed fallback
-is the plain `DE:278` text card when the printed value is missing. This affects presentation
+is the shared unnumbered end-sign pictogram (`de-282.png`) when the printed value
+is missing. The `DE:278` inventory alias uses this existing artwork with the
+maximum-speed-end label; it retains the source's `DE:278` semantics. This affects presentation
 only; the speed-reference state-machine policy is unchanged.
 
 The DE:278 source review on 2026-11-03 confirmed 14 existing variants: 5, 10,

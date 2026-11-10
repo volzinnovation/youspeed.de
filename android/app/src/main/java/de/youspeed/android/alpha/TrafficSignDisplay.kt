@@ -57,6 +57,9 @@ internal class TrafficSignDisplayCatalog private constructor(
 
     /** Bundle inventory can identify an exact sign independently of camera vocabulary. */
     fun inventorySpeedEnd(signCode: String, value: Double?, unit: String?, parameterStatus: String): TrafficSignPictogram? {
+        if (signCode == "DE:278" && (value == null || parameterStatus != "parsed_source_value")) {
+            return pictograms["DE:278"]?.takeIf { it.imagePath != null }
+        }
         val sourceNumber = InventorySpeedEndCode.number(signCode)
         val exactCode = when {
             sourceNumber != null -> "DE:278-$sourceNumber"
@@ -67,8 +70,7 @@ internal class TrafficSignDisplayCatalog private constructor(
             }
             else -> return null
         }
-        // An absent reviewed variant stays unavailable. Never borrow another
-        // number or the DE:282 artwork when the source only says DE:278.
+        // Known numeric variants still require their exact reviewed artwork.
         return pictograms[exactCode]?.takeIf { it.imagePath != null }
     }
 

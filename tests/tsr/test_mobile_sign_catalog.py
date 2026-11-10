@@ -102,6 +102,12 @@ def test_numeric_speed_end_inventory_artwork_is_independent_of_camera_vocabulary
         assert (directory / artworks[code]["original_path"]).is_file()
         assert code not in catalog["class_labels"]
 
+    fallback = signs["DE:278"]
+    assert fallback["sign_code"] == "DE:278"
+    assert fallback["display_eligible"] is True
+    assert fallback["image_path"] == signs["no:end"]["image_path"]
+    assert "DE:278" not in catalog["class_labels"]
+
     # A family-only camera result cannot establish which printed number ended.
     assert signs["maxspeed:end"]["image_path"] is None
     assert signs["maxspeed:end"]["display_eligible"] is False

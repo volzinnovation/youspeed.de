@@ -132,9 +132,17 @@ final class InventorySpeedEndPictogramTests: XCTestCase {
 
     func testUnknownInvalidAndUnsupportedEndValuesNeverInventArtwork() throws {
         let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        for source in ["mobidata-bw-vzk", "osm"] {
+            for missing in [inventory(code: "DE:278", pictogramCode: "DE:278-30", source: source),
+                            inventory(code: "DE:278", value: 30, status: "missing_value", source: source)] {
+                let fallback = try XCTUnwrap(catalog.sign(forInventory: missing))
+                XCTAssertEqual(fallback.signCode, "DE:278")
+                XCTAssertEqual(fallback.imagePath, "tsr/sign-pictograms/png/de-282.png")
+                XCTAssertNotNil(fallback.imageURL())
+                XCTAssertFalse(catalog.canRecognize("DE:278"))
+            }
+        }
         let cases = [
-            inventory(code: "DE:278", pictogramCode: "DE:278-30"),
-            inventory(code: "DE:278", value: 30, status: "missing_value"),
             inventory(code: "DE:278", value: 30, status: "parsed_source_value", unit: "mph"),
             inventory(code: "DE:278", value: 30.5, status: "parsed_source_value"),
             inventory(code: "DE:278", value: .nan, status: "parsed_source_value"),

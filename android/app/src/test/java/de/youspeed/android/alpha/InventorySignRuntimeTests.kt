@@ -318,10 +318,16 @@ class InventorySignRuntimeTests {
         assertNull(generic.copy(parameterStatus = "annotation_unverified").parameterText)
         assertEquals("50 km/h", generic.copy(code = "DE:278-50", parameterStatus = "missing_value").parameterText)
         assertEquals("tsr/sign-pictograms/png/de-278-50.png", generic.copy(code = "DE:278[50]").pictogram(displayCatalog)?.imagePath)
+        for (missing in listOf(generic.copy(value = null), generic.copy(parameterStatus = "missing_value"),
+            generic.copy(parameterStatus = "annotation_unverified"))) {
+            for (source in listOf("mobidata-bw-vzk", "osm-traffic-sign")) {
+                assertEquals("tsr/sign-pictograms/png/de-282.png", missing.copy(sourceId = source).pictogram(displayCatalog)?.imagePath)
+            }
+        }
+        assertNull(displayCatalog.pictogram("DE:278")) // The inventory alias is not a camera class.
         for (unknown in listOf(
-            generic.copy(value = null), generic.copy(value = 70.5), generic.copy(value = Double.NaN),
+            generic.copy(value = 70.5), generic.copy(value = Double.NaN),
             generic.copy(value = Double.POSITIVE_INFINITY), generic.copy(unit = "mph"),
-            generic.copy(parameterStatus = "missing_value"), generic.copy(parameterStatus = "annotation_unverified"),
             generic.copy(code = "DE:278-999"), generic.copy(code = "DE:278[70 mph]"),
         )) assertNull(unknown.pictogram(displayCatalog))
     }

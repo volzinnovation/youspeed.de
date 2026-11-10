@@ -84,6 +84,9 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
     func sign(forInventory inventory: InventoryTrafficSign) -> Sign? {
         let code: String?
         if inventory.code == "DE:278" {
+            if inventory.numericValue == nil || inventory.parameterStatus != "parsed_source_value" {
+                return sign(for: "DE:278")
+            }
             guard inventory.parameterStatus == "parsed_source_value",
                   inventory.unit == nil || inventory.unit == "km/h",
                   let value = inventory.numericValue, let speed = Int(exactly: value) else { return nil }
