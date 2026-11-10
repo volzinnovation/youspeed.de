@@ -1,4 +1,4 @@
-# OSM-Korrekturen im YouSpeed Inspector
+# OSM-Korrekturen im Streetshots Inspector
 
 Öffnen: **https://osm.youspeed.de**. Der Dienst erzeugt Vorschläge für Geschwindigkeitslimits und Bedingungen. Du prüfst immer einen ursprünglichen OSM-Way und lädst dessen geprüfte JOSM-Datei herunter.
 

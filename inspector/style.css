@@ -127,17 +127,9 @@ body {
 }
 
 .inspector-brand-mark {
-  display: grid;
   width: 2rem;
   height: 2rem;
-  place-items: center;
-  border: 1px solid rgba(255, 180, 84, 0.48);
-  border-radius: 0.45rem;
-  color: var(--tsr-accent);
-  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, monospace;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  flex: none;
 }
 
 .inspector-brand-copy {
@@ -1811,11 +1803,11 @@ a:focus-visible,
 
 @media (max-width: 560px) {
   .inspector-brand-copy > span {
-    display: none;
+    font-size: 0.56rem;
   }
 
   .inspector-brand-copy strong {
-    margin-top: 0;
+    margin-top: 0.15rem;
     font-size: 0.85rem;
   }
 

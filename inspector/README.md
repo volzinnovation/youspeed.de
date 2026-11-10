@@ -1,4 +1,4 @@
-# YouSpeed Web Inspector
+# Streetshots Inspector
 
 ## Zeichen vor Ort
 

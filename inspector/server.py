@@ -583,6 +583,8 @@ def static_path_allowed(path):
     if any(part.startswith(".") for part in relative.parts):
         return False
     if relative.parts[0] == "inspector":
+        if relative.as_posix() == "inspector/streetshots-road.svg":
+            return True
         return len(relative.parts) <= 2 and (path.is_dir() or path.suffix in {".html", ".css", ".js", ".ndjson"})
     if relative.parts[:3] in (("shared", "tsr", "fixtures"), ("shared", "tsr", "sign-pictograms")):
         return path.suffix in {".json", ".png", ".jpg", ".jpeg", ".ppm", ".svg", ".txt"}
