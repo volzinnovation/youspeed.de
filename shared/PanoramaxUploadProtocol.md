@@ -31,7 +31,7 @@ Stopping a drive only closes the local batch and makes it available for review. 
 After the post-drive gate succeeds, the platform adapter implements this sequence:
 
 ```text
-POST /api/upload_sets                         {title, estimated_nb_files}
+POST /api/upload_sets                         {title, estimated_nb_files, no_split: true, sort_method: "time-asc"}
 POST /api/upload_sets/{id}/files              multipart field: file
 POST /api/upload_sets/{id}/complete
 GET  /api/upload_sets/{id}                     poll until ready/complete
@@ -40,6 +40,8 @@ GET  /api/upload_sets/{id}                     poll until ready/complete
 Only user-included Panoramax originals are sent. Dashcam video and transient TSR frames are never part of this protocol. The local queue records the remote upload-set ID and per-item state so a partial upload can be retried later without discarding captures or reopening the camera. Already accepted originals must not be uploaded again.
 
 Before creating an upload set or transferring a selection, clients check that its pending originals are available locally. Missing originals stop the attempt with a visible count and instructions to deselect those images; their queue records remain intact. Already accepted items do not require a local original to resume remote completion or processing.
+
+Both clients explicitly keep each upload set in one chronologically ordered sequence. Distance or time gaps between selected photos must not trigger the server's default sequence splitting. This applies to newly created upload sets; existing remote sets retain their original grouping.
 
 ## Progress, stopping, and local retention
 

@@ -252,7 +252,9 @@ struct PanoramaxUploadClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let payload: [String: Any] = [
             "title": title,
-            "estimated_nb_files": max(estimatedFileCount, 1)
+            "estimated_nb_files": max(estimatedFileCount, 1),
+            "no_split": true,
+            "sort_method": "time-asc"
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await transport.data(for: request)

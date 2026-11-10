@@ -149,7 +149,12 @@ class PanoramaxUploadClient(
     }
 
     fun createUploadSet(title: String, estimatedFileCount: Int): PanoramaxUploadSetStatus {
-        val payload = buildJsonObject { put("title", title); put("estimated_nb_files", estimatedFileCount.coerceAtLeast(1)) }
+        val payload = buildJsonObject {
+            put("title", title)
+            put("estimated_nb_files", estimatedFileCount.coerceAtLeast(1))
+            put("no_split", true)
+            put("sort_method", "time-asc")
+        }
         return PanoramaxUploadSetStatus.decode(execute(PanoramaxHttpRequest(
             "POST", "/api/upload_sets", token, "application/json", payload.toString().toByteArray(Charsets.UTF_8),
             origin = origin,
