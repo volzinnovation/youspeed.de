@@ -14,7 +14,10 @@ if the trial runtime repeatedly fails during live analysis.
 
 The Core ML digest covers sorted relative paths and file bytes, with a NUL
 after each path and payload. Both artifacts were verified in the device app
-containers. The release builds do not accept the local override.
+containers. The release builds do not accept the local override. A repeat LiteRT export
+on KI produced a different artifact digest and identical raw tensors on four
+checked corpus images. Use the listed binaries for this trial. Verify and
+explicitly pin a different digest before installing a re-export.
 
 Use `../export_town_trial_detector.py` with `--checkpoint`, `--architecture`
 (the pinned upstream YOLO26n weights) and `--output`. Run the `coreml` and
@@ -40,7 +43,7 @@ onnx2tf 1.28.8, TensorFlow 2.19.0 and Python LiteRT 1.3.0. Both use Ultralytics
   `Documents/results.json`. The benchmark records Core ML's preferred device
   placement when the OS supports compute plans.
 
-The 10 November 2026 device comparison used YouSpeed 1.5 build 10092. On 64
+The 10 November 2026 trial was installed as YouSpeed 1.5 build 10092. On 64
 reviewed scenes, both phones found 6/23 town signs and 22/48 other signs with
 YOLO26n, versus 2/23 and 27/48 with SGBlur. YOLO26n produced 7 false positives
 on each phone. SGBlur produced 14 on the Moto and 15 on the iPhone.
