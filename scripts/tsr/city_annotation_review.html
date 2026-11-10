@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Town sign annotation review</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { font: 16px/1.5 system-ui, sans-serif; color: #17252b; background: #f5f7f6; }
+  body { max-width: 1260px; margin: 2rem auto; padding: 0 1rem; }
+  h1, h2, p { margin: 0 0 .65rem; }
+  .bar, .fields { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; margin: 1rem 0; }
+  label { display: grid; gap: .2rem; }
+  button, select, input, textarea { font: inherit; padding: .4rem .55rem; border: 1px solid #a4b4b3; border-radius: 4px; background: white; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: .5; }
+  #accept, #save, #export, [aria-pressed="true"] { background: #0e5f54; color: white; }
+  .pictures { display: grid; grid-template-columns: minmax(0, 3fr) minmax(160px, 1fr); gap: 1rem; }
+  .pictures.single { grid-template-columns: minmax(0, 1fr); }
+  figure { margin: 0; }
+  .photo { position: relative; background: #dce5e2; }
+  img { display: block; width: 100%; }
+  #frameBox { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #frame.editing { cursor: crosshair; touch-action: none; }
+  #crop { max-height: 370px; object-fit: contain; image-rendering: pixelated; }
+  .small { font-size: .9rem; color: #405451; }
+  #coordinates input { width: 6em; }
+  #queue { max-width: min(24rem, 80vw); }
+  #title { overflow-wrap: anywhere; }
+  #status { min-height: 1.5em; }
+  [hidden] { display: none !important; }
+  @media (max-width: 680px) { .pictures { grid-template-columns: 1fr; } }
+</style>
+<h1>Town sign annotation review</h1>
+<p>Accept, reject or mark uncertain to save and move to the next unreviewed record. Use Edit to correct a class or draw a box. Export your decisions as JSON.</p>
+<div class="bar">
+  <label>Source <select id="source"><option value="">All sources</option></select></label>
+  <label>Sign <select id="code"><option value="">Both classes</option><option>DE:310</option><option>DE:311</option></select></label>
+  <label>Scope <select id="scope"><option value="">All records</option><option value="frame">Full frame</option><option value="crop">Crop only</option></select></label>
+  <label>Record <select id="queue"></select></label>
+  <button id="previous">Previous</button><button id="next">Next</button>
+  <button id="export">Export decisions</button>
+</div>
+<p class="small" id="progress" aria-live="polite"></p>
+<p id="empty" hidden>No records match these filters.</p>
+<main id="record" hidden>
+  <h2 id="title"></h2>
+  <div class="fields" id="actions" role="group" aria-label="Review decision">
+    <button id="accept">Accept proposal</button>
+    <button id="reject">Reject</button>
+    <button id="uncertain">Uncertain</button>
+    <button id="edit">Edit class or box</button>
+  </div>
+  <form id="reviewForm" hidden>
+    <div class="fields" role="group" aria-label="Reviewed class">
+      <button type="button" data-class="DE:310" aria-pressed="false">DE:310 Town entry</button>
+      <button type="button" data-class="DE:311" aria-pressed="false">DE:311 Town exit</button>
+    </div>
+    <div class="fields" id="coordinates">
+      <label>Left px <input id="left" type="number" step="any"></label>
+      <label>Top px <input id="top" type="number" step="any"></label>
+      <label>Right px <input id="right" type="number" step="any"></label>
+      <label>Bottom px <input id="bottom" type="number" step="any"></label>
+    </div>
+    <div class="fields">
+      <button id="save">Save correction</button>
+      <button id="cancel" type="button">Cancel edit</button>
+    </div>
+  </form>
+  <p id="status" role="status"></p>
+  <div class="pictures" id="pictures">
+    <figure id="scene">
+      <div class="photo">
+        <img id="frame" alt="Full source frame" draggable="false">
+        <svg id="frameBox" preserveAspectRatio="none" aria-hidden="true">
+          <rect id="outline" fill="none" stroke="#ffdf4a" stroke-width="3" vector-effect="non-scaling-stroke"/>
+        </svg>
+      </div>
+      <figcaption class="small" id="frameCaption">Source frame</figcaption>
+    </figure>
+    <figure id="cropFigure">
+      <div class="photo"><img id="crop" alt="Sign review crop"></div>
+      <figcaption class="small" id="cropCaption"></figcaption>
+    </figure>
+  </div>
+  <p class="small" id="origin"></p>
+  <p><a id="link" target="_blank" rel="noopener noreferrer">Open source</a>
+    <a id="original" target="_blank" rel="noopener noreferrer">Open full-resolution photo</a></p>
+  <label>Note <input id="note" maxlength="2000"></label>
+</main>
+<script type="application/json" id="review-data">__REVIEW_DATA__</script>
+<script>
+const $ = id => document.getElementById(id);
+const data = JSON.parse($('review-data').textContent);
+const names = {'DE:310': 'Town entry', 'DE:311': 'Town exit'};
+const coordinates = ['left', 'top', 'right', 'bottom'].map($);
+const classButtons = document.querySelectorAll('[data-class]');
+const storage = `youspeed-city-review-${data.manifest_sha256}`;
+let reviews = {};
+try { reviews = JSON.parse(localStorage.getItem(storage) || '{}'); } catch {}
+let filtered = [];
+let current;
+let drawStart;
+let editing = false;
+let correctedClass;
+
+function progress() {
+  $('progress').textContent = `${Object.keys(reviews).length} of ${data.records.length} decisions saved · ${filtered.length} records in this view`;
+}
+
+function show() {
+  current = filtered[$('queue').selectedIndex];
+  $('record').hidden = !current;
+  $('empty').hidden = !!current;
+  $('previous').disabled = !current || $('queue').selectedIndex === 0;
+  $('next').disabled = !current || $('queue').selectedIndex === filtered.length - 1;
+  progress();
+  if (!current) return;
+  const r = current;
+  const saved = reviews[r.id] || {};
+  const needsBox = !!r.frame_preview && !r.bbox_xyxy;
+  $('title').textContent = `${r.id} · ${needsBox ? 'Search hint · ' : ''}${r.class_code} ${names[r.class_code]}`;
+  $('scene').hidden = !r.frame_preview;
+  $('cropFigure').hidden = !r.crop_preview;
+  $('pictures').classList.toggle('single', !r.frame_preview || !r.crop_preview);
+  $('coordinates').hidden = !r.frame_size;
+  $('frameCaption').textContent = needsBox ? 'Source frame awaiting a box' : 'Source frame with proposed box';
+  $('accept').disabled = needsBox;
+  $('edit').textContent = needsBox ? 'Annotate visible sign' : 'Edit class or box';
+  if (r.frame_preview) {
+    $('frame').src = r.frame_preview;
+    $('frameBox').setAttribute('viewBox', `0 0 ${r.frame_size.join(' ')}`);
+  }
+  if (r.crop_preview) $('crop').src = r.crop_preview;
+  $('cropCaption').textContent = needsBox || r.crop_role === 'search_region' ? 'Map-based search region · verify on the full frame' :
+    r.frame_preview ? 'Review crop' : 'Review crop · class review only';
+  $('origin').textContent = [r.split, r.source, r.provenance, r.exposure, r.author, r.license].filter(Boolean).join(' · ');
+  for (const [id, url] of [['link', r.source_url], ['original', r.source_photo_url]]) {
+    $(id).hidden = !/^https?:\/\//.test(url || '');
+    if (!$(id).hidden) $(id).href = url;
+  }
+  $('note').value = saved.note || '';
+  $('status').textContent = saved.decision ? `Saved decision: ${saved.decision}` : 'Awaiting review';
+  setEditing(false);
+}
+
+function filter() {
+  filtered = data.records.filter(r =>
+    (!$('source').value || r.source === $('source').value) &&
+    (!$('code').value || r.class_code === $('code').value) &&
+    (!$('scope').value || (r.frame_preview ? 'frame' : 'crop') === $('scope').value));
+  $('queue').replaceChildren(...filtered.map((r, i) => new Option(
+    `${i + 1} · ${r.class_code} · ${r.picture_id?.slice(0, 8) || r.id}`, r.id)));
+  if (filtered.length) $('queue').selectedIndex = Math.max(0, filtered.findIndex(r => !reviews[r.id]));
+  show();
+}
+
+function setClass(code) {
+  correctedClass = code;
+  classButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.class === code)));
+}
+
+function setEditing(active) {
+  editing = active;
+  drawStart = undefined;
+  $('actions').hidden = editing;
+  $('reviewForm').hidden = !editing;
+  if (editing) {
+    const saved = reviews[current.id];
+    setClass(saved?.class_code || (current.frame_preview && !current.bbox_xyxy ? '' : current.class_code));
+    coordinates.forEach((field, i) => field.value = (saved?.bbox_xyxy || current.bbox_xyxy || [])[i] ?? '');
+  }
+  $('frame').classList.toggle('editing', editing && !!current.frame_size);
+  drawBox();
+}
+
+function drawBox() {
+  if (!current.frame_size) return;
+  const box = editing ? coordinates.map(field => field.valueAsNumber) : reviews[current.id]?.bbox_xyxy || current.bbox_xyxy || [];
+  const [x, y, right, bottom] = box;
+  const outline = $('outline');
+  const [w, h] = current.frame_size;
+  const valid = x >= 0 && y >= 0 && right > x && bottom > y && right <= w && bottom <= h;
+  outline.style.visibility = valid ? 'visible' : 'hidden';
+  if (!valid) return;
+  outline.setAttribute('x', x);
+  outline.setAttribute('y', y);
+  outline.setAttribute('width', right - x);
+  outline.setAttribute('height', bottom - y);
+  outline.setAttribute('stroke', editing ? '#5bf0c5' : '#ffdf4a');
+}
+
+function pointOnFrame(event) {
+  const bounds = $('frame').getBoundingClientRect();
+  const [width, height] = current.frame_size;
+  return [[event.clientX - bounds.left, bounds.width, width], [event.clientY - bounds.top, bounds.height, height]]
+    .map(([offset, displayed, source]) => Math.round(Math.max(0, Math.min(source, offset / displayed * source))));
+}
+
+$('frame').onpointerdown = event => {
+  if (!editing || !current.frame_size || event.button !== 0) return;
+  event.preventDefault();
+  drawStart = pointOnFrame(event);
+  $('frame').setPointerCapture(event.pointerId);
+};
+$('frame').onpointermove = event => {
+  if (!drawStart) return;
+  const [x, y] = pointOnFrame(event);
+  const [left, top] = drawStart;
+  const box = [Math.min(left, x), Math.min(top, y), Math.max(left, x), Math.max(top, y)];
+  coordinates.forEach((field, i) => field.value = box[i]);
+  drawBox();
+};
+$('frame').onpointerup = $('frame').onpointercancel = () => { drawStart = undefined; };
+
+function saveDecision(decision) {
+  const accepted = decision === 'accept' || decision === 'correct';
+  const corrected = decision === 'correct';
+  const box = corrected && current.frame_size ? coordinates.map(field => field.valueAsNumber) : current.bbox_xyxy;
+  if (corrected && !correctedClass) {
+    $('status').textContent = 'Choose the class of the visible sign.';
+    return;
+  }
+  if (corrected && box) {
+    const [w, h] = current.frame_size;
+    const [x, y, right, bottom] = box;
+    if (!(x >= 0 && y >= 0 && right > x && bottom > y && right <= w && bottom <= h)) {
+      $('status').textContent = `Enter a nonempty box inside the ${w} × ${h} source frame.`;
+      return;
+    }
+  }
+  let persisted = true;
+  try { reviews = {...reviews, ...JSON.parse(localStorage.getItem(storage) || '{}')}; } catch {}
+  reviews[current.id] = {
+    id: current.id, decision, class_code: accepted ? (corrected ? correctedClass : current.class_code) : null,
+    bbox_xyxy: accepted ? box : null, note: $('note').value,
+  };
+  try { localStorage.setItem(storage, JSON.stringify(reviews)); }
+  catch { persisted = false; }
+  const index = $('queue').selectedIndex;
+  let next = filtered.findIndex((record, i) => i > index && !reviews[record.id]);
+  if (next < 0) next = filtered.findIndex(record => !reviews[record.id]);
+  if (next >= 0) $('queue').selectedIndex = next;
+  show();
+  $('status').textContent = !persisted ? 'Saved for this session. Export JSON before closing.' :
+    next < 0 ? 'All records in this view reviewed.' : 'Decision saved. Ready for next review.';
+}
+
+$('reviewForm').onsubmit = event => {
+  event.preventDefault();
+  if (editing) saveDecision('correct');
+};
+
+$('export').onclick = () => {
+  const splits = [...new Set(data.records.map(record => record.split).filter(Boolean))];
+  const split = splits.length === 1 ? splits[0] : null;
+  const payload = {schema: 'youspeed-city-annotation-decisions-v1', manifest_sha256: data.manifest_sha256,
+    split, exported_at: new Date().toISOString(), records: Object.values(reviews)};
+  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'}));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  const scope = split ? split.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'review';
+  anchor.download = `city-annotation-${scope}-decisions.json`;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+for (const source of new Set(data.records.map(r => r.source))) $('source').add(new Option(source, source));
+for (const id of ['source', 'code', 'scope']) $(id).onchange = filter;
+$('queue').onchange = show;
+for (const decision of ['accept', 'reject', 'uncertain']) $(decision).onclick = () => saveDecision(decision);
+$('edit').onclick = () => setEditing(true);
+$('cancel').onclick = () => setEditing(false);
+classButtons.forEach(button => button.onclick = () => setClass(button.dataset.class));
+coordinates.forEach(field => field.oninput = drawBox);
+$('previous').onclick = () => { $('queue').selectedIndex--; show(); };
+$('next').onclick = () => { $('queue').selectedIndex++; show(); };
+filter();
+</script>
+</html>
