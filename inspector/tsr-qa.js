@@ -230,12 +230,14 @@
   }
 
   function setMode(mode, options = {}) {
+    if (mode.startsWith("place-signs?")) mode = "place-signs";
     if (mode === "sign-positions") mode = "positions";
-    state.mode = ["tsr", "crops", "positions"].includes(mode) ? mode : "matcher";
+    state.mode = ["tsr", "crops", "positions", "place-signs"].includes(mode) ? mode : "matcher";
     const tsrActive = state.mode === "tsr";
     const matcherActive = state.mode === "matcher";
     const cropsActive = state.mode === "crops";
     const positionsActive = state.mode === "positions";
+    const placeSignsActive = state.mode === "place-signs";
     document.body.dataset.inspectorMode = state.mode;
     elements.matcherMode?.classList.toggle("active", matcherActive);
     elements.tsrMode?.classList.toggle("active", tsrActive);
@@ -243,6 +245,8 @@
     byID("crops-mode-btn")?.setAttribute("aria-selected", String(cropsActive));
     byID("positions-mode-btn")?.classList.toggle("active", positionsActive);
     byID("positions-mode-btn")?.setAttribute("aria-selected", String(positionsActive));
+    byID("place-signs-mode-btn")?.classList.toggle("active", placeSignsActive);
+    byID("place-signs-mode-btn")?.setAttribute("aria-selected", String(placeSignsActive));
     elements.matcherMode?.setAttribute("aria-selected", String(matcherActive));
     elements.tsrMode?.setAttribute("aria-selected", String(tsrActive));
     if (elements.matcherPanel) elements.matcherPanel.hidden = !matcherActive;
@@ -251,8 +255,9 @@
     elements.workspace.hidden = !tsrActive;
     byID("crops-workspace").hidden = !cropsActive;
     if (byID("positions-workspace")) byID("positions-workspace").hidden = !positionsActive;
-    byID("workspace-locality-label").textContent = cropsActive || positionsActive ? "Report-Zugriff · privates Netz" : "QA-Daten lokal verarbeitet";
-    if (!options.preserveHash) {
+    if (byID("place-signs-workspace")) byID("place-signs-workspace").hidden = !placeSignsActive;
+    byID("workspace-locality-label").textContent = cropsActive || positionsActive || placeSignsActive ? "Report-Zugriff · privates Netz" : "QA-Daten lokal verarbeitet";
+    if (!options.preserveHash && !(placeSignsActive && window.location.hash.startsWith("#place-signs?"))) {
       history.replaceState(null, "", "#" + (positionsActive ? "sign-positions" : state.mode));
     }
     window.dispatchEvent(new CustomEvent("youspeed:mode", { detail: state.mode }));
@@ -1625,6 +1630,7 @@
   elements.tsrMode?.addEventListener("click", () => setMode("tsr"));
   byID("crops-mode-btn")?.addEventListener("click", () => setMode("crops"));
   byID("positions-mode-btn")?.addEventListener("click", () => setMode("positions"));
+  byID("place-signs-mode-btn")?.addEventListener("click", () => setMode("place-signs"));
   elements.loadFixture?.addEventListener("click", () => void loadFixtureSet());
   elements.loadM0Fixture?.addEventListener("click", () => void loadM0FixtureSet());
   elements.modelInput?.addEventListener("change", async (event) => {

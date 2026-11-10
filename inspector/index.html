@@ -12,6 +12,7 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./place-sign-review.css" />
   </head>
   <body>
     <header class="app-header">
@@ -47,6 +48,8 @@
           aria-selected="false" aria-controls="crops-workspace">Backend-Crops</button>
         <button id="positions-mode-btn" class="mode-switch-button" type="button" role="tab"
           aria-selected="false" aria-controls="positions-workspace">Tempolimit-Positionen</button>
+        <button id="place-signs-mode-btn" class="mode-switch-button" type="button" role="tab"
+          aria-selected="false" aria-controls="place-signs-workspace">Zeichen vor Ort</button>
         <a class="mode-switch-button" href="https://osm.youspeed.de/" target="_blank" rel="noopener">OSM-Korrekturen</a>
       </nav>
       <div class="workspace-locality">
@@ -290,6 +293,77 @@
         </details>
         <p id="track-video-status" class="hint compact" role="status" tabindex="-1">Lokales Video öffnen. Klick auf Zeichen oder GPS-Fix springt zur passenden Videozeit.</p>
       </section>
+      </div>
+    </main>
+
+    <main id="place-signs-workspace" class="place-sign-review mode-workspace" role="tabpanel"
+      aria-labelledby="place-signs-mode-btn" hidden>
+      <header class="place-sign-toolbar">
+        <div>
+          <h1 id="place-sign-title">Verkehrszeichen vor Ort</h1>
+          <p id="place-sign-scope" class="hint"></p>
+          <div id="place-sign-identity" class="place-sign-identity" hidden>
+            <span>Gruppen-ID</span>
+            <code id="place-sign-group-id"></code>
+            <a id="place-sign-permalink">Direktlink</a>
+            <button id="place-sign-copy-link" type="button">Link kopieren</button>
+            <span id="place-sign-copy-status" role="status" aria-live="polite"></span>
+          </div>
+        </div>
+        <div class="place-sign-controls">
+          <label for="place-sign-filter">Zeichenklasse
+            <input id="place-sign-filter" type="search" placeholder="z. B. 205" disabled />
+          </label>
+          <label for="place-sign-group">Gruppe
+            <select id="place-sign-group" disabled></select>
+          </label>
+          <label class="place-sign-mobidata-filter">
+            <input id="place-sign-mobidata-only" type="checkbox" disabled />
+            Nur potenzielle MobiData-Treffer
+          </label>
+          <button id="place-sign-refresh" type="button">Aktualisieren</button>
+        </div>
+      </header>
+      <p id="place-sign-status" class="status" role="status" aria-live="polite" hidden></p>
+      <div id="place-sign-content" class="place-sign-content" hidden>
+        <section class="place-sign-map-panel" aria-labelledby="place-sign-map-title">
+          <header class="place-sign-panel-header">
+            <h2 id="place-sign-map-title">Karte</h2>
+            <div class="place-sign-map-actions">
+              <button id="place-sign-fit-area" type="button">Gebiet</button>
+              <button id="place-sign-fit-group" type="button">Gruppe</button>
+            </div>
+          </header>
+          <div id="place-sign-map" class="place-sign-map" aria-label="Karte mit Kamerapositionen, Sichtwinkeln und Schildvorschlag"></div>
+          <div class="place-sign-map-foot">
+            <div class="place-sign-legend" aria-label="Kartenlegende">
+              <span><i class="place-sign-legend-camera"></i>Aufnahmen, GPS und Sichtwinkel</span>
+              <span><i class="place-sign-legend-selected"></i>Ausgewählte Aufnahme</span>
+              <span><i class="place-sign-legend-proposal"></i>Standort und Azimut</span>
+              <span id="place-sign-inventory-legend" hidden><i class="place-sign-legend-inventory"></i>MobiData-Referenz</span>
+            </div>
+            <p id="place-sign-proposal" aria-live="polite"></p>
+            <section id="place-sign-inventory" class="place-sign-inventory" aria-label="MobiData-Referenz" hidden></section>
+          </div>
+        </section>
+        <section class="place-sign-evidence" aria-labelledby="place-sign-gallery-title">
+          <header class="place-sign-panel-header">
+            <h2 id="place-sign-gallery-title">Aufnahmen</h2>
+            <span id="place-sign-photo-count" class="hint"></span>
+          </header>
+          <figure class="place-sign-figure">
+            <div id="place-sign-stage" class="place-sign-stage" aria-live="polite"></div>
+            <figcaption>
+              <p id="place-sign-image-label"></p>
+              <dl id="place-sign-image-meta" class="place-sign-image-meta"></dl>
+            </figcaption>
+          </figure>
+          <div id="place-sign-gallery" class="place-sign-gallery" role="group" aria-label="Bilder der Gruppe"></div>
+          <section id="place-sign-follow-ons" class="place-sign-follow-ons" aria-labelledby="place-sign-follow-title" hidden>
+            <h3 id="place-sign-follow-title">Folgeaufnahmen derselben Sequenz</h3>
+            <div id="place-sign-follow-gallery" class="place-sign-gallery" role="group" aria-label="Folgeaufnahmen der Gruppe"></div>
+          </section>
+        </section>
       </div>
     </main>
 
@@ -691,5 +765,7 @@
     <script src="./backend-crops.js"></script>
     <script src="./sign-positions-core.js"></script>
     <script src="./sign-positions.js"></script>
+    <script src="./place-sign-review-map.js"></script>
+    <script src="./place-sign-review.js"></script>
   </body>
 </html>

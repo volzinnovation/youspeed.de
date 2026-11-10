@@ -3088,7 +3088,7 @@ map.whenReady(() => {
     portalTraceEl.innerHTML = "";
   }
   setBundleValue("nicht geladen");
-  if (["#tsr", "#crops"].includes(window.location.hash)) {
+  if (["#tsr", "#crops", "#place-signs"].includes(window.location.hash.split("?")[0])) {
     setStatus("QA aktiv. Matcher-Daten werden erst beim Kartenwechsel geladen.");
   } else {
     setStatus(window.location.hash === "#track" ? "Bereit. Drive-Log und zugehöriges TSR-Log laden." : "Bereit. SQLite-Bundle laden.");

@@ -21,6 +21,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from inspector.crop_review_proxy import CropReviewProxy, ReviewProxyError
+from inspector.place_sign_review import (
+    ROUTE as PLACE_SIGN_REVIEW_ROUTE,
+    PlaceSignReviewError,
+    PlaceSignReviewStore,
+)
 from inspector.sign_positions import SignPositionStore, SignPositionsError  # noqa: E402
 MAX_IMAGE_BYTES = 5 * 1024**2
 VOLZ_DB_ADDRESS = "141.47.91.52"
@@ -613,6 +618,38 @@ class InspectorHandler(SimpleHTTPRequestHandler):
         if not head:
             self.wfile.write(data)
 
+    def image_response(self, data, content_type, head=False):
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        if not head:
+            self.wfile.write(data)
+
+    def place_sign_review(self, parsed, head):
+        store = getattr(self.server, "place_sign_review", None)
+        local_hosts = {
+            f"{host}:{self.server.server_port}" for host in ("localhost", "127.0.0.1")
+        }
+        if (
+            store is None
+            or self.client_address[0] != "127.0.0.1"
+            or self.headers.get("Host") not in local_hosts
+        ):
+            raise PlaceSignReviewError("Ortsprüfung ist hier nicht eingerichtet.", 404)
+        if parsed.query:
+            raise PlaceSignReviewError("Ungültige Abfrage für die Ortsprüfung.", 400)
+        if parsed.path == PLACE_SIGN_REVIEW_ROUTE:
+            self.json_response(store.get(), head=head)
+            return
+        match = re.fullmatch(
+            rf"{PLACE_SIGN_REVIEW_ROUTE}/images/([0-9a-f-]{{36}})/(photo|crop)",
+            parsed.path,
+        )
+        if match is None:
+            raise PlaceSignReviewError("Unbekanntes Bild für die Ortsprüfung.", 404)
+        self.image_response(*store.image(*match.groups()), head=head)
+
     def request_allowed(self, head=False):
         host = self.headers.get("Host", "")
         if len(self.headers.get_all("Host", [])) != 1 or host not in self.server.allowed_hosts:
@@ -749,7 +786,9 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             try:
                 if len(parsed.query) > 2048:
                     raise InspectorError("Abfrage zu lang.", 400)
-                if parsed.path in ("/api/sign-positions", "/inspector/api/sign-positions"):
+                if parsed.path == PLACE_SIGN_REVIEW_ROUTE or parsed.path.startswith(PLACE_SIGN_REVIEW_ROUTE + "/"):
+                    self.place_sign_review(parsed, head)
+                elif parsed.path in ("/api/sign-positions", "/inspector/api/sign-positions"):
                     if parsed.query:
                         raise InspectorError("Ungültige Schildpositions-Abfrage.", 400)
                     store = getattr(self.server, "sign_positions", None)
@@ -786,15 +825,10 @@ class InspectorHandler(SimpleHTTPRequestHandler):
                         data, content_type = self.server.store.panoramax_image(crop_id)
                     else:
                         data, content_type = self.server.store.image(crop_identity(parsed.path))
-                    self.send_response(200)
-                    self.send_header("Content-Type", content_type)
-                    self.send_header("Content-Length", str(len(data)))
-                    self.end_headers()
-                    if not head:
-                        self.wfile.write(data)
+                    self.image_response(data, content_type, head)
                 else:
                     raise InspectorError("Unbekannter Inspector-Endpunkt.", 404)
-            except (InspectorError, ReviewProxyError, SignPositionsError) as error:
+            except (InspectorError, PlaceSignReviewError, ReviewProxyError, SignPositionsError) as error:
                 self.json_response({"error": str(error)}, error.status, head)
             except (BrokenPipeError, ConnectionResetError):
                 pass
@@ -838,7 +872,18 @@ def arguments(argv=None):
     parser.add_argument("--panoramax-public-image-fallback", action="store_true", help="Reconstruct admitted public Panoramax images in RAM if private image access is unavailable; requires the shared analytics helper on PYTHONPATH")
 
     parser.add_argument("--sign-positions-file", type=Path, default=os.environ.get("YOUSPEED_SIGN_POSITIONS_FILE"), help="Private external static fit export; sources rechecked on every request")
-    return parser.parse_args(argv)
+    parser.add_argument("--place-sign-review-file", type=Path, help="Owner-only external place review snapshot; loopback only")
+    parser.add_argument("--place-sign-review-media-dir", type=Path, help="Optional owner-only directory of native Panoramax JPEGs named by picture UUID")
+    args = parser.parse_args(argv)
+    if args.place_sign_review_media_dir and not args.place_sign_review_file:
+        parser.error("--place-sign-review-media-dir requires --place-sign-review-file")
+    if args.place_sign_review_file:
+        if args.bind != "127.0.0.1":
+            parser.error("--place-sign-review-file requires --bind 127.0.0.1")
+        for path in (args.place_sign_review_file, args.place_sign_review_media_dir):
+            if path is not None and path.resolve().is_relative_to(ROOT):
+                parser.error("place review data must be outside the Inspector checkout")
+    return args
 
 
 def main():
@@ -856,6 +901,12 @@ def main():
     server.lane_videos = lane_videos
 
     server.sign_positions = SignPositionStore(args.sign_positions_file, store)
+    if args.place_sign_review_file:
+        server.place_sign_review = PlaceSignReviewStore(
+            args.place_sign_review_file,
+            opener=urllib.request.build_opener(urllib.request.ProxyHandler({}), NoImageRedirects()),
+            media_dir=args.place_sign_review_media_dir,
+        )
     server.review_proxy = CropReviewProxy(args.review_service_url)
     server.allowed_hosts = {f"{args.bind}:{server.server_port}", f"volz-db:{server.server_port}",
                             f"{VOLZ_DB_ADDRESS}:{server.server_port}", *args.allowed_host}

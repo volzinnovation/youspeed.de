@@ -57,3 +57,26 @@ test('hash changes support canonical route and alias; tab navigation writes the 
   app.hashchange('#not-a-tab');
   assert.equal(app.document.body.dataset.inspectorMode, 'matcher');
 });
+
+test('the place sign workspace initializes from its route and closes on tab change', () => {
+  const app = harness('#place-signs');
+  assert.equal(app.document.body.dataset.inspectorMode, 'place-signs');
+  assert.equal(app.el('place-signs-workspace').hidden, false);
+  assert.equal(app.el('place-signs-mode-btn').attributes['aria-selected'], 'true');
+  assert.equal(app.el('positions-workspace').hidden, true);
+  assert.equal(app.dispatched.at(-1).detail, 'place-signs');
+  app.el('positions-mode-btn').listeners.click();
+  assert.equal(app.el('place-signs-workspace').hidden, true);
+  app.el('place-signs-mode-btn').listeners.click();
+  assert.equal(app.historyWrites.at(-1), '#place-signs');
+});
+
+test('an exact place link opens the right workspace and survives reselecting its tab', () => {
+  const hash = '#place-signs?group=b061ff0dc00f7e32e716073373d680a2&photo=867974d4-3274-4566-906c-50d98c503370';
+  const app = harness(hash);
+  assert.equal(app.el('place-signs-workspace').hidden, false);
+  assert.equal(app.el('matcher-workspace').hidden, true);
+  assert.equal(app.dispatched.at(-1).detail, 'place-signs');
+  app.el('place-signs-mode-btn').listeners.click();
+  assert.equal(app.historyWrites.length, 0);
+});

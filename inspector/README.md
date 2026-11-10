@@ -1,5 +1,49 @@
 # YouSpeed Web Inspector
 
+## Zeichen vor Ort
+
+Der Tab **Zeichen vor Ort** (`/inspector/#place-signs`) zeigt im
+Bad-Herrenalb-Prototyp ein 2 km × 2 km großes Quadrat um die Ortsmitte.
+Die Gruppe verbindet die Karte mit den Panoramax-Aufnahmen. Ein Klick
+auf ein Bild oder einen Kamerapunkt wählt dieselbe Aufnahme aus.
+GPS-Bereiche, Sichtstrahlen und Winkelbereiche bleiben je Aufnahme
+sichtbar. Der Standortvorschlag und sein Azimut sind gesondert markiert.
+Die Hintergrundkarte verwendet dieselben OpenStreetMap-Kacheln wie **Karte & TSR**.
+Mit `--mobidata-inventory PFAD_ZUR_SQLITE` beim Snapshot-Build werden
+MobiData-Referenzkandidaten derselben Zeichenklasse im Radius von 30 m
+um den Standortvorschlag ergänzt. Grün markiert sind deren Quellposition
+und die unverändert übernommene `GruppenAusrichtung`. Mehrere Treffer
+bleiben als Kandidaten sichtbar. Gruppen ohne Treffer bleiben erhalten.
+Nominale Vorschläge haben keinen begrenzten Unsicherheitsradius.
+**Link kopieren** enthält die vollständige Gruppen-ID und die Annotation
+des ausgewählten Bildes. Das Öffnen des Links stellt beides wieder her.
+Folgeaufnahmen derselben Sequenz sind separat gekennzeichnet. Sie können
+knapp außerhalb des Suchfensters liegen und werden als zusätzliche
+Ansichten derselben Fahrt behandelt.
+Für den Standort werden zuerst passende, unmittelbar aufeinanderfolgende
+Aufnahmen ausgewertet. Die Veränderung der scheinbaren Schildhöhe und
+die Kamerabewegung begrenzen die Entfernung. Mehrere Sequenzen müssen
+den Standort stützen. Der angezeigte Radius ist von den Kamera-, GPS-
+und Größenannahmen abhängig. Widersprochene frühere Vorschläge sind
+als gestrichelte Kreise markiert.
+
+Die Ortsdaten und optional vorab geladenen Originalbilder bleiben in
+einem privaten Verzeichnis. Der Prototyp ist nur am lokalen Loopback verfügbar.
+Für die Bildansicht wird Pillow aus `inspector/requirements-public-images.txt`
+benötigt.
+
+```sh
+python3 inspector/server.py --bind 127.0.0.1 --port 8080 \
+  --place-sign-review-file /private/place-review/bad-herrenalb.json \
+  --place-sign-review-media-dir /private/place-review/media
+```
+
+`scripts/inspector/build_place_sign_review.py --help` beschreibt den Aufbau
+des Snapshots aus einem zusammengehörenden Panoramax-Bericht, den daraus
+normalisierten Sichtstrahlen und dem eingefrorenen OSM-Straßennetz.
+Für einen anderen Ort die passenden Quellen sowie
+`--place-name NAME --center LON LAT` angeben.
+
 ## Verkehrszeichen im Offline-Bestand
 
 Nach dem Laden eines Bundles mit `traffic_sign_inventory` zeigt **Karte & TSR**
