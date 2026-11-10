@@ -727,15 +727,25 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     }
 
     private func perform(
-        _ handler: VNImageRequestHandler
+        _ handler: VNImageRequestHandler,
+        detectorHandler: VNImageRequestHandler? = nil,
+        sourceRegion: (CGRect) -> CGRect? = { $0 }
     ) throws -> TrafficSignTwoStageInferenceResultV2 {
         inferenceLock.lock()
         defer { inferenceLock.unlock() }
+    func shadowInference(in input: TrafficSignDetectorInput) throws -> TrafficSignTwoStageInferenceResultV2 {
+        try perform(
+            VNImageRequestHandler(ciImage: input.uprightSource, options: [:]),
+            detectorHandler: VNImageRequestHandler(cgImage: input.image, options: [:]),
+            sourceRegion: input.geometry.sourceRegion(for:)
+        )
+    }
+
 
         let detectorRequest = VNCoreMLRequest(model: detectorModel)
         detectorRequest.imageCropAndScaleOption = .scaleFit
         let detectorStartedAt = ProcessInfo.processInfo.systemUptime
-        try handler.perform([detectorRequest])
+        try (detectorHandler ?? handler).perform([detectorRequest])
         let detectorLatencyMs = max(
             0,
             (ProcessInfo.processInfo.systemUptime - detectorStartedAt) * 1_000
@@ -746,12 +756,15 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
 
         let objects = results.compactMap { $0 as? VNRecognizedObjectObservation }
-        let admittedProposals = objects.filter { object in
+        let admittedProposals = objects.compactMap { object -> (confidence: Float, box: CGRect)? in
             guard let label = object.labels.first,
                   object.confidence.isFinite,
-                  Self.isValidNormalizedRegion(object.boundingBox) else { return false }
-            return Self.isSignProposal(label.identifier)
-                && Double(object.confidence) >= unknownThreshold
+                  Self.isSignProposal(label.identifier),
+                  Double(object.confidence) >= unknownThreshold,
+                  Self.isValidNormalizedRegion(object.boundingBox),
+                  let box = sourceRegion(object.boundingBox),
+                  Self.isValidNormalizedRegion(box) else { return nil }
+            return (object.confidence, box)
         }
         .sorted { $0.confidence > $1.confidence }
         let signObjects = Array(admittedProposals.prefix(Self.maximumProposalsPerRole))
@@ -761,7 +774,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         for object in signObjects {
             let classifierStartedAt = ProcessInfo.processInfo.systemUptime
             let result = try classify(
-                object,
+                object.box,
                 detectorConfidence: Double(object.confidence),
                 using: handler
             )
@@ -785,12 +798,11 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     }
 
     private func classify(
-        _ object: VNRecognizedObjectObservation,
+        _ visionBox: CGRect,
         detectorConfidence: Double,
         using handler: VNImageRequestHandler
     ) throws -> TrafficSignSpatialAssembly.ClassifiedDetection? {
-        guard Self.isValidNormalizedRegion(object.boundingBox) else { return nil }
-        let classifierRegion = Self.classifierRegion(for: object.boundingBox)
+        let classifierRegion = Self.classifierRegion(for: visionBox)
         guard Self.isValidNormalizedRegion(classifierRegion) else { return nil }
         let request = VNCoreMLRequest(model: classifierModel)
         request.imageCropAndScaleOption = .scaleFill
@@ -802,7 +814,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             throw TrafficSignInferenceBackendError.incompatibleOutput
         }
 
-        let visionBox = object.boundingBox
         guard let contractBox = Self.contractBox(from: visionBox) else { return nil }
         let mapping = mappingsByClassID[classification.identifier]
         let score = min(detectorConfidence, Double(classification.confidence))
@@ -1216,9 +1227,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private struct WorkItem: @unchecked Sendable {
         let eventId: String
         let frameId: String
-        var image: Image
-        var orientation: CGImagePropertyOrientation
-        var collectionSource: (image: Image, orientation: CGImagePropertyOrientation)? = nil
+        let image: Image
+        let orientation: CGImagePropertyOrientation
         let source: TrafficSignRecognitionSource
         let timestampUTC: Date
         let snapshot: TrafficSignFrameSnapshot
@@ -1549,11 +1559,10 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private func perform(_ item: WorkItem) {
         inferenceQueue.async { [weak self] in
             guard let self else { return }
-            var item = item
             let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
             let frameScope = TSRApplicabilityScope(sessionId: item.snapshot.captureSessionId ?? "no-session",
                 bundleId: item.snapshot.context?.sourceSignature.bundleSHA256 ?? "unverified",
-                cameraGeometryId: "mobile-right-1024-v1:\(item.orientation.rawValue):\(dimensions.width)x\(dimensions.height):visual=\(item.visualCalibration?.revision ?? "none")",
+                cameraGeometryId: "mobile-full-frame-1024-v1:\(item.orientation.rawValue):\(dimensions.width)x\(dimensions.height):visual=\(item.visualCalibration?.revision ?? "none")",
                 generation: item.snapshot.sessionGeneration, contextGeneration: item.snapshot.contextGeneration,
                 traversalEpoch: item.snapshot.context?.traversalEpoch ?? 0)
             var preparedRoadPath: RoadPathPreparedFrame?
@@ -1581,21 +1590,14 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             let startedAt = ProcessInfo.processInfo.systemUptime
             if let preparedRoadPath { TrafficSignRuntimeLog.lanePreparation(preparedRoadPath, tsrStartedAt: startedAt) }
             do {
-                // One mobile window feeds detection, classification and auxiliary reads.
-                // Results remain in window coordinates; no full-frame remapping.
-                let source: CIImage
-                switch item.image {
-                case .pixelBuffer(let pixel): source = CIImage(cvPixelBuffer: pixel)
-                case .cgImage(let image): source = CIImage(cgImage: image)
-                }
-                let input = try TrafficSignDetectorInput(source: source, orientation: item.orientation,
-                    context: self.inferenceCropContext)
-                item.collectionSource = (item.image, item.orientation)
-                item.image = .cgImage(input.image)
-                item.orientation = .up
                 let rawDetections: [TrafficSignDetection]
                 let rawTwoStage: TrafficSignTwoStageInferenceResultV2?
-                if let twoStageBackend = self.backend as? any TrafficSignShadowInferenceBackendV2 {
+                if let twoStageBackend = self.backend as? TrafficSignVisionTwoStageCoreMLBackend {
+                    let input = try TrafficSignDetectorInput(source: Self.ciImage(item.image), orientation: item.orientation,
+                        context: self.inferenceCropContext)
+                    let result = try twoStageBackend.shadowInference(in: input)
+                    rawDetections = result.legacyDetections; rawTwoStage = result
+                } else if let twoStageBackend = self.backend as? any TrafficSignShadowInferenceBackendV2 {
                     let result: TrafficSignTwoStageInferenceResultV2
                     switch item.image {
                     case .pixelBuffer(let pixel): result = try twoStageBackend.shadowInference(in: pixel, orientation: item.orientation)
@@ -1677,7 +1679,8 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                         }
                         if let preparedRoadPath {
                             roadPathDiagnostic = session.evaluate(prepared: preparedRoadPath, diagnostic: applicability,
-                                tsrStartedAtUptime: startedAt, associateSigns: false)
+                                tsrStartedAtUptime: startedAt, associateSigns: false,
+                                recognitionInputMode: "full_frame_letterbox_1024")
                                 ?? skipped("path_processing_failed")
                         } else { roadPathDiagnostic = skipped(preparationUnavailableReason) }
                     } else { roadPathDiagnostic = nil }
@@ -1902,20 +1905,15 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
         }
     }
 
-    private func nativeAuxiliarySource(_ item: WorkItem) -> CIImage {
-        let original = item.collectionSource ?? (item.image,item.orientation)
-        let source: CIImage
-        switch original.0 {
-        case .pixelBuffer(let pixel): source = CIImage(cvPixelBuffer:pixel)
-        case .cgImage(let image): source = CIImage(cgImage:image)
+    private static func ciImage(_ image: Image) -> CIImage {
+        switch image {
+        case .pixelBuffer(let pixel): return CIImage(cvPixelBuffer: pixel)
+        case .cgImage(let image): return CIImage(cgImage: image)
         }
-        return TrafficSignDetectorInput.nativeWindow(source:source,orientation:original.1)
     }
-    private func nativeAuxiliaryBounds(_ item: WorkItem) -> (size:Int,content:TrafficSignPlateRect) {
-        let original = item.collectionSource ?? (item.image,item.orientation)
-        let dimensions = Self.orientedDimensions(for:original.0,orientation:original.1)
-        let size = dimensions.height
-        return (size,.init(x:max(0,size-dimensions.width),y:0,width:min(size,dimensions.width),height:size))
+
+    private func nativeAuxiliarySource(_ item: WorkItem) -> CIImage {
+        TrafficSignDetectorInput.upright(source: Self.ciImage(item.image), orientation: item.orientation)
     }
     /// Read only a native primary-plus-lower rectangle after primary delivery.
     /// Immutable source evidence may refine its parent's conditions separately;
@@ -1952,8 +1950,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 speedKmh: numericDetection == nil ? nil : $0.semantic.value, box: $0.boundingBox,
                 physicalSignID: numericDetection == nil ? nil : (processed.event.applicabilityDecision?.trackId ?? candidate?.trackId))
         }
-        let native = nativeAuxiliaryBounds(item)
-        let dimensions = (width:native.size,height:native.size)
+        let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
         let crop = primary.flatMap { TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox: $0.box,
             imageWidth: dimensions.width, imageHeight: dimensions.height) }
         let thermal = ProcessInfo.processInfo.thermalState
@@ -1992,8 +1989,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             TrafficSignRuntimeLog.recoveredAuxiliaryFailure(stage: "supplementary_text", error: error)
         }
         guard canDeliverCallback, isWorkItemStillCurrent(item) else { return nil }
-        let native = nativeAuxiliaryBounds(item)
-        let dimensions = (width:native.size,height:native.size)
+        let dimensions = Self.orientedDimensions(for: item.image, orientation: item.orientation)
         let roi = TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox: attempt.primary.box,
             imageWidth: dimensions.width, imageHeight: dimensions.height).flatMap { rect -> TrafficSignNormalizedRect? in
                 guard let plate = read.plateRect else { return nil }
@@ -2012,7 +2008,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     primaryBox: attempt.primary.box,
                     contextRect: .init(x: Int(context.minX), y: Int(context.minY), width: Int(context.width), height: Int(context.height)),
                     otherPrimaryBoxes: primaryBoxes.filter { $0 != attempt.primary.box }, scan: scan,
-                    qualityDecision: read.decision, passes: read.passes,nativeContentRect:native.content)
+                    qualityDecision: read.decision, passes: read.passes)
             }
         return supplementaryTextTracker.finish(attempt, read: read, ocrBoundingBox: roi, assemblyEvidence: evidence)
     }
@@ -2280,7 +2276,6 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                 collectionDetections: collectionDetections,
                 collectionFrame: makeCollectionFrame(item),
                 collectionCaptureAt: item.roadPathCapture.flatMap { $0.clockKnown ? Date(timeIntervalSince1970: $0.capturedAtSeconds) : nil },
-                usesDetectorWindow: true,
                 collectionPhoneRoadMatch: item.snapshot.collectionPhoneRoadMatch
             )
             callbackQueue.async { [weak self, eventHandler] in
@@ -2307,8 +2302,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             applicabilityDiagnostic: processed.applicabilityDiagnostic,
             roadPathDiagnostic: nil, annotationEvent: nil,
             collectionDetections: [], collectionFrame: nil,
-                collectionCaptureAt: item.roadPathCapture.flatMap { $0.clockKnown ? Date(timeIntervalSince1970: $0.capturedAtSeconds) : nil },
-            usesDetectorWindow: true)
+            collectionCaptureAt: item.roadPathCapture.flatMap { $0.clockKnown ? Date(timeIntervalSince1970: $0.capturedAtSeconds) : nil })
         callbackQueue.async { [weak self, eventHandler] in
             guard let self, self.canDeliverCallback, self.isWorkItemStillCurrent(item) else { return }
             eventHandler(emission)
@@ -2318,14 +2312,12 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
     private func makeCollectionFrame(_ item: WorkItem) -> SignCollectionFrame? {
         guard item.source == .liveFrame else { return nil }
         return SignCollectionFrame(token: item.frameId, crop: { box in
-            let native = item.collectionSource ?? (item.image, item.orientation)
-            let source: CIImage
-            switch native.0 { case .pixelBuffer(let buffer): source = CIImage(cvPixelBuffer: buffer); case .cgImage(let image): source = CIImage(cgImage: image) }
-            let upright = TrafficSignDetectorInput.nativeWindow(source: source, orientation: native.1)
-            let size = Int(upright.extent.height)
-            let geometry = try SignCollectionCropGeometry(width: size, height: size, box: box)
+            let upright = TrafficSignDetectorInput.upright(source: Self.ciImage(item.image), orientation: item.orientation)
+            let width = Int(upright.extent.width)
+            let height = Int(upright.extent.height)
+            let geometry = try SignCollectionCropGeometry(width: width, height: height, box: box)
             let bounds = geometry.actual
-            let rect = CGRect(x: bounds[0], y: size - bounds[3],
+            let rect = CGRect(x: bounds[0], y: height - bounds[3],
                 width: bounds[2] - bounds[0], height: bounds[3] - bounds[1])
             let color = CGColorSpace(name: CGColorSpace.sRGB)!
             let ci = CIContext(options: [.cacheIntermediates: false])
@@ -2334,7 +2326,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                       space: color, bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { throw SignCollectionError.storage }
             rgb.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
             guard let result = rgb.makeImage() else { throw SignCollectionError.storage }
-            return try SignCollectionCrop.encode(cropped: result, geometry: geometry, sourceWidth: size, sourceHeight: size)
+            return try SignCollectionCrop.encode(cropped: result, geometry: geometry, sourceWidth: width, sourceHeight: height)
         })
     }
 

@@ -271,7 +271,7 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         try assertRuntimeOCRDelivery(thermal: .nominal, pictogram: true)
     }
 
-    func testSavedVisualCalibrationPreservesNativeOCRSourceWithMobileDetectorWindow() throws {
+    func testSavedVisualCalibrationPreservesFullFrameNativeOCRSource() throws {
         try assertRuntimeOCRDelivery(thermal: .nominal, calibrated: true)
     }
 
@@ -345,9 +345,10 @@ final class TrafficSignSupplementaryOCRTests: XCTestCase {
         let diagnosticData = try XCTUnwrap(diagnostic.dropFirst("ocr_attempt_v1=".count).data(using: .utf8))
         let diagnosticFields = try XCTUnwrap(JSONSerialization.jsonObject(with: diagnosticData) as? [String: Any])
         XCTAssertEqual(diagnosticFields["status"] as? String, "no_text")
-        XCTAssertLessThanOrEqual(try XCTUnwrap(diagnosticFields["native_roi_width"] as? Int),230,"OCR keeps native captured pixels despite the detector's1024 input window")
-        XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.sourceWidth,230)
-        XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.nativeContentRect?.width,136)
+        XCTAssertLessThanOrEqual(try XCTUnwrap(diagnosticFields["native_roi_width"] as? Int), 136)
+        XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.sourceWidth, 136)
+        XCTAssertEqual(values[2].ocrAttemptAnnotation?.assemblyEvidence?.sourceHeight, 230)
+        XCTAssertNil(values[2].ocrAttemptAnnotation?.assemblyEvidence?.nativeContentRect)
         XCTAssertTrue(diagnosticFields["raw_text"] is NSNull)
         XCTAssertTrue(values[2].supplementaryOCROnly, "Every OCR completion refines evidence without replaying the primary")
         XCTAssertTrue(values.filter { !$0.supplementaryOCROnly }.allSatisfy { $0.ocrAnnotation == nil && $0.ocrAttemptAnnotation == nil },

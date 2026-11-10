@@ -2120,7 +2120,7 @@ final class SpeedConsumerTests: XCTestCase {
             let image = try XCTUnwrap(UIImage(data: imageData)?.cgImage)
             let input = try TrafficSignDetectorInput(source: CIImage(cgImage: image), orientation: .up,
                 context: CIContext(options: [.cacheIntermediates: false]))
-            let detections = try backend.detections(in: input.image, orientation: .up)
+            let detections = try backend.shadowInference(in: input).legacyDetections
             let speed70 = detections.first {
                 $0.semantic.kind == .maximumSpeed && $0.semantic.value == 70
             }
@@ -2975,7 +2975,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertNil(emissions.snapshot().last?.collectionPhoneRoadMatch)
     }
 
-    func testRuntimeUsesFixedWindowAndKeepsResultCoordinatesForEveryMountAndCalibration() throws {
+    func testRuntimeKeepsFullFrameCoordinatesForEveryMountAndCalibration() throws {
         let manifest = makeTrafficSignModelPackManifest()
         let artifact = try XCTUnwrap(manifest.detector.artifacts.first)
         let verified = TrafficSignVerifiedModelPack(directoryURL: URL(fileURLWithPath: NSTemporaryDirectory()),
@@ -3005,15 +3005,15 @@ final class SpeedConsumerTests: XCTestCase {
             runtime.analyzeStill(cgImage: image, orientation: orientation, timestampUTC: Date(timeIntervalSince1970: 4000), snapshot: snapshot)
             XCTAssertEqual(completed.wait(timeout: .now() + 3), .success)
             let dimensions = try XCTUnwrap(backend.dimensions())
-            XCTAssertEqual(dimensions.0, 1024); XCTAssertEqual(dimensions.1, 1024)
-            XCTAssertEqual(dimensions.2, .up)
+            XCTAssertEqual(dimensions.0, 10); XCTAssertEqual(dimensions.1, 6)
+            XCTAssertEqual(dimensions.2, orientation)
             let candidate = try XCTUnwrap(emissions.snapshot().first?.event.candidate)
             XCTAssertEqual(candidate.boundingBox, detection.boundingBox)
             XCTAssertEqual(candidate.boundingBox.y, 0.3); XCTAssertEqual(candidate.boundingBox.height, 0.2)
             XCTAssertEqual(candidate.rawScore, detection.rawScore)
             XCTAssertEqual(candidate.semanticKind, detection.semantic.kind.rawValue)
             XCTAssertEqual(candidate.value, detection.semantic.value)
-            XCTAssertTrue(try XCTUnwrap(emissions.snapshot().first).usesDetectorWindow)
+            XCTAssertFalse(try XCTUnwrap(emissions.snapshot().first).usesDetectorWindow)
           }
         }
     }

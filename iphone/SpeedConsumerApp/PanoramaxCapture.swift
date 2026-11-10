@@ -134,8 +134,7 @@ struct PanoramaxTrafficSignAnnotationDraft: Equatable, Sendable {
     }
 
     init?(emission: TrafficSignRuntimeEmission) {
-        // Full-size JPEG projection requires full-frame coordinates. Mobile
-        // classification intentionally keeps its boxes in the detector window.
+        // Full-size JPEG projection requires full-frame coordinates.
         guard !emission.usesDetectorWindow else { return nil }
         let event = emission.annotationEvent ?? emission.event
         applicabilityStatus = event.applicabilityDecision?.classification ?? "NOT_EVALUATED"

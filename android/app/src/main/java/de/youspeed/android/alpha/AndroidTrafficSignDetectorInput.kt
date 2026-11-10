@@ -7,7 +7,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
 
-/** Reuses a 1024-square window; scaling/cropping is rendered without a full-size intermediate. */
+/** Reuses a square detector bitmap and fits the entire upright source inside it. */
 internal class AndroidTrafficSignDetectorInput : AutoCloseable {
     val bitmap: Bitmap = Bitmap.createBitmap(TrafficSignDetectorGeometry.SIZE, TrafficSignDetectorGeometry.SIZE, Bitmap.Config.ARGB_8888)
     private val canvas = Canvas(bitmap)
@@ -19,32 +19,12 @@ internal class AndroidTrafficSignDetectorInput : AutoCloseable {
         val geometry = TrafficSignDetectorGeometry(source.width, source.height)
         canvas.drawColor(Color.rgb(114, 114, 114))
         sourceBounds.set(0, 0, source.width, source.height)
-        destinationBounds.set((-geometry.left).toFloat(), 0f,
-            TrafficSignDetectorGeometry.SIZE.toFloat(), TrafficSignDetectorGeometry.SIZE.toFloat())
+        destinationBounds.set(geometry.left.toFloat(), geometry.top.toFloat(),
+            (geometry.left + geometry.scaledWidth).toFloat(),
+            (geometry.top + geometry.scaledHeight).toFloat())
         canvas.drawBitmap(source, sourceBounds, destinationBounds, paint)
         return geometry
     }
 
     override fun close() { bitmap.recycle() }
-
-    companion object {
-        fun nativeContentRect(source: Bitmap) = TrafficSignSupplementaryPixelRect(
-            maxOf(0, source.height-source.width), 0, minOf(source.width,source.height), source.height)
-        /** Owned native-resolution window for selected upload evidence; no image scaling. */
-        fun nativeWindow(source: Bitmap): Bitmap {
-            val size = source.height
-            val result = if (source.width >= size) {
-                val crop = Bitmap.createBitmap(source, source.width - size, 0, size, size)
-                if (crop === source) source.copy(Bitmap.Config.ARGB_8888, false) else crop
-            } else {
-                Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).apply {
-                    eraseColor(Color.rgb(114, 114, 114))
-                    Canvas(this).drawBitmap(source, Rect(0, 0, source.width, source.height),
-                        Rect(size - source.width, 0, size, size), null)
-                }
-            }
-            result.setHasAlpha(false)
-            return result
-        }
-    }
 }

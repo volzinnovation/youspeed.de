@@ -246,16 +246,26 @@ class AndroidLiteRtTrafficSignInstrumentedTest {
             put("display_accepted", TrafficSignDisplayPolicy.accepted(listOf(detection)) != null)
         }
         try {
-            val full = engine.recognizeAll(bitmap)
+            val fullResult = engine.recognizeAllWithDiagnostics(bitmap)
+            val full = fullResult.detections
             val classifiedCrop = engine.classifyCropForDiagnostic(crop)
             val classifiedProlixCrop = engine.classifyCropForDiagnostic(prolixCrop)
-            assertTrue("Pinned classifier has no city-entry class", pack.displayCatalog.classLabels.none { it.contains("310") || it.contains("city") })
-            assertTrue(full.none { it.candidate.semantic.kind == TrafficSignSemanticKind.CITY_ENTRY })
-            assertTrue(classifiedCrop?.candidate?.semantic?.kind != TrafficSignSemanticKind.CITY_ENTRY)
+            assertEquals(142, pack.displayCatalog.classLabels.size)
+            assertTrue("Current classifier supports city entry", "city:start" in pack.displayCatalog.classLabels)
+            assertTrue("Current classifier supports city exit", "city:end" in pack.displayCatalog.classLabels)
+            if (InstrumentationRegistry.getArguments().getString("requireGpu") == "true") {
+                assertEquals("gpu", fullResult.executionBackend)
+                assertEquals(null, fullResult.accelerationFallbackReason)
+            }
             val evidence = JSONObject().apply {
                 put("ground_truth", "User-identified DE:310 Bernbach city entry; source annotation provides generic sign bounds")
                 put("fixture_sha256", "11c4eb3729167234ec35474192e301b0e74b9f4fd68582d4ccc959e80b43e9ae")
-                put("model_has_city_entry_class", false)
+                put("model_has_city_entry_class", "city:start" in pack.displayCatalog.classLabels)
+                put("class_count", pack.displayCatalog.classLabels.size)
+                put("execution_backend", fullResult.executionBackend)
+                put("detector_inference_ms", fullResult.detectorInferenceMs)
+                put("classifier_inference_ms", fullResult.classifierInferenceMs)
+                put("evaluation_scope", "Historical diagnostic fixture, not fresh held-out accuracy or warmed latency benchmark")
                 put("classifier_artifact_sha256", pack.classifierArtifact.sha256)
                 put("detector_artifact_sha256", pack.detectorArtifact.sha256)
                 put("crop_probe_note", "Crop probes call the classifier directly; proposal_score=1 is synthetic admission, not a detector result.")

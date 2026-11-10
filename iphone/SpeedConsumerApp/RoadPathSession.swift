@@ -464,7 +464,7 @@ final class RoadPathSession: @unchecked Sendable {
     }
 
     func evaluate(prepared: RoadPathPreparedFrame, diagnostic: TSRApplicabilityDiagnostic, tsrStartedAtUptime: Double? = nil,
-                  associateSigns: Bool = true) -> String? {
+                  associateSigns: Bool = true, recognitionInputMode: String = "full_frame") -> String? {
         evaluationLock.lock(); defer { evaluationLock.unlock() }
         let frame = prepared.frame, associationStarted = nowUptime()
         guard prepared.frameId == diagnostic.batch.frameId, prepared.scope == diagnostic.batch.scope else {
@@ -609,13 +609,11 @@ final class RoadPathSession: @unchecked Sendable {
            let object = try? JSONSerialization.jsonObject(with: encoded) {
             json["visualCalibration"] = object
         }
-        json["recognitionInputMode"] = associateSigns ? "full_frame" : "height_1024_rightmost_1024"
-        json["signCoordinateSpace"] = associateSigns ? "full_frame" : "detector_window"
-        if associateSigns {
-            json["tsrInputRegion"] = ["leftPixels": 0, "topPixels": 0,
-                "rightPixels": frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight,
-                "bottomPixels": frame.rotationDegrees % 180 == 0 ? frame.rawHeight : frame.rawWidth]
-        }
+        json["recognitionInputMode"] = recognitionInputMode
+        json["signCoordinateSpace"] = "full_frame"
+        json["tsrInputRegion"] = ["leftPixels": 0, "topPixels": 0,
+            "rightPixels": frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight,
+            "bottomPixels": frame.rotationDegrees % 180 == 0 ? frame.rawHeight : frame.rawWidth]
         json["temporalOperationCount"] = geometry.temporalOperationCount
         json["temporalResetReason"] = geometry.temporalResetReason
         json["imageWidth"] = frame.rotationDegrees % 180 == 0 ? frame.rawWidth : frame.rawHeight

@@ -2,54 +2,60 @@ import CoreGraphics
 import CoreImage
 import ImageIO
 
-/// Mobile detector window in the upright image, independent of mounting/lane calibration.
-/// Scale to height 1024, then retain the rightmost 1024 columns. Narrow images
-/// are right-aligned with gray padding on the left instead of being stretched.
+/// Centered letterbox for the upright camera frame.
 struct TrafficSignDetectorGeometry {
     static let size = 1024
     let sourceWidth: Int
     let sourceHeight: Int
 
-    var scale: Double { Double(Self.size) / Double(sourceHeight) }
+    var scale: Double { Double(Self.size) / Double(max(sourceWidth, sourceHeight)) }
     var scaledWidth: Double { Double(sourceWidth) * scale }
-    var left: Double { scaledWidth - Double(Self.size) }
+    var scaledHeight: Double { Double(sourceHeight) * scale }
+    var left: Double { (Double(Self.size) - scaledWidth) / 2 }
+    var bottom: Double { (Double(Self.size) - scaledHeight) / 2 }
+
+    /// Vision boxes use a bottom-left origin. Intersect with the image before
+    /// normalizing to its extent so padding cannot produce a source proposal.
+    func sourceRegion(for detectorRegion: CGRect) -> CGRect? {
+        let content = CGRect(x: left, y: bottom, width: scaledWidth, height: scaledHeight)
+        let pixels = detectorRegion.applying(CGAffineTransform(
+            scaleX: CGFloat(Self.size), y: CGFloat(Self.size)))
+        let clipped = pixels.intersection(content)
+        guard !clipped.isEmpty else { return nil }
+        return CGRect(x: (clipped.minX - content.minX) / content.width,
+                      y: (clipped.minY - content.minY) / content.height,
+                      width: clipped.width / content.width, height: clipped.height / content.height)
+    }
 }
 
 struct TrafficSignDetectorInput {
     let image: CGImage
+    let uprightSource: CIImage
     let geometry: TrafficSignDetectorGeometry
 
     init(source: CIImage, orientation: CGImagePropertyOrientation, context: CIContext) throws {
-        let upright = source.oriented(forExifOrientation: Int32(orientation.rawValue))
-        let extent = upright.extent
+        uprightSource = Self.upright(source: source, orientation: orientation)
+        let extent = uprightSource.extent
         guard extent.width > 0, extent.height > 0,
               extent.width.isFinite, extent.height.isFinite else {
             throw TrafficSignRuntimeUnavailability(code: .inferenceFailed, detail: "Invalid TSR image dimensions.")
         }
         geometry = TrafficSignDetectorGeometry(sourceWidth: Int(extent.width), sourceHeight: Int(extent.height))
         let square = CGRect(x: 0, y: 0, width: TrafficSignDetectorGeometry.size, height: TrafficSignDetectorGeometry.size)
-        let scaled = upright
-            .transformed(by: CGAffineTransform(translationX: -extent.minX, y: -extent.minY))
+        let scaled = uprightSource
             .transformed(by: CGAffineTransform(scaleX: geometry.scale, y: geometry.scale))
-            .transformed(by: CGAffineTransform(translationX: -geometry.left, y: 0))
+            .transformed(by: CGAffineTransform(translationX: geometry.left, y: geometry.bottom))
         let gray = CGFloat(114.0 / 255.0)
         let background = CIImage(color: CIColor(red: gray, green: gray, blue: gray)).cropped(to: square)
         guard let rendered = context.createCGImage(scaled.composited(over: background), from: square) else {
-            throw TrafficSignRuntimeUnavailability(code: .inferenceFailed, detail: "The TSR detector window could not be rendered.")
+            throw TrafficSignRuntimeUnavailability(code: .inferenceFailed, detail: "The TSR detector image could not be rendered.")
         }
         image = rendered
     }
 
-    /// The same window at native resolution for upload crops. No resizing;
-    /// normalized window boxes continue to address the exact sampled pixels.
-    static func nativeWindow(source: CIImage, orientation: CGImagePropertyOrientation) -> CIImage {
-        let upright = source.oriented(forExifOrientation: Int32(orientation.rawValue))
-        let extent = upright.extent
-        let square = CGRect(x: 0, y: 0, width: extent.height, height: extent.height)
-        let pixels = upright.transformed(by: CGAffineTransform(
-            translationX: -extent.maxX + extent.height, y: -extent.minY))
-        let gray = CGFloat(114.0 / 255.0)
-        return pixels.composited(over: CIImage(color: CIColor(red: gray, green: gray, blue: gray)))
-            .cropped(to: square)
+    static func upright(source: CIImage, orientation: CGImagePropertyOrientation) -> CIImage {
+        let oriented = source.oriented(forExifOrientation: Int32(orientation.rawValue))
+        return oriented.transformed(by: CGAffineTransform(
+            translationX: -oriented.extent.minX, y: -oriented.extent.minY))
     }
 }

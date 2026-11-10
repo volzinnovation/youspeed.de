@@ -15,26 +15,22 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TrafficSignDetectorInputInstrumentedTest {
-    @Test fun uploadWindowKeepsNativePixelsWithoutScaling() {
+    @Test fun collectionCropUsesFullResolutionCoordinates() {
         val source = Bitmap.createBitmap(3840, 2160, Bitmap.Config.ARGB_8888)
         source.eraseColor(Color.GREEN)
-        for (y in 0 until source.height) source.setPixel(3839, y, Color.RED)
-        val native = AndroidTrafficSignDetectorInput.nativeWindow(source)
+        source.setHasAlpha(false)
         try {
-            assertEquals(2160, native.width)
-            assertEquals(2160, native.height)
-            assertEquals(Color.GREEN, native.getPixel(2158, 500))
-            assertEquals(Color.RED, native.getPixel(2159, 500))
-            source.eraseColor(Color.BLUE)
-            assertEquals(Color.RED, native.getPixel(2159, 500))
-            val crop = SignCollectionCrop.generate(native,
-                mapOf("x" to 0.5, "y" to 0.25, "width" to 0.25, "height" to 0.125), hashSource = false)
-            assertEquals(540, crop.geometry.actual[2] - crop.geometry.actual[0])
+            val crop = SignCollectionCrop.generate(source,
+                mapOf("x" to 0.0, "y" to 0.25, "width" to 0.25, "height" to 0.125), hashSource = false)
+            assertEquals(3840, crop.sourceWidth)
+            assertEquals(2160, crop.sourceHeight)
+            assertEquals(0, crop.geometry.actual[0])
+            assertEquals(960, crop.geometry.actual[2])
             assertEquals(540, crop.geometry.actual[3] - crop.geometry.actual[1])
-        } finally { native.recycle(); source.recycle() }
+        } finally { source.recycle() }
     }
 
-    @Test fun croppedWindowStillRecognizesTheBundledReferenceSign() {
+    @Test fun fullFrameRecognizesTheBundledReferenceSign() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val pack = AndroidTrafficSignModelPackLoader.load(context, "DE")
         val source = requireNotNull(context.assets.open(AndroidTrafficSignStartupProbe.REFERENCE_ASSET)
@@ -42,16 +38,16 @@ class TrafficSignDetectorInputInstrumentedTest {
         try {
             AndroidLiteRtTrafficSignInferenceEngine(pack, allowGpu = false).use { engine ->
                 val result = engine.recognizeAllWithDiagnostics(source)
-                assertEquals(1024, result.sourceWidthPixels)
-                assertEquals(1024, result.sourceHeightPixels)
-                assertTrue("Expected 70 km/h classification from the fixed rightmost window", result.detections.any {
+                assertEquals(source.width, result.sourceWidthPixels)
+                assertEquals(source.height, result.sourceHeightPixels)
+                assertTrue("Expected 70 km/h classification from the full frame", result.detections.any {
                     it.candidate.rawClassId == "maxspeed:70" && it.candidate.rawScore >= pack.modelPack.thresholds.confirmed
                 })
             }
         } finally { source.recycle() }
     }
 
-    @Test fun rightmostWindowPreservesHeightAndReusesItsBuffer() {
+    @Test fun fullFrameFitsAndReusesItsBuffer() {
         val source = Bitmap.createBitmap(3840, 2160, Bitmap.Config.ARGB_8888)
         Canvas(source).apply {
             drawColor(Color.RED)
@@ -65,10 +61,13 @@ class TrafficSignDetectorInputInstrumentedTest {
                 val window = input.bitmap
                 assertEquals(1024, window.width)
                 assertEquals(1024, window.height)
-                assertEquals(Color.GREEN, window.getPixel(100, 500))
+                assertEquals(Color.RED, window.getPixel(100, 500))
+                assertEquals(Color.GREEN, window.getPixel(550, 500))
                 assertEquals(Color.BLUE, window.getPixel(900, 500))
-                assertEquals(Color.YELLOW, window.getPixel(100, 0))
-                assertEquals(Color.GREEN, window.getPixel(100, 1023))
+                assertEquals(Color.YELLOW, window.getPixel(100, 240))
+                assertEquals(Color.RED, window.getPixel(100, 780))
+                assertEquals(Color.rgb(114, 114, 114), window.getPixel(100, 0))
+                assertEquals(Color.rgb(114, 114, 114), window.getPixel(100, 1023))
                 input.prepare(source)
                 assertSame(window, input.bitmap)
                 assertEquals(3840, source.width)
@@ -85,6 +84,7 @@ class TrafficSignDetectorInputInstrumentedTest {
                 input.prepare(source)
                 assertEquals(Color.rgb(114, 114, 114), input.bitmap.getPixel(100, 500))
                 assertEquals(Color.GREEN, input.bitmap.getPixel(600, 500))
+                assertEquals(Color.rgb(114, 114, 114), input.bitmap.getPixel(900, 500))
             }
         } finally { source.recycle() }
     }

@@ -25,10 +25,10 @@ class ConditionalCameraLiveInstrumentedTest {
     private val positive="fbc95839-71fc-540c-ae6b-041df195e07d"
     private fun source(id:String)=instrumentation.context.assets.open("tsr-ocr-32/$id.png").use {requireNotNull(BitmapFactory.decodeStream(it))}
     private fun read(bitmap:Bitmap,candidate:TrafficSignCandidate,parent:String,frame:String,at:Instant,generation:Long,session:String,
-        content:TrafficSignSupplementaryPixelRect=TrafficSignSupplementaryPixelRect(0,0,bitmap.width,bitmap.height),otherPrimaries:List<NormalizedTrafficSignBoundingBox> = emptyList()):TrafficSignSupplementaryTextAnnotation {
+        otherPrimaries:List<NormalizedTrafficSignBoundingBox> = emptyList()):TrafficSignSupplementaryTextAnnotation {
         val done=CountDownLatch(1);var annotation:TrafficSignSupplementaryTextAnnotation?=null
         val request=TrafficSignSupplementaryOCRRequest(candidate,parent,frame,at,at,TrafficSignSupplementaryScope(generation,session),otherPrimaryBoxes=otherPrimaries)
-        AndroidTrafficSignSupplementaryOCR.fromBitmap(bitmap,content).recognize(request) {annotation=it;done.countDown()}
+        AndroidTrafficSignSupplementaryOCR.fromBitmap(bitmap).recognize(request) {annotation=it;done.countDown()}
         assertTrue("Bundled OCR must finish",done.await(30,TimeUnit.SECONDS))
         return requireNotNull(annotation)
     }
@@ -51,16 +51,10 @@ class ConditionalCameraLiveInstrumentedTest {
                     assertNotNull("Actual model must recognize the real 30 sign $id",detection)
                     val candidate=requireNotNull(detection).candidate
                     val at=Instant.parse("2026-10-23T03:59:58Z")
-                    val native=AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
-                    val content=AndroidTrafficSignDetectorInput.nativeContentRect(bitmap)
-                    val first:TrafficSignSupplementaryTextAnnotation
-                    val second:TrafficSignSupplementaryTextAnnotation
-                    try {
-                        first=read(native,candidate,"native-$id","native-$id-1",at,1,"native",content)
-                        second=read(native,candidate,"native-$id","native-$id-2",at.plusMillis(400),1,"native",content)
-                    } finally {native.recycle()}
-                    assertEquals("Native proof $id box=${candidate.boundingBox} status=${first.status} decision=${first.qualityDecision} raw=${first.rawText}",bitmap.height,first.assemblyEvidence?.sourceWidth)
-                    assertEquals(content,first.assemblyEvidence?.sourceContentRect)
+                    val first=read(bitmap,candidate,"native-$id","native-$id-1",at,1,"native")
+                    val second=read(bitmap,candidate,"native-$id","native-$id-2",at.plusMillis(400),1,"native")
+                    assertEquals("Native proof $id box=${candidate.boundingBox} status=${first.status} decision=${first.qualityDecision} raw=${first.rawText}",bitmap.width,first.assemblyEvidence?.sourceWidth)
+                    assertEquals(TrafficSignSupplementaryPixelRect(0,0,bitmap.width,bitmap.height),first.assemblyEvidence?.sourceContentRect)
                     for(annotation in listOf(first,second)) {
                         assertEquals("$id ${annotation.rawText} ${annotation.qualityDecision}",TrafficSignSupplementaryOCRStatus.READ,annotation.status)
                         assertEquals(ConditionalOCRInterpretation.Condition.Schedule(emptyList(),1320,360),ConditionalOCRInterpretation.parse(annotation.rawText.orEmpty())?.condition)
@@ -80,8 +74,7 @@ class ConditionalCameraLiveInstrumentedTest {
                 val detections=engine.recognizeAllWithDiagnostics(clipped).detections.filter {it.candidate.numericSupplementarySpeed()!=null}
                 assertTrue("Negative source contains actual numeric parents",detections.isNotEmpty())
                 for((i,detection) in detections.withIndex()) {
-                    val native=AndroidTrafficSignDetectorInput.nativeWindow(clipped)
-                    val annotation=try {read(native,detection.candidate,"clipped-$i","clipped-$i",Instant.now(),1,"negative",AndroidTrafficSignDetectorInput.nativeContentRect(clipped))} finally {native.recycle()}
+                    val annotation=read(clipped,detection.candidate,"clipped-$i","clipped-$i",Instant.now(),1,"negative")
                     assertNotEquals(TrafficSignConditionalAssemblyEvidence.Kind.CONDITIONAL,
                         annotation.assemblyEvidence?.validate(annotation.primaryBoundingBox,annotation.rawText)?.kind)
                 }
@@ -99,27 +92,24 @@ class ConditionalCameraLiveInstrumentedTest {
                     val detections=engine.recognizeAllWithDiagnostics(bitmap).detections
                     val numeric=detections.filter {it.candidate.rawClassId=="maxspeed:30"}
                     assertTrue("Actual full scene must detect numeric parent $id",numeric.isNotEmpty())
-                    val native=AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
-                    try {
-                        for((index,detection) in numeric.withIndex()) {
-                            val at=Instant.parse("2026-10-23T03:59:58Z")
-                            val others=detections.map {it.candidate.boundingBox}.filter {it!=detection.candidate.boundingBox}
-                            val first=read(native,detection.candidate,"natural-$id-$index","natural-$id-$index-1",at,1,"natural",AndroidTrafficSignDetectorInput.nativeContentRect(bitmap),others)
-                            val second=read(native,detection.candidate,"natural-$id-$index","natural-$id-$index-2",at.plusMillis(400),1,"natural",AndroidTrafficSignDetectorInput.nativeContentRect(bitmap),others)
-                            val verdict=second.assemblyEvidence?.validate(second.primaryBoundingBox,second.rawText)
-                            rows.put(org.json.JSONObject().put("source",id).put("raw",second.rawText).put("decision",second.qualityDecision).put("box",second.primaryBoundingBox.toString())
-                                .put("validation",verdict.toString()).put("native_width",second.assemblyEvidence?.sourceWidth).put("native_height",second.assemblyEvidence?.sourceHeight))
-                            if(verdict?.kind==TrafficSignConditionalAssemblyEvidence.Kind.CONDITIONAL) {
-                                complete++
-                                val tracker=ConditionalOCRInterpretation.Tracker()
-                                fun observation(a:TrafficSignSupplementaryTextAnnotation)=ConditionalOCRInterpretation.Observation(a.physicalSignId,a.physicalSignId,a.primaryClassId,30,
-                                    a.assemblyEvidence!!.plateRects.indices.map {"panel-$it"},a.frameId,a.rawText.orEmpty(),a.sourceObservedAt,at,0.0,"DE","natural",1,
-                                    "actual-native-detector","actual-bundled-ocr",assemblyEvidence=a.assemblyEvidence)
-                                tracker.consume(observation(first))
-                                assertEquals(ConditionalOCRInterpretation.Verification.VERIFIED,tracker.consume(observation(second)).verification)
-                            }
+                    for((index,detection) in numeric.withIndex()) {
+                        val at=Instant.parse("2026-10-23T03:59:58Z")
+                        val others=detections.map {it.candidate.boundingBox}.filter {it!=detection.candidate.boundingBox}
+                        val first=read(bitmap,detection.candidate,"natural-$id-$index","natural-$id-$index-1",at,1,"natural",others)
+                        val second=read(bitmap,detection.candidate,"natural-$id-$index","natural-$id-$index-2",at.plusMillis(400),1,"natural",others)
+                        val verdict=second.assemblyEvidence?.validate(second.primaryBoundingBox,second.rawText)
+                        rows.put(org.json.JSONObject().put("source",id).put("raw",second.rawText).put("decision",second.qualityDecision).put("box",second.primaryBoundingBox.toString())
+                            .put("validation",verdict.toString()).put("native_width",second.assemblyEvidence?.sourceWidth).put("native_height",second.assemblyEvidence?.sourceHeight))
+                        if(verdict?.kind==TrafficSignConditionalAssemblyEvidence.Kind.CONDITIONAL) {
+                            complete++
+                            val tracker=ConditionalOCRInterpretation.Tracker()
+                            fun observation(a:TrafficSignSupplementaryTextAnnotation)=ConditionalOCRInterpretation.Observation(a.physicalSignId,a.physicalSignId,a.primaryClassId,30,
+                                a.assemblyEvidence!!.plateRects.indices.map {"panel-$it"},a.frameId,a.rawText.orEmpty(),a.sourceObservedAt,at,0.0,"DE","natural",1,
+                                "actual-native-detector","actual-bundled-ocr",assemblyEvidence=a.assemblyEvidence)
+                            tracker.consume(observation(first))
+                            assertEquals(ConditionalOCRInterpretation.Verification.VERIFIED,tracker.consume(observation(second)).verification)
                         }
-                    } finally {native.recycle()}
+                    }
                 } finally {bitmap.recycle()}
             }
         }
@@ -242,8 +232,7 @@ class ConditionalCameraLiveInstrumentedTest {
                             fixture.main {fixture.controller.onTrafficSignUnverifiedAssembly(event,fixture.generation)}
                             if(index>0) {
                                 assertEquals("Actual applicability engine must prove ego approach", "LIKELY_EGO_CORRIDOR",decision.classification)
-                                val native=AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
-                                val annotation=try {read(native,candidate,parent,frame,at,fixture.generation,fixture.session,AndroidTrafficSignDetectorInput.nativeContentRect(bitmap))} finally {native.recycle()}
+                                val annotation=read(bitmap,candidate,parent,frame,at,fixture.generation,fixture.session)
                                 assertEquals("Actual live replay pixels must yield a complete read",TrafficSignConditionalAssemblyEvidence.Kind.CONDITIONAL,
                                     annotation.assemblyEvidence?.validate(box,annotation.rawText)?.kind)
                                 fixture.main {fixture.controller.onTrafficSignSupplementaryAuthority(event,annotation)}

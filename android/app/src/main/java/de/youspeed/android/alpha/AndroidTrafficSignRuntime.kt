@@ -438,7 +438,6 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val classifierOutput = directFloatBuffer(classifierClassCount)
     private val detectorWindow = AndroidTrafficSignDetectorInput()
     // Borrowed until the next inference on this engine's owner thread.
-    val recognitionBitmap: Bitmap get() = detectorWindow.bitmap
     private val classifierBitmap = Bitmap.createBitmap(CLASSIFIER_SIZE, CLASSIFIER_SIZE, Bitmap.Config.ARGB_8888)
     private val detectorPixels = IntArray(DETECTOR_SIZE * DETECTOR_SIZE)
     private val classifierPixels = IntArray(CLASSIFIER_SIZE * CLASSIFIER_SIZE)
@@ -500,8 +499,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     fun recognizeAllWithDiagnostics(source: Bitmap): AndroidTrafficSignInferenceResult {
         val startedAtNanos = System.nanoTime()
         detectorWindow.prepare(source)
-        val window = recognitionBitmap
-        prepareDetectorInput(window)
+        prepareDetectorInput(detectorWindow.bitmap)
         val detectorPreprocessingMs = elapsedMs(startedAtNanos)
         val detectorStartedAtNanos = System.nanoTime()
         detector.run { resource ->
@@ -514,8 +512,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         detectorOutput.asFloatBuffer().get(detectorOutputFloats)
         val proposals = AndroidYoloSignDecoder.decode(
             output = detectorOutputFloats,
-            sourceWidth = TrafficSignDetectorGeometry.SIZE,
-            sourceHeight = TrafficSignDetectorGeometry.SIZE,
+            sourceWidth = source.width,
+            sourceHeight = source.height,
             inputSize = DETECTOR_SIZE,
             minimumScore = verifiedPack.modelPack.thresholds.unknown,
         )
@@ -525,9 +523,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             signCount = AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
             minimumScore = verifiedPack.modelPack.thresholds.unknown,
         )
-        val lumaMean = sourceLumaMean(window)
+        val lumaMean = sourceLumaMean(source)
 
-        val classified = proposals.map { proposal -> classify(window, proposal) }
+        val classified = proposals.map { proposal -> classify(source, proposal) }
         val detections = classified.mapNotNull(ClassificationResult::detection)
         return AndroidTrafficSignInferenceResult(
             detections = detections,
@@ -540,8 +538,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             detectorRawSignTopScore = rawOutput.signTopScore,
             detectorRawGlobalTopScore = rawOutput.globalTopScore,
             detectorRawSignScoresAboveThreshold = rawOutput.signScoresAboveThreshold,
-            sourceWidthPixels = window.width,
-            sourceHeightPixels = window.height,
+            sourceWidthPixels = source.width,
+            sourceHeightPixels = source.height,
             sourceLumaMean = lumaMean,
             executionBackend = if (detector.executionBackend == classifier.executionBackend) detector.executionBackend else "mixed",
             accelerationFallbackReason = listOfNotNull(
@@ -773,12 +771,8 @@ internal class AndroidLiteRtTrafficSignBackend(
             runCatching {
                 frame.withOrientedBitmap(rotationBuffer) { bitmap ->
                     val conversionMs = (System.nanoTime() - conversionStartedAtNanos) / 1_000_000.0
-                    // Detection uses a fixed tensor; auxiliary reads use the same normalized
-                    // right-hand window at original resolution, never upscaled OCR evidence.
+                    // Proposals are projected back onto the upright source before OCR or collection.
                     val inference = engine.recognizeAllWithDiagnostics(bitmap)
-                    val window = AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
-                    val nativeContent = AndroidTrafficSignDetectorInput.nativeContentRect(bitmap)
-                    try {
                     val detections = inference.detections
                     val hasQualifiedOrdinarySpeed = detections.any { detection ->
                         val candidate = detection.candidate
@@ -792,25 +786,25 @@ internal class AndroidLiteRtTrafficSignBackend(
                     val verifiedZones = detections.withIndex().filter {
                         !hasQualifiedOrdinarySpeed && it.value.candidate.semantic.kind == TrafficSignSemanticKind.ZONE_START
                     }.sortedByDescending { it.value.candidate.rawScore }.take(2).filter {
-                        AndroidTrafficSignSupplementaryOCR.verifiesZone(window, it.value.candidate)
+                        AndroidTrafficSignSupplementaryOCR.verifiesZone(bitmap, it.value.candidate)
                     }.map { it.index }.toSet()
                     val primary = primaryDetection(detections)
                     val result = TrafficSignBackendResult.Recognition(
                         detection = primary,
-                        supplementaryTextRecognition = AndroidTrafficSignSupplementaryOCR.fromBitmap(window,nativeContent),
-                        supplementaryImageWidth = window.width,
-                        supplementaryImageHeight = window.height,
+                        supplementaryTextRecognition = AndroidTrafficSignSupplementaryOCR.fromBitmap(bitmap),
+                        supplementaryImageWidth = bitmap.width,
+                        supplementaryImageHeight = bitmap.height,
                         supplementaryPictogramClassIds = supplementaryPictogramClassIds,
                         collectionCaptureAtUtc = frame.collectionCaptureAtUtc,
                         collectionFrame = if (detections.isNotEmpty() && cropRequested(detections.map { it.candidate.rawClassId }) && cropFrameOutstanding.compareAndSet(false, true)) {
                             try {
-                                val owned = AndroidTrafficSignDetectorInput.nativeWindow(bitmap)
+                                val owned = checkNotNull(bitmap.copy(Bitmap.Config.ARGB_8888, false))
+                                owned.setHasAlpha(false)
                                 SignCollectionFrame(frame.frameId, owned) { cropFrameOutstanding.set(false) }
                             } catch (_: Exception) { cropFrameOutstanding.set(false); null }
                         } else null,
                         displayDetections = detections,
                         verifiedZoneIndices = verifiedZones,
-                        usesDetectorWindow = true,
                         thermalState = thermalState(),
                         strongPassGeometry = false,
                         diagnostics = TrafficSignInferenceDiagnostics(
@@ -842,7 +836,6 @@ internal class AndroidLiteRtTrafficSignBackend(
                     // completion returns; OCR then owns its independent sub-bitmap on its worker.
                     delivered = true
                     completion(result)
-                    } finally { window.recycle() }
                 }
             }.onFailure { failure ->
                 if (!delivered) completion(TrafficSignBackendResult.Unavailable(
@@ -1133,8 +1126,8 @@ internal class AndroidTrafficSignCameraRuntime(
                                 frame.visualCalibration?.let {
                                     put("visualCalibration", org.json.JSONObject(it.encode()))
                                 }
-                                put("recognitionInputMode", "height_1024_rightmost_1024")
-                                put("signCoordinateSpace", "detector_window")
+                                put("recognitionInputMode", "full_frame_letterbox_1024")
+                                put("signCoordinateSpace", "full_frame")
                             }.toString()
                         },
                         controller = controller,
@@ -1238,10 +1231,7 @@ internal class AndroidTrafficSignCameraRuntime(
                             ResolutionSelector.Builder()
                                 .setResolutionStrategy(
                                     ResolutionStrategy(
-                                        // iPhone keeps the high-resolution video output for
-                                        // TSR. Keep the same camera detail on Android and let
-                                        // the fixed 1024px rightmost recognition window
-                                        // retain native pixels for selected upload crops.
+                                        // Keep native camera detail for selected upload crops.
                                         Size(1920, 1080),
                                         ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
                                     ),

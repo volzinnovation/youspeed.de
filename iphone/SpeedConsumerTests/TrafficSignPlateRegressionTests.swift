@@ -100,17 +100,17 @@ final class TrafficSignPlateRegressionTests: XCTestCase {
             let image = try XCTUnwrap(UIImage(data:data)?.cgImage)
             XCTAssertEqual(image.width,4224);XCTAssertEqual(image.height,2376)
             let source = CIImage(cgImage:image)
-            let window = try TrafficSignDetectorInput(source:source,orientation:.up,context:context)
-            let detections = try backend.detections(in:window.image,orientation:.up)
+            let input = try TrafficSignDetectorInput(source:source,orientation:.up,context:context)
+            let detections = try backend.shadowInference(in: input).legacyDetections
             let selected = detections.filter { $0.rawClassId == "maxspeed:30" && $0.rawScore >= max($0.classThreshold,pack.manifest.thresholds.confirmed) }
                 .max { $0.rawScore < $1.rawScore }
             guard let parent = selected else {
                 rows.append(["picture_id":id,"sha256":sha,"stage":"no_confirmed_30_parent",
                     "detections":detections.map { ["class":$0.rawClassId,"score":$0.rawScore,"box":[$0.boundingBox.x,$0.boundingBox.y,$0.boundingBox.width,$0.boundingBox.height]] }]);continue
             }
-            let native = TrafficSignDetectorInput.nativeWindow(source:source,orientation:.up)
-            let size = Int(native.extent.height), box = parent.boundingBox
-            guard let rect = TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox:box,imageWidth:size,imageHeight:size),
+            let native = input.uprightSource
+            let box = parent.boundingBox
+            guard let rect = TrafficSignSupplementaryOCRGeometry.cropRect(primaryBox:box,imageWidth:image.width,imageHeight:image.height),
                   let crop = context.createCGImage(native,from:CGRect(x:rect.minX,y:native.extent.maxY-rect.maxY,width:rect.width,height:rect.height)) else {
                 rows.append(["picture_id":id,"sha256":sha,"stage":"native_context_unavailable"]);continue
             }
@@ -127,11 +127,11 @@ final class TrafficSignPlateRegressionTests: XCTestCase {
                     physicalSignID:"full-scene-parent-\(id)",frameID:frame,sourceObservedAt:captured,observedAt:captured,firstSeenAt:at,
                     rawText:read.rawText,window:read.window,readStatus:read.readStatus,primaryBoundingBox:box,ocrBoundingBox:nil,
                     engine:"apple_vision",modelVersion:read.modelVersion,
-                    assemblyEvidence:.init(sourceWidth:size,sourceHeight:size,sourceFrameID:frame,capturedAt:captured,
+                    assemblyEvidence:.init(sourceWidth:image.width,sourceHeight:image.height,sourceFrameID:frame,capturedAt:captured,
                         physicalSignID:"full-scene-parent-\(id)",primaryBox:box,
                         contextRect:.init(x:Int(rect.minX),y:Int(rect.minY),width:Int(rect.width),height:Int(rect.height)),
                         otherPrimaryBoxes:detections.map(\.boundingBox).filter { $0 != box },scan:scan,
-                        qualityDecision:read.decision,passes:read.passes,nativeContentRect:.init(x:0,y:0,width:size,height:size)))
+                        qualityDecision:read.decision,passes:read.passes))
                 if case .conditional = ConditionalOCRInterpretation.assess(annotation) { assessment="conditional" }
                 last=tracker.consume(annotation,originAt:at,originDistanceM:0,country:"DE",scopeID:"controlled-road",generation:0,
                     pipelineID:pack.manifest.packId,modelHash:pack.detectorArtifact.sha256)

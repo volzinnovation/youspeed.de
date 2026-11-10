@@ -2,17 +2,19 @@ import XCTest
 @testable import SpeedConsumer
 
 final class RoadPathSessionTests: XCTestCase {
-    func testWindowClassificationsDoNotEnterFullFrameSignGeometry() throws {
+    func testFullFrameDiagnosticsWithSignAssociationDisabled() throws {
         let session = RoadPathSession(nowUptime: { 1.001 })
         let diagnostic = diagnostic(10)
         let prepared = session.prepare(frame: paintedFrame(10, sourceTime: 100),
             frameId: diagnostic.batch.frameId, scope: scope)
-        let result = try decoded(session.evaluate(prepared: prepared, diagnostic: diagnostic, associateSigns: false))
+        let result = try decoded(session.evaluate(prepared: prepared, diagnostic: diagnostic, associateSigns: false,
+            recognitionInputMode: "full_frame_letterbox_1024"))
         XCTAssertEqual((result["associations"] as? [Any])?.count, 0)
         XCTAssertEqual((result["signBoxes"] as? [Any])?.count, 0)
         XCTAssertEqual((result["boundaries"] as? [Any])?.count, 2)
-        XCTAssertEqual(result["recognitionInputMode"] as? String, "height_1024_rightmost_1024")
-        XCTAssertNil(result["tsrInputRegion"])
+        XCTAssertEqual(result["recognitionInputMode"] as? String, "full_frame_letterbox_1024")
+        XCTAssertEqual(result["signCoordinateSpace"] as? String, "full_frame")
+        XCTAssertNotNil(result["tsrInputRegion"])
     }
 
     func testPreviewExperimentsCannotChangeTSRPathEvidence() {
