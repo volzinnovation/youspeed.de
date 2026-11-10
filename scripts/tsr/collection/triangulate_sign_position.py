@@ -136,8 +136,13 @@ def _validate(group):
             if identity in values:
                 raise ValueError(f"duplicate {key}; repeated evidence is not independent")
             values.add(identity)
-        if row["source_kind"] not in ("qualified_live_crop", "synthetic"):
-            raise ValueError("source_kind: qualified live crop or synthetic only; replay excluded")
+        if row["source_kind"] not in (
+            "qualified_live_crop",
+            "qualified_live_sighting",
+            "qualified_panoramax_annotation",
+            "synthetic",
+        ):
+            raise ValueError("source_kind: qualified live or synthetic evidence required")
         if row["bearing_basis"] not in ("calibrated_optical_ray", "explicit_camera_hypothesis"):
             raise ValueError("bearing_basis: GPS travel course is not an optical ray")
         captured = _time(row["captured_at"], "captured_at")
@@ -171,7 +176,8 @@ def _validate(group):
             "alpha": alpha, "error": error,
             "frame_fix_delta_ms": (captured - fix).total_seconds() * 1000,
         })
-    if len({r["row"]["source_kind"] for r in result}) > 1:
+    kinds = {r["row"]["source_kind"] for r in result}
+    if "synthetic" in kinds and len(kinds) > 1:
         raise ValueError("synthetic and live evidence may not be mixed")
     return sorted(result, key=lambda r: r["row"]["sighting_id"])
 
@@ -306,8 +312,10 @@ def triangulate(group: dict, config: dict | None = None) -> dict:
 
     Provenance hashes identify caller-supplied evidence; this pure function cannot
     independently read/verify those referenced objects or authenticate eligibility.
-    ``qualified_live_crop`` must therefore come from the live-only lifecycle-aware
-    adapter. ``synthetic`` is reserved for explicit fixtures and cannot mix with it.
+    ``qualified_live_crop`` and ``qualified_live_sighting`` must therefore come
+    from live-only lifecycle-aware adapters. ``qualified_panoramax_annotation``
+    requires a current annotation and
+    a declared camera model. ``synthetic`` cannot mix with source evidence.
     """
     result = {"schema_version": 1, "algorithm": ALGORITHM, "status": "invalid_input",
               "estimate_en_m": None, "feasible_region": None, "diagnostics": {},
