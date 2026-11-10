@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "source_pack_id": "de-youspeed-expanded142-v3",
-  "pack_id": "de-youspeed-expanded142-shadow-v2",
+  "source_pack_id": "de-youspeed-reviewed142-v1",
+  "pack_id": "de-youspeed-reviewed142-shadow-v2",
   "taxonomy_version": "tsr-semantic-v2",
   "execution_policy": {
     "mode": "shadow",
@@ -29,10 +29,10 @@
     }
   },
   "classifier": {
-    "component_id": "youspeed-de-expanded142-v3",
-    "artifact_id": "youspeed-de142-coreml-c697dd46-v2",
+    "component_id": "youspeed-de-reviewed142-v1",
+    "artifact_id": "youspeed-de142-reviewed-coreml-9c198e7a",
     "artifact_path": "classify_de_road_signs.mlmodelc",
-    "artifact_sha256": "c697dd469ba4aa4e15ce7ff73459b5fa02d5ced7ea95d1dbe56d970aae902e9b",
+    "artifact_sha256": "9c198e7a9f9e50b686b058a0c74cb93c3db18151bbd0290afa47bf1ec55d3fe2",
     "artifact_format": "coreml",
     "preprocessing": {
       "version": "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2",
@@ -43,8 +43,8 @@
       "orientation": "normalize_exif_and_mirroring"
     },
     "calibration": {
-      "id": "youspeed-de142-uncalibrated-v3",
-      "dataset_sha256": "565dc7c5a0109309a205d60ff9d886e3f2d7c17f7678cba6cb594b719cecc41b",
+      "id": "youspeed-de142-reviewed-uncalibrated-v1",
+      "dataset_sha256": "2b9330141f2d43547d9b15a5b6b10a325f6d42cebce0533b56bcd5017ac3072b",
       "passed": false,
       "runtime_output": "raw_score"
     }

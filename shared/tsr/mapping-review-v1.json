@@ -6,7 +6,7 @@
     {
       "country": "DE",
       "official_reference": "https://www.gesetze-im-internet.de/stvo_2013/anlage_2.html",
-      "classifier_checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
+      "classifier_checkpoint_sha256": "e10f4a7f8a2d2c3554dc0ef2d0e1f96e98948c7648432ed13098ef05ff6c3299",
       "classifier_output_count": 142,
       "speed_action_count": 25,
       "runtime_scope": "bundled_evaluation_pack",
@@ -1420,7 +1420,7 @@
           "sign_code": null,
           "presentation": "unavailable",
           "image_path": null,
-          "limitation": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review. Generic plate content remains unresolved until OCR or review; no unique official family pictogram."
+          "limitation": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json. Generic plate content remains unresolved until OCR or review; no unique official family pictogram."
         },
         {
           "class_id": "maxspeed:90",

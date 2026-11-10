@@ -1401,3 +1401,10 @@ not reference labels. New intake uses assistant silver labels for TRAIN only.
 Bootstrap provenance files retained here describe the predecessor/detector.
 expanded142-* provenance files describe the current classifier.
 Raw scores remain uncalibrated. Fresh field F1 awaits human label review.
+
+Reviewed DE142 classifier, 2026-11-10
+Fine-tuned from the preserved DE142 v3 model with reviewed Panoramax crops,
+manual annotations and historical replay. Public source attribution is
+retained with the predecessor notices and reviewed142 attribution record.
+Aggregate training, evaluation and native device parity are recorded in
+provenance/reviewed142-*.json. Raw scores remain uncalibrated.

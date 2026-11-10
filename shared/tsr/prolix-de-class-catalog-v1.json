@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "country": "DE",
-  "classifier_checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
+  "classifier_checkpoint_sha256": "e10f4a7f8a2d2c3554dc0ef2d0e1f96e98948c7648432ed13098ef05ff6c3299",
   "class_labels": [
     "arrow:red",
     "arrow_left_down",
@@ -2276,7 +2276,7 @@
         "nl": "Begin bebouwde kom"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "city:end",
@@ -2289,7 +2289,7 @@
         "nl": "Einde bebouwde kom"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "bus:stop",
@@ -2302,7 +2302,7 @@
         "nl": "Bushalte"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "supplementary:plate",
@@ -2315,7 +2315,7 @@
         "nl": "Onderbord (inhoud onbekend)"
       },
       "display_eligible": false,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review. Generic plate content remains unresolved until OCR or review; no unique official family pictogram."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json. Generic plate content remains unresolved until OCR or review; no unique official family pictogram."
     },
     {
       "class_id": "maxspeed:90",
@@ -2328,7 +2328,7 @@
         "nl": "Maximumsnelheid 90 km/h"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "DE:156-10",
@@ -2341,7 +2341,7 @@
         "nl": "Overweg met baken met drie strepen"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "DE:325.1",
@@ -2354,7 +2354,7 @@
         "nl": "Begin verkeersluw gebied"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "DE:325.2",
@@ -2367,7 +2367,7 @@
         "nl": "Einde verkeersluw gebied"
       },
       "display_eligible": true,
-      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and town-entry and town-exit metrics are recorded in reviewed142-evaluation.json."
     },
     {
       "class_id": "DE:278-5",
@@ -2690,11 +2690,11 @@
   "provenance": {
     "reviewed_at": "2026-09-10",
     "class_labels_source": "iphone/SpeedConsumerApp/TSRModelPacks/DE.panoramax-bootstrap.tsrmodelpack/classify_de_road_signs.mlmodelc/metadata.json",
-    "class_labels_source_sha256": "ddd6abfe4a2036fca7f282d34026a17c611cdba74be2cae045beaecbcb4c0889",
+    "class_labels_source_sha256": "23b66efe252f03ba10a5260bb640af786265122cd1a5684693c8e499bad9137c",
     "prolix_commit": "36bb92bed7d8aba1d87c1fd10fcdf8ec7f06046f",
     "prolix_class_map_sha256": "76b65eb1d35a4ad5dcb1e25e920b07d7f45fedbbdba08048315bc6075b9b7238",
     "prolix_class_map_revision": "panoramax-road-signs-7a81105",
-    "classifier_revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+    "classifier_revision": "de-reviewed-2026-11-10-epoch6",
     "plate_url": "https://de.wikipedia.org/wiki/Bildtafel_der_Verkehrszeichen_in_der_Bundesrepublik_Deutschland_seit_2017",
     "law_urls": [
       "https://www.gesetze-im-internet.de/stvo_2013/anlage_1.html",
@@ -3043,6 +3043,11 @@
       "retained_reviewed_phrase_classes": 76,
       "newly_reviewed_classes": [],
       "upstream_display_blocked_since_initial_review": []
+    },
+    "reviewed_training": {
+      "checkpoint_sha256": "e10f4a7f8a2d2c3554dc0ef2d0e1f96e98948c7648432ed13098ef05ff6c3299",
+      "dataset_sha256": "2b9330141f2d43547d9b15a5b6b10a325f6d42cebce0533b56bcd5017ac3072b",
+      "evaluation": "provenance/reviewed142-evaluation.json"
     }
   },
   "policy": {

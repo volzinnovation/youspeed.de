@@ -1,0 +1,28 @@
+{
+  "android": {
+    "checkpoint_sha256": "e10f4a7f8a2d2c3554dc0ef2d0e1f96e98948c7648432ed13098ef05ff6c3299",
+    "artifact_sha256": "d33963edc6413b158f60bacae87e7ea6c552d0e9784f2de0bafa364bfd258bf6",
+    "platform": "android",
+    "images": 96,
+    "class_count": 142,
+    "top1_agree_count": 96,
+    "tolerance": 0.02,
+    "measured_max_abs_difference": 2.3245811462402344e-06,
+    "passed": true,
+    "execution": "GPU delegate, float32 weights and arithmetic",
+    "gpu_precision_loss_allowed": false,
+    "canonical_median_ms": 78.600077
+  },
+  "ios": {
+    "checkpoint_sha256": "e10f4a7f8a2d2c3554dc0ef2d0e1f96e98948c7648432ed13098ef05ff6c3299",
+    "platform": "iphone",
+    "images": 96,
+    "class_count": 142,
+    "top1_agree_count": 96,
+    "tolerance": 0.02,
+    "measured_max_abs_difference": 0.004929721355438232,
+    "passed": true,
+    "execution": "Core ML all, Neural Engine allowed",
+    "artifact_sha256": "9c198e7a9f9e50b686b058a0c74cb93c3db18151bbd0290afa47bf1ec55d3fe2"
+  }
+}
