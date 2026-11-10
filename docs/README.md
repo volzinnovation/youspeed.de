@@ -2,6 +2,8 @@
 
 This directory contains the public technical documentation for YouSpeed.
 
+- [`OPENSIGNMAP_CONCEPT_2026-11-04.md`](OPENSIGNMAP_CONCEPT_2026-11-04.md): Android-only OpenSignMap on a reference device, three-repository architecture, Panoramax/Baba comparison, survey database and OSM review, town coverage planning, Centipede RTK and 360° cameras, and AI-assisted engineering estimates
+
 - [`APP_IDENTITY_AND_SIGN_PARITY_2026-11-04.validation.json`](APP_IDENTITY_AND_SIGN_PARITY_2026-11-04.validation.json): build 10085 version/build labels, Android preview and secondary-sign parity repairs, packaged artwork checks and device-consolidation status
 - [`MOBIDATA_BW_PICTOGRAM_COVERAGE_2026-11-04.json`](MOBIDATA_BW_PICTOGRAM_COVERAGE_2026-11-04.json): all 53 imported MobiData sign classes, exact shared artwork verification and explicit numeric, missing-value and source-annotation fallbacks
 - [`DEVICE_DEPLOYMENT_2026-11-04.validation.json`](DEVICE_DEPLOYMENT_2026-11-04.validation.json): branch/worktree audit, version 1.5 build 10084 installation on both attached phones, focused regression checks and cleanup
