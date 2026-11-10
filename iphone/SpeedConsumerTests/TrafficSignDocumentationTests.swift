@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import XCTest
 @testable import SpeedConsumer
@@ -211,5 +212,34 @@ final class PackedOSMSpeedEndPresentationTests: XCTestCase {
             XCTAssertNil(try lookup(tags: ["traffic_sign:forward": value]), value)
         }
         XCTAssertEqual(try lookup(tags: ["traffic_sign:forward": "DE:278[70 km/h]"])?.signs.first?.code, "DE:278-70")
+    }
+}
+
+@MainActor
+final class UserCorrectionsDisabledTests: XCTestCase {
+    func testCorrectionEntryPointsLeaveMicrophoneAndCaptureIdle() {
+        let model = DriveSessionViewModel()
+        let audio = AVAudioSession.sharedInstance()
+        let category = audio.category
+        let mode = audio.mode
+        model.beginSpeedLimitCapture()
+        model.prepareVisionDismissalVoicePermissionsIfNeeded(isStationary: true)
+        model.disregardVision()
+        XCTAssertEqual(model.speedCaptureMode, .idle)
+        XCTAssertFalse(model.canDisregardVision)
+        XCTAssertFalse(model.isVisionDismissalListening)
+        XCTAssertEqual(audio.category, category)
+        XCTAssertEqual(audio.mode, mode)
+    }
+
+    func testAutomaticSpeechListenerCannotAcquireMicrophone() {
+        let listener = VisionDismissalSpeechListener()
+        let audio = AVAudioSession.sharedInstance()
+        let category = audio.category
+        XCTAssertThrowsError(try listener.start(language: "de-DE") { _, _ in
+            XCTFail("Disabled microphone listener delivered a result")
+        })
+        listener.stop()
+        XCTAssertEqual(audio.category, category)
     }
 }

@@ -1332,6 +1332,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedCaptureRecognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var speedCaptureRecognitionTask: SFSpeechRecognitionTask?
     private var speedCaptureAudioEngine: AVAudioEngine?
+    private var speedCaptureOwnsAudioSession = false
     private var speedCaptureStartListeningTask: Task<Void, Never>?
     private var trafficSignEndOverlayTask: Task<Void, Never>?
     private var trafficSignEndOverlayGeneration = 0
@@ -4037,13 +4038,15 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var canDisregardVision: Bool {
-        trafficSignEffectiveLimitResolver.activePassage != nil || trafficSignOverridePolicy.activeOverride != nil ||
+        guard UserCorrectionAvailability.enabled else { return false }
+        return trafficSignEffectiveLimitResolver.activePassage != nil || trafficSignOverridePolicy.activeOverride != nil ||
             speedReference.output?.source == "camera"
     }
 
     func disregardVision() { disregardVision(recordCollectionCorrection: true) }
 
     private func disregardVision(recordCollectionCorrection: Bool) {
+        guard UserCorrectionAvailability.enabled else { return }
         if recordCollectionCorrection {
             let attempt = SignCollectionJSON.uuid()
             signCollection.freezeCorrection(attempt: attempt, presentation: trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID ?? trafficSignOverridePolicy.activeOverride?.trackId)
@@ -4072,6 +4075,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     /// Permission dialogs are prepared only with a fresh, verified standstill.
     /// A detected sign never opens an authorization dialog while driving.
     func prepareVisionDismissalVoicePermissionsIfNeeded(isStationary: Bool) {
+        guard UserCorrectionAvailability.enabled else { return }
         visionDismissalPermissionStationary = isStationary
         guard isStationary, trafficSignApplicationIsActive, trafficSignRecognitionEnabled,
               appScreenshotState == nil, visionDismissalPermissionTask == nil else { return }
@@ -4103,6 +4107,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func updateVisionDismissalVoiceWindow() {
+        guard UserCorrectionAvailability.enabled else { return }
         guard let identity = currentVisionDismissalEvidenceID else {
             cancelVisionDismissalVoice()
             return
@@ -8065,6 +8070,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     func beginSpeedLimitCapture() {
+        guard UserCorrectionAvailability.enabled else { return }
         guard drivingControlsAllowed, !isInSpeedCaptureMode else {
             return
         }
@@ -8528,6 +8534,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func startSpeedCaptureListening() {
+        guard UserCorrectionAvailability.enabled else { return }
         guard !speedCaptureDidResolve else {
             return
         }
@@ -8555,6 +8562,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 
         do {
             let audioSession = AVAudioSession.sharedInstance()
+            speedCaptureOwnsAudioSession = true
             try audioSession.setCategory(.record, mode: .measurement, options: [.duckOthers])
             try audioSession.setActive(true)
             // This correction was started on the phone. Do not let an attached
@@ -9007,15 +9015,21 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             engine.inputNode.removeTap(onBus: 0)
         }
         speedCaptureAudioEngine = nil
-        let session = AVAudioSession.sharedInstance()
-        try? session.setPreferredInput(nil)
-        try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        if speedCaptureOwnsAudioSession {
+            speedCaptureOwnsAudioSession = false
+            let session = AVAudioSession.sharedInstance()
+            try? session.setPreferredInput(nil)
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        }
         if !keepStatus {
             localObservationStatus = ""
         }
     }
 
     private func prepareSpeedCaptureRecognizer() async throws -> SFSpeechRecognizer {
+        guard UserCorrectionAvailability.enabled else {
+            throw ConsumerAppError.io("User voice corrections are disabled.")
+        }
         let speechAuth = await requestSpeechRecognitionAuthorization()
         guard speechAuth == .authorized else {
             throw ConsumerAppError.io(Self.speechAuthorizationDescription(speechAuth))
@@ -9046,6 +9060,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func requestMicrophonePermission() async -> Bool {
+        guard UserCorrectionAvailability.enabled else { return false }
         return await withCheckedContinuation { continuation in
             AVAudioApplication.requestRecordPermission(completionHandler: { granted in
                 continuation.resume(returning: granted)

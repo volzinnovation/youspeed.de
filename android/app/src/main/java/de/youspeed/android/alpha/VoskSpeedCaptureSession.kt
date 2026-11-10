@@ -29,7 +29,7 @@ class VoskSpeedCaptureSession(
 
     @Throws(IOException::class)
     fun start(timeoutMs: Long, listener: Listener): Boolean {
-        if (completed || speechService != null) return false
+        if (!UserCorrectionAvailability.enabled || completed || speechService != null) return false
         val recognizer = createRecognizer()
         val speechService = try {
             recognizer.setMaxAlternatives(5)

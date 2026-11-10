@@ -81,6 +81,59 @@ class OnboardingControllerInstrumentedTest {
         }
     }
 
+    @Test fun disabledUserCorrectionsNeverRequestMicrophoneOrEnterCapture() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val base = instrumentation.targetContext
+        val id = "onboarding-test-${UUID.randomUUID()}"
+        val root = File(base.cacheDir, id).apply { mkdirs() }
+        val isolated = object : ContextWrapper(base) {
+            override fun getApplicationContext(): Context = this
+            override fun getFilesDir(): File = File(root, "files").apply { mkdirs() }
+            override fun getCacheDir(): File = File(root, "cache").apply { mkdirs() }
+            override fun getNoBackupFilesDir(): File = File(root, "no-backup").apply { mkdirs() }
+            override fun getSharedPreferences(name: String, mode: Int) = base.getSharedPreferences("$id-$name", mode)
+        }
+        val preferences = isolated.getSharedPreferences("youspeed", Context.MODE_PRIVATE)
+        preferences.edit().putBoolean("youspeed.onboarding.completed", true).commit()
+        val host = QuietHost()
+        lateinit var controller: ConsumerSessionController
+        var initialized = false
+        fun act(action: (ConsumerSessionController) -> Unit) = instrumentation.runOnMainSync { action(controller) }
+        fun state(): ConsumerUiState {
+            lateinit var current: ConsumerUiState
+            act { current = it.uiState }
+            return current
+        }
+        try {
+            instrumentation.runOnMainSync {
+                controller = ConsumerSessionController(isolated, File(root, "bundle"), preferences, Clock.systemUTC(), null)
+                initialized = true
+                controller.bindHost(host)
+            }
+            val deadline = SystemClock.uptimeMillis() + 60_000
+            while (state().startupDataState == StartupDataState.LOADING && SystemClock.uptimeMillis() < deadline) {
+                SystemClock.sleep(100)
+            }
+            assertEquals(state().lastError, StartupDataState.READY, state().startupDataState)
+            act {
+                it.beginSpeedCapture()
+                it.prepareVisionDismissalPermissionIfNeeded()
+                it.onMicrophonePermissionResult(true)
+                it.disregardVision()
+                assertFalse(it.canDisregardVision)
+            }
+            instrumentation.waitForIdleSync()
+            assertEquals(SpeedCaptureModeState.IDLE, state().speedCaptureMode)
+            assertFalse(state().visionDismissalListening)
+            assertEquals(0, host.microphoneRequests)
+            assertEquals(0, host.cameraStarts)
+        } finally {
+            if (initialized) act { it.dispose() }
+            base.deleteSharedPreferences("$id-youspeed")
+            root.deleteRecursively()
+        }
+    }
+
     private class QuietHost : ConsumerHost {
         var locationRequests = 0
         var cameraRequests = 0

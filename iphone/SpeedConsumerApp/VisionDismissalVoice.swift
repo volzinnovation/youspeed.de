@@ -2,6 +2,9 @@ import Foundation
 import AVFoundation
 import Speech
 
+/// Product-disabled: microphone corrections interrupt car audio routes.
+enum UserCorrectionAvailability { static let enabled = false }
+
 /// A physical sign gets one short correction opportunity, even when its frame
 /// preview subsequently becomes a committed passage. All times are monotonic.
 struct VisionDismissalVoiceWindow {
@@ -80,6 +83,9 @@ final class VisionDismissalSpeechListener {
     private var ownsAudioSession = false
 
     func start(language: String, onResult: @escaping @MainActor (String?, Bool) -> Void) throws {
+        guard UserCorrectionAvailability.enabled else {
+            throw ConsumerAppError.io("User voice corrections are disabled.")
+        }
         guard SFSpeechRecognizer.authorizationStatus() == .authorized,
               AVAudioApplication.shared.recordPermission == .granted,
               let recognizer = SFSpeechRecognizer(locale: Locale(identifier: language)),

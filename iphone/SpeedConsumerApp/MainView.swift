@@ -317,9 +317,9 @@ struct MainView: View {
                         .contentShape(Rectangle())
                         .highPriorityGesture(
                             TapGesture(count: 2).onEnded {
-                                guard viewModel.drivingControlsAllowed else { return }
+                                guard UserCorrectionAvailability.enabled, viewModel.drivingControlsAllowed else { return }
                                 viewModel.performDriveInteraction { viewModel.beginSpeedLimitCapture() }
-                            }
+                            }, including: UserCorrectionAvailability.enabled ? .all : .none
                         )
                         if viewModel.trafficSignPictogramEnabled,
                            let sign = viewModel.trafficSignPictogramForDisplay {

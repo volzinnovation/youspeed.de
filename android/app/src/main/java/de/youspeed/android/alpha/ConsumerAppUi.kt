@@ -791,8 +791,8 @@ internal fun MainScreen(
                                 ui.speedLimitKmh != null -> stringResource(R.string.ui_camera_speed_limit, ui.speedLimitKmh.toString())
                                 else -> stringResource(R.string.ui_camera_sign)
                             },
-                            touchEnabled = ui.drivingControlsAllowed,
-                            onDoubleTap = onCapture,
+                            touchEnabled = UserCorrectionAvailability.enabled && ui.drivingControlsAllowed,
+                            onDoubleTap = { if (UserCorrectionAvailability.enabled) onCapture() },
                         )
                         if (!ui.isTrafficSignEndOverlayVisible && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
                             ui.retainedTrafficSignSupplementaryText?.takeIf {

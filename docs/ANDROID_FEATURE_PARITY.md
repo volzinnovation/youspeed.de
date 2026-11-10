@@ -1,5 +1,13 @@
 # Android / iPhone feature parity
 
+Current update, 4 November 2026 (build 10087): user corrections are disabled
+on both platforms. Manual speed capture, automatic “wrong sign” listening,
+microphone permission prompts and touch dismissal of camera limits are blocked.
+Android skips speech-model preparation at startup. iPhone capture cleanup only
+releases an audio session that capture actually acquired. Spoken alerts remain
+available through the existing feedback settings. The historical checkpoint
+below describes the earlier implementation.
+
 Implementation checkpoint: 11 September 2026. Reference: the current iPhone
 working tree, including its existing local photo-deletion changes. This change
 modifies Android only; it does not change shared schemas or the iPhone behavior.

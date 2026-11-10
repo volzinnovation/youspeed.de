@@ -1,5 +1,8 @@
 package de.youspeed.android.alpha
 
+/** Product-disabled: microphone corrections interrupt car audio routes. */
+internal object UserCorrectionAvailability { const val enabled = false }
+
 /** Commands share the four languages for which the app ships an offline Vosk model. */
 internal object VisionDismissalSpeech {
     const val listeningWindowMs = 4_000L

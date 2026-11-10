@@ -143,6 +143,7 @@ class MainActivity : ComponentActivity(), ConsumerHost {
     }
 
     override fun requestMicrophonePermission() {
+        if (!UserCorrectionAvailability.enabled) return
         microphonePermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
     }
 

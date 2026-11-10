@@ -2282,7 +2282,7 @@ class ConsumerSessionController(
         feedbackGate.reset()
     }
 
-    val canDisregardVision: Boolean get() = synchronized(trafficSignStateLock) {
+    val canDisregardVision: Boolean get() = UserCorrectionAvailability.enabled && synchronized(trafficSignStateLock) {
         trafficSignResolver.activeAssertion() != null || immediateTrafficSignOverride != null ||
             speedReference.output()?.source == "camera"
     }
@@ -2290,6 +2290,7 @@ class ConsumerSessionController(
     fun disregardVision() = disregardVision(recordCollectionCorrection = true)
 
     private fun disregardVision(recordCollectionCorrection: Boolean) {
+        if (!UserCorrectionAvailability.enabled) return
         if (recordCollectionCorrection) {
             val attempt = SignCollectionJson.uuid()
             signCollection.freezeCorrection(attempt, speedReference.output()?.evidenceId?.removeSuffix(":enclosing"))
@@ -3113,6 +3114,7 @@ class ConsumerSessionController(
     }
 
     fun beginSpeedCapture() {
+        if (!UserCorrectionAvailability.enabled) return
         if (!uiState.drivingControlsAllowed) return
         if (shouldPresentOnboarding()) return
         if (uiState.startupDataState != StartupDataState.READY || uiState.speedCaptureMode != SpeedCaptureModeState.IDLE) {
@@ -3164,6 +3166,7 @@ class ConsumerSessionController(
 
     /** Prepare permission only at a verified stop; recognition callbacks never open a dialog. */
     fun prepareVisionDismissalPermissionIfNeeded() {
+        if (!UserCorrectionAvailability.enabled) return
         val observedAt = uiState.stationarySpeedObservedAt ?: return
         if (!applicationActive || !uiState.drivingControlsAllowed || !uiState.trafficSignRecognitionEnabled ||
             uiState.speedCaptureMode != SpeedCaptureModeState.IDLE || uiState.appScreenshotState != null ||
@@ -3182,13 +3185,14 @@ class ConsumerSessionController(
             .takeIf { it == offeredVisionDismissalEvidence }
     }
 
-    private fun visionDismissalMayListen(): Boolean = !isDisposed.get() && applicationActive &&
+    private fun visionDismissalMayListen(): Boolean = UserCorrectionAvailability.enabled && !isDisposed.get() && applicationActive &&
         isDriving && uiState.trafficSignRecognitionEnabled && uiState.appScreenshotState == null &&
         uiState.speedCaptureMode == SpeedCaptureModeState.IDLE && hasMicrophonePermission() &&
         uiState.germanSpeechModelState == GermanSpeechModelState.READY && bundledVoskModel != null
 
     /** Called only after a published authoritative reference, never from annotation/classifier output. */
     private fun reconcileVisionDismissalListening() {
+        if (!UserCorrectionAvailability.enabled) return
         if (visionDismissalReconciliationActive) return
         visionDismissalReconciliationActive = true
         try {
@@ -6519,6 +6523,7 @@ class ConsumerSessionController(
     }
 
     private fun prepareSpeedCaptureRecognizerAndMaybeStart() {
+        if (!UserCorrectionAvailability.enabled) return
         updateState {
             copy(
                 speedCaptureMode = SpeedCaptureModeState.PREPARING,
@@ -6573,6 +6578,7 @@ class ConsumerSessionController(
     }
 
     private fun startSpeedCaptureListening() {
+        if (!UserCorrectionAvailability.enabled) return
         if (isSpeedCaptureResolved || uiState.speedCaptureMode !in setOf(
                 SpeedCaptureModeState.PREPARING, SpeedCaptureModeState.SPEAKING_PROMPT,
             )) {
@@ -6694,6 +6700,10 @@ class ConsumerSessionController(
         force: Boolean,
         userInitiated: Boolean,
     ) {
+        if (!UserCorrectionAvailability.enabled) {
+            if (isStartupWaitingForSpeechModel) finishStartupAfterSpeechModelReady()
+            return
+        }
         if (isDisposed.get()) {
             return
         }
