@@ -116,6 +116,7 @@ struct TrafficSignVerifiedModelPack: Sendable {
     let classifierArtifactURL: URL?
     let shadowRuntimeConfigurationV2: TrafficSignShadowRuntimeConfigurationV2?
     let manifestSHA256: String?
+    let trialDetectorThreshold: Double?
 
     init(
         directoryURL: URL,
@@ -125,7 +126,8 @@ struct TrafficSignVerifiedModelPack: Sendable {
         classifierArtifact: TrafficSignModelPackManifest.Artifact? = nil,
         classifierArtifactURL: URL? = nil,
         shadowRuntimeConfigurationV2: TrafficSignShadowRuntimeConfigurationV2? = nil,
-        manifestSHA256: String? = nil
+        manifestSHA256: String? = nil,
+        trialDetectorThreshold: Double? = nil
     ) {
         self.directoryURL = directoryURL
         self.manifest = manifest
@@ -135,6 +137,7 @@ struct TrafficSignVerifiedModelPack: Sendable {
         self.classifierArtifactURL = classifierArtifactURL
         self.shadowRuntimeConfigurationV2 = shadowRuntimeConfigurationV2
         self.manifestSHA256 = manifestSHA256
+        self.trialDetectorThreshold = trialDetectorThreshold
     }
 }
 
@@ -644,6 +647,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private let classifierModel: VNCoreMLModel
     private let mappingsByClassID: [String: TrafficSignModelPackManifest.ClassMapping]
     private let unknownThreshold: Double
+    private let detectorThreshold: Double
 
     init(
         verifiedPack: TrafficSignVerifiedModelPack,
@@ -672,7 +676,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 
         detectorModel = try Self.loadVisionModel(
             at: verifiedPack.detectorArtifactURL,
-            computeUnits: computeUnits,
+            computeUnits: verifiedPack.trialDetectorThreshold == nil ? computeUnits : .cpuAndNeuralEngine,
             componentName: "detector"
         )
         classifierModel = try Self.loadVisionModel(
@@ -684,6 +688,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             uniqueKeysWithValues: verifiedPack.manifest.classMapping.map { ($0.classId, $0) }
         )
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
+        detectorThreshold = verifiedPack.trialDetectorThreshold ?? unknownThreshold
     }
 
     func detections(
@@ -726,13 +731,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
     }
 
-    private func perform(
-        _ handler: VNImageRequestHandler,
-        detectorHandler: VNImageRequestHandler? = nil,
-        sourceRegion: (CGRect) -> CGRect? = { $0 }
-    ) throws -> TrafficSignTwoStageInferenceResultV2 {
-        inferenceLock.lock()
-        defer { inferenceLock.unlock() }
     func shadowInference(in input: TrafficSignDetectorInput) throws -> TrafficSignTwoStageInferenceResultV2 {
         try perform(
             VNImageRequestHandler(ciImage: input.uprightSource, options: [:]),
@@ -741,6 +739,13 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
     }
 
+    private func perform(
+        _ handler: VNImageRequestHandler,
+        detectorHandler: VNImageRequestHandler? = nil,
+        sourceRegion: (CGRect) -> CGRect? = { $0 }
+    ) throws -> TrafficSignTwoStageInferenceResultV2 {
+        inferenceLock.lock()
+        defer { inferenceLock.unlock() }
 
         let detectorRequest = VNCoreMLRequest(model: detectorModel)
         detectorRequest.imageCropAndScaleOption = .scaleFit
@@ -760,7 +765,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             guard let label = object.labels.first,
                   object.confidence.isFinite,
                   Self.isSignProposal(label.identifier),
-                  Double(object.confidence) >= unknownThreshold,
+                  Double(object.confidence) >= detectorThreshold,
                   Self.isValidNormalizedRegion(object.boundingBox),
                   let box = sourceRegion(object.boundingBox),
                   Self.isValidNormalizedRegion(box) else { return nil }
@@ -2480,16 +2485,22 @@ enum TrafficSignRuntimeBootstrap {
         visualCalibrationProvider: @escaping @Sendable () -> VisualRoadCalibration? = { nil }
     ) -> TrafficSignRuntimeBootstrapResult {
         do {
-            let pack = try TrafficSignModelPackDirectoryLoader.load(
+            let baseline = try TrafficSignModelPackDirectoryLoader.load(
                 from: modelPackDirectoryURL,
                 runtimeVersion: runtimeVersion,
                 appVersion: appVersion,
                 countryCode: countryCode
             )
+            let pack: TrafficSignVerifiedModelPack
             let backend: any TrafficSignInferenceBackend
             if let backendFactory {
+                pack = baseline
                 backend = try backendFactory(pack)
+            } else if let trial = townTrial(baseline, countryCode: countryCode) {
+                pack = trial.0
+                backend = trial.1
             } else {
+                pack = baseline
                 switch pack.manifest.pipeline {
                 case .directDetection:
                     backend = try TrafficSignVisionCoreMLBackend(verifiedPack: pack)
@@ -2533,5 +2544,76 @@ enum TrafficSignRuntimeBootstrap {
                 detail: "No compatible verified TSR model is available on this device."
             ))
         }
+    }
+
+    private static func townTrial(_ baseline: TrafficSignVerifiedModelPack, countryCode: String)
+        -> (TrafficSignVerifiedModelPack, TrafficSignVisionTwoStageCoreMLBackend)? {
+        #if DEBUG
+        let fileManager = FileManager.default
+        let name = "town_yolo26n_trial.mlmodelc"
+        let sha = "73a2818194be58673ba63fa7c92f6c12f9d0ef046f39649bd97d89e65578c026"
+        guard countryCode.uppercased() == "DE", baseline.manifest.pipeline == .proposalClassification,
+              let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        let model = directory.appendingPathComponent(name, isDirectory: true)
+        guard fileManager.fileExists(atPath: model.path) else { return nil }
+        do {
+            let keys: [URLResourceKey] = [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey]
+            guard try model.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink != true,
+                  let children = fileManager.enumerator(at: model, includingPropertiesForKeys: keys) else {
+                throw TrafficSignInferenceBackendError.incompatibleOutput
+            }
+            let files = try children.compactMap { item -> URL? in
+                guard let url = item as? URL else { return nil }
+                let values = try url.resourceValues(forKeys: Set(keys))
+                guard values.isSymbolicLink != true else { throw TrafficSignInferenceBackendError.incompatibleOutput }
+                return values.isRegularFile == true ? url : nil
+            }.sorted { $0.path < $1.path }
+            var digest = SHA256()
+            for url in files {
+                digest.update(data: Data(url.path.dropFirst(model.path.count + 1).utf8))
+                digest.update(data: Data([0]))
+                digest.update(data: try Data(contentsOf: url, options: .mappedIfSafe))
+                digest.update(data: Data([0]))
+            }
+            guard digest.finalize().map({ String(format: "%02x", $0) }).joined() == sha else {
+                throw TrafficSignInferenceBackendError.incompatibleOutput
+            }
+            let original = baseline.detectorArtifact
+            let artifact = TrafficSignModelPackManifest.Artifact(
+                platform: original.platform, minimumRuntime: original.minimumRuntime,
+                format: original.format, precision: original.precision, inputShape: original.inputShape,
+                outputSchema: original.outputSchema, path: name, sha256: sha,
+                sourceCheckpointSha256: "f02bf99483c5ad2b79f254b1623b18593ed780c8f3c2df7051331633bb1a2a36",
+                exporter: .init(name: "Ultralytics and Core ML Tools", version: "8.4.56 and 9.0",
+                                configuration: "1024 FP16, one-to-many, NMS 0.45"),
+                calibrationDatasetSha256: original.calibrationDatasetSha256,
+                parity: .init(tolerance: 0, measuredMaxAbsDifference: 0, passed: false))
+            let shadow = baseline.shadowRuntimeConfigurationV2.map { previous in
+                TrafficSignShadowRuntimeConfigurationV2(
+                    packId: previous.packId, taxonomyVersion: previous.taxonomyVersion,
+                    initialMode: previous.initialMode, overrideEligible: previous.overrideEligible,
+                    detector: .init(componentId: "town-yolo26n-trial", artifactId: "town-yolo26n-coreml-trial",
+                                    artifactSha256: sha, artifactFormat: .coreml,
+                                    preprocessingVersion: previous.detector.preprocessingVersion,
+                                    calibrationId: "town-yolo26n-trial-uncalibrated", calibrationPassed: false),
+                    classifier: previous.classifier, classifierConfirmedThreshold: previous.classifierConfirmedThreshold,
+                    confirmationFrames: previous.confirmationFrames, minimumTrackIou: previous.minimumTrackIou,
+                    temporalWindowMs: previous.temporalWindowMs, associationPolicy: previous.associationPolicy,
+                    stableObservationHintCanOverrideIou: previous.stableObservationHintCanOverrideIou,
+                    fallbackRequiresUniqueCandidate: previous.fallbackRequiresUniqueCandidate)
+            }
+            let pack = TrafficSignVerifiedModelPack(
+                directoryURL: baseline.directoryURL, manifest: baseline.manifest,
+                detectorArtifact: artifact, detectorArtifactURL: model, classifierArtifact: baseline.classifierArtifact,
+                classifierArtifactURL: baseline.classifierArtifactURL, shadowRuntimeConfigurationV2: shadow,
+                manifestSHA256: baseline.manifestSHA256, trialDetectorThreshold: 0.840783)
+            let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack)
+            NSLog("YouSpeedTSR town YOLO26n active at 0.840783 with CPU and Neural Engine enabled")
+            return (pack, backend)
+        } catch {
+            NSLog("YouSpeedTSR town detector failed startup. Using SGBlur. %@", error.localizedDescription)
+        }
+        #endif
+        return nil
     }
 }

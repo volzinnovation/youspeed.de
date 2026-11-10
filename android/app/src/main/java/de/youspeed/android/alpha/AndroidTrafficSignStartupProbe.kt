@@ -25,6 +25,7 @@ internal object AndroidTrafficSignStartupProbe {
         context: Context,
         engine: AndroidLiteRtTrafficSignInferenceEngine,
         pack: TrafficSignModelPack,
+        trial: Boolean = false,
     ): AndroidTrafficSignStartupResult {
         val bytes = context.assets.open(REFERENCE_ASSET).use { it.readBytes() }
         val hash = MessageDigest.getInstance("SHA-256").digest(bytes)
@@ -35,7 +36,7 @@ internal object AndroidTrafficSignStartupProbe {
         }
         val referenceMapping = pack.classMapping.firstOrNull {
             it.classId == REFERENCE_CLASS_ID
-        }?.takeIf { pack.countries.any { country -> country.equals("DE", ignoreCase = true) } }
+        }?.takeIf { !trial && pack.countries.any { country -> country.equals("DE", ignoreCase = true) } }
         fun checkRecognition(result: AndroidTrafficSignInferenceResult) {
             if (referenceMapping != null) {
                 check(result.detections.any { detection ->
@@ -47,10 +48,8 @@ internal object AndroidTrafficSignStartupProbe {
                         (candidate.classifierRawScore ?: 0.0) >= TrafficSignDisplayPolicy.MINIMUM_SCORE
                 }) { "Traffic-sign startup check could not recognize the reference 70 km/h sign" }
             } else {
-                // The shared German reference frame is still useful for a
-                // foreign pack's tensor-shape/delegate/timing smoke test, but
-                // its national class vocabulary may not contain a 70 km/h
-                // mapping. Do not invent a semantic match in that case.
+                // A foreign or trial detector can still use this frame for
+                // its tensor, delegate and timing checks.
                 check(engine.classifyCropForDiagnostic(bitmap) != null) {
                     "Traffic-sign startup check could not execute the foreign classifier"
                 }

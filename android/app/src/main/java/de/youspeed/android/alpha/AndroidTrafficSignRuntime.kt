@@ -73,6 +73,7 @@ internal data class AndroidTrafficSignVerifiedPack(
     val classifierModel: MappedByteBuffer,
     val displayCatalog: TrafficSignDisplayCatalog,
     val manifestSHA256: String = "",
+    val trialDetectorThreshold: Double? = null,
 )
 
 internal object AndroidTrafficSignModelPackLoader {
@@ -129,6 +130,28 @@ internal object AndroidTrafficSignModelPackLoader {
         )
     }
 
+    fun townTrial(context: Context, baseline: AndroidTrafficSignVerifiedPack): AndroidTrafficSignVerifiedPack? {
+        if (!BuildConfig.DEBUG || "DE" !in baseline.modelPack.countries) return null
+        val file = File(context.filesDir, "town_yolo26n_trial_float16.tflite")
+        if (!file.isFile) return null
+        return runCatching {
+            val hash = "9bf554f86b0e8e695430905e97bfd7eabdb713941d94c5ea1dcaaab7cb692041"
+            val mapped = file.inputStream().use { input ->
+                input.channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, input.channel.size())
+            }
+            verifyDigest(mapped, hash, file.name)
+            baseline.copy(
+                detectorArtifact = baseline.detectorArtifact.copy(
+                    path = file.name,
+                    sha256 = hash,
+                    sourceCheckpointSha256 = "f02bf99483c5ad2b79f254b1623b18593ed780c8f3c2df7051331633bb1a2a36",
+                ),
+                detectorModel = mapped,
+                trialDetectorThreshold = 0.840783,
+            )
+        }.onFailure { Log.w("YouSpeedTSR", "Town detector could not be verified. Using SGBlur.", it) }.getOrNull()
+    }
+
     private fun mapAndVerify(context: Context, packAssetRoot: String, artifact: TrafficSignArtifact): MappedByteBuffer {
         val assetPath = "$packAssetRoot/${artifact.path}"
         val mapped = context.assets.openFd(assetPath).use { descriptor ->
@@ -140,15 +163,19 @@ internal object AndroidTrafficSignModelPackLoader {
                 )
             }
         }
+        verifyDigest(mapped, artifact.sha256, artifact.path)
+        return mapped
+    }
+
+    private fun verifyDigest(mapped: MappedByteBuffer, expected: String, name: String) {
         val digestBuffer = mapped.duplicate().apply { position(0) }
         val digest = MessageDigest.getInstance("SHA-256").apply { update(digestBuffer) }
         val actualHash = digest.digest()
             .joinToString("") { byte -> "%02x".format(Locale.US, byte.toInt() and 0xff) }
-        require(actualHash == artifact.sha256) {
-            "TSR artifact hash mismatch for ${artifact.path}"
+        require(actualHash == expected) {
+            "TSR artifact hash mismatch for $name"
         }
         mapped.position(0)
-        return mapped
     }
 
     private const val DETECTOR_SIZE = 1024
@@ -492,6 +519,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
 
     fun recognize(source: Bitmap): TrafficSignDetection? = primaryDetection(recognizeAll(source))
 
+    val detectorUsesGpu: Boolean get() = detector.executionBackend == "gpu"
+
     fun recognizeAll(source: Bitmap): List<TrafficSignDetection> {
         return recognizeAllWithDiagnostics(source).detections
     }
@@ -507,6 +536,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             detectorOutput.clear()
             resource.interpreter.run(detectorInput, detectorOutput)
         }
+        check(verifiedPack.trialDetectorThreshold == null || detectorUsesGpu) {
+            "Town detector lost GPU acceleration"
+        }
         val detectorInferenceMs = elapsedMs(detectorStartedAtNanos)
         detectorOutput.rewind()
         detectorOutput.asFloatBuffer().get(detectorOutputFloats)
@@ -515,13 +547,13 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             sourceWidth = source.width,
             sourceHeight = source.height,
             inputSize = DETECTOR_SIZE,
-            minimumScore = verifiedPack.modelPack.thresholds.unknown,
+            minimumScore = verifiedPack.trialDetectorThreshold ?: verifiedPack.modelPack.thresholds.unknown,
         )
         val rawOutput = TrafficSignTensorDiagnostics.summarize(
             detectorOutputFloats,
             signOffset = AndroidYoloSignDecoder.SIGN_SCORE_CHANNEL * AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
             signCount = AndroidYoloSignDecoder.OUTPUT_ELEMENTS,
-            minimumScore = verifiedPack.modelPack.thresholds.unknown,
+            minimumScore = verifiedPack.trialDetectorThreshold ?: verifiedPack.modelPack.thresholds.unknown,
         )
         val lumaMean = sourceLumaMean(source)
 
@@ -715,7 +747,12 @@ internal class AndroidLiteRtTrafficSignBackend(
             fun initialize(reducedPrecision: Boolean): Pair<AndroidLiteRtTrafficSignInferenceEngine, AndroidTrafficSignStartupResult> {
                 val engine = AndroidLiteRtTrafficSignInferenceEngine(verifiedPack, gpuPrecisionLossAllowed = reducedPrecision)
                 try {
-                    return engine to AndroidTrafficSignStartupProbe.run(context, engine, verifiedPack.modelPack)
+                    val measured = AndroidTrafficSignStartupProbe.run(context, engine, verifiedPack.modelPack,
+                        trial = verifiedPack.trialDetectorThreshold != null)
+                    check(verifiedPack.trialDetectorThreshold == null || engine.detectorUsesGpu) {
+                        "Town detector could not run on the LiteRT GPU delegate"
+                    }
+                    return engine to measured
                 } catch (failure: Throwable) {
                     engine.close()
                     throw failure
@@ -898,6 +935,7 @@ internal class AndroidTrafficSignCameraRuntime(
     private var activeRecording: Recording? = null
     private var activeRecordingFile: File? = null
     private var backend: AndroidLiteRtTrafficSignBackend? = null
+    private var townTrialFailed = false
     @Volatile private var bridge: TrafficSignLiveRuntimeBridge<CameraXTrafficSignFrame>? = null
     @Volatile private var requestedModelCountryCode: String = controller.trafficSignModelCountryCode()
     @Volatile private var loadedModelCountryCode: String? = null
@@ -1084,13 +1122,22 @@ internal class AndroidTrafficSignCameraRuntime(
         val recognitionGeneration = controller.uiState.trafficSignGeneration
         val runtimeSerial = ++recognitionRuntimeSerial
         val countryCode = requestedModelCountryCode
+        val allowTownTrial = !townTrialFailed
         modelLoading = true
         startupExecutor.execute {
             val loaded = runCatching {
-                    val pack = AndroidTrafficSignModelPackLoader.load(context, countryCode)
-                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context, { labels -> controller.signCollection.wantsCropFrame(
+                    val baseline = AndroidTrafficSignModelPackLoader.load(context, countryCode)
+                    fun open(pack: AndroidTrafficSignVerifiedPack) = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context, { labels -> controller.signCollection.wantsCropFrame(
                         pack.modelPack.countries.firstOrNull { Regex("^[A-Z]{2}$").matches(it) } ?: "unknown",
                         pack.manifestSHA256, pack.classifierArtifact.sha256, labels) })
+                    val trialPack = if (allowTownTrial) AndroidTrafficSignModelPackLoader.townTrial(context, baseline) else null
+                    val trial = trialPack?.let { candidate ->
+                        runCatching { candidate to open(candidate) }
+                            .onFailure { Log.w("YouSpeedTSR", "Town detector failed startup. Using SGBlur.", it) }
+                            .getOrNull()
+                    }
+                    val (pack, runtimeBackend) = trial ?: (baseline to open(baseline))
+                    if (trial != null) Log.i("YouSpeedTSR", "Town YOLO26n active at 0.840783 on GPU")
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
                         pathPreparer = { frame: CameraXTrafficSignFrame, preparation ->
                             val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus ?: PowerManager.THERMAL_STATUS_NONE
@@ -1138,11 +1185,22 @@ internal class AndroidTrafficSignCameraRuntime(
                         confirmationWindowMsOverride = runtimeBackend.startupResult.timingProfile.confirmationWindowMs,
                         onRuntimeUnavailable = { detail, failedGeneration -> mainExecutor.execute {
                             if (!closed.get() && generation.get() == startGeneration && recognitionRuntimeSerial == runtimeSerial) {
-                                stopRecognitionAfterFailure(
-                                    "Speed-sign recognition stopped after three camera-processing errors in a row. " +
-                                        "Turn recognition off and on to retry. $detail",
-                                    failedGeneration,
-                                )
+                                if (trial != null) {
+                                    townTrialFailed = true
+                                    Log.w("YouSpeedTSR", "Town detector stopped processing frames. Using SGBlur. $detail")
+                                    bridge?.close()
+                                    bridge = null
+                                    backend?.close()
+                                    backend = null
+                                    refreshAnalysisConsumer()
+                                    if (controller.isTrafficSignRecognitionRuntimeEnabled()) loadRecognitionRuntime()
+                                } else {
+                                    stopRecognitionAfterFailure(
+                                        "Speed-sign recognition stopped after three camera-processing errors in a row. " +
+                                            "Turn recognition off and on to retry. $detail",
+                                        failedGeneration,
+                                    )
+                                }
                             }
                         } },
                     ) } catch (failure: Throwable) {

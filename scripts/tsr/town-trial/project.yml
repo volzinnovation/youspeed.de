@@ -1,0 +1,19 @@
+name: TownDetectorBench
+options:
+  deploymentTarget:
+    iOS: '17.0'
+targets:
+  TownDetectorBench:
+    type: application
+    platform: iOS
+    sources:
+      - Bench.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.youspeed.DetectorTrial
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: NO
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: F4CT29PZS5
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: '1.5'
