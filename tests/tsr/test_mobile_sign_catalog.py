@@ -29,13 +29,15 @@ def test_mobile_semantic_mappings_match_and_only_use_real_model_outputs():
     assert android["classifier"]["source_checkpoint"] == iphone["classifier"]["source_checkpoint"]
     labels = read_json(IPHONE_PACK / "classify_de_road_signs.mlmodelc/metadata.json")[0]["classLabels"]
     mappings = {entry["class_id"]: entry["semantic"] for entry in android["class_mapping"]}
-    assert set(mappings) <= set(labels)
+    assert [entry["class_id"] for entry in android["class_mapping"]] == labels
+    assert mappings["city:start"] == {"kind": "city_entry"}
+    assert mappings["city:end"] == {"kind": "city_exit"}
     for label in ("maxspeed:end", "no:end", "motorway:end", "trunk:end"):
         assert mappings[label] == {"kind": "restriction_end"}
     # Overtaking ends must never become actionable speed-limit changes.
     for label in ("no_overtaking:end", "no_overtaking:end:hgv", "DE:280", "DE:281"):
         assert mappings.get(label, {"kind": "unknown"}) == {"kind": "unknown"}
-    # Typed town-boundary support is not evidence that this model recognizes it.
+    # Model classes retain their trained IDs rather than inventing sign-code aliases.
     assert "DE:310" not in mappings
     assert "city_entry" not in mappings
 
@@ -47,7 +49,13 @@ def test_shared_catalog_preserves_every_classifier_index_and_real_capabilities()
     assert catalog["schema_version"] == 1
     assert catalog["country"] == "DE"
     assert catalog["class_labels"] == metadata["classLabels"]
-    assert len(catalog["class_labels"]) == 134
+    baseline = read_json(TSR / "baselines/de134-expanded-reference-2026-11-09/catalog.json")
+    assert len(catalog["class_labels"]) == 142
+    assert catalog["class_labels"][:134] == baseline["class_labels"]
+    assert catalog["class_labels"][134:] == [
+        "city:start", "city:end", "bus:stop", "supplementary:plate", "maxspeed:90",
+        "DE:156-10", "DE:325.1", "DE:325.2",
+    ]
     assert catalog["classifier_checkpoint_sha256"] == manifest["classifier"]["source_checkpoint"]["sha256"]
     signs = {entry["class_id"]: entry for entry in catalog["signs"]}
     assert len(signs) == len(catalog["signs"])

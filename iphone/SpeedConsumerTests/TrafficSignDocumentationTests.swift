@@ -2,6 +2,52 @@ import Foundation
 import XCTest
 @testable import SpeedConsumer
 
+final class ExpandedDEClassifierTests: XCTestCase {
+    func testBundledClassifierSupportsNewArtworkWithoutInventingPlateContent() throws {
+        let candidate = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        XCTAssertEqual(candidate.classLabels.count, 142)
+        XCTAssertTrue(candidate.canRecognize("bus:stop"))
+        XCTAssertEqual(Array(candidate.classLabels.dropFirst(134)), [
+            "city:start", "city:end", "bus:stop", "supplementary:plate", "maxspeed:90",
+            "DE:156-10", "DE:325.1", "DE:325.2",
+        ])
+        XCTAssertEqual(candidate.classLabels[136], "bus:stop")
+        XCTAssertEqual(candidate.classLabels[137], "supplementary:plate")
+        let bus = try XCTUnwrap(candidate.sign(for: "bus:stop"))
+        XCTAssertEqual(bus.signCode, "DE:224")
+        XCTAssertEqual(bus.localizedLabel(language: "de"), "Haltestelle")
+        XCTAssertNotNil(bus.imageURL())
+        XCTAssertEqual(candidate.sign(for: "maxspeed:90")?.signCode, "DE:274-90")
+        let plate = try XCTUnwrap(candidate.sign(for: "supplementary:plate"))
+        XCTAssertFalse(plate.displayEligible)
+        XCTAssertNil(plate.imageURL())
+        XCTAssertNil(plate.signCode)
+        XCTAssertEqual(plate.localizedLabel(language: "en"), "Supplementary plate (content unresolved)")
+        XCTAssertFalse(try XCTUnwrap(candidate.sign(for: "exit")).displayEligible)
+        XCTAssertFalse(try XCTUnwrap(candidate.sign(for: "lanes")).displayEligible)
+    }
+
+    func testGenericPlateMappingUsesExistingRoleAndUnresolvedContent() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "DE.panoramax-bootstrap", withExtension: "tsrmodelpack", subdirectory: "TSRModelPacks"))
+        let pack = try TrafficSignPackJSON.decoder().decode(TrafficSignModelPackManifest.self,
+            from: Data(contentsOf: url.appendingPathComponent("manifest.json")))
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        XCTAssertEqual(pack.classMapping.count, 142)
+        XCTAssertEqual(pack.classMapping.map(\.classId), catalog.classLabels)
+        XCTAssertEqual(pack.classifier?.sourceCheckpoint.sha256, catalog.classifierCheckpointSHA256)
+        let mapping = try XCTUnwrap(pack.classMapping.first { $0.classId == "supplementary:plate" })
+        XCTAssertEqual(mapping.signRole, .supplementaryPlate)
+        XCTAssertEqual(mapping.semantic.kind, .unknown)
+        XCTAssertNil(mapping.semantic.value)
+        XCTAssertNil(mapping.semantic.unit)
+        XCTAssertEqual(mapping.restriction?.kind, .unknown)
+        XCTAssertEqual(mapping.restriction?.normalizedValue, "unresolved")
+        XCTAssertEqual(mapping.restriction?.isValid, true)
+        XCTAssertNil(mapping.restriction?.rawText)
+        XCTAssertNil(mapping.restriction?.countrySignCode)
+    }
+}
+
 final class TrafficSignDocumentationTests: XCTestCase {
     func testReferenceReadsEveryNationalCatalogWithOriginalPictogramsAndSpeech() throws {
         let html = try TrafficSignDocumentationHTML.make(activeCountry: "NLD", locale: "fr")
@@ -37,6 +83,20 @@ final class InventorySpeedEndPictogramTests: XCTestCase {
               code: code, kind: "speed_limit_end", numericValue: value, unit: unit,
               parameterStatus: status, latitude: 48, longitude: 8, radiusM: 30,
               pictogramCode: pictogramCode, pictogramPath: nil, modelClasses: [], distanceM: 0)
+    }
+
+    func testExactCurveBoardReferenceDoesNotInferRedArrowCameraDirection() throws {
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled())
+        let exact = try XCTUnwrap(catalog.sign(forInventory: inventory(code: "DE:625-20", pictogramCode: "DE:625-20")))
+        XCTAssertEqual(exact.imagePath, "tsr/sign-pictograms/png/de-625-20.png")
+        XCTAssertEqual(exact.localizedLabel(language: "de"), "Richtungstafel in Kurven – rechtsweisend")
+        XCTAssertNotNil(exact.imageURL())
+        XCTAssertFalse(catalog.canRecognize("DE:625-20"))
+        XCTAssertTrue(catalog.canRecognize("arrow:red"))
+        let family = try XCTUnwrap(catalog.sign(for: "arrow:red"))
+        XCTAssertFalse(family.displayEligible)
+        XCTAssertNil(family.imageURL())
+        XCTAssertNil(family.signCode)
     }
 
     func testExactInventoryCodesUseEveryReviewedEndPictogramWithoutCameraClasses() throws {

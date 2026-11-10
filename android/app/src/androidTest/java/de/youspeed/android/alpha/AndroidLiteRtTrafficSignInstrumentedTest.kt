@@ -279,6 +279,10 @@ class AndroidLiteRtTrafficSignInstrumentedTest {
     fun verifiedLiteRtPackRecognizesPinnedPanoramaxFixture() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val pack = AndroidTrafficSignModelPackLoader.load(instrumentation.targetContext)
+        assertEquals("de-youspeed-expanded142-v3", pack.modelPack.packId)
+        assertEquals(142, pack.modelPack.classMapping.size)
+        assertEquals("bus:stop", pack.modelPack.classMapping[136].classId)
+        assertEquals("supplementary:plate", pack.modelPack.classMapping[137].classId)
         val bitmap = instrumentation.context.assets
             .open("tsr-panoramax-0906fc23.jpg")
             .use(BitmapFactory::decodeStream)
@@ -286,7 +290,14 @@ class AndroidLiteRtTrafficSignInstrumentedTest {
         val engine = AndroidLiteRtTrafficSignInferenceEngine(pack)
 
         try {
-            val detection = requireNotNull(engine.recognize(bitmap))
+            val result = engine.recognizeAllWithDiagnostics(bitmap)
+            if (InstrumentationRegistry.getArguments().getString("requireGpu") == "true") {
+                assertEquals("gpu", result.executionBackend)
+                assertEquals(null, result.accelerationFallbackReason)
+            }
+            val detection = requireNotNull(primaryDetection(result.detections))
+            Log.i("YouSpeedTSR", "DE142 packaged model verified: backend=${result.executionBackend}, " +
+                "classifierMs=${result.classifierInferenceMs}, class=${detection.candidate.rawClassId}")
             assertEquals("maxspeed:70", detection.candidate.rawClassId)
             assertEquals(TrafficSignSemanticKind.MAXIMUM_SPEED, detection.candidate.semantic.kind)
             assertEquals(70, detection.candidate.semantic.value)

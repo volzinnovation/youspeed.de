@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "pack_id": "de-panoramax-bootstrap-live-v1",
+  "pack_id": "de-youspeed-expanded142-v3",
   "countries": [
     "DE"
   ],
@@ -24,8 +24,8 @@
   },
   "calibration": {
     "kind": "none",
-    "revision": "uncalibrated-published-panoramax-bootstrap-v1",
-    "dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+    "revision": "uncalibrated-de-expanded142-v3",
+    "dataset_sha256": "565dc7c5a0109309a205d60ff9d886e3f2d7c17f7678cba6cb594b719cecc41b",
     "calibrated": false,
     "runtime_output": "raw_score"
   },
@@ -1132,6 +1132,77 @@
         "kind": "pedestrian_zone_start"
       },
       "threshold": 0.7
+    },
+    {
+      "class_id": "city:start",
+      "label": "Start of built-up area",
+      "semantic": {
+        "kind": "city_entry"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "city:end",
+      "label": "End of built-up area",
+      "semantic": {
+        "kind": "city_exit"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "bus:stop",
+      "label": "Bus stop",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "supplementary:plate",
+      "label": "Supplementary plate (content unresolved)",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7,
+      "sign_role": "supplementary_plate",
+      "restriction": {
+        "kind": "unknown",
+        "normalized_value": "unresolved"
+      }
+    },
+    {
+      "class_id": "maxspeed:90",
+      "label": "Maximum speed 90 km/h",
+      "semantic": {
+        "kind": "maximum_speed",
+        "value": 90,
+        "unit": "km/h"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "DE:156-10",
+      "label": "Railway crossing with three-stripe beacon",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "DE:325.1",
+      "label": "Start of traffic-calmed area",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
+    },
+    {
+      "class_id": "DE:325.2",
+      "label": "End of traffic-calmed area",
+      "semantic": {
+        "kind": "unknown"
+      },
+      "threshold": 0.7
     }
   ],
   "detector": {
@@ -1172,11 +1243,11 @@
     ]
   },
   "classifier": {
-    "component_id": "panoramax-classify-de-road-signs-5360aa6f4ef6c7b1",
+    "component_id": "youspeed-de-expanded142-v3",
     "source_checkpoint": {
-      "uri": "https://huggingface.co/Panoramax/classify_de_road_signs/blob/5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790/classify_de_road_signs.pt",
-      "revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
-      "sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7"
+      "uri": "urn:sha256:c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
+      "revision": "de-expanded-2026-11-09-v3-epoch2",
+      "sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda"
     },
     "artifacts": [
       {
@@ -1192,31 +1263,32 @@
         ],
         "output_schema": "classification_probabilities_v1",
         "path": "classify_de_road_signs_float16.tflite",
-        "sha256": "28d2ce40455d0f9cac2f7c61a51b5a5f95f17fa57fc5706a56f64fa9f8bd7df0",
-        "source_checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+        "sha256": "f179b03a59aff8ceb8c0127077c595d0f1629d9b30d0cf487cfa11bf24f4b15a",
+        "source_checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
         "exporter": {
           "name": "ultralytics+onnx2tf+litert",
           "version": "8.4.56+1.17.0+1.28.8+2.19.0",
-          "configuration": "imgsz=224,batch=1,half=true,nms=false"
+          "configuration": "imgsz=224,batch=1,half=true,nms=false,dynamic=false; RGB/255; 142 frozen output classes"
         },
-        "calibration_dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+        "calibration_dataset_sha256": "565dc7c5a0109309a205d60ff9d886e3f2d7c17f7678cba6cb594b719cecc41b",
         "parity": {
           "tolerance": 0.02,
-          "measured_max_abs_difference": 2.5e-05,
+          "measured_max_abs_difference": 0.018067210912704468,
           "passed": true
         }
       }
     ]
   },
   "lineage": {
-    "source_manifest_sha256": "87fb31ee173b86543d825c55f1370e1be65d737b6d54fcecb569337238f91cbe",
+    "source_manifest_sha256": "7d5d679d1ad7f9a5036b7837f92b875154d93c85cba772d13f73992fd87debbd",
     "dataset_inventory_sha256s": [
-      "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853"
+      "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+      "565dc7c5a0109309a205d60ff9d886e3f2d7c17f7678cba6cb594b719cecc41b"
     ],
-    "training_run_id": "panoramax-bootstrap-coreml-export-2026-09-02",
-    "training_run_sha256": "3b78b9ba65d4d4c9317f57ae62ec0321d06aa79153307f6beac840806e56f29d",
-    "evaluation_report_sha256": "ec4f07768d9effc7c3eb159ca6302fead3fbb7f2678c9b5d621ad6014fc0c0d5",
-    "parity_report_sha256": "78c646d7b9b6234a37ccd3f84576b24df6e3d8326c243fa521d633c34225549e"
+    "training_run_id": "de-expanded-2026-11-09-v3-epoch2",
+    "training_run_sha256": "bd7f03fea0ff313cb3b3059653bd2bedd4546eb328b60c7af0bc8f6d8d6ef1ba",
+    "evaluation_report_sha256": "af0e2c5d3422e048fba716d70d6903f5c802728db1d9c213a54478ed3c282bce",
+    "parity_report_sha256": "11779420e1f4a0e2c1686f37ebd4d1c5917ce00f705dc1c7a38a803bc714ebbe"
   },
   "licenses": [
     {

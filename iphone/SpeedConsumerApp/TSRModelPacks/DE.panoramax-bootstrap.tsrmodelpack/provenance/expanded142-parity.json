@@ -1,0 +1,40 @@
+{
+  "android": {
+    "checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
+    "platform": "Moto g86 5G TensorFlow Lite GPU delegate",
+    "class_count": 142,
+    "images": 96,
+    "top1_agree_count": 96,
+    "tolerance": 0.02,
+    "measured_max_abs_difference": 0.018067210912704468,
+    "passed": true,
+    "exact_canonical_tensor_hashes_verified": true,
+    "result_sha256": "203f88b2cfbd74d5105afb45c00c21b9a9ad3617ab1ee48bf5d68564bcb1919b",
+    "reference_sha256": "cb3d5e7e57c8b3fec058169f8989c474773e6fd151c8e2eb0a308eb443305dae",
+    "canonical_median_ms": null,
+    "native_preprocess_and_forward": {
+      "n": 96,
+      "p50Ms": 45.4568465,
+      "p95Ms": 46.14807725,
+      "meanMs": 45.57986293749999,
+      "minimumMs": 45.082384,
+      "maximumMs": 50.880616
+    },
+    "scope": "Numerical export parity and on-device GPU classifier latency; not F1."
+  },
+  "ios": {
+    "schema_version": 1,
+    "platform": "macOS Core ML export parity (not an iPhone latency benchmark)",
+    "compute_units": "all",
+    "neural_engine_allowed": true,
+    "input_contract": "Exact canonical224 RGB bytes, RGB/255; CUDA reference bound by tensor hashes",
+    "checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
+    "class_count": 142,
+    "images": 96,
+    "reference_sha256": "cb3d5e7e57c8b3fec058169f8989c474773e6fd151c8e2eb0a308eb443305dae",
+    "tolerance": 0.02,
+    "measured_max_abs_difference": 0.012933492660522461,
+    "passed": true,
+    "top1_agree_count": 96
+  }
+}

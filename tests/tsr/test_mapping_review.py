@@ -9,7 +9,7 @@ import pytest
 from scripts.tsr.mapping_review import COUNTRIES, ROOT, run, semantic, reconcile_catalog
 
 
-@pytest.mark.parametrize('country,count', [('DE',134), ('BE',143), ('FR',256), ('NL',160), ('CH',127)])
+@pytest.mark.parametrize('country,count', [('DE',142), ('BE',143), ('FR',256), ('NL',160), ('CH',127)])
 def test_every_actual_classifier_output_is_mapped_identically_on_both_platforms(country, count):
     ios = ROOT / f'iphone/SpeedConsumerApp/TSRModelPacks/{country}.panoramax-bootstrap.tsrmodelpack'
     android = ROOT / f'android/app/src/main/assets/tsr/{country}.panoramax-bootstrap.tsrmodelpack'
@@ -95,9 +95,11 @@ def test_french_unreviewed_entry_still_gets_its_corrected_meaning():
 
 
 def test_actual_model_gaps_are_not_filled_with_fictional_labels():
-    for country in ['DE','NL','CH']:
+    for country in ['NL','CH']:
         catalog = json.loads((ROOT / f'shared/tsr/prolix-{country.lower()}-class-catalog-v1.json').read_text())
         assert not {'city:start','city:end'} & set(catalog['class_labels'])
+    german = json.loads((ROOT / 'shared/tsr/prolix-de-class-catalog-v1.json').read_text())
+    assert german['class_labels'][134:136] == ['city:start', 'city:end']
     catalog = json.loads((ROOT / 'shared/tsr/prolix-ch-class-catalog-v1.json').read_text())
     sign = next(s for s in catalog['signs'] if s['class_id']=='zone:no_parking:end')
     assert not sign['display_eligible']  # The upstream ASTRA example is actually a 30-zone end.

@@ -4,3 +4,5 @@ android/app/src/main/assets/tsr/FR.panoramax-bootstrap.tsrmodelpack/classify_fr_
 iphone/SpeedConsumerApp/TSRModelPacks/FR.panoramax-bootstrap.tsrmodelpack/classify_fr_road_signs.mlmodelc/weights/weight.bin filter=lfs diff=lfs merge=lfs -text
 # Published CSV uses RFC 4180 CRLF; preserve its verified download bytes.
 shared/packed-runtime/releases/**/size-comparison.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Keep the verified official SVG source byte-for-byte, including its whitespace.
+shared/tsr/sign-pictograms/originals/de-224.svg -text whitespace=-blank-at-eol,cr-at-eol

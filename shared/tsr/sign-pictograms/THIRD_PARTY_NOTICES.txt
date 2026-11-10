@@ -203,3 +203,22 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+2026-11-09 additions for the expanded DE candidate vocabulary:
+- DE:224: https://commons.wikimedia.org/wiki/File:Zeichen_224.svg
+  SanAndreas; authentic RAL colours by Mediatus.
+- DE:274-90: https://commons.wikimedia.org/wiki/File:Zeichen_274-90_-_Zul%C3%A4ssige_H%C3%B6chstgeschwindigkeit,_StVO_2017.svg
+  Mediatus.
+Both are public-domain German official-work renditions (§ 5(1) UrhG).
+Original SVG bytes are unmodified; PNG conversion uses ImageMagick 7.1.2-31.
+Full source revision, upload, authorship and byte hashes are in manifest.json.
+No generic supplementary-plate artwork is supplied: a specific plate would
+incorrectly imply content that this visual-family classifier cannot establish.
+
+2026-11-09 requested exact curve-board reference:
+- DE:625-20: https://commons.wikimedia.org/wiki/File:Zeichen_625-20_-_Richtungstafel_in_Kurven_(Aufstellung_links),_500x500;_StVO_1992.svg
+  Mediatus, vectorized after official Bundesverkehrsministerium specifications.
+  Public domain: PD-GermanGov / PD-VzKat, § 5(1) UrhG.
+  Unmodified SVG; transparent PNG conversion with ImageMagick 7.1.2-31.
+  Current official meaning: right-pointing curve direction board, 500 × 500 mm.
+  The historical filename describes left-side placement, not arrow direction.

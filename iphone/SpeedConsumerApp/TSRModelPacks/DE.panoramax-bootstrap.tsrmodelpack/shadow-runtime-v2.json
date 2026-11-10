@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
-  "source_pack_id": "de-panoramax-bootstrap-live-v1",
-  "pack_id": "de-panoramax-bootstrap-shadow-adapter-v2",
+  "source_pack_id": "de-youspeed-expanded142-v3",
+  "pack_id": "de-youspeed-expanded142-shadow-v2",
   "taxonomy_version": "tsr-semantic-v2",
   "execution_policy": {
     "mode": "shadow",
@@ -29,10 +29,10 @@
     }
   },
   "classifier": {
-    "component_id": "panoramax-classify-de-road-signs-5360aa6f4ef6c7b1",
-    "artifact_id": "panoramax-de-road-sign-classifier-coreml-7a9b6d96-v2",
+    "component_id": "youspeed-de-expanded142-v3",
+    "artifact_id": "youspeed-de142-coreml-c697dd46-v2",
     "artifact_path": "classify_de_road_signs.mlmodelc",
-    "artifact_sha256": "7a9b6d96fef76ee6ba99403591d6861f05f712008c0be69ff1c1a7376c1f21be",
+    "artifact_sha256": "c697dd469ba4aa4e15ce7ff73459b5fa02d5ced7ea95d1dbe56d970aae902e9b",
     "artifact_format": "coreml",
     "preprocessing": {
       "version": "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2",
@@ -43,8 +43,8 @@
       "orientation": "normalize_exif_and_mirroring"
     },
     "calibration": {
-      "id": "panoramax-classifier-uncalibrated-v1",
-      "dataset_sha256": "0a7cc5895afd76a4dc98e70efc9421ae82a6f580e6d60da3904911155e424853",
+      "id": "youspeed-de142-uncalibrated-v3",
+      "dataset_sha256": "565dc7c5a0109309a205d60ff9d886e3f2d7c17f7678cba6cb594b719cecc41b",
       "passed": false,
       "runtime_output": "raw_score"
     }

@@ -25,8 +25,10 @@ def test_national_sign_set_index_is_explicit_and_schema_valid():
     assert by_country["CH"]["status"] == "not_ready"
     assert by_country["CH"]["runtime_status"] == "not_ready"
     assert by_country["CH"]["display_eligible_assets"] == 0
-    assert len(list((SIGN_ROOT / "originals").glob("de-*.svg"))) == 117
-    assert len(list((SIGN_ROOT / "png").glob("de-*.png"))) == 117
+    german_count = len(load("manifest.json")["artworks"])
+    assert by_country["DE"]["display_eligible_assets"] == german_count
+    assert len(list((SIGN_ROOT / "originals").glob("de-*.svg"))) == german_count
+    assert len(list((SIGN_ROOT / "png").glob("de-*.png"))) == german_count
 
     for country in ("FR", "NL", "BE"):
         entry = by_country[country]

@@ -1613,8 +1613,12 @@ final class SpeedConsumerTests: XCTestCase {
         let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
         let metadata = try JSONSerialization.jsonObject(with: Data(contentsOf: directory.appendingPathComponent("classify_de_road_signs.mlmodelc/metadata.json"))) as! [[String: Any]]
         XCTAssertEqual(catalog.classLabels, metadata[0]["classLabels"] as? [String])
-        XCTAssertEqual(catalog.classLabels.count, 134)
-        for alias in ["DE:278-50", "DE:281", "DE:310", "DE:311", "city:start"] {
+        XCTAssertEqual(catalog.classLabels.count, 142)
+        XCTAssertEqual(Array(catalog.classLabels.dropFirst(134)), [
+            "city:start", "city:end", "bus:stop", "supplementary:plate", "maxspeed:90",
+            "DE:156-10", "DE:325.1", "DE:325.2",
+        ])
+        for alias in ["DE:278-50", "DE:281", "DE:310", "DE:311", "DE:625-20"] {
             XCTAssertFalse(catalog.canRecognize(alias), "Reference aliases must not claim recognition capability")
         }
         for sign in catalog.signs where sign.displayEligible {
@@ -1640,7 +1644,7 @@ final class SpeedConsumerTests: XCTestCase {
         XCTAssertEqual(TrafficSignModelPackSelection.availableCountryCode("CHE"), "CH")
         XCTAssertNil(TrafficSignModelPackSelection.availableCountryCode("LUX"))
 
-        for (country, classCount) in [("DE", 134), ("FR", 256), ("NL", 160), ("BE", 143), ("CH", 127)] {
+        for (country, classCount) in [("DE", 142), ("FR", 256), ("NL", 160), ("BE", 143), ("CH", 127)] {
             let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(countryCode: country))
             XCTAssertEqual(catalog.country, country)
             XCTAssertEqual(catalog.classLabels.count, classCount)
@@ -1651,7 +1655,8 @@ final class SpeedConsumerTests: XCTestCase {
     @MainActor
     func testAllFiveNationalMappingsReachTheCorrectRuntimeActionsAndArtwork() throws {
         let cases: [String: [String: TrafficSignStructuralAction]] = [
-            "DE": ["no:end": .allRestrictionsEnd, "maxspeed:end": .maximumSpeedEnd(nil), "zone:30:end": .zoneEnd(30)],
+            "DE": ["no:end": .allRestrictionsEnd, "maxspeed:end": .maximumSpeedEnd(nil), "zone:30:end": .zoneEnd(30),
+                   "city:start": .cityEntry("DE"), "city:end": .cityExit, "maxspeed:90": .postedMaximum(90)],
             "BE": ["no:end": .allRestrictionsEnd, "city:start": .cityEntry("BE"), "city:end": .cityExit, "zone:50:end": .zoneEnd(50)],
             "FR": ["B31": .allRestrictionsEnd, "B33-70": .maximumSpeedEnd(70), "B14-45": .postedMaximum(45), "B30": .zoneStart(30), "B51": .zoneEnd(30), "B52": .zoneStart(20), "B53": .zoneEnd(20), "B54": .pedestrianZoneStart, "B55": .pedestrianZoneEnd, "EB10": .cityEntry("FR"), "EB20": .cityExit, "C208": .motorwayExit, "C108": .motorroadExit],
             "NL": ["no:end": .allRestrictionsEnd, "maxspeed:100": .postedMaximum(100), "zone:60:end": .zoneEnd(60), "zone:pedestrian": .pedestrianZoneStart],

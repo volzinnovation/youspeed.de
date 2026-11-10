@@ -1,0 +1,18 @@
+{
+  "samples": 1522,
+  "accuracy": 0.9848883048620236,
+  "macro_f1_supported": 0.9781050349507757,
+  "old_class_macro_f1_supported": 0.9777681893346338,
+  "city_macro_f1_supported": 1.0,
+  "supported_classes": 132,
+  "new_class_macro_f1_supported": null,
+  "scope": "Historical ontology-compatible report; not fresh field F1.",
+  "fresh_field_f1": null,
+  "new_class_heldout_f1": null,
+  "predecessor_historical_macro_f1": 0.9817534896670391,
+  "limitations": [
+    "Historical labels include legacy catch-all conflicts.",
+    "Fresh route-separated labels await user review.",
+    "Six new classes have no independent held-out reference labels."
+  ]
+}

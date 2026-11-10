@@ -1,0 +1,236 @@
+[
+  {
+    "sha256": "c55efe2f43cdea7516f68d3167c35c229221b17171979d134de7e3ac72426590",
+    "class_id": "DE:325.1",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=bba0588c-685b-4d36-b80a-26497375d0c9",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "0c19aecab988945e4f9569473310a6d78befb1784df76c7aca043dd98ee99beb",
+    "class_id": "DE:325.1",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=1095cf4b-8e9f-4fe7-8c23-e3ebb45f38a4",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "mcliquid",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "9455fbff57c0c2702e3c13dbeb38a98b3eb6510d3e0770de5b9eec378d76b59c",
+    "class_id": "DE:325.1",
+    "source_url": "https://panoramax-ulm.jjbaur.de/#pic=96449757-0cfe-466d-afba-3d9f7f06b5d0",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "Julian Baur",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://spdx.org/licenses/CC-BY-SA-4.0.html"
+  },
+  {
+    "sha256": "2982a0e026483105c683f192b0b0f50a4ade38b5e7a9a359f4eb9e7460118bf2",
+    "class_id": "DE:325.1",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=0d0cbe23-93c8-47a8-91f5-27155f91dfb5",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "wegavision",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "c23d54aef6a482a49182e787de545ec6cca55ed7f40c1aaa2d588971a99eae28",
+    "class_id": "DE:325.1",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=46ee74ba-0fd9-41b9-9779-acd45eb18a15",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "mcliquid",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "feaf518fbf0f5658cac39b9acb8b9ea75fa136bcd9d0c566575391cbd477c96e",
+    "class_id": "DE:325.2",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=596c6359-c420-472b-ac2b-3d95a93350cc",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "Karthoo",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "1a8c62f9c785b1f6c6cad5575e6b6140b8b8bd68bd2c9373033c845da246408a",
+    "class_id": "DE:325.2",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=c70ca721-e156-45e5-87cb-6efd1a486fd9",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "ab4c60107d65262eb6b38a8454b8cf7d2d88dacdc7e2665c33a30aa2a829c304",
+    "class_id": "DE:325.1",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=665c1d4a-fc26-41b7-b69e-f647863bfbd3",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "696524b76d501b336a8f352d0ea9dae78e8303ffcb50bd0c460e01f3ee139546",
+    "class_id": "maxspeed:90",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=c6e903cc-20db-4227-a00f-99549889486b",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "d4dee37437b626b54999e13353a5454d084d7c4104fba5b4272ab50e992c9b10",
+    "class_id": "maxspeed:90",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=0b54cb97-0124-42b8-841f-6f5b365270a8",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "wegavision",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "34abe242d18647dbe3a2cf04d80f8c088ea590f59c0ea00b5b86193fa6a41145",
+    "class_id": "DE:156-10",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=77fe7845-9640-4c4e-ac9b-7ed540ae1675",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "dd0d921efc0211419c120eff70c70ddb79cdb0d6fb943e2e4635bb28c18dd7eb",
+    "class_id": "supplementary:plate",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=1095cf4b-8e9f-4fe7-8c23-e3ebb45f38a4",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "mcliquid",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "91ca815b5ed14c96626719fdf02bbd6de444c2d581f675e1f3b93fda80e23b06",
+    "class_id": "supplementary:plate",
+    "source_url": "https://panoramax.openstreetmap.fr/#pic=2588d1d4-aba0-4a91-ac35-63bd376fad68",
+    "source_dataset": "loffenauer/ws26_hspf_imo",
+    "source_dataset_revision": "fcf4367b4b1dbad55d2c529a735d4504ecb34286",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "67b97d5caeb3f009ce5354a5ac752b276db9add8501eea02740dd35966190179",
+    "class_id": "bus:stop",
+    "source_url": "https://panoramax.youspeed.de/api/pictures/f24c9d8d-6c17-476f-90c6-b33acf0e4263",
+    "author": "admin",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://spdx.org/licenses/CC-BY-SA-4.0.html"
+  },
+  {
+    "sha256": "56eeafacf2200958b62a98b245ce46f761a8c324f1340cc1078dff96bdeb27e6"
+  },
+  {
+    "sha256": "277c2a358d6cb663f373c5eba7b5e7ba8f1e88cb6c83b925119d66e3c623946c"
+  },
+  {
+    "sha256": "ccd06a0a28f4a344425114a120c04d28e3012fb48f578264bbfd0443a3df6619"
+  },
+  {
+    "sha256": "b5de9aedfcccb1a6e72a8e2ef767a97ad4fc29cb408b8a8acaa185c5eb789762"
+  },
+  {
+    "sha256": "4fa69643d30b743792e9f2fc142a17ec4014c02f6decb6b9943025e3f7d1a35a"
+  },
+  {
+    "sha256": "d3b2b5d226d597ee04f0dec7042b2e3ad2319b478485621f6d057c2ef7af38a5"
+  },
+  {
+    "sha256": "b2450655d3d98c6392a2ebc61ba42e07138452faa4b7864cd454f48a43ea931d"
+  },
+  {
+    "sha256": "b126b1b702a1f4bfb984de355c4a525ac66eb597ae5cf8e4861c3e13a7aa8bb9"
+  },
+  {
+    "sha256": "daadd06305d41ffee5f57173b9532e9e2343b2728c26cde8c82142d22d816530",
+    "class_id": "bus:stop",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/06a8bca8-0a50-490b-b11c-7c597b20dd58",
+    "author": "ZX Streetview",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "93536fa88f7cc541f20fee66177b12ee6b83322a2a8a7e76f171f6051bbbce00",
+    "class_id": "bus:stop",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/29e93b8f-d453-475d-b346-e6c062e2ffcf",
+    "author": "R_A",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "18b052fd11c28eface5734907c85821e18361a51d3a4631332e3c9dd426cbd2e",
+    "class_id": "bus:stop",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/9ce9296d-47dc-446e-9c83-43a78056f963",
+    "author": "Geofreund1",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "459d29a575f978a9e68dd8f67917c8e380ef32a3b78076ba92520d6747945109",
+    "class_id": "bus:stop",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/c30f2be2-d13d-48d5-b020-5178d3877683",
+    "author": "enscha",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "ac875be2e2fa7a87583c5da6a601747ca4e189640b8a7cb050c626f76255c769",
+    "class_id": "bus:stop",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/7eff87c7-7507-4690-8ccf-8f94b4db0bb1",
+    "author": "enscha",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "c5ad4233474b5d28f962694f67763aa89f29a8e72a43ed499eee2e9f65456c45",
+    "class_id": "supplementary:plate",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/51af6143-3953-4bc7-ad7b-070e2b373e7e",
+    "author": "ZX Streetview",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "11c01ec6bce49c34be4c7beff17aa4986071511d496b47e8c07d92d74633f06b",
+    "class_id": "supplementary:plate",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/51af6143-3953-4bc7-ad7b-070e2b373e7e",
+    "author": "ZX Streetview",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "fc6d7e774c4e4f5e2181a9910b7adcf768ea491c03d177b70822ed66f46c7150",
+    "class_id": "supplementary:plate",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/fec0db86-624c-4a21-9939-73c21071dc73",
+    "author": "wegavision",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  {
+    "sha256": "3be075c2bf126789c82e4616951423c56d3f3c6cfcf7dde215356e011fecbfd1",
+    "class_id": "supplementary:plate",
+    "source_url": "https://panoramax.openstreetmap.fr/api/pictures/316c92c7-83fe-4242-b1d0-952e7077fc48",
+    "author": "wegavision",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  }
+]

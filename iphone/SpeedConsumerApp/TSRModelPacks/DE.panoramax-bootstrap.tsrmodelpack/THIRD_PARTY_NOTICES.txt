@@ -1391,3 +1391,13 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>.
+
+DE142 expanded classifier, 2026-11-10
+Fine-tuned from the Panoramax DE classifier and the preserved 136-class predecessor.
+Additional public Panoramax imagery attribution and licenses are recorded in
+provenance/expanded142-intake-attribution.json; official pictogram sources are
+in the shared sign-pictograms notices. Municipal/OSM anchors are search hints,
+not reference labels. New intake uses assistant silver labels for TRAIN only.
+Bootstrap provenance files retained here describe the predecessor/detector.
+expanded142-* provenance files describe the current classifier.
+Raw scores remain uncalibrated. Fresh field F1 awaits human label review.

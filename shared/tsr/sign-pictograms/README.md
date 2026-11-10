@@ -35,13 +35,12 @@ semantics, an evaluated/calibrated model and runtime evidence are available.
 these manifests only from the checked-in source selection and never turns a
 core artwork subset into a runtime pack.
 
-`../prolix-de-class-catalog-v1.json` preserves the 134 ordered labels in the
-bundled Core ML classifier. Its checkpoint is
-`f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7`
-from Panoramax `classify_de_road_signs` revision
-`5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790`. The deployed Prolix DE mapping
-was reviewed as a separate 142-entry reference. It does not define the mobile
-model's actual output vocabulary.
+`../prolix-de-class-catalog-v1.json` preserves the 142 ordered labels in the
+bundled Core ML and TensorFlow Lite classifiers. Both exports bind to checkpoint
+`c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda`.
+Its first 134 indices retain the original Panoramax `classify_de_road_signs`
+vocabulary from revision `5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790`.
+Reference catalogs and pictogram aliases do not define additional model outputs.
 
 ## Files and verification
 
@@ -98,7 +97,7 @@ python3 shared/tsr/sign-pictograms/fetch_national.py FR --fetch
 
 To restore missing assets, use `fetch.py --fetch`. This requires `curl`, network
 access and the pinned ImageMagick version for each missing PNG (7.1.2-3 by
-default; DE:1044-10 uses 7.1.2-31). It fetches pinned originals sequentially, verifies
+default; newer additions and DE:1044-10 use 7.1.2-31). It fetches pinned originals sequentially, verifies
 their hashes, and recreates PNGs locally. Two renderer exceptions, signs 206
 and 250, use separately pinned Commons PNG renditions: ImageMagick's SVG reader
 loses their lettering or red ring. `png_source_kind`, source URL and source
@@ -116,7 +115,7 @@ render different bytes and correctly fail that reproducibility check.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.
-All 117 assets already have transparent exteriors; do not turn white pixels
+All 120 assets already have transparent exteriors; do not turn white pixels
 globally transparent, which would also erase required parts of the signs.
 
 `display_eligible` means that a faithful pictogram exists for the entry. It does
@@ -125,11 +124,12 @@ sign card. Numeric speed signs may have artwork while the UI uses its main
 speed display for them. Speed actions remain governed by the reviewed model
 manifest and passage/state logic.
 
-The first 134 `signs` entries correspond exactly to `class_labels`. Additional
-exact `DE:278-x`, `DE:281`, `DE:282`, `DE:310`, `DE:311` and semantic aliases are
-inventory/reference entries, not model outputs. A consumer must not infer that the pinned
-model emits them. In particular, the checkpoint has no city-entry/city-exit
-class and cannot gain that capability from an asset or alias.
+The first 142 `signs` entries correspond exactly to `class_labels`, preserving
+the original 134 indices and appending eight outputs. Additional exact
+`DE:278-x`, `DE:281`, `DE:282`, `DE:310`, `DE:311` and semantic aliases are
+inventory/reference entries, not model outputs. The model recognizes town
+boundaries as `city:start` and `city:end`; exact source-code aliases do not add
+outputs or establish recognition performance.
 
 The numeric `DE:278-x` aliases are also available to the OSM/MobiData inventory
 display independently of the camera vocabulary. Use the exact source sign code
@@ -224,3 +224,41 @@ recorded per file. The owner-approved commercial-use policy excludes only
 non-commercial licences. The national regulation URL is the legal reference,
 while Commons supplies the checked-in vector rendition. Do not relabel an
 original or remove a required attribution.
+
+
+## Expanded German vocabulary (2026-11-10)
+
+The bundled 142-class checkpoint preserves the original 134 indices and adds
+`city:start`, `city:end`, `bus:stop` (DE:224), `supplementary:plate`,
+`maxspeed:90` (DE:274-90), `DE:156-10`, `DE:325.1` and `DE:325.2`.
+`scripts/tsr/build_de_expanded_catalog.py` binds the frozen 142-label order to
+an actual candidate checkpoint and writes matching catalog and class mappings
+for both native clients. Its SHA-pinned 134-class baseline is retained under
+`../baselines/de134-expanded-reference-2026-11-09/`; future builds do not derive
+their predecessor from mutable deployed packs. Candidate generation and
+deployment remain separate. Field F1 still requires approved review labels.
+The original HF training-crop audit places DE:223.1-50 in the existing `lanes`
+family and DE:460-20 in `exit` (numbered motorway diversions); these do not
+receive duplicate classifier heads. Their exact inventory pictograms remain
+available, while a family-level camera result cannot establish the subtype.
+
+The generic supplementary-plate family has no unique official pictogram.
+It deliberately has no image or invented sign code, and is not eligible for
+the pictogram card. Its translated text label records unresolved content.
+The model mapping routes it through the existing supplementary-plate role
+with an unknown restriction; OCR or human review must establish the content.
+DE:224 and DE:274-90 use unmodified Commons official-work SVG renditions,
+rasterized with ImageMagick 7.1.2-31. Source URLs, revisions and hashes are
+pinned in the manifest; see the source audit under
+`docs/collection-evidence/2026-11-09-de-expanded-classifier/asset-sources/`.
+
+
+DE:625-20 was added as exact inventory/reference artwork on 2026-11-09.
+The official VwV-StVO catalogue specifies **rechtsweisend, 500 × 500 mm**.
+The Commons filename's historical “Aufstellung links” describes placement
+on the left side, not a left-pointing arrow. The unmodified source is by
+Mediatus after Bundesverkehrsministerium specifications (PD-GermanGov/PD-VzKat).
+A train-only audit found both arrow directions and adjacent guide-board forms
+in existing `arrow:red`; its output remains broad and has no directional
+pictogram. The classifier stays at 142 classes. The already frozen field-review
+catalog is retained unchanged as its own presentation revision.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "country": "DE",
-  "classifier_checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+  "classifier_checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
   "class_labels": [
     "arrow:red",
     "arrow_left_down",
@@ -136,7 +136,15 @@
     "zone:30:end",
     "zone:end",
     "zone:no_parking",
-    "zone:pedestrian"
+    "zone:pedestrian",
+    "city:start",
+    "city:end",
+    "bus:stop",
+    "supplementary:plate",
+    "maxspeed:90",
+    "DE:156-10",
+    "DE:325.1",
+    "DE:325.2"
   ],
   "signs": [
     {
@@ -150,7 +158,10 @@
         "nl": "Rode richtingspijl"
       },
       "display_eligible": false,
-      "notes": "No reviewed unambiguous German sign-code mapping for this classifier label."
+      "notes": "Train-only historical HF audit on 2026-11-09 confirms single and repeated red curve chevrons pointing both left and right, together with adjacent striped guide-board forms. This broad visual family covers DE:625, but does not determine exact direction, dimensions or subtype. No directional pictogram is inferred from this classifier output.",
+      "related_reference_sign_codes": [
+        "DE:625-20"
+      ]
     },
     {
       "class_id": "arrow_left_down",
@@ -454,13 +465,13 @@
       "sign_code": "DE:460",
       "image_path": null,
       "label": {
-        "de": "Ausfahrthinweis",
-        "en": "Exit indication",
-        "fr": "Indication de sortie",
-        "nl": "Aanduiding van een afrit"
+        "de": "Nummerierte Bedarfsumleitung",
+        "en": "Numbered motorway diversion",
+        "fr": "Déviation autoroutière numérotée",
+        "nl": "Genummerde omleidingsroute"
       },
       "display_eligible": false,
-      "notes": "Deployed map gives DE:460 (numbered motorway detour), which does not establish an exit pictogram; unresolved mapping."
+      "notes": "Original HF training crops reviewed on 2026-11-09 show the numbered U diversion-route family, including DE:460-20. The class does not establish arrow direction or route number; no exact subtype pictogram is inferred. Exact inventory codes retain their own artwork."
     },
     {
       "class_id": "give_way",
@@ -1076,7 +1087,7 @@
         "nl": "Rijstrookindeling"
       },
       "display_eligible": false,
-      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+      "notes": "Original HF training crops reviewed on 2026-11-09 include lane diagrams and blue hard-shoulder-use signs, including the DE:223.1 family. The class does not determine exact layout, direction or shoulder permission; no representative subtype is substituted. Exact inventory codes retain their own artwork."
     },
     {
       "class_id": "maxaxleweight",
@@ -2255,6 +2266,110 @@
       "display_eligible": true
     },
     {
+      "class_id": "city:start",
+      "sign_code": "DE:310",
+      "image_path": "tsr/sign-pictograms/png/de-310.png",
+      "label": {
+        "de": "Beginn einer geschlossenen Ortschaft",
+        "en": "Start of built-up area",
+        "fr": "Entrée d’agglomération",
+        "nl": "Begin bebouwde kom"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
+      "class_id": "city:end",
+      "sign_code": "DE:311",
+      "image_path": "tsr/sign-pictograms/png/de-311.png",
+      "label": {
+        "de": "Ende einer geschlossenen Ortschaft",
+        "en": "End of built-up area",
+        "fr": "Sortie d’agglomération",
+        "nl": "Einde bebouwde kom"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
+      "class_id": "bus:stop",
+      "sign_code": "DE:224",
+      "image_path": "tsr/sign-pictograms/png/de-224.png",
+      "label": {
+        "de": "Haltestelle",
+        "en": "Bus stop",
+        "fr": "Arrêt de bus",
+        "nl": "Bushalte"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
+      "class_id": "supplementary:plate",
+      "sign_code": null,
+      "image_path": null,
+      "label": {
+        "de": "Zusatzzeichen (Inhalt ungeklärt)",
+        "en": "Supplementary plate (content unresolved)",
+        "fr": "Panonceau (contenu indéterminé)",
+        "nl": "Onderbord (inhoud onbekend)"
+      },
+      "display_eligible": false,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review. Generic plate content remains unresolved until OCR or review; no unique official family pictogram."
+    },
+    {
+      "class_id": "maxspeed:90",
+      "sign_code": "DE:274-90",
+      "image_path": "tsr/sign-pictograms/png/de-274-90.png",
+      "label": {
+        "de": "Höchstgeschwindigkeit 90 km/h",
+        "en": "Maximum speed 90 km/h",
+        "fr": "Vitesse maximale 90 km/h",
+        "nl": "Maximumsnelheid 90 km/h"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
+      "class_id": "DE:156-10",
+      "sign_code": "DE:156-10",
+      "image_path": "tsr/sign-pictograms/png/de-156-10.png",
+      "label": {
+        "de": "Bahnübergang mit dreistreifiger Bake",
+        "en": "Railway crossing with three-stripe beacon",
+        "fr": "Passage à niveau avec balise à trois bandes",
+        "nl": "Overweg met baken met drie strepen"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
+      "class_id": "DE:325.1",
+      "sign_code": "DE:325.1",
+      "image_path": "tsr/sign-pictograms/png/de-325.1.png",
+      "label": {
+        "de": "Beginn eines verkehrsberuhigten Bereichs",
+        "en": "Start of traffic-calmed area",
+        "fr": "Début d’une zone de circulation apaisée",
+        "nl": "Begin verkeersluw gebied"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
+      "class_id": "DE:325.2",
+      "sign_code": "DE:325.2",
+      "image_path": "tsr/sign-pictograms/png/de-325.2.png",
+      "label": {
+        "de": "Ende eines verkehrsberuhigten Bereichs",
+        "en": "End of traffic-calmed area",
+        "fr": "Fin d’une zone de circulation apaisée",
+        "nl": "Einde verkeersluw gebied"
+      },
+      "display_eligible": true,
+      "notes": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review."
+    },
+    {
       "class_id": "DE:278-5",
       "sign_code": "DE:278-5",
       "image_path": "tsr/sign-pictograms/png/de-278-5.png",
@@ -2489,32 +2604,6 @@
       "notes": "Reference-only exact sign-code alias; absent from the pinned classifier class_labels. Artwork availability does not add recognition capability."
     },
     {
-      "class_id": "city:start",
-      "sign_code": "DE:310",
-      "image_path": "tsr/sign-pictograms/png/de-310.png",
-      "label": {
-        "de": "Beginn einer geschlossenen Ortschaft",
-        "en": "Start of built-up area",
-        "fr": "Entrée d’agglomération",
-        "nl": "Begin bebouwde kom"
-      },
-      "display_eligible": true,
-      "notes": "Reference-only semantic alias absent from the pinned classifier class_labels; requires genuine model output support."
-    },
-    {
-      "class_id": "city:end",
-      "sign_code": "DE:311",
-      "image_path": "tsr/sign-pictograms/png/de-311.png",
-      "label": {
-        "de": "Ende einer geschlossenen Ortschaft",
-        "en": "End of built-up area",
-        "fr": "Sortie d’agglomération",
-        "nl": "Einde bebouwde kom"
-      },
-      "display_eligible": true,
-      "notes": "Reference-only semantic alias absent from the pinned classifier class_labels; requires genuine model output support."
-    },
-    {
       "class_id": "no_overtaking:end:hgv",
       "sign_code": "DE:281",
       "image_path": "tsr/sign-pictograms/png/de-281.png",
@@ -2541,19 +2630,6 @@
       "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
     },
     {
-      "class_id": "DE:156-10",
-      "sign_code": "DE:156-10",
-      "image_path": "tsr/sign-pictograms/png/de-156-10.png",
-      "label": {
-        "de": "Bahnübergang mit dreistreifiger Bake",
-        "en": "Railway crossing with three-stripe beacon",
-        "fr": "Passage à niveau avec balise à trois bandes",
-        "nl": "Overweg met baken met drie strepen"
-      },
-      "display_eligible": true,
-      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
-    },
-    {
       "class_id": "DE:223.1-50",
       "sign_code": "DE:223.1-50",
       "image_path": "tsr/sign-pictograms/png/de-223.1-50.png",
@@ -2562,32 +2638,6 @@
         "en": "Use hard shoulder",
         "fr": "Circulation sur la bande d’arrêt d’urgence",
         "nl": "Vluchtstrook gebruiken"
-      },
-      "display_eligible": true,
-      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
-    },
-    {
-      "class_id": "DE:325.1",
-      "sign_code": "DE:325.1",
-      "image_path": "tsr/sign-pictograms/png/de-325.1.png",
-      "label": {
-        "de": "Beginn eines verkehrsberuhigten Bereichs",
-        "en": "Start of traffic-calmed area",
-        "fr": "Début d’une zone de circulation apaisée",
-        "nl": "Begin verkeersluw gebied"
-      },
-      "display_eligible": true,
-      "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
-    },
-    {
-      "class_id": "DE:325.2",
-      "sign_code": "DE:325.2",
-      "image_path": "tsr/sign-pictograms/png/de-325.2.png",
-      "label": {
-        "de": "Ende eines verkehrsberuhigten Bereichs",
-        "en": "End of traffic-calmed area",
-        "fr": "Fin d’une zone de circulation apaisée",
-        "nl": "Einde verkeersluw gebied"
       },
       "display_eligible": true,
       "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
@@ -2604,6 +2654,24 @@
       },
       "display_eligible": true,
       "notes": "Inventory/reference-only exact artwork; not an additional output of the pinned classifier. Camera confirmation still requires actual evaluated model support."
+    },
+    {
+      "class_id": "DE:625-20",
+      "sign_code": "DE:625-20",
+      "image_path": "tsr/sign-pictograms/png/de-625-20.png",
+      "label": {
+        "de": "Richtungstafel in Kurven – rechtsweisend",
+        "en": "Curve direction board – right-pointing",
+        "fr": "Balise de virage vers la droite",
+        "nl": "Bochtschild naar rechts"
+      },
+      "display_eligible": true,
+      "classifier_family": {
+        "class_id": "arrow:red",
+        "scope": "broad_visual_family",
+        "exact_subtype_inferred": false
+      },
+      "notes": "Exact inventory/reference artwork for DE:625-20, 500 × 500 mm. The official catalogue names the right-pointing direction; historical Aufstellung links means left-side placement. Existing arrow:red covers a broader mixed family and must not be treated as proof of this exact subtype. Not an additional classifier output."
     }
   ],
   "provenance": {

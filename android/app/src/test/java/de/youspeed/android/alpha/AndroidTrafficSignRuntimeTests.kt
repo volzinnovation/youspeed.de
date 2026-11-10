@@ -4,6 +4,7 @@ import java.io.File
 import java.security.MessageDigest
 import java.util.zip.ZipFile
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
@@ -95,7 +96,7 @@ class AndroidTrafficSignRuntimeTests {
     fun nationalCatalogsUseTheirOwnClassifierVocabulary() {
         val sharedRoot = listOf(File("../../shared"), File("../shared"), File("shared"))
             .first(File::isDirectory)
-        mapOf("DE" to 134, "FR" to 256, "NL" to 160, "BE" to 143).forEach { (country, expectedClassCount) ->
+        mapOf("DE" to 142, "FR" to 256, "NL" to 160, "BE" to 143).forEach { (country, expectedClassCount) ->
             val file = File(sharedRoot, TrafficSignDisplayCatalog.assetPath(country))
             val catalog = TrafficSignDisplayCatalog.decode(file.readText(), expectedCountryCode = country)
             assertEquals(expectedClassCount, catalog.classLabels.size)
@@ -116,7 +117,7 @@ class AndroidTrafficSignRuntimeTests {
         assertEquals(TrafficSignArtifactFormat.TFLITE, classifier.format)
         assertEquals(listOf(1, 224, 224, 3), classifier.inputShape)
         assertEquals("classification_probabilities_v1", classifier.outputSchema)
-        assertEquals("28d2ce40455d0f9cac2f7c61a51b5a5f95f17fa57fc5706a56f64fa9f8bd7df0", classifier.sha256)
+        assertEquals("f179b03a59aff8ceb8c0127077c595d0f1629d9b30d0cf487cfa11bf24f4b15a", classifier.sha256)
         assertTrue(File(root, detector.path).isFile)
         assertTrue(File(root, classifier.path).isFile)
         assertEquals(detector.sha256, sha256(File(root, detector.path)))
@@ -185,7 +186,7 @@ class AndroidTrafficSignRuntimeTests {
     }
 
     @Test
-    fun classifierIndicesMatchAllPinnedModelClassesWithoutInventingCityEntry() {
+    fun classifierIndicesPreserveBaselineAndMatchAllExpandedModelClasses() {
         val catalog = displayCatalog()
         assertEquals("maxspeed:30", catalog.classId(65))
         assertEquals("maxspeed:70", catalog.classId(70))
@@ -200,8 +201,19 @@ class AndroidTrafficSignRuntimeTests {
         assertEquals("plate", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["1"])
         assertEquals("face", embeddedModelNames(File(root, "yolo11n_panoramax_float16.tflite"))["2"])
         val names = embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))
-        assertEquals((0 until 134).map { names.getValue(it.toString()) }, catalog.classLabels)
-        assertTrue(catalog.classLabels.none { it.contains("310") || it.contains("city") || it.contains("town") })
+        assertEquals((0 until 142).map { names.getValue(it.toString()) }, catalog.classLabels)
+        val baselineFile = listOf(File("../../shared"), File("../shared"), File("shared"))
+            .map { File(it, "tsr/baselines/de134-expanded-reference-2026-11-09/catalog.json") }.first(File::isFile)
+        val baseline = Json.parseToJsonElement(baselineFile.readText()).jsonObject
+        assertEquals(baseline.getValue("class_labels").jsonArray.map { it.jsonPrimitive.content },
+            catalog.classLabels.take(134))
+        assertEquals(listOf("city:start", "city:end", "bus:stop", "supplementary:plate", "maxspeed:90",
+            "DE:156-10", "DE:325.1", "DE:325.2"), catalog.classLabels.drop(134))
+        val manifest = Json.parseToJsonElement(File(root, "manifest.json").readText()).jsonObject
+        val checkpoint = manifest.getValue("classifier").jsonObject.getValue("source_checkpoint").jsonObject
+            .getValue("sha256").jsonPrimitive.content
+        assertEquals(checkpoint, catalog.checkpointSha256)
+        assertTrue(checkpoint != baseline.getValue("classifier_checkpoint_sha256").jsonPrimitive.content)
         assertEquals("maxspeed:30", embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))["65"])
         assertEquals("zone:30", embeddedModelNames(File(root, "classify_de_road_signs_float16.tflite"))["129"])
     }

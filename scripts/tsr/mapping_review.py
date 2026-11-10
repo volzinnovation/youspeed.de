@@ -139,7 +139,7 @@ def reconcile_catalog(catalog: dict) -> dict:
 
 def run(write: bool) -> list[str]:
     pending: dict[Path, bytes] = {}
-    ledger = {"schema_version": 1, "reviewed_at": "2026-09-23", "scope": "All 820 ordered classifier outputs in DE/BE/FR/NL/CH; semantic and artwork contract audit, not a visual model accuracy evaluation.", "countries": []}
+    ledger = {"schema_version": 1, "reviewed_at": "2026-11-10", "scope": "", "countries": []}
     for country in COUNTRIES:
         cat_path = ROOT / f"shared/tsr/prolix-{country.lower()}-class-catalog-v1.json"
         catalog = reconcile_catalog(load(cat_path))
@@ -174,6 +174,8 @@ def run(write: bool) -> list[str]:
             "classifier_output_count": len(labels), "speed_action_count": sum(semantic(l, country)["kind"] != "unknown" for l in labels),
             "runtime_scope": "evaluation_only_existing_rollout_gates_unchanged" if country == "CH" else "bundled_evaluation_pack",
             "entries": rows})
+    count = sum(country["classifier_output_count"] for country in ledger["countries"])
+    ledger["scope"] = f"All {count} ordered classifier outputs in DE/BE/FR/NL/CH; semantic and artwork contract audit, not a visual model accuracy evaluation."
     readiness_path = ROOT / "shared/tsr/foreign-runtime-readiness-v1.json"
     readiness = load(readiness_path)
     for item in readiness["countries"]:

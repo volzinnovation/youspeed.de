@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "reviewed_at": "2026-09-23",
-  "scope": "All 820 ordered classifier outputs in DE/BE/FR/NL/CH; semantic and artwork contract audit, not a visual model accuracy evaluation.",
+  "reviewed_at": "2026-11-10",
+  "scope": "All 828 ordered classifier outputs in DE/BE/FR/NL/CH; semantic and artwork contract audit, not a visual model accuracy evaluation.",
   "countries": [
     {
       "country": "DE",
       "official_reference": "https://www.gesetze-im-internet.de/stvo_2013/anlage_2.html",
-      "classifier_checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
-      "classifier_output_count": 134,
-      "speed_action_count": 22,
+      "classifier_checkpoint_sha256": "c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda",
+      "classifier_output_count": 142,
+      "speed_action_count": 25,
       "runtime_scope": "bundled_evaluation_pack",
       "entries": [
         {
@@ -19,7 +19,7 @@
           "sign_code": null,
           "presentation": "unavailable",
           "image_path": null,
-          "limitation": "No reviewed unambiguous German sign-code mapping for this classifier label."
+          "limitation": "Train-only historical HF audit on 2026-11-09 confirms single and repeated red curve chevrons pointing both left and right, together with adjacent striped guide-board forms. This broad visual family covers DE:625, but does not determine exact direction, dimensions or subtype. No directional pictogram is inferred from this classifier output."
         },
         {
           "class_id": "arrow_left_down",
@@ -209,7 +209,7 @@
           "sign_code": "DE:460",
           "presentation": "unavailable",
           "image_path": null,
-          "limitation": "Deployed map gives DE:460 (numbered motorway detour), which does not establish an exit pictogram; unresolved mapping."
+          "limitation": "Original HF training crops reviewed on 2026-11-09 show the numbered U diversion-route family, including DE:460-20. The class does not establish arrow direction or route number; no exact subtype pictogram is inferred. Exact inventory codes retain their own artwork."
         },
         {
           "class_id": "give_way",
@@ -569,7 +569,7 @@
           "sign_code": "DE:223",
           "presentation": "unavailable",
           "image_path": null,
-          "limitation": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+          "limitation": "Original HF training crops reviewed on 2026-11-09 include lane diagrams and blue hard-shoulder-use signs, including the DE:223.1 family. The class does not determine exact layout, direction or shoulder permission; no representative subtype is substituted. Exact inventory codes retain their own artwork."
         },
         {
           "class_id": "maxaxleweight",
@@ -1380,6 +1380,88 @@
           "sign_code": "DE:242.1",
           "presentation": "national_pictogram",
           "image_path": "tsr/sign-pictograms/png/de-242.1.png",
+          "limitation": null
+        },
+        {
+          "class_id": "city:start",
+          "semantic": {
+            "kind": "city_entry"
+          },
+          "sign_code": "DE:310",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-310.png",
+          "limitation": null
+        },
+        {
+          "class_id": "city:end",
+          "semantic": {
+            "kind": "city_exit"
+          },
+          "sign_code": "DE:311",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-311.png",
+          "limitation": null
+        },
+        {
+          "class_id": "bus:stop",
+          "semantic": {
+            "kind": "unknown"
+          },
+          "sign_code": "DE:224",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-224.png",
+          "limitation": null
+        },
+        {
+          "class_id": "supplementary:plate",
+          "semantic": {
+            "kind": "unknown"
+          },
+          "sign_code": null,
+          "presentation": "unavailable",
+          "image_path": null,
+          "limitation": "Bundled DE142 classifier output; raw score is uncalibrated and fresh field F1 awaits review. Generic plate content remains unresolved until OCR or review; no unique official family pictogram."
+        },
+        {
+          "class_id": "maxspeed:90",
+          "semantic": {
+            "kind": "maximum_speed",
+            "value": 90,
+            "unit": "km/h"
+          },
+          "sign_code": "DE:274-90",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-274-90.png",
+          "limitation": null
+        },
+        {
+          "class_id": "DE:156-10",
+          "semantic": {
+            "kind": "unknown"
+          },
+          "sign_code": "DE:156-10",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-156-10.png",
+          "limitation": null
+        },
+        {
+          "class_id": "DE:325.1",
+          "semantic": {
+            "kind": "unknown"
+          },
+          "sign_code": "DE:325.1",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-325.1.png",
+          "limitation": null
+        },
+        {
+          "class_id": "DE:325.2",
+          "semantic": {
+            "kind": "unknown"
+          },
+          "sign_code": "DE:325.2",
+          "presentation": "national_pictogram",
+          "image_path": "tsr/sign-pictograms/png/de-325.2.png",
           "limitation": null
         }
       ]

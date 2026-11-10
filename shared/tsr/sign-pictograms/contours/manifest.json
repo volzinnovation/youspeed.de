@@ -246,6 +246,12 @@
       "contour_sha256": "54db091cc4f02864802ef4da3fe478bc9735e7f8b6f4f8af21033e101eaaafd8"
     },
     {
+      "source_path": "png/de-224.png",
+      "source_sha256": "b5de9aedfcccb1a6e72a8e2ef767a97ad4fc29cb408b8a8acaa185c5eb789762",
+      "contour_path": "contours/de-224.png",
+      "contour_sha256": "518bb39c9e6b04d8a5c67e19a9149c777644c16f5e8a8719cf0a63b81cc85b59"
+    },
+    {
       "source_path": "png/de-237.png",
       "source_sha256": "caba5d4183dfc08e4195a1d5d1672a704a8412d43afac0b831cc7959cfbe42f2",
       "contour_path": "contours/de-237.png",
@@ -435,6 +441,12 @@
       "source_path": "png/de-274-80.png",
       "source_sha256": "0bf6d6d8f0e50b633464c84b434cb9427184cc739ed2de39a389b4043b94404b",
       "contour_path": "contours/de-274-80.png",
+      "contour_sha256": "c5661af209850ba5b490a4ebcc616c1d85a17494dc9c2877b7c85e40a8f9a9f2"
+    },
+    {
+      "source_path": "png/de-274-90.png",
+      "source_sha256": "4fa69643d30b743792e9f2fc142a17ec4014c02f6decb6b9943025e3f7d1a35a",
+      "contour_path": "contours/de-274-90.png",
       "contour_sha256": "c5661af209850ba5b490a4ebcc616c1d85a17494dc9c2877b7c85e40a8f9a9f2"
     },
     {
@@ -706,6 +718,12 @@
       "source_sha256": "942189aa14207458cb731d0fc1ed4d00efe60315ff0888ee49b8afe934e11cc2",
       "contour_path": "contours/de-460-20.png",
       "contour_sha256": "3b77bbbfbfa2441ce1b7210f4bc4f7dda51b9753463dd9aed7d91811797f9b5f"
+    },
+    {
+      "source_path": "png/de-625-20.png",
+      "source_sha256": "5793b0c8f174d0822f7a7bcc6055305d06f856f56a705fba96e61cc5b2650e4f",
+      "contour_path": "contours/de-625-20.png",
+      "contour_sha256": "f73426f352d0091c08c740f989cfa77612fd8bbf2ca7d371feaa79bfa8a7a494"
     }
   ]
 }

@@ -1,0 +1,2150 @@
+{
+  "run": "training-v3",
+  "prepared_manifest_sha256": "565dc7c5a0109309a205d60ff9d886e3f2d7c17f7678cba6cb594b719cecc41b",
+  "configuration_sha256": "1427ecced07ad3ce5f3c9d4b944c471bcf60aa1b2848d78d67b102c42e089add",
+  "total_unique_training_crops": 13731,
+  "total_scheduled_exposures_per_epoch": 14477,
+  "classes_by_descending_unique_training_count": [
+    {
+      "class_index": 11,
+      "class_id": "bad",
+      "unique_training_crops": 633,
+      "real_training_crops": 633,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 628,
+      "development_crops": 88,
+      "report_crops": 59,
+      "scheduled_exposures_per_epoch": 633,
+      "training_label_origins": {
+        "historical_dataset_label": 633
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 15,
+      "class_id": "bad:windows",
+      "unique_training_crops": 216,
+      "real_training_crops": 216,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 210,
+      "development_crops": 21,
+      "report_crops": 16,
+      "scheduled_exposures_per_epoch": 216,
+      "training_label_origins": {
+        "historical_dataset_label": 216
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 50,
+      "class_id": "hazard:wild_animals",
+      "unique_training_crops": 208,
+      "real_training_crops": 208,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 177,
+      "development_crops": 23,
+      "report_crops": 23,
+      "scheduled_exposures_per_epoch": 208,
+      "training_label_origins": {
+        "historical_dataset_label": 208
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 32,
+      "class_id": "hazard:intersection",
+      "unique_training_crops": 205,
+      "real_training_crops": 205,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 198,
+      "development_crops": 23,
+      "report_crops": 20,
+      "scheduled_exposures_per_epoch": 205,
+      "training_label_origins": {
+        "historical_dataset_label": 205
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 116,
+      "class_id": "pedestrian_bicycle:start",
+      "unique_training_crops": 204,
+      "real_training_crops": 204,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 195,
+      "development_crops": 24,
+      "report_crops": 27,
+      "scheduled_exposures_per_epoch": 204,
+      "training_label_origins": {
+        "historical_dataset_label": 204
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 4,
+      "class_id": "arrow_through",
+      "unique_training_crops": 195,
+      "real_training_crops": 195,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 191,
+      "development_crops": 26,
+      "report_crops": 24,
+      "scheduled_exposures_per_epoch": 195,
+      "training_label_origins": {
+        "historical_dataset_label": 195
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 40,
+      "class_id": "hazard:pedestrian_crossing",
+      "unique_training_crops": 189,
+      "real_training_crops": 189,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 164,
+      "development_crops": 26,
+      "report_crops": 10,
+      "scheduled_exposures_per_epoch": 189,
+      "training_label_origins": {
+        "historical_dataset_label": 189
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 99,
+      "class_id": "no_stop",
+      "unique_training_crops": 183,
+      "real_training_crops": 183,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 161,
+      "development_crops": 16,
+      "report_crops": 26,
+      "scheduled_exposures_per_epoch": 183,
+      "training_label_origins": {
+        "historical_dataset_label": 183
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 65,
+      "class_id": "maxspeed:30",
+      "unique_training_crops": 181,
+      "real_training_crops": 181,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 176,
+      "development_crops": 16,
+      "report_crops": 17,
+      "scheduled_exposures_per_epoch": 181,
+      "training_label_origins": {
+        "historical_dataset_label": 181
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 57,
+      "class_id": "maxheight",
+      "unique_training_crops": 180,
+      "real_training_crops": 180,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 160,
+      "development_crops": 21,
+      "report_crops": 17,
+      "scheduled_exposures_per_epoch": 180,
+      "training_label_origins": {
+        "historical_dataset_label": 180
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 19,
+      "class_id": "exit",
+      "unique_training_crops": 176,
+      "real_training_crops": 176,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 160,
+      "development_crops": 18,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 176,
+      "training_label_origins": {
+        "historical_dataset_label": 176
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 122,
+      "class_id": "roundabout",
+      "unique_training_crops": 176,
+      "real_training_crops": 176,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 163,
+      "development_crops": 11,
+      "report_crops": 12,
+      "scheduled_exposures_per_epoch": 176,
+      "training_label_origins": {
+        "historical_dataset_label": 176
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 14,
+      "class_id": "bad:round",
+      "unique_training_crops": 174,
+      "real_training_crops": 174,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 171,
+      "development_crops": 18,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 174,
+      "training_label_origins": {
+        "historical_dataset_label": 174
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 44,
+      "class_id": "hazard:school",
+      "unique_training_crops": 171,
+      "real_training_crops": 171,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 159,
+      "development_crops": 20,
+      "report_crops": 23,
+      "scheduled_exposures_per_epoch": 171,
+      "training_label_origins": {
+        "historical_dataset_label": 171
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 20,
+      "class_id": "give_way",
+      "unique_training_crops": 170,
+      "real_training_crops": 170,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 138,
+      "development_crops": 17,
+      "report_crops": 12,
+      "scheduled_exposures_per_epoch": 170,
+      "training_label_origins": {
+        "historical_dataset_label": 170
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 0,
+      "class_id": "arrow:red",
+      "unique_training_crops": 167,
+      "real_training_crops": 167,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 129,
+      "development_crops": 14,
+      "report_crops": 16,
+      "scheduled_exposures_per_epoch": 167,
+      "training_label_origins": {
+        "historical_dataset_label": 167
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 9,
+      "class_id": "arrow_turn_right_through",
+      "unique_training_crops": 167,
+      "real_training_crops": 167,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 163,
+      "development_crops": 18,
+      "report_crops": 21,
+      "scheduled_exposures_per_epoch": 167,
+      "training_label_origins": {
+        "historical_dataset_label": 167
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 42,
+      "class_id": "hazard:road_works",
+      "unique_training_crops": 166,
+      "real_training_crops": 166,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 156,
+      "development_crops": 16,
+      "report_crops": 12,
+      "scheduled_exposures_per_epoch": 166,
+      "training_label_origins": {
+        "historical_dataset_label": 166
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 70,
+      "class_id": "maxspeed:70",
+      "unique_training_crops": 163,
+      "real_training_crops": 163,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 139,
+      "development_crops": 17,
+      "report_crops": 22,
+      "scheduled_exposures_per_epoch": 163,
+      "training_label_origins": {
+        "historical_dataset_label": 163
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 61,
+      "class_id": "maxspeed:120",
+      "unique_training_crops": 161,
+      "real_training_crops": 161,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 101,
+      "development_crops": 18,
+      "report_crops": 10,
+      "scheduled_exposures_per_epoch": 161,
+      "training_label_origins": {
+        "historical_dataset_label": 158,
+        "source_annotation": 3
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 97,
+      "class_id": "no_parking",
+      "unique_training_crops": 161,
+      "real_training_crops": 161,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 154,
+      "development_crops": 18,
+      "report_crops": 18,
+      "scheduled_exposures_per_epoch": 161,
+      "training_label_origins": {
+        "historical_dataset_label": 161
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 115,
+      "class_id": "pedestrian_bicycle:designated",
+      "unique_training_crops": 161,
+      "real_training_crops": 161,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 154,
+      "development_crops": 11,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 161,
+      "training_label_origins": {
+        "historical_dataset_label": 161
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 3,
+      "class_id": "arrow_right_down",
+      "unique_training_crops": 159,
+      "real_training_crops": 159,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 144,
+      "development_crops": 10,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 159,
+      "training_label_origins": {
+        "historical_dataset_label": 159
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 8,
+      "class_id": "arrow_turn_right",
+      "unique_training_crops": 159,
+      "real_training_crops": 159,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 151,
+      "development_crops": 21,
+      "report_crops": 22,
+      "scheduled_exposures_per_epoch": 159,
+      "training_label_origins": {
+        "historical_dataset_label": 159
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 21,
+      "class_id": "hazard",
+      "unique_training_crops": 158,
+      "real_training_crops": 158,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 139,
+      "development_crops": 12,
+      "report_crops": 27,
+      "scheduled_exposures_per_epoch": 158,
+      "training_label_origins": {
+        "historical_dataset_label": 158
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 114,
+      "class_id": "pedestrian:start",
+      "unique_training_crops": 158,
+      "real_training_crops": 158,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 151,
+      "development_crops": 16,
+      "report_crops": 26,
+      "scheduled_exposures_per_epoch": 158,
+      "training_label_origins": {
+        "historical_dataset_label": 158
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 24,
+      "class_id": "hazard:bicycle",
+      "unique_training_crops": 157,
+      "real_training_crops": 157,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 153,
+      "development_crops": 21,
+      "report_crops": 22,
+      "scheduled_exposures_per_epoch": 157,
+      "training_label_origins": {
+        "historical_dataset_label": 157
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 72,
+      "class_id": "maxspeed:end",
+      "unique_training_crops": 157,
+      "real_training_crops": 157,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 146,
+      "development_crops": 16,
+      "report_crops": 12,
+      "scheduled_exposures_per_epoch": 157,
+      "training_label_origins": {
+        "historical_dataset_label": 155,
+        "source_annotation": 2
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 85,
+      "class_id": "no_car_motorcycle",
+      "unique_training_crops": 155,
+      "real_training_crops": 155,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 149,
+      "development_crops": 6,
+      "report_crops": 19,
+      "scheduled_exposures_per_epoch": 155,
+      "training_label_origins": {
+        "historical_dataset_label": 155
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 13,
+      "class_id": "bad:buildings",
+      "unique_training_crops": 154,
+      "real_training_crops": 154,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 153,
+      "development_crops": 12,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 154,
+      "training_label_origins": {
+        "historical_dataset_label": 154
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 26,
+      "class_id": "hazard:bumps",
+      "unique_training_crops": 153,
+      "real_training_crops": 153,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 140,
+      "development_crops": 16,
+      "report_crops": 22,
+      "scheduled_exposures_per_epoch": 153,
+      "training_label_origins": {
+        "historical_dataset_label": 153
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 94,
+      "class_id": "no_overtaking",
+      "unique_training_crops": 152,
+      "real_training_crops": 152,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 121,
+      "development_crops": 15,
+      "report_crops": 20,
+      "scheduled_exposures_per_epoch": 152,
+      "training_label_origins": {
+        "historical_dataset_label": 152
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 69,
+      "class_id": "maxspeed:60",
+      "unique_training_crops": 150,
+      "real_training_crops": 150,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 124,
+      "development_crops": 24,
+      "report_crops": 18,
+      "scheduled_exposures_per_epoch": 150,
+      "training_label_origins": {
+        "historical_dataset_label": 150
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 68,
+      "class_id": "maxspeed:50",
+      "unique_training_crops": 149,
+      "real_training_crops": 149,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 133,
+      "development_crops": 23,
+      "report_crops": 11,
+      "scheduled_exposures_per_epoch": 149,
+      "training_label_origins": {
+        "historical_dataset_label": 149
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 71,
+      "class_id": "maxspeed:80",
+      "unique_training_crops": 148,
+      "real_training_crops": 148,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 112,
+      "development_crops": 19,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 148,
+      "training_label_origins": {
+        "historical_dataset_label": 148
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 101,
+      "class_id": "no_way",
+      "unique_training_crops": 148,
+      "real_training_crops": 148,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 139,
+      "development_crops": 19,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 148,
+      "training_label_origins": {
+        "historical_dataset_label": 148
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 48,
+      "class_id": "hazard:train",
+      "unique_training_crops": 146,
+      "real_training_crops": 146,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 115,
+      "development_crops": 13,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 146,
+      "training_label_origins": {
+        "historical_dataset_label": 146
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 45,
+      "class_id": "hazard:slippery",
+      "unique_training_crops": 145,
+      "real_training_crops": 145,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 129,
+      "development_crops": 12,
+      "report_crops": 17,
+      "scheduled_exposures_per_epoch": 145,
+      "training_label_origins": {
+        "historical_dataset_label": 145
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 130,
+      "class_id": "zone:30:end",
+      "unique_training_crops": 145,
+      "real_training_crops": 145,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 143,
+      "development_crops": 12,
+      "report_crops": 19,
+      "scheduled_exposures_per_epoch": 145,
+      "training_label_origins": {
+        "historical_dataset_label": 145
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 117,
+      "class_id": "pedestrian_crossing",
+      "unique_training_crops": 144,
+      "real_training_crops": 144,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 104,
+      "development_crops": 22,
+      "report_crops": 19,
+      "scheduled_exposures_per_epoch": 144,
+      "training_label_origins": {
+        "historical_dataset_label": 144
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 25,
+      "class_id": "hazard:bothways",
+      "unique_training_crops": 143,
+      "real_training_crops": 143,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 128,
+      "development_crops": 10,
+      "report_crops": 16,
+      "scheduled_exposures_per_epoch": 143,
+      "training_label_origins": {
+        "historical_dataset_label": 143
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 5,
+      "class_id": "arrow_turn_left",
+      "unique_training_crops": 140,
+      "real_training_crops": 140,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 134,
+      "development_crops": 17,
+      "report_crops": 16,
+      "scheduled_exposures_per_epoch": 140,
+      "training_label_origins": {
+        "historical_dataset_label": 140
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 90,
+      "class_id": "no_exit:car",
+      "unique_training_crops": 140,
+      "real_training_crops": 140,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 130,
+      "development_crops": 9,
+      "report_crops": 13,
+      "scheduled_exposures_per_epoch": 140,
+      "training_label_origins": {
+        "historical_dataset_label": 140
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 81,
+      "class_id": "no_bicycle",
+      "unique_training_crops": 139,
+      "real_training_crops": 139,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 138,
+      "development_crops": 18,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 139,
+      "training_label_origins": {
+        "historical_dataset_label": 139
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 91,
+      "class_id": "no_hgv",
+      "unique_training_crops": 139,
+      "real_training_crops": 139,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 135,
+      "development_crops": 24,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 139,
+      "training_label_origins": {
+        "historical_dataset_label": 139
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 96,
+      "class_id": "no_overtaking:hgv",
+      "unique_training_crops": 138,
+      "real_training_crops": 138,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 95,
+      "development_crops": 11,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 138,
+      "training_label_origins": {
+        "historical_dataset_label": 138
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 113,
+      "class_id": "parking:sidewalk",
+      "unique_training_crops": 138,
+      "real_training_crops": 138,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 133,
+      "development_crops": 17,
+      "report_crops": 30,
+      "scheduled_exposures_per_epoch": 138,
+      "training_label_origins": {
+        "historical_dataset_label": 138
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 124,
+      "class_id": "traffic_signal",
+      "unique_training_crops": 138,
+      "real_training_crops": 138,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 119,
+      "development_crops": 17,
+      "report_crops": 20,
+      "scheduled_exposures_per_epoch": 138,
+      "training_label_origins": {
+        "historical_dataset_label": 138
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 131,
+      "class_id": "zone:end",
+      "unique_training_crops": 138,
+      "real_training_crops": 138,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 130,
+      "development_crops": 20,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 138,
+      "training_label_origins": {
+        "historical_dataset_label": 138
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 89,
+      "class_id": "no_exit",
+      "unique_training_crops": 137,
+      "real_training_crops": 137,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 131,
+      "development_crops": 19,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 137,
+      "training_label_origins": {
+        "historical_dataset_label": 137
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 129,
+      "class_id": "zone:30",
+      "unique_training_crops": 137,
+      "real_training_crops": 137,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 124,
+      "development_crops": 17,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 137,
+      "training_label_origins": {
+        "historical_dataset_label": 137
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 60,
+      "class_id": "maxspeed:100",
+      "unique_training_crops": 136,
+      "real_training_crops": 136,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 88,
+      "development_crops": 19,
+      "report_crops": 17,
+      "scheduled_exposures_per_epoch": 136,
+      "training_label_origins": {
+        "historical_dataset_label": 136
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 88,
+      "class_id": "no_entry",
+      "unique_training_crops": 135,
+      "real_training_crops": 135,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 120,
+      "development_crops": 16,
+      "report_crops": 17,
+      "scheduled_exposures_per_epoch": 135,
+      "training_label_origins": {
+        "historical_dataset_label": 135
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 17,
+      "class_id": "bicycle:start",
+      "unique_training_crops": 134,
+      "real_training_crops": 134,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 133,
+      "development_crops": 20,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 134,
+      "training_label_origins": {
+        "historical_dataset_label": 134
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 77,
+      "class_id": "motorway:start",
+      "unique_training_crops": 128,
+      "real_training_crops": 128,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 117,
+      "development_crops": 13,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 128,
+      "training_label_origins": {
+        "historical_dataset_label": 128
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 123,
+      "class_id": "stop",
+      "unique_training_crops": 128,
+      "real_training_crops": 128,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 102,
+      "development_crops": 6,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 128,
+      "training_label_origins": {
+        "historical_dataset_label": 128
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 132,
+      "class_id": "zone:no_parking",
+      "unique_training_crops": 127,
+      "real_training_crops": 127,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 107,
+      "development_crops": 21,
+      "report_crops": 12,
+      "scheduled_exposures_per_epoch": 127,
+      "training_label_origins": {
+        "historical_dataset_label": 127
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 98,
+      "class_id": "no_pedestrian",
+      "unique_training_crops": 126,
+      "real_training_crops": 126,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 120,
+      "development_crops": 18,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 126,
+      "training_label_origins": {
+        "historical_dataset_label": 126
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 36,
+      "class_id": "hazard:narrow_both",
+      "unique_training_crops": 123,
+      "real_training_crops": 123,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 108,
+      "development_crops": 22,
+      "report_crops": 13,
+      "scheduled_exposures_per_epoch": 123,
+      "training_label_origins": {
+        "historical_dataset_label": 123
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 59,
+      "class_id": "maxspeed:10",
+      "unique_training_crops": 121,
+      "real_training_crops": 121,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 116,
+      "development_crops": 10,
+      "report_crops": 13,
+      "scheduled_exposures_per_epoch": 121,
+      "training_label_origins": {
+        "historical_dataset_label": 121
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 12,
+      "class_id": "bad:back",
+      "unique_training_crops": 118,
+      "real_training_crops": 118,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 116,
+      "development_crops": 14,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 118,
+      "training_label_origins": {
+        "historical_dataset_label": 118
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 121,
+      "class_id": "priority:start",
+      "unique_training_crops": 116,
+      "real_training_crops": 116,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 112,
+      "development_crops": 11,
+      "report_crops": 23,
+      "scheduled_exposures_per_epoch": 116,
+      "training_label_origins": {
+        "historical_dataset_label": 116
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 38,
+      "class_id": "hazard:narrow_right",
+      "unique_training_crops": 109,
+      "real_training_crops": 109,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 108,
+      "development_crops": 8,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 109,
+      "training_label_origins": {
+        "historical_dataset_label": 109
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 47,
+      "class_id": "hazard:traffic_signal",
+      "unique_training_crops": 109,
+      "real_training_crops": 109,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 94,
+      "development_crops": 13,
+      "report_crops": 11,
+      "scheduled_exposures_per_epoch": 109,
+      "training_label_origins": {
+        "historical_dataset_label": 109
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 7,
+      "class_id": "arrow_turn_left_through",
+      "unique_training_crops": 108,
+      "real_training_crops": 108,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 103,
+      "development_crops": 10,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 108,
+      "training_label_origins": {
+        "historical_dataset_label": 108
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 73,
+      "class_id": "maxweight",
+      "unique_training_crops": 101,
+      "real_training_crops": 101,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 98,
+      "development_crops": 9,
+      "report_crops": 13,
+      "scheduled_exposures_per_epoch": 101,
+      "training_label_origins": {
+        "historical_dataset_label": 101
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 52,
+      "class_id": "hazard:zigzag",
+      "unique_training_crops": 100,
+      "real_training_crops": 100,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 94,
+      "development_crops": 9,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 100,
+      "training_label_origins": {
+        "historical_dataset_label": 100
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 27,
+      "class_id": "hazard:crossing",
+      "unique_training_crops": 99,
+      "real_training_crops": 99,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 96,
+      "development_crops": 14,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 99,
+      "training_label_origins": {
+        "historical_dataset_label": 99
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 1,
+      "class_id": "arrow_left_down",
+      "unique_training_crops": 98,
+      "real_training_crops": 98,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 96,
+      "development_crops": 7,
+      "report_crops": 15,
+      "scheduled_exposures_per_epoch": 98,
+      "training_label_origins": {
+        "historical_dataset_label": 98
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 18,
+      "class_id": "bus:start",
+      "unique_training_crops": 98,
+      "real_training_crops": 98,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 92,
+      "development_crops": 11,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 98,
+      "training_label_origins": {
+        "historical_dataset_label": 98
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 66,
+      "class_id": "maxspeed:40",
+      "unique_training_crops": 98,
+      "real_training_crops": 98,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 93,
+      "development_crops": 9,
+      "report_crops": 14,
+      "scheduled_exposures_per_epoch": 98,
+      "training_label_origins": {
+        "historical_dataset_label": 98
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 108,
+      "class_id": "parking",
+      "unique_training_crops": 98,
+      "real_training_crops": 98,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 91,
+      "development_crops": 6,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 98,
+      "training_label_origins": {
+        "historical_dataset_label": 98
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 2,
+      "class_id": "arrow_right",
+      "unique_training_crops": 91,
+      "real_training_crops": 91,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 87,
+      "development_crops": 8,
+      "report_crops": 11,
+      "scheduled_exposures_per_epoch": 91,
+      "training_label_origins": {
+        "historical_dataset_label": 91
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 41,
+      "class_id": "hazard:right_turn",
+      "unique_training_crops": 91,
+      "real_training_crops": 91,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 79,
+      "development_crops": 23,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 91,
+      "training_label_origins": {
+        "historical_dataset_label": 91
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 87,
+      "class_id": "no_dangerous_liquid",
+      "unique_training_crops": 83,
+      "real_training_crops": 83,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 76,
+      "development_crops": 6,
+      "report_crops": 5,
+      "scheduled_exposures_per_epoch": 83,
+      "training_label_origins": {
+        "historical_dataset_label": 83
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 53,
+      "class_id": "hazard:zigzag:left",
+      "unique_training_crops": 78,
+      "real_training_crops": 78,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 61,
+      "development_crops": 4,
+      "report_crops": 11,
+      "scheduled_exposures_per_epoch": 78,
+      "training_label_origins": {
+        "historical_dataset_label": 78
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 109,
+      "class_id": "parking:covered",
+      "unique_training_crops": 78,
+      "real_training_crops": 78,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 77,
+      "development_crops": 13,
+      "report_crops": 17,
+      "scheduled_exposures_per_epoch": 78,
+      "training_label_origins": {
+        "historical_dataset_label": 78
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 118,
+      "class_id": "priority:backward",
+      "unique_training_crops": 78,
+      "real_training_crops": 78,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 68,
+      "development_crops": 7,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 78,
+      "training_label_origins": {
+        "historical_dataset_label": 78
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 126,
+      "class_id": "trunk:start",
+      "unique_training_crops": 75,
+      "real_training_crops": 75,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 66,
+      "development_crops": 13,
+      "report_crops": 6,
+      "scheduled_exposures_per_epoch": 75,
+      "training_label_origins": {
+        "historical_dataset_label": 75
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 111,
+      "class_id": "parking:pedestrian",
+      "unique_training_crops": 72,
+      "real_training_crops": 72,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 68,
+      "development_crops": 4,
+      "report_crops": 13,
+      "scheduled_exposures_per_epoch": 72,
+      "training_label_origins": {
+        "historical_dataset_label": 72
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 56,
+      "class_id": "maxaxleweight",
+      "unique_training_crops": 71,
+      "real_training_crops": 71,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 68,
+      "development_crops": 10,
+      "report_crops": 6,
+      "scheduled_exposures_per_epoch": 71,
+      "training_label_origins": {
+        "historical_dataset_label": 71
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 33,
+      "class_id": "hazard:left_turn",
+      "unique_training_crops": 64,
+      "real_training_crops": 64,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 59,
+      "development_crops": 7,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 64,
+      "training_label_origins": {
+        "historical_dataset_label": 64
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 134,
+      "class_id": "city:start",
+      "unique_training_crops": 62,
+      "real_training_crops": 62,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 20,
+      "development_crops": 2,
+      "report_crops": 5,
+      "scheduled_exposures_per_epoch": 62,
+      "training_label_origins": {
+        "historical_dataset_label": 26,
+        "source_annotation": 36
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 76,
+      "class_id": "motorway:end",
+      "unique_training_crops": 60,
+      "real_training_crops": 60,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 51,
+      "development_crops": 6,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 60,
+      "training_label_origins": {
+        "historical_dataset_label": 60
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 128,
+      "class_id": "zone:20",
+      "unique_training_crops": 58,
+      "real_training_crops": 58,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 53,
+      "development_crops": 8,
+      "report_crops": 11,
+      "scheduled_exposures_per_epoch": 58,
+      "training_label_origins": {
+        "historical_dataset_label": 58
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 107,
+      "class_id": "park_ride",
+      "unique_training_crops": 57,
+      "real_training_crops": 57,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 55,
+      "development_crops": 4,
+      "report_crops": 4,
+      "scheduled_exposures_per_epoch": 57,
+      "training_label_origins": {
+        "historical_dataset_label": 57
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 37,
+      "class_id": "hazard:narrow_left",
+      "unique_training_crops": 56,
+      "real_training_crops": 56,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 46,
+      "development_crops": 13,
+      "report_crops": 12,
+      "scheduled_exposures_per_epoch": 56,
+      "training_label_origins": {
+        "historical_dataset_label": 56
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 100,
+      "class_id": "no_u_turn",
+      "unique_training_crops": 56,
+      "real_training_crops": 56,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 55,
+      "development_crops": 6,
+      "report_crops": 6,
+      "scheduled_exposures_per_epoch": 56,
+      "training_label_origins": {
+        "historical_dataset_label": 56
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 6,
+      "class_id": "arrow_turn_left_right",
+      "unique_training_crops": 55,
+      "real_training_crops": 55,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 52,
+      "development_crops": 9,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 55,
+      "training_label_origins": {
+        "historical_dataset_label": 55
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 95,
+      "class_id": "no_overtaking:end",
+      "unique_training_crops": 55,
+      "real_training_crops": 55,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 47,
+      "development_crops": 6,
+      "report_crops": 4,
+      "scheduled_exposures_per_epoch": 55,
+      "training_label_origins": {
+        "historical_dataset_label": 55
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 106,
+      "class_id": "other:multi",
+      "unique_training_crops": 55,
+      "real_training_crops": 55,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 51,
+      "development_crops": 7,
+      "report_crops": 7,
+      "scheduled_exposures_per_epoch": 55,
+      "training_label_origins": {
+        "historical_dataset_label": 55
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 46,
+      "class_id": "hazard:traffic_jam",
+      "unique_training_crops": 53,
+      "real_training_crops": 53,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 40,
+      "development_crops": 7,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 53,
+      "training_label_origins": {
+        "historical_dataset_label": 53
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 43,
+      "class_id": "hazard:rocks",
+      "unique_training_crops": 52,
+      "real_training_crops": 52,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 47,
+      "development_crops": 11,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 52,
+      "training_label_origins": {
+        "historical_dataset_label": 52
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 74,
+      "class_id": "maxwidth",
+      "unique_training_crops": 52,
+      "real_training_crops": 52,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 49,
+      "development_crops": 6,
+      "report_crops": 4,
+      "scheduled_exposures_per_epoch": 52,
+      "training_label_origins": {
+        "historical_dataset_label": 52
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 39,
+      "class_id": "hazard:other",
+      "unique_training_crops": 49,
+      "real_training_crops": 49,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 44,
+      "development_crops": 5,
+      "report_crops": 10,
+      "scheduled_exposures_per_epoch": 49,
+      "training_label_origins": {
+        "historical_dataset_label": 49
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 63,
+      "class_id": "maxspeed:20",
+      "unique_training_crops": 48,
+      "real_training_crops": 48,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 45,
+      "development_crops": 6,
+      "report_crops": 6,
+      "scheduled_exposures_per_epoch": 48,
+      "training_label_origins": {
+        "historical_dataset_label": 48
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 78,
+      "class_id": "no:end",
+      "unique_training_crops": 48,
+      "real_training_crops": 48,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 43,
+      "development_crops": 3,
+      "report_crops": 6,
+      "scheduled_exposures_per_epoch": 48,
+      "training_label_origins": {
+        "historical_dataset_label": 47,
+        "source_annotation": 1
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 83,
+      "class_id": "no_car",
+      "unique_training_crops": 48,
+      "real_training_crops": 48,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 41,
+      "development_crops": 6,
+      "report_crops": 11,
+      "scheduled_exposures_per_epoch": 48,
+      "training_label_origins": {
+        "historical_dataset_label": 48
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 103,
+      "class_id": "other",
+      "unique_training_crops": 47,
+      "real_training_crops": 47,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 46,
+      "development_crops": 17,
+      "report_crops": 27,
+      "scheduled_exposures_per_epoch": 47,
+      "training_label_origins": {
+        "historical_dataset_label": 47
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 64,
+      "class_id": "maxspeed:25",
+      "unique_training_crops": 45,
+      "real_training_crops": 45,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 43,
+      "development_crops": 4,
+      "report_crops": 7,
+      "scheduled_exposures_per_epoch": 45,
+      "training_label_origins": {
+        "historical_dataset_label": 45
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 79,
+      "class_id": "no:other",
+      "unique_training_crops": 45,
+      "real_training_crops": 45,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 40,
+      "development_crops": 8,
+      "report_crops": 7,
+      "scheduled_exposures_per_epoch": 45,
+      "training_label_origins": {
+        "historical_dataset_label": 45
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 112,
+      "class_id": "parking:perpendicular",
+      "unique_training_crops": 43,
+      "real_training_crops": 43,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 41,
+      "development_crops": 5,
+      "report_crops": 4,
+      "scheduled_exposures_per_epoch": 43,
+      "training_label_origins": {
+        "historical_dataset_label": 43
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 133,
+      "class_id": "zone:pedestrian",
+      "unique_training_crops": 43,
+      "real_training_crops": 43,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 40,
+      "development_crops": 3,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 43,
+      "training_label_origins": {
+        "historical_dataset_label": 43
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 102,
+      "class_id": "oneway",
+      "unique_training_crops": 42,
+      "real_training_crops": 42,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 38,
+      "development_crops": 11,
+      "report_crops": 7,
+      "scheduled_exposures_per_epoch": 42,
+      "training_label_origins": {
+        "historical_dataset_label": 42
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 127,
+      "class_id": "tunnel:start",
+      "unique_training_crops": 41,
+      "real_training_crops": 41,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 33,
+      "development_crops": 7,
+      "report_crops": 3,
+      "scheduled_exposures_per_epoch": 41,
+      "training_label_origins": {
+        "historical_dataset_label": 41
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 80,
+      "class_id": "no:other:dog",
+      "unique_training_crops": 40,
+      "real_training_crops": 40,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 38,
+      "development_crops": 5,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 40,
+      "training_label_origins": {
+        "historical_dataset_label": 40
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 34,
+      "class_id": "hazard:level_crossing",
+      "unique_training_crops": 39,
+      "real_training_crops": 39,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 32,
+      "development_crops": 4,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 39,
+      "training_label_origins": {
+        "historical_dataset_label": 39
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 86,
+      "class_id": "no_dangerous",
+      "unique_training_crops": 39,
+      "real_training_crops": 39,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 32,
+      "development_crops": 4,
+      "report_crops": 5,
+      "scheduled_exposures_per_epoch": 39,
+      "training_label_origins": {
+        "historical_dataset_label": 39
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 140,
+      "class_id": "DE:325.1",
+      "unique_training_crops": 39,
+      "real_training_crops": 38,
+      "official_artwork_training_crops": 1,
+      "unique_training_groups": 36,
+      "development_crops": 0,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 156,
+      "training_label_origins": {
+        "assistant_visual_silver": 38,
+        "official_pictogram": 1
+      },
+      "appended_class": true
+    },
+    {
+      "class_index": 125,
+      "class_id": "trunk:end",
+      "unique_training_crops": 37,
+      "real_training_crops": 37,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 31,
+      "development_crops": 1,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 37,
+      "training_label_origins": {
+        "historical_dataset_label": 37
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 58,
+      "class_id": "maxlength",
+      "unique_training_crops": 36,
+      "real_training_crops": 36,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 31,
+      "development_crops": 7,
+      "report_crops": 5,
+      "scheduled_exposures_per_epoch": 36,
+      "training_label_origins": {
+        "historical_dataset_label": 36
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 75,
+      "class_id": "min_distance",
+      "unique_training_crops": 34,
+      "real_training_crops": 34,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 23,
+      "development_crops": 6,
+      "report_crops": 4,
+      "scheduled_exposures_per_epoch": 34,
+      "training_label_origins": {
+        "historical_dataset_label": 34
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 30,
+      "class_id": "hazard:ice",
+      "unique_training_crops": 30,
+      "real_training_crops": 30,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 23,
+      "development_crops": 7,
+      "report_crops": 5,
+      "scheduled_exposures_per_epoch": 30,
+      "training_label_origins": {
+        "historical_dataset_label": 30
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 120,
+      "class_id": "priority:forward",
+      "unique_training_crops": 29,
+      "real_training_crops": 29,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 28,
+      "development_crops": 4,
+      "report_crops": 8,
+      "scheduled_exposures_per_epoch": 29,
+      "training_label_origins": {
+        "historical_dataset_label": 29
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 135,
+      "class_id": "city:end",
+      "unique_training_crops": 29,
+      "real_training_crops": 29,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 15,
+      "development_crops": 2,
+      "report_crops": 3,
+      "scheduled_exposures_per_epoch": 29,
+      "training_label_origins": {
+        "historical_dataset_label": 8,
+        "source_annotation": 21
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 31,
+      "class_id": "hazard:incline",
+      "unique_training_crops": 28,
+      "real_training_crops": 28,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 25,
+      "development_crops": 1,
+      "report_crops": 3,
+      "scheduled_exposures_per_epoch": 28,
+      "training_label_origins": {
+        "historical_dataset_label": 28
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 55,
+      "class_id": "lanes",
+      "unique_training_crops": 26,
+      "real_training_crops": 26,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 24,
+      "development_crops": 4,
+      "report_crops": 9,
+      "scheduled_exposures_per_epoch": 26,
+      "training_label_origins": {
+        "historical_dataset_label": 26
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 62,
+      "class_id": "maxspeed:130",
+      "unique_training_crops": 25,
+      "real_training_crops": 25,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 14,
+      "development_crops": 2,
+      "report_crops": 5,
+      "scheduled_exposures_per_epoch": 25,
+      "training_label_origins": {
+        "historical_dataset_label": 25
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 141,
+      "class_id": "DE:325.2",
+      "unique_training_crops": 25,
+      "real_training_crops": 24,
+      "official_artwork_training_crops": 1,
+      "unique_training_groups": 23,
+      "development_crops": 0,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 150,
+      "training_label_origins": {
+        "assistant_visual_silver": 24,
+        "official_pictogram": 1
+      },
+      "appended_class": true
+    },
+    {
+      "class_index": 110,
+      "class_id": "parking:disabled",
+      "unique_training_crops": 22,
+      "real_training_crops": 22,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 22,
+      "development_crops": 1,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 22,
+      "training_label_origins": {
+        "historical_dataset_label": 22
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 67,
+      "class_id": "maxspeed:5",
+      "unique_training_crops": 20,
+      "real_training_crops": 20,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 20,
+      "development_crops": 4,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 20,
+      "training_label_origins": {
+        "historical_dataset_label": 20
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 28,
+      "class_id": "hazard:gravel",
+      "unique_training_crops": 19,
+      "real_training_crops": 19,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 17,
+      "development_crops": 1,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 19,
+      "training_label_origins": {
+        "historical_dataset_label": 19
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 84,
+      "class_id": "no_car_bicycle",
+      "unique_training_crops": 19,
+      "real_training_crops": 19,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 17,
+      "development_crops": 5,
+      "report_crops": 4,
+      "scheduled_exposures_per_epoch": 19,
+      "training_label_origins": {
+        "historical_dataset_label": 19
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 16,
+      "class_id": "bicycle:priority",
+      "unique_training_crops": 17,
+      "real_training_crops": 17,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 16,
+      "development_crops": 3,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 17,
+      "training_label_origins": {
+        "historical_dataset_label": 17
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 51,
+      "class_id": "hazard:wind",
+      "unique_training_crops": 17,
+      "real_training_crops": 17,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 14,
+      "development_crops": 3,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 17,
+      "training_label_origins": {
+        "historical_dataset_label": 17
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 49,
+      "class_id": "hazard:train2",
+      "unique_training_crops": 15,
+      "real_training_crops": 15,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 15,
+      "development_crops": 6,
+      "report_crops": 7,
+      "scheduled_exposures_per_epoch": 15,
+      "training_label_origins": {
+        "historical_dataset_label": 15
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 104,
+      "class_id": "other:charging",
+      "unique_training_crops": 14,
+      "real_training_crops": 14,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 14,
+      "development_crops": 3,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 14,
+      "training_label_origins": {
+        "historical_dataset_label": 14
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 22,
+      "class_id": "hazard:airport",
+      "unique_training_crops": 12,
+      "real_training_crops": 12,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 11,
+      "development_crops": 0,
+      "report_crops": 3,
+      "scheduled_exposures_per_epoch": 12,
+      "training_label_origins": {
+        "historical_dataset_label": 12
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 10,
+      "class_id": "arrow_u_turn",
+      "unique_training_crops": 9,
+      "real_training_crops": 9,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 8,
+      "development_crops": 0,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 9,
+      "training_label_origins": {
+        "historical_dataset_label": 9
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 23,
+      "class_id": "hazard:animals",
+      "unique_training_crops": 9,
+      "real_training_crops": 9,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 8,
+      "development_crops": 2,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 9,
+      "training_label_origins": {
+        "historical_dataset_label": 9
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 92,
+      "class_id": "no_horse",
+      "unique_training_crops": 9,
+      "real_training_crops": 9,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 9,
+      "development_crops": 3,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 9,
+      "training_label_origins": {
+        "historical_dataset_label": 9
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 93,
+      "class_id": "no_motorcycle",
+      "unique_training_crops": 9,
+      "real_training_crops": 9,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 9,
+      "development_crops": 1,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 9,
+      "training_label_origins": {
+        "historical_dataset_label": 9
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 137,
+      "class_id": "supplementary:plate",
+      "unique_training_crops": 9,
+      "real_training_crops": 9,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 6,
+      "development_crops": 0,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 135,
+      "training_label_origins": {
+        "assistant_visual_silver": 9
+      },
+      "appended_class": true
+    },
+    {
+      "class_index": 105,
+      "class_id": "other:motorhome",
+      "unique_training_crops": 8,
+      "real_training_crops": 8,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 8,
+      "development_crops": 1,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 8,
+      "training_label_origins": {
+        "historical_dataset_label": 8
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 29,
+      "class_id": "hazard:horse",
+      "unique_training_crops": 7,
+      "real_training_crops": 7,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 7,
+      "development_crops": 0,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 7,
+      "training_label_origins": {
+        "historical_dataset_label": 7
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 136,
+      "class_id": "bus:stop",
+      "unique_training_crops": 7,
+      "real_training_crops": 6,
+      "official_artwork_training_crops": 1,
+      "unique_training_groups": 6,
+      "development_crops": 0,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 133,
+      "training_label_origins": {
+        "assistant_visual_silver": 6,
+        "official_pictogram": 1
+      },
+      "appended_class": true
+    },
+    {
+      "class_index": 82,
+      "class_id": "no_bus",
+      "unique_training_crops": 6,
+      "real_training_crops": 6,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 5,
+      "development_crops": 2,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 6,
+      "training_label_origins": {
+        "historical_dataset_label": 6
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 119,
+      "class_id": "priority:end",
+      "unique_training_crops": 5,
+      "real_training_crops": 5,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 5,
+      "development_crops": 2,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 5,
+      "training_label_origins": {
+        "historical_dataset_label": 5
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 54,
+      "class_id": "horse:start",
+      "unique_training_crops": 4,
+      "real_training_crops": 4,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 4,
+      "development_crops": 0,
+      "report_crops": 2,
+      "scheduled_exposures_per_epoch": 4,
+      "training_label_origins": {
+        "historical_dataset_label": 4
+      },
+      "appended_class": false
+    },
+    {
+      "class_index": 138,
+      "class_id": "maxspeed:90",
+      "unique_training_crops": 3,
+      "real_training_crops": 2,
+      "official_artwork_training_crops": 1,
+      "unique_training_groups": 3,
+      "development_crops": 0,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 129,
+      "training_label_origins": {
+        "assistant_visual_silver": 2,
+        "official_pictogram": 1
+      },
+      "appended_class": true
+    },
+    {
+      "class_index": 139,
+      "class_id": "DE:156-10",
+      "unique_training_crops": 2,
+      "real_training_crops": 1,
+      "official_artwork_training_crops": 1,
+      "unique_training_groups": 2,
+      "development_crops": 0,
+      "report_crops": 0,
+      "scheduled_exposures_per_epoch": 128,
+      "training_label_origins": {
+        "assistant_visual_silver": 1,
+        "official_pictogram": 1
+      },
+      "appended_class": true
+    },
+    {
+      "class_index": 35,
+      "class_id": "hazard:moving_bridge",
+      "unique_training_crops": 1,
+      "real_training_crops": 1,
+      "official_artwork_training_crops": 0,
+      "unique_training_groups": 1,
+      "development_crops": 0,
+      "report_crops": 1,
+      "scheduled_exposures_per_epoch": 1,
+      "training_label_origins": {
+        "historical_dataset_label": 1
+      },
+      "appended_class": false
+    }
+  ],
+  "scope": "Unique training counts and fixed scheduled exposures; not observation priors, heldout new-class evidence or final F1."
+}
