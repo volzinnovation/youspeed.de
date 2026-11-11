@@ -948,8 +948,7 @@ struct TrafficSignPassageFinalizer: Sendable {
         frameCoordinate: TrafficSignCoordinate? = nil,
         frameSpeedKmh: Double? = nil,
         strongPassGeometry: Bool = false,
-        calibratedActivationEligible: Bool = false,
-        negativeForQueuedTrack: Bool = true
+        calibratedActivationEligible: Bool = false
     ) -> TrafficSignPassageFinalizerUpdate {
         guard event.source == .liveFrame else { return .idle }
         // This legacy-named eligibility bit is frozen with the analyzed frame
@@ -993,12 +992,13 @@ struct TrafficSignPassageFinalizer: Sendable {
                 frameCoordinate: frameCoordinate,
                 context: event.roadContext
             )
-            if isSuppressedByRecentCommit(
+            let suppressed = isSuppressedByRecentCommit(
                 physicalTrackID: trackID,
                 action: action,
                 timestamp: event.frameTimestampUtc,
                 coordinate: candidateCoordinate
-            ), track?.action == action || track == nil {
+            )
+            if suppressed, track?.action == action || track == nil {
                 if track?.action == action {
                     track = nil
                 }
@@ -1007,214 +1007,240 @@ struct TrafficSignPassageFinalizer: Sendable {
                 }
                 return .idle
             }
-            let confidence = activationConfidence
-            if var current = track,
-               current.id == trackID,
-               current.action == action,
+            if let current = track,
+               !Self.continuesVisibleTrack(current, id: trackID, action: action, sessionGeneration: sessionGeneration,
+                                           contextGeneration: contextGeneration, driveSessionID: driveSessionID,
+                                           roadContext: event.roadContext),
+               current.armed,
                current.sessionGeneration == sessionGeneration,
                current.contextGeneration == contextGeneration,
                current.driveSessionID == driveSessionID,
                Self.isCompatibleVisibleContext(event.roadContext, with: current.lastContext) {
-                guard event.frameTimestampUtc > current.lastSeen else {
-                    return currentStateUpdate
-                }
-                current.lastSeen = event.frameTimestampUtc
-                current.lastSeenCoordinate = candidateCoordinate ?? current.lastSeenCoordinate
-                let resumedAfterLoss = current.boundaryEvent != nil
-                if let context = event.roadContext, context.isValid {
-                    if current.initialRecognitionContext == nil {
-                        current.initialRecognitionContext = context
-                        current.initialRecognitionRouteRelationMemberships = context.routeRelationMemberships
-                        current.recognitionRouteRelationMemberships = context.routeRelationMemberships
-                    } else if let previousContext = current.lastContext,
-                              previousContext.wayId != context.wayId {
-                        let currentIDs = Set(context.routeRelationMemberships.map(\.groupID))
-                        current.recognitionRouteRelationMemberships.removeAll {
-                            !currentIDs.contains($0.groupID)
-                        }
-                    }
-                    current.lastContext = context
-                }
-                current.assemblyID = candidate.assemblyId ?? current.assemblyID
-                if let assemblyID = Self.nonempty(candidate.assemblyId),
-                   !current.assemblyIDs.contains(assemblyID) {
-                    current.assemblyIDs.append(assemblyID)
-                }
-                current.currentConsecutiveFramesSeen = resumedAfterLoss
-                    ? 1
-                    : current.currentConsecutiveFramesSeen + 1
-                current.peakConsecutiveFramesSeen = max(
-                    current.peakConsecutiveFramesSeen,
-                    current.currentConsecutiveFramesSeen
-                )
-                current.boundaryEvent = nil
-                current.boundaryCoordinate = nil
-                current.boundaryHasStrongPassGeometry = false
-                current.negativeFrames = 0
-                current.lossReason = .negativeDebounce
-                current.negativeFramesRequired = 0
-                current.lossEvidence.removeAll(keepingCapacity: true)
-                current.rematchWayID = nil
-                current.coherentRematchFrames = 0
-                current.firstStableRematchContext = nil
-                current.firstStableRematchTimestamp = nil
-                current.conditionState = Self.mergedConditionState(
-                    current.conditionState,
-                    candidate.conditionState
-                )
-                current.restrictions = Self.mergedRestrictions(
-                    current.restrictions,
-                    candidate.restrictions
-                )
-                current.support = Self.accumulatedSupport(
-                    previous: current.support,
-                    next: confidence,
-                    discount: configuration.supportCorrelationDiscount
-                )
-                current.evidence.append(TrafficSignPassageFrameEvidence(
-                    frameID: Self.frameID(for: event),
-                    timestampUTC: event.frameTimestampUtc,
-                    outcome: "seen",
-                    analysisEligible: true,
-                    rawScore: candidate.rawScore,
-                    calibratedConfidence: candidate.calibratedConfidence,
-                    proposalRawScore: candidate.detectorRawScore,
-                    proposalCalibratedConfidence: candidate.detectorCalibratedConfidence,
-                    classifierRawScore: candidate.classifierRawScore,
-                    classifierCalibratedConfidence: candidate.classifierCalibratedConfidence,
-                    assemblyConfidence: candidate.assemblyConfidence,
-                    accumulatedSupport: current.support,
-                    wayID: event.roadContext?.wayId
-                ))
-                current.armed = Self.shouldArm(
-                    evidenceCount: current.evidence.count,
-                    support: current.support,
-                    eventState: event.state,
-                    structuralReset: current.action.isBoundaryReset && current.conditionState == .none && current.restrictions.isEmpty && event.roadContext?.matchedWayStable == true,
-                    configuration: configuration
-                )
-                track = current
-            } else {
-                if let current = track,
-                   current.armed,
-                   current.sessionGeneration == sessionGeneration,
-                   current.contextGeneration == contextGeneration,
-                   current.driveSessionID == event.driveSessionId,
-                   Self.isCompatibleVisibleContext(event.roadContext, with: current.lastContext) {
-                    // The classifier exposes one primary candidate per frame.
-                    // A different compatible sign therefore proves the old
-                    // sign is absent, while the new sign must simultaneously
-                    // begin/continue its own visual track. Debounce the old
-                    // passage and retain the adjacent sign for the next edge.
-                    track = queuedTrack
-                    _ = ingest(
-                        event,
-                        sessionGeneration: sessionGeneration,
-                        contextGeneration: contextGeneration,
-                        frameCoordinate: frameCoordinate,
-                        frameSpeedKmh: frameSpeedKmh,
-                        strongPassGeometry: strongPassGeometry,
-                        calibratedActivationEligible: calibratedActivationEligible,
-                        negativeForQueuedTrack: false
-                    )
-                    queuedTrack = track
-                    track = current
-                    let negativeEvent = TrafficSignRecognitionEvent(
-                        schemaVersion: event.schemaVersion,
-                        packId: event.packId,
-                        artifactSha256: event.artifactSha256,
-                        preprocessingVersion: event.preprocessingVersion,
-                        frameId: event.frameId,
-                        driveSessionId: event.driveSessionId,
-                        analysisEligible: event.analysisEligible,
-                        source: event.source,
-                        frameTimestampUtc: event.frameTimestampUtc,
-                        state: .noRecognition,
-                        candidate: nil,
-                        roadContext: event.roadContext,
-                        latencyMs: event.latencyMs,
-                        thermalState: event.thermalState
-                    )
-                    return ingest(
-                        negativeEvent,
-                        sessionGeneration: sessionGeneration,
-                        contextGeneration: contextGeneration,
-                        frameCoordinate: frameCoordinate,
-                        frameSpeedKmh: frameSpeedKmh,
-                        strongPassGeometry: strongPassGeometry,
-                        calibratedActivationEligible: calibratedActivationEligible,
-                        negativeForQueuedTrack: false
+                // Evaluate the visible sign only against the queued slot. If
+                // that slot contains a different sign, replace it in place.
+                // Never re-enter passage handling with the two tracks swapped.
+                if suppressed, queuedTrack?.action == action || queuedTrack == nil {
+                    queuedTrack = nil
+                } else {
+                    queuedTrack = updatedVisibleTrack(
+                        queuedTrack, event: event, candidate: candidate, id: trackID, action: action,
+                        coordinate: candidateCoordinate, confidence: activationConfidence,
+                        sessionGeneration: sessionGeneration, contextGeneration: contextGeneration,
+                        driveSessionID: driveSessionID
                     )
                 }
-                queuedTrack = nil
-                // A different visible physical track is contradictory, not a
-                // delayed passage edge for the old one. Replacing the pending
-                // track prevents a later empty frame from committing the old
-                // sign and never prevents the new sign from accumulating.
-                track = Track(
-                    id: trackID,
-                    action: action,
-                    firstSeen: event.frameTimestampUtc,
-                    lastSeen: event.frameTimestampUtc,
-                    lastContext: event.roadContext.flatMap { $0.isValid ? $0 : nil },
-                    lastSeenCoordinate: candidateCoordinate,
-                    initialRecognitionContext: event.roadContext.flatMap { $0.isValid ? $0 : nil },
-                    initialRecognitionRouteRelationMemberships: event.roadContext?
-                        .routeRelationMemberships ?? [],
-                    recognitionRouteRelationMemberships: event.roadContext?
-                        .routeRelationMemberships ?? [],
-                    assemblyID: candidate.assemblyId,
-                    assemblyIDs: Self.nonempty(candidate.assemblyId).map { [$0] } ?? [],
-                    packID: event.packId,
-                    artifactSHA256: event.artifactSha256,
+                let negativeEvent = TrafficSignRecognitionEvent(
+                    schemaVersion: event.schemaVersion,
+                    packId: event.packId,
+                    artifactSha256: event.artifactSha256,
                     preprocessingVersion: event.preprocessingVersion,
-                    modelComponents: event.modelComponents,
-                    conditionState: candidate.conditionState,
-                    restrictions: candidate.restrictions,
-                    evidence: [TrafficSignPassageFrameEvidence(
-                        frameID: Self.frameID(for: event),
-                        timestampUTC: event.frameTimestampUtc,
-                        outcome: "seen",
-                        analysisEligible: true,
-                        rawScore: candidate.rawScore,
-                        calibratedConfidence: candidate.calibratedConfidence,
-                        proposalRawScore: candidate.detectorRawScore,
-                        proposalCalibratedConfidence: candidate.detectorCalibratedConfidence,
-                        classifierRawScore: candidate.classifierRawScore,
-                        classifierCalibratedConfidence: candidate.classifierCalibratedConfidence,
-                        assemblyConfidence: candidate.assemblyConfidence,
-                        accumulatedSupport: confidence,
-                        wayID: event.roadContext?.wayId
-                    )],
-                    lossEvidence: [],
-                    currentConsecutiveFramesSeen: 1,
-                    peakConsecutiveFramesSeen: 1,
-                    support: confidence,
-                    armed: Self.shouldArm(
-                        evidenceCount: 1,
-                        support: confidence,
-                        eventState: event.state,
-                        structuralReset: action.isBoundaryReset && candidate.conditionState == .none && candidate.restrictions.isEmpty && event.roadContext?.matchedWayStable == true,
-                        configuration: configuration
-                    ),
-                    boundaryEvent: nil,
-                    boundaryCoordinate: nil,
-                    boundaryHasStrongPassGeometry: false,
-                    negativeFrames: 0,
-                    lossReason: .negativeDebounce,
-                    negativeFramesRequired: 0,
-                    rematchWayID: nil,
-                    coherentRematchFrames: 0,
-                    firstStableRematchContext: nil,
-                    firstStableRematchTimestamp: nil,
-                    sessionGeneration: sessionGeneration,
-                    contextGeneration: contextGeneration,
-                    driveSessionID: driveSessionID
+                    frameId: event.frameId,
+                    driveSessionId: event.driveSessionId,
+                    analysisEligible: event.analysisEligible,
+                    source: event.source,
+                    frameTimestampUtc: event.frameTimestampUtc,
+                    state: .noRecognition,
+                    candidate: nil,
+                    roadContext: event.roadContext,
+                    latencyMs: event.latencyMs,
+                    thermalState: event.thermalState
                 )
+                return observeMissing(negativeEvent, frameCoordinate: frameCoordinate,
+                                      frameSpeedKmh: frameSpeedKmh, strongPassGeometry: strongPassGeometry)
+            }
+            let previous = track
+            track = updatedVisibleTrack(
+                previous, event: event, candidate: candidate, id: trackID, action: action,
+                coordinate: candidateCoordinate, confidence: activationConfidence,
+                sessionGeneration: sessionGeneration, contextGeneration: contextGeneration, driveSessionID: driveSessionID
+            )
+            if previous.map({ Self.continuesVisibleTrack($0, id: trackID, action: action,
+                sessionGeneration: sessionGeneration, contextGeneration: contextGeneration, driveSessionID: driveSessionID,
+                roadContext: event.roadContext) }) != true {
+                queuedTrack = nil
             }
             return currentStateUpdate
         }
 
+        let update = observeMissing(event, frameCoordinate: frameCoordinate, frameSpeedKmh: frameSpeedKmh,
+                                    strongPassGeometry: strongPassGeometry)
+        if case .committed = update, track != nil {
+            // An analyzed empty frame can also be the first loss frame for
+            // a newly promoted sign. Only one queued slot exists.
+            _ = observeMissing(event, frameCoordinate: frameCoordinate, frameSpeedKmh: frameSpeedKmh,
+                               strongPassGeometry: strongPassGeometry)
+        }
+        return update
+    }
+
+    private static func continuesVisibleTrack(
+        _ current: Track, id: String, action: TrafficSignStructuralAction,
+        sessionGeneration: UInt64, contextGeneration: UInt64, driveSessionID: String,
+        roadContext: TrafficSignDetectionContext?
+    ) -> Bool {
+        current.id == id && current.action == action && current.sessionGeneration == sessionGeneration
+            && current.contextGeneration == contextGeneration && current.driveSessionID == driveSessionID
+            && isCompatibleVisibleContext(roadContext, with: current.lastContext)
+    }
+
+    private func updatedVisibleTrack(
+        _ previous: Track?, event: TrafficSignRecognitionEvent, candidate: TrafficSignRecognitionCandidate,
+        id trackID: String, action: TrafficSignStructuralAction, coordinate candidateCoordinate: TrafficSignCoordinate?,
+        confidence: Double, sessionGeneration: UInt64, contextGeneration: UInt64, driveSessionID: String
+    ) -> Track {
+        if var current = previous,
+           Self.continuesVisibleTrack(current, id: trackID, action: action, sessionGeneration: sessionGeneration,
+                                      contextGeneration: contextGeneration, driveSessionID: driveSessionID,
+                                      roadContext: event.roadContext) {
+            guard event.frameTimestampUtc > current.lastSeen else { return current }
+            current.lastSeen = event.frameTimestampUtc
+            current.lastSeenCoordinate = candidateCoordinate ?? current.lastSeenCoordinate
+            let resumedAfterLoss = current.boundaryEvent != nil
+            if let context = event.roadContext, context.isValid {
+                if current.initialRecognitionContext == nil {
+                    current.initialRecognitionContext = context
+                    current.initialRecognitionRouteRelationMemberships = context.routeRelationMemberships
+                    current.recognitionRouteRelationMemberships = context.routeRelationMemberships
+                } else if let previousContext = current.lastContext,
+                          previousContext.wayId != context.wayId {
+                    let currentIDs = Set(context.routeRelationMemberships.map(\.groupID))
+                    current.recognitionRouteRelationMemberships.removeAll {
+                        !currentIDs.contains($0.groupID)
+                    }
+                }
+                current.lastContext = context
+            }
+            current.assemblyID = candidate.assemblyId ?? current.assemblyID
+            if let assemblyID = Self.nonempty(candidate.assemblyId),
+               !current.assemblyIDs.contains(assemblyID) {
+                current.assemblyIDs.append(assemblyID)
+            }
+            current.currentConsecutiveFramesSeen = resumedAfterLoss
+                ? 1
+                : current.currentConsecutiveFramesSeen + 1
+            current.peakConsecutiveFramesSeen = max(
+                current.peakConsecutiveFramesSeen,
+                current.currentConsecutiveFramesSeen
+            )
+            current.boundaryEvent = nil
+            current.boundaryCoordinate = nil
+            current.boundaryHasStrongPassGeometry = false
+            current.negativeFrames = 0
+            current.lossReason = .negativeDebounce
+            current.negativeFramesRequired = 0
+            current.lossEvidence.removeAll(keepingCapacity: true)
+            current.rematchWayID = nil
+            current.coherentRematchFrames = 0
+            current.firstStableRematchContext = nil
+            current.firstStableRematchTimestamp = nil
+            current.conditionState = Self.mergedConditionState(
+                current.conditionState,
+                candidate.conditionState
+            )
+            current.restrictions = Self.mergedRestrictions(
+                current.restrictions,
+                candidate.restrictions
+            )
+            current.support = Self.accumulatedSupport(
+                previous: current.support,
+                next: confidence,
+                discount: configuration.supportCorrelationDiscount
+            )
+            current.evidence.append(TrafficSignPassageFrameEvidence(
+                frameID: Self.frameID(for: event),
+                timestampUTC: event.frameTimestampUtc,
+                outcome: "seen",
+                analysisEligible: true,
+                rawScore: candidate.rawScore,
+                calibratedConfidence: candidate.calibratedConfidence,
+                proposalRawScore: candidate.detectorRawScore,
+                proposalCalibratedConfidence: candidate.detectorCalibratedConfidence,
+                classifierRawScore: candidate.classifierRawScore,
+                classifierCalibratedConfidence: candidate.classifierCalibratedConfidence,
+                assemblyConfidence: candidate.assemblyConfidence,
+                accumulatedSupport: current.support,
+                wayID: event.roadContext?.wayId
+            ))
+            current.armed = Self.shouldArm(
+                evidenceCount: current.evidence.count,
+                support: current.support,
+                eventState: event.state,
+                structuralReset: current.action.isBoundaryReset && current.conditionState == .none && current.restrictions.isEmpty && event.roadContext?.matchedWayStable == true,
+                configuration: configuration
+            )
+            return current
+        }
+
+        // A different visible physical track is contradictory, not a
+        // delayed passage edge for the old one. Replacing the pending
+        // track prevents a later empty frame from committing the old
+        // sign and never prevents the new sign from accumulating.
+        return Track(
+            id: trackID,
+            action: action,
+            firstSeen: event.frameTimestampUtc,
+            lastSeen: event.frameTimestampUtc,
+            lastContext: event.roadContext.flatMap { $0.isValid ? $0 : nil },
+            lastSeenCoordinate: candidateCoordinate,
+            initialRecognitionContext: event.roadContext.flatMap { $0.isValid ? $0 : nil },
+            initialRecognitionRouteRelationMemberships: event.roadContext?
+                .routeRelationMemberships ?? [],
+            recognitionRouteRelationMemberships: event.roadContext?
+                .routeRelationMemberships ?? [],
+            assemblyID: candidate.assemblyId,
+            assemblyIDs: Self.nonempty(candidate.assemblyId).map { [$0] } ?? [],
+            packID: event.packId,
+            artifactSHA256: event.artifactSha256,
+            preprocessingVersion: event.preprocessingVersion,
+            modelComponents: event.modelComponents,
+            conditionState: candidate.conditionState,
+            restrictions: candidate.restrictions,
+            evidence: [TrafficSignPassageFrameEvidence(
+                frameID: Self.frameID(for: event),
+                timestampUTC: event.frameTimestampUtc,
+                outcome: "seen",
+                analysisEligible: true,
+                rawScore: candidate.rawScore,
+                calibratedConfidence: candidate.calibratedConfidence,
+                proposalRawScore: candidate.detectorRawScore,
+                proposalCalibratedConfidence: candidate.detectorCalibratedConfidence,
+                classifierRawScore: candidate.classifierRawScore,
+                classifierCalibratedConfidence: candidate.classifierCalibratedConfidence,
+                assemblyConfidence: candidate.assemblyConfidence,
+                accumulatedSupport: confidence,
+                wayID: event.roadContext?.wayId
+            )],
+            lossEvidence: [],
+            currentConsecutiveFramesSeen: 1,
+            peakConsecutiveFramesSeen: 1,
+            support: confidence,
+            armed: Self.shouldArm(
+                evidenceCount: 1,
+                support: confidence,
+                eventState: event.state,
+                structuralReset: action.isBoundaryReset && candidate.conditionState == .none && candidate.restrictions.isEmpty && event.roadContext?.matchedWayStable == true,
+                configuration: configuration
+            ),
+            boundaryEvent: nil,
+            boundaryCoordinate: nil,
+            boundaryHasStrongPassGeometry: false,
+            negativeFrames: 0,
+            lossReason: .negativeDebounce,
+            negativeFramesRequired: 0,
+            rematchWayID: nil,
+            coherentRematchFrames: 0,
+            firstStableRematchContext: nil,
+            firstStableRematchTimestamp: nil,
+            sessionGeneration: sessionGeneration,
+            contextGeneration: contextGeneration,
+            driveSessionID: driveSessionID
+        )
+    }
+
+    private mutating func observeMissing(
+        _ event: TrafficSignRecognitionEvent, frameCoordinate: TrafficSignCoordinate?,
+        frameSpeedKmh: Double?, strongPassGeometry: Bool
+    ) -> TrafficSignPassageFinalizerUpdate {
         guard event.state == .noRecognition,
               event.analysisEligible != false,
               Self.nonempty(event.frameId) != nil,
@@ -1392,20 +1418,6 @@ struct TrafficSignPassageFinalizer: Sendable {
         )
         track = queuedTrack
         queuedTrack = nil
-        if negativeForQueuedTrack, track != nil {
-            // The same analyzed empty frame is also the first qualified loss
-            // frame for an adjacent queued sign.
-            _ = ingest(
-                event,
-                sessionGeneration: sessionGeneration,
-                contextGeneration: contextGeneration,
-                frameCoordinate: frameCoordinate,
-                frameSpeedKmh: frameSpeedKmh,
-                strongPassGeometry: strongPassGeometry,
-                calibratedActivationEligible: calibratedActivationEligible,
-                negativeForQueuedTrack: false
-            )
-        }
         return .committed(passage)
     }
 
