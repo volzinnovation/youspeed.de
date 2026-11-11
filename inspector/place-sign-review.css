@@ -49,6 +49,11 @@
 .place-sign-controls label { display: grid; gap: .25rem; color: var(--muted); font-size: .8rem; }
 .place-sign-controls .place-sign-mobidata-filter { display: flex; align-items: center; align-self: center; gap: .4rem; }
 #place-sign-mobidata-only { margin: 0; accent-color: #087847; }
+#place-sign-mobile-only { margin: 0; accent-color: #2676b9; }
+.place-sign-association { margin-top: .5rem !important; font-size: .8rem; line-height: 1.5; }
+.place-sign-association a { color: var(--accent); }
+.place-sign-mobile-summary { margin: .4rem 1rem 0; font-size: .8rem; color: var(--muted); line-height: 1.45; }
+#place-sign-compare { margin-top: .5rem; font-size: .8rem; }
 #place-sign-filter { width: 9rem; }
 #place-sign-group { width: min(15rem, 66vw); }
 #place-sign-status { align-self: start; margin: 1rem 1.25rem; }
@@ -99,6 +104,7 @@
 .place-sign-legend-camera { background: #2676b9; }
 .place-sign-legend-selected { box-shadow: inset 0 0 0 2px #2676b9; }
 .place-sign-legend-proposal { background: #7650c4; }
+.place-sign-legend-before { box-shadow: inset 0 0 0 2px #64748b; }
 .place-sign-legend-inventory { background: #087847; }
 .place-sign-map .place-sign-inventory-label { border-color: #087847; color: #07532f; }
 .place-sign-inventory { margin-top: .6rem; border-top: 1px solid var(--border); padding-top: .2rem; }

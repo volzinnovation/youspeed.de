@@ -322,6 +322,10 @@
             Nur potenzielle MobiData-Treffer
           </label>
           <button id="place-sign-refresh" type="button">Aktualisieren</button>
+          <label class="place-sign-mobidata-filter">
+            <input id="place-sign-mobile-only" type="checkbox" disabled />
+            Mit mobilen Kandidaten
+          </label>
         </div>
       </header>
       <p id="place-sign-status" class="status" role="status" aria-live="polite" hidden></p>
@@ -340,9 +344,11 @@
               <span><i class="place-sign-legend-camera"></i>Aufnahmen, GPS und Sichtwinkel</span>
               <span><i class="place-sign-legend-selected"></i>Ausgewählte Aufnahme</span>
               <span><i class="place-sign-legend-proposal"></i>Standort und Azimut</span>
+              <span id="place-sign-before-legend" hidden><i class="place-sign-legend-before"></i>Vorher · Panoramax</span>
               <span id="place-sign-inventory-legend" hidden><i class="place-sign-legend-inventory"></i>MobiData-Referenz</span>
             </div>
             <p id="place-sign-proposal" aria-live="polite"></p>
+            <p id="place-sign-refinement" hidden></p>
             <section id="place-sign-inventory" class="place-sign-inventory" aria-label="MobiData-Referenz" hidden></section>
           </div>
         </section>
@@ -356,12 +362,19 @@
             <figcaption>
               <p id="place-sign-image-label"></p>
               <dl id="place-sign-image-meta" class="place-sign-image-meta"></dl>
+              <p id="place-sign-association" class="place-sign-association" hidden></p>
+              <button id="place-sign-compare" type="button" hidden>Passendes Panoramax-Bild zeigen</button>
             </figcaption>
           </figure>
           <div id="place-sign-gallery" class="place-sign-gallery" role="group" aria-label="Bilder der Gruppe"></div>
           <section id="place-sign-follow-ons" class="place-sign-follow-ons" aria-labelledby="place-sign-follow-title" hidden>
             <h3 id="place-sign-follow-title">Folgeaufnahmen derselben Sequenz</h3>
             <div id="place-sign-follow-gallery" class="place-sign-gallery" role="group" aria-label="Folgeaufnahmen der Gruppe"></div>
+          </section>
+          <section id="place-sign-mobile" class="place-sign-follow-ons" aria-labelledby="place-sign-mobile-title" hidden>
+            <h3 id="place-sign-mobile-title">Mobile Evidenz · vorgeschlagene Zuordnung</h3>
+            <p id="place-sign-mobile-summary" class="place-sign-mobile-summary"></p>
+            <div id="place-sign-mobile-gallery" class="place-sign-gallery" role="group" aria-label="Mobile Kandidaten der Gruppe"></div>
           </section>
         </section>
       </div>

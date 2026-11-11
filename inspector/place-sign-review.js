@@ -11,6 +11,7 @@
   };
   const angle = value => Number.isFinite(value) ? `${value.toFixed(1)}°` : "offen";
   const meters = value => Number.isFinite(value) ? `${value.toFixed(1)} m` : "offen";
+  const observationId = observation => observation?.evidence_id || observation?.annotation_id;
   const time = new Intl.DateTimeFormat("de-DE", {
     dateStyle: "medium", timeStyle: "medium", timeZone: "Europe/Berlin"
   });
@@ -31,6 +32,8 @@
     element("stage").replaceChildren();
     element("gallery").replaceChildren();
     element("follow-gallery").replaceChildren();
+    element("mobile-gallery").replaceChildren();
+    element("mobile").hidden = true;
     element("follow-ons").hidden = true;
     element("identity").hidden = true;
     element("copy-status").textContent = "";
@@ -40,6 +43,8 @@
     element("filter").value = "";
     element("mobidata-only").disabled = true;
     element("mobidata-only").checked = false;
+    element("mobile-only").disabled = true;
+    element("mobile-only").checked = false;
     element("content").hidden = true;
     element("title").textContent = "Verkehrszeichen vor Ort";
     element("scope").textContent = "";
@@ -48,7 +53,7 @@
 
   function updateLink(historyMode) {
     const params = new URLSearchParams({group: group.id});
-    const photo = observations[selectedIndex]?.annotation_id;
+    const photo = observationId(observations[selectedIndex]);
     if (photo) params.set("photo", photo);
     const hash = "#place-signs?" + params;
     element("group-id").textContent = group.id;
@@ -96,12 +101,14 @@
     const photo = mediaUrl(observation.photo_url);
     const crop = mediaUrl(observation.crop_url);
     if (!photo && !crop) {
-      stage.replaceChildren(message("Für diese Aufnahme steht kein Bild zur Verfügung."));
+      stage.replaceChildren(message(observation.mobile_kind === "sighting"
+        ? "Mobile Sichtung mit Zeitstempel, GPS und Sichtstrahl. Das zugeordnete Panoramax-Bild lässt sich unten öffnen."
+        : "Für diese Aufnahme steht kein Bild zur Verfügung."));
       return;
     }
     const image = document.createElement("img");
     const loading = message("Aufnahme wird geladen …");
-    image.alt = `Panoramax-Aufnahme ${index + 1}`;
+    image.alt = observation.mobile_kind ? "Mobiler Zeichenausschnitt" : `Panoramax-Aufnahme ${index + 1}`;
     image.referrerPolicy = "no-referrer";
     image.hidden = true;
     let fullFrame = Boolean(photo);
@@ -140,6 +147,11 @@
       ["Sichtstrahl", `${angle(observation.bearing_deg)} ± ${angle(observation.bearing_error_deg)}`]
     ];
     if (Number.isFinite(rawGps)) fields.splice(1, 0, ["GPS-Angabe", meters(rawGps)]);
+    if (observation.mobile_kind) {
+      element("image-label").textContent = `${observationLabel(observation, index)} · ${time.format(date)}${observation.in_review_window === false ? " · Außerhalb des Suchfensters" : ""}`;
+      const way = observation.phone_road_match;
+      if (way) fields.push(["Aufgezeichneter OSM-Way", `${way.osm_way_id} · ${way.travel_direction}`]);
+    }
     element("image-meta").replaceChildren(...fields.map(([label, value]) => {
       const item = document.createElement("div");
       const term = document.createElement("dt");
@@ -149,6 +161,34 @@
       item.append(term, detail);
       return item;
     }));
+    const association = observation.association;
+    const detail = element("association");
+    detail.replaceChildren();
+    detail.hidden = !association;
+    element("compare").hidden = !association;
+    if (association) {
+      if (observation.gallery_only) {
+        detail.textContent = "Weitere Evidenz derselben Sichtung · zur Bildprüfung";
+        return;
+      }
+      const timing = association.independence_status === "different_capture_day"
+        ? "Andere Fahrt · Sichtstrahl mit Standort vereinbar"
+        : `Δt ${association.time_delta_s.toFixed(3)} s · Gleiche Aufnahme oder Fahrt möglich`;
+      detail.append(`Zuordnung vorgeschlagen · ${timing} · Kameraabstand ${meters(association.camera_distance_m)} · Sichtstrahl-Differenz ${angle(association.bearing_delta_deg)}.`);
+      const alternatives = association.candidate_group_ids.filter(id => id !== group.id);
+      if (alternatives.length) {
+        detail.append(" Weitere Kandidatengruppen ");
+        for (const id of alternatives) {
+          const link = document.createElement("a");
+          link.href = "#place-signs?" + new URLSearchParams({group: id, photo: observationId(observation)});
+          link.textContent = id.slice(0, 6);
+          detail.append(link, " ");
+        }
+      }
+      if (association.shared_panoramax_group_ids.length > 1) {
+        detail.append(` · Panoramax-Annotation in ${association.shared_panoramax_group_ids.length} Prüfgruppen verwendet.`);
+      }
+    }
   }
 
   function selectObservation(index, historyMode = "replaceState") {
@@ -156,7 +196,7 @@
     if (!observation) return;
     if (selectedIndex !== index) {
       selectedIndex = index;
-      [...element("gallery").children, ...element("follow-gallery").children].forEach((button, i) => {
+      [...element("gallery").children, ...element("follow-gallery").children, ...element("mobile-gallery").children].forEach((button, i) => {
         button.setAttribute("aria-pressed", String(i === index));
       });
       showImage(observation, index);
@@ -167,6 +207,10 @@
   }
 
   function observationLabel(observation, index) {
+    if (observation.mobile_kind) {
+      const number = observations.filter(item => item.mobile_kind === observation.mobile_kind).indexOf(observation) + 1;
+      return `${observation.mobile_kind === "crop" ? "Mobiler Crop" : "Mobile Sichtung"} ${number}`;
+    }
     if (!observation.frame_offset) return `Bild ${index + 1}`;
     const anchor = group.observations.findIndex(item => item.image_id === observation.anchor_image_id);
     return `+${observation.frame_offset}${anchor >= 0 ? " zu Bild " + (anchor + 1) : ""}`;
@@ -268,6 +312,27 @@
     }
   }
 
+  function showRefinement() {
+    const result = group.mobile_refinement;
+    const elementText = element("refinement");
+    elementText.hidden = !result;
+    element("before-legend").hidden = result?.status !== "refined" || !group.proposal;
+    if (!result) return;
+    const duplicates = result.duplicate_mobile_count
+      ? ` · ${result.duplicate_mobile_count} mobile Wiederholungen zusammengefasst` : "";
+    if (result.status !== "refined") {
+      elementText.textContent = `Nachher · Keine ausreichend gestützte Änderung${duplicates}`;
+      return;
+    }
+    const before = group.proposal;
+    const after = result.proposal;
+    const azimuth = pose => angle(window.YouSpeedPlaceSignReviewMap.displayProposalAzimuth(pose?.azimut_deg));
+    const location = `${after.latitude.toFixed(6)}, ${after.longitude.toFixed(6)}`;
+    const movement = Number.isFinite(result.movement_m) ? ` · Verschiebung ${meters(result.movement_m)}` : "";
+    const radius = Number.isFinite(after.position_radius_m) ? ` · Bedingter Radius ${meters(after.position_radius_m)}` : "";
+    elementText.textContent = `Nachher mit mobiler Evidenz · ${location}${radius}${movement} · Azimut ${azimuth(before)} → ${azimuth(after)} · ${result.mobile_evidence_ids.length} mobile Ansichten · ${result.drive_count} Fahrten${duplicates}`;
+  }
+
   function showGroup(id, {photo = null, historyMode = "replaceState", exact = false} = {}) {
     const changed = group?.id !== id;
     group = data.groups.find(item => item.id === id);
@@ -282,15 +347,21 @@
     status("");
     if (changed) {
       const following = group.follow_on_observations || [];
-      observations = [...group.observations, ...following];
+      const mobile = group.mobile_observations || [];
+      observations = [...group.observations, ...following, ...mobile];
       selectedIndex = -1;
       element("photo-count").textContent = following.length
         ? `${group.sign_code} · ${observations.length} Bilder aus ${group.observations.length} Sequenzen`
         : `${group.sign_code} · ${observations.length} Aufnahmen`;
+      if (mobile.length) element("photo-count").textContent = `${group.sign_code} · ${group.observations.length + following.length} Panoramax · ${mobile.length} mobile Kandidaten`;
       element("gallery").replaceChildren(...group.observations.map(thumbnail));
       element("follow-gallery").replaceChildren(...following.map((item, i) => thumbnail(item, group.observations.length + i)));
       element("follow-ons").hidden = !following.length;
+      element("mobile-gallery").replaceChildren(...mobile.map((item, i) => thumbnail(item, group.observations.length + following.length + i)));
+      element("mobile").hidden = !mobile.length;
+      element("mobile-summary").textContent = "Kandidaten aus zeitnahen Aufnahmen und anderen Fahrten mit passendem Sichtstrahl. Wiederholte Aufnahmen zählen zusammen.";
       showProposal(group.proposal);
+      showRefinement();
       showInventory();
       if (!map && window.L && window.YouSpeedPlaceSignReviewMap) {
         map = window.YouSpeedPlaceSignReviewMap.create(element("map"), {
@@ -310,7 +381,7 @@
         element("map").textContent = "Die Kartenbibliothek ist derzeit nicht verfügbar.";
       }
     }
-    const index = photo === null ? 0 : observations.findIndex(item => item.annotation_id === photo);
+    const index = photo === null ? 0 : observations.findIndex(item => observationId(item) === photo);
     selectObservation(Math.max(0, index), index >= 0 ? historyMode : null);
     if (index < 0) element("copy-status").textContent = "Die verlinkte Aufnahme ist in dieser Gruppe nicht mehr vorhanden.";
   }
@@ -318,14 +389,16 @@
   function fillGroups(preferredId, options = {}) {
     const filter = element("filter").value.trim().toLowerCase();
     const mobidataOnly = element("mobidata-only").checked;
+    const mobileOnly = element("mobile-only").checked;
     const groups = data.groups.filter(item =>
       item.sign_code.toLowerCase().includes(filter) && (!mobidataOnly || item.mobidata_matches?.length)
+        && (!mobileOnly || item.mobile_observations?.length)
     );
     const input = element("group");
     input.replaceChildren(...groups.map(item => {
       const option = document.createElement("option");
       option.value = item.id;
-      const prefix = item.mobidata_matches?.length ? "+ MobiData · " : "";
+      const prefix = (item.mobile_observations?.length ? "+ Mobil · " : "") + (item.mobidata_matches?.length ? "+ MobiData · " : "");
       option.textContent = `${prefix}${item.sign_code} · ${item.observations.length} Bilder · ${item.id.slice(0, 6)}`;
       return option;
     }));
@@ -341,6 +414,7 @@
     const id = params.get("group");
     element("filter").value = "";
     element("mobidata-only").checked = false;
+    element("mobile-only").checked = false;
     fillGroups(id ?? data.default_group_id, {
       photo: params.get("photo"),
       exact: id !== null,
@@ -365,9 +439,15 @@
       data = payload;
       element("title").textContent = data.place.name;
       element("scope").textContent = `2 km × 2 km um die Ortsmitte · ${data.groups.length} Zeichengruppen`;
+      const counts = data.mobile_reference?.collection_counts;
+      if (counts) element("scope").textContent += ` · ${counts.crop} Crops und ${counts.sighting} Sichtungen erfasst`;
       element("filter").disabled = false;
       element("mobidata-only").disabled = false;
+      element("mobile-only").disabled = false;
       applyLocation();
+      if (data.mobile_reference && data.mobile_reference.availability !== "available") {
+        status("Mobile Kandidaten warten auf aktuelle Quelldaten sowie Freigabe- und Löschkontrollen. Panoramax-Gruppen sind verfügbar.");
+      }
     } catch (error) {
       if (request === controller && error.name !== "AbortError") status(error.message);
     } finally {
@@ -377,10 +457,16 @@
 
   element("group").addEventListener("change", event => showGroup(event.target.value, {historyMode: "pushState"}));
   function filterGroups() {
-    fillGroups(group?.id, {photo: observations[selectedIndex]?.annotation_id});
+    fillGroups(group?.id, {photo: observationId(observations[selectedIndex])});
   }
   element("filter").addEventListener("input", filterGroups);
   element("mobidata-only").addEventListener("change", filterGroups);
+  element("mobile-only").addEventListener("change", filterGroups);
+  element("compare").addEventListener("click", () => {
+    const matched = observations[selectedIndex]?.association?.matched_annotation_id;
+    const index = observations.findIndex(item => item.annotation_id === matched);
+    if (index >= 0) selectObservation(index);
+  });
   element("copy-link").addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(element("permalink").href);

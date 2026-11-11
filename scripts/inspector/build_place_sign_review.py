@@ -555,6 +555,12 @@ def main():
     )
     parser.add_argument("--id-key-file", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--mobile-rays", type=Path, action="append", default=[],
+                        help="Optional private mobile JSON Lines for proposed close-time evidence links")
+    parser.add_argument("--mobile-bindings", type=Path,
+                        help="Private current source bindings keyed by mobile observation ID")
+    parser.add_argument("--mobile-collection", type=Path,
+                        help="Complete private place collection with rays and source bindings")
     parser.add_argument(
         "--mobidata-inventory", type=Path,
         help="Optional SQLite inventory for same-class MobiData reference candidates within 30 m",
@@ -580,6 +586,22 @@ def main():
         from scripts.inspector.match_place_sign_inventory import attach_inventory_matches
 
         attach_inventory_matches(document, args.mobidata_inventory)
+    if args.mobile_rays or args.mobile_collection:
+        from scripts.inspector.link_place_mobile_evidence import attach_collection_context, attach_mobile_evidence
+        from scripts.inspector.refine_place_sign_pose import attach_refinements
+
+        if args.mobile_collection:
+            collection = json.loads(read_private(args.mobile_collection, MAX_PRIVATE_INPUT_BYTES))
+            rows, bindings = collection["rays"], collection["bindings"]
+        else:
+            collection = {}
+            rows = [json.loads(line) for path in args.mobile_rays
+                    for line in read_private(path, MAX_PRIVATE_INPUT_BYTES).splitlines() if line.strip()]
+            bindings = json.loads(read_private(args.mobile_bindings, MAX_PRIVATE_INPUT_BYTES)) if args.mobile_bindings else None
+        attach_mobile_evidence(document, rows, bindings)
+        attach_refinements(document)
+        if collection:
+            attach_collection_context(document, collection)
     write_private_json(args.output, document)
     print(json.dumps(document["summary"], sort_keys=True))
 

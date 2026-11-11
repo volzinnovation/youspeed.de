@@ -408,6 +408,94 @@ class CropStore:
         if not control or control["fresh"] is not True:
             raise InspectorError("Live-Analyse wartet auf aktuelle, vollständige Freigabe- und Löschkontrollen des Backends. Später neu laden; Altbestand bleibt nur lesbar.", 503)
 
+    def admit_place_mobile(self, document):
+        def digest(value):
+            return hashlib.sha256(json.dumps(value, ensure_ascii=False,
+                sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+
+        entries = {row["evidence_id"]: row for group in document["groups"]
+                   for row in group.get("mobile_observations", [])}
+        requests = [{"evidence_id": identifier, **row["source_binding"]}
+                    for identifier, row in entries.items() if row.get("source_binding")]
+        permitted = {}
+        availability = "available"
+        try:
+            with self.connection() as db:
+                self.require_live_controls(db)
+                current = db.execute("""
+                    WITH requested AS (
+                        SELECT * FROM jsonb_to_recordset(%s::jsonb) AS r(
+                            evidence_id text, installation uuid, epoch bigint,
+                            event_id uuid, crop_id uuid
+                        )
+                    )
+                    SELECT r.evidence_id,e.payload->'event' AS observation,
+                        m.manifest,m.digest,review.revision AS review_revision,
+                        review.verdict,review.corrected_classification,
+                        review.crop_digest,review.observation_sha256,review.manifest_sha256
+                    FROM requested r JOIN youspeed.events e
+                        ON (e.installation,e.epoch,e.event_id)=(r.installation,r.epoch,r.event_id)
+                    LEFT JOIN youspeed.media m ON m.installation=r.installation
+                        AND m.epoch=r.epoch AND m.crop_id=r.crop_id
+                    LEFT JOIN LATERAL (
+                        SELECT revision,verdict,corrected_classification,crop_digest,
+                            observation_sha256,manifest_sha256
+                        FROM youspeed.crop_reviews cr WHERE cr.installation=r.installation
+                            AND cr.epoch=r.epoch AND cr.crop_id=r.crop_id
+                        ORDER BY revision DESC LIMIT 1
+                    ) review ON true
+                    WHERE e.kind='sighting'
+                        AND e.received_at+365*86400>extract(epoch FROM clock_timestamp())
+                        AND NOT EXISTS (SELECT 1 FROM youspeed.tombstones t
+                            WHERE t.installation=r.installation AND t.deleted_through>=r.epoch)
+                        AND EXISTS (SELECT 1 FROM youspeed.authorizations a
+                            WHERE a.installation=r.installation AND a.epoch=r.epoch
+                            AND a.scope='sign_metadata' AND a.state='granted')
+                        AND (r.crop_id IS NULL OR (
+                            m.expires>extract(epoch FROM clock_timestamp())
+                            AND m.manifest->>'observation_id'=r.event_id::text
+                            AND EXISTS (SELECT 1 FROM youspeed.authorizations a
+                                WHERE a.installation=r.installation AND a.epoch=r.epoch
+                                AND a.scope='crop_storage' AND a.state='granted')
+                        ))
+                """, (json.dumps(requests),)).fetchall()
+                for row in current:
+                    binding = entries[row["evidence_id"]]["source_binding"]
+                    if digest(row["observation"]) != binding["event_sha256"]:
+                        continue
+                    if binding.get("crop_id"):
+                        manifest_digest = digest(row["manifest"])
+                        if row["digest"] != binding.get("crop_digest") or manifest_digest != binding.get("manifest_sha256"):
+                            continue
+                        review_digest = digest({key: row.get(key) for key in (
+                            "review_revision", "verdict", "corrected_classification",
+                            "crop_digest", "observation_sha256", "manifest_sha256"
+                        )})
+                        if review_digest != binding.get("review_sha256"):
+                            continue
+                    permitted[row["evidence_id"]] = binding
+                self.require_live_controls(db)
+        except InspectorError:
+            availability = "unavailable"
+            permitted.clear()
+        for group in document["groups"]:
+            admitted = []
+            for row in group.pop("mobile_observations", []):
+                binding = permitted.get(row["evidence_id"])
+                row.pop("source_binding", None)
+                if binding is None:
+                    continue
+                if binding.get("crop_id"):
+                    row["crop_url"] = f"/inspector/api/crops/{binding['installation']}/{binding['epoch']}/{binding['crop_id']}/image"
+                admitted.append(row)
+            if admitted:
+                group["mobile_observations"] = admitted
+            refinement = group.get("mobile_refinement")
+            if refinement and (not admitted or not set(refinement.get("mobile_evidence_ids", ())) <= permitted.keys()):
+                group.pop("mobile_refinement", None)
+        document["mobile_reference"]["availability"] = availability
+        document["mobile_reference"]["visible_observations"] = len(permitted)
+
     def list(self, query):
         offset, limit, clauses, params = crop_filters(query)
         scope = query.get("scope", ["live"])[0]
@@ -908,6 +996,7 @@ def main():
             args.place_sign_review_file,
             opener=urllib.request.build_opener(urllib.request.ProxyHandler({}), NoImageRedirects()),
             media_dir=args.place_sign_review_media_dir,
+            mobile_admitter=store.admit_place_mobile,
         )
     server.review_proxy = CropReviewProxy(args.review_service_url)
     server.allowed_hosts = {f"{args.bind}:{server.server_port}", f"volz-db:{server.server_port}",

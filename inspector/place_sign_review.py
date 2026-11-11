@@ -212,6 +212,36 @@ def load_snapshot(path, local_media):
             if not isinstance(entries, list):
                 raise ValueError("invalid group observations")
             entries = entries + follow_on_entries(group, entries)
+            mobile = group.get("mobile_observations", [])
+            if not isinstance(mobile, list) or len(mobile) > 100:
+                raise ValueError("invalid mobile observations")
+            refinement = group.get("mobile_refinement")
+            if refinement is not None and (
+                not document.get("mobile_reference")
+                or not set(refinement.get("mobile_evidence_ids", ())) <= {row["evidence_id"] for row in mobile}
+            ):
+                raise ValueError("invalid mobile refinement")
+            for observation in mobile:
+                if (
+                    observation.get("source_id") != "mobile"
+                    or observation.get("mobile_kind") not in {"crop", "sighting"}
+                    or not re.fullmatch(r"mobile:[a-z-]+:[0-9a-f]{64}", observation.get("evidence_id", ""))
+                    or observation.get("association", {}).get("status") != "proposed"
+                ):
+                    raise ValueError("invalid mobile evidence")
+                binding = observation.get("source_binding")
+                if binding is not None:
+                    canonical_uuid(binding["installation"])
+                    canonical_uuid(binding["event_id"])
+                    if type(binding["epoch"]) is not int or binding["epoch"] < 0:
+                        raise ValueError("invalid mobile epoch")
+                    if observation["mobile_kind"] == "crop":
+                        canonical_uuid(binding["crop_id"])
+                    if not re.fullmatch(r"[0-9a-f]{64}", binding["event_sha256"]):
+                        raise ValueError("invalid source digest")
+                observation.pop("photo_url", None)
+                observation.pop("crop_url", None)
+            observations += len(mobile)
             observations += len(entries)
             if observations > MAX_REFERENCES:
                 raise ValueError("too many review observations")
@@ -294,14 +324,24 @@ def asset_path(picture_id):
 
 
 class PlaceSignReviewStore:
-    def __init__(self, path, *, opener, media_dir=None):
+    def __init__(self, path, *, opener, media_dir=None, mobile_admitter=None):
         self.path = path
         self.opener = opener
         self.media_dir = media_dir
+        self.mobile_admitter = mobile_admitter
         self.slots = BoundedSemaphore(3)
 
     def get(self):
-        return load_snapshot(self.path, self.media_dir is not None)[0]
+        document = load_snapshot(self.path, self.media_dir is not None)[0]
+        if document.get("mobile_reference"):
+            if self.mobile_admitter:
+                self.mobile_admitter(document)
+            else:
+                for group in document["groups"]:
+                    group.pop("mobile_observations", None)
+                    group.pop("mobile_refinement", None)
+                document["mobile_reference"]["availability"] = "unconfigured"
+        return document
 
     def image(self, annotation, variant):
         _, images = load_snapshot(self.path, self.media_dir is not None)

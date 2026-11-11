@@ -14,6 +14,24 @@ MobiData-Referenzkandidaten derselben Zeichenklasse im Radius von 30 m
 um den Standortvorschlag ergänzt. Grün markiert sind deren Quellposition
 und die unverändert übernommene `GruppenAusrichtung`. Mehrere Treffer
 bleiben als Kandidaten sichtbar. Gruppen ohne Treffer bleiben erhalten.
+Mit `--mobile-rays PFAD` (wiederholbar) und `--mobile-bindings PFAD` ergänzt
+der Build zeitnahe mobile Kandidaten. Der Filter **Mit mobilen Kandidaten**
+zeigt die zugehörigen Gruppen. Crops und Sichtungen stehen in einer eigenen
+Galerie mit Zeitdifferenz, Kameraabstand, Sichtstrahl-Differenz und einem
+Vergleichslink zum Panoramax-Bild. Mehrdeutige Gruppen sind verlinkt.
+Der lokale Server prüft die gebundenen Quelldatensätze, Freigaben,
+Löschkontrollen und Bildidentitäten bei jedem Laden erneut. Bei veralteten
+Kontrollen bleibt die mobile Evidenz bis zur nächsten aktuellen Prüfung verborgen.
+Für eine vollständige lokale Erfassung sammelt
+`scripts/inspector/collect_place_mobile_evidence.py` die verfügbaren Crops
+und Sichtungen im Suchgebiet und einem Kamerapuffer von 100 m. Die private
+Datei enthält auch Einzelcrops und Aufnahmen mit fehlender Kamerageometrie.
+`--mobile-collection PFAD` übernimmt die Sammlung in den Ortsprüfungs-Build.
+Die Karte zeigt Panoramax als grauen Vorher-Marker und die verfeinerte
+Schätzung in Violett. Zeitnahe Wiederholungen und gemeinsam genutzte
+GPS-Fixes werden für den Fit zusammengefasst. Ein Sichtstrahl einer anderen
+Fahrt kann beitragen, wenn seine Klasse, Position und Richtung eindeutig
+zu einer bereits lokalisierten Gruppe passen.
 Nominale Vorschläge haben keinen begrenzten Unsicherheitsradius.
 **Link kopieren** enthält die vollständige Gruppen-ID und die Annotation
 des ausgewählten Bildes. Das Öffnen des Links stellt beides wieder her.

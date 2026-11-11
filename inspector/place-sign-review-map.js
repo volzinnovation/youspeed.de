@@ -106,7 +106,7 @@
       }
     }
 
-    function drawProposal(proposal) {
+    function drawProposal(proposal, {before = false, after = false} = {}) {
       const position = coordinate(proposal);
       if (!position) return;
       if (proposal.position_status === "challenged_review") {
@@ -114,22 +114,25 @@
           .bindTooltip(tooltip("Alter Standortvorschlag widerspricht Folgeaufnahmen")).addTo(markerLayers);
         return;
       }
-      const label = proposal.position_status === "adjacent_track_review"
+      const color = before ? "#64748b" : colors.proposal;
+      const label = before ? "Vorher · Panoramax" : after ? "Nachher · mit mobiler Evidenz"
+        : proposal.position_status === "adjacent_track_review"
         ? "Vorgeschlagene Position aus Folgeaufnahmen"
         : positionLabels[proposal.position_status] ?? "Vorgeschlagene Schildposition";
       const radius = proposal.position_radius_m;
       if (positive(radius)) {
-        L.circle(position, {radius, color: colors.proposal, weight: 1.5, dashArray: "5 4", fillOpacity: .13, interactive: false})
+        L.circle(position, {radius, color, weight: 1.5, dashArray: "5 4", fillOpacity: before ? 0 : .13, interactive: false})
           .addTo(geometryLayers);
       }
       const azimuth = displayProposalAzimuth(proposal.azimut_deg);
       const roadHeading = proposal.azimut_method === "road_tangent_with_image_proxy" || proposal.azimut_method?.endsWith("_fallback");
-      drawAzimuth(position, azimuth, colors.proposal, roadHeading);
+      drawAzimuth(position, azimuth, color, before || roadHeading);
       const headingLabel = proposal.azimut_method?.includes("proxy") ? "Azimut-Hinweis" : "Azimut";
       const detail = [label, positive(radius) ? `Positionsradius ${format.format(radius)} m` : "Positionsradius offen",
         degrees(azimuth) && `${headingLabel} ${format.format(azimuth)}°`,
         degrees(azimuth) && azimuthLabels[proposal.azimut_method]].filter(Boolean).join(" · ");
-      L.circleMarker(position, {radius: 8, color: "#fff", weight: 2, fillColor: colors.proposal, fillOpacity: 1})
+      L.circleMarker(position, {radius: before ? 10 : 8, color: before ? color : "#fff",
+        weight: 2, fillColor: color, fillOpacity: before ? 0 : 1})
         .bindTooltip(tooltip(detail)).addTo(markerLayers);
     }
 
@@ -152,7 +155,9 @@
           ...styles.ray, dashArray: "5 5", interactive: false,
         }).addTo(geometryLayers);
       }
-      const detail = [observation.frame_offset ? `Folgeaufnahme +${observation.frame_offset}` : `Aufnahme ${index + 1}`,
+      const origin = observation.mobile_kind === "crop" ? "Mobiler Crop" : "Mobile Sichtung";
+      const detail = [observation.mobile_kind ? `${origin} · vorgeschlagene Zuordnung`
+        : observation.frame_offset ? `Folgeaufnahme +${observation.frame_offset}` : `Aufnahme ${index + 1}`,
         degrees(heading) && `Kamerarichtung ${format.format(heading)}°`,
         degrees(bearing) && `Sichtstrahl ${format.format(bearing)}°${positive(bound) ? ` ± ${format.format(bound)}°` : ""}`,
         positive(error) && `GPS-Radius ${format.format(error)} m`].filter(Boolean).join(" · ");
@@ -234,7 +239,19 @@
         if (group?.challenged_proposal && group.proposal?.position_status !== "challenged_review") {
           drawProposal({...group.challenged_proposal, position_status: "challenged_review"});
         }
-        drawProposal(group?.proposal);
+        const refinement = group?.mobile_refinement;
+        if (refinement?.status === "refined") {
+          const before = coordinate(group.proposal);
+          const after = coordinate(refinement.proposal);
+          if (before && after && refinement.movement_m >= .05) {
+            L.polyline([before, after], {color: "#64748b", weight: 2, dashArray: "3 3", interactive: false})
+              .addTo(geometryLayers);
+          }
+          drawProposal(group.proposal, {before: true});
+          drawProposal(refinement.proposal, {after: true});
+        } else {
+          drawProposal(group?.proposal);
+        }
         observations = (group?.observations ?? []).map(drawObservation);
         drawInventory(group?.mobidata_matches);
       }
