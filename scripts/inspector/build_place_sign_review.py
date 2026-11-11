@@ -1,4 +1,4 @@
-"""Build a private 2 km place review from frozen Panoramax evidence."""
+"""Build a private place review for a 2 km square or a municipality."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ import json
 import math
 from pathlib import Path
 
-from fiona.transform import transform
-from shapely.geometry import Point, box
+from fiona.transform import transform, transform_geom
+from shapely.geometry import Point, box, shape
 
 from scripts.tsr.collection.estimate_sign_poses import (
     METRIC,
@@ -91,6 +91,18 @@ def inside(point, bounds):
     east, north = point
     west, south, east_limit, north_limit = bounds
     return west <= east <= east_limit and south <= north <= north_limit
+
+
+def municipality_boundary(path, ags):
+    matches = [feature["geometry"] for feature in json.loads(path.read_text())["features"]
+               if feature["properties"].get("kind") == "gemeinde_ags"
+               and feature["properties"].get("id") == ags]
+    if len(matches) != 1:
+        raise ValueError(f"expected exactly one municipality boundary for {ags}")
+    boundary = shape(matches[0])
+    if boundary.geom_type not in {"Polygon", "MultiPolygon"} or boundary.is_empty or not boundary.is_valid:
+        raise ValueError(f"invalid municipality boundary for {ags}")
+    return matches[0]
 
 
 def local_roads(roads, bounds):
@@ -174,6 +186,10 @@ def render_proposal(fit, status, method, roads):
             road.distance,
             road.direction_basis,
         )
+    elif road is not None and proxy is None:
+        heading = (road.approach + 180 - rotation) % 360
+        heading_method = road.method
+        way_id, road_distance, road_basis = road.way_id, road.distance, road.direction_basis
     return {
         "longitude": longitude,
         "latitude": latitude,
@@ -388,7 +404,7 @@ def follow_on_diagnostic(group, continuations, proposal):
     }
 
 
-def adjacent_proposal(group, continuations, window, bounds, roads):
+def adjacent_proposal(group, continuations, window, roads):
     from scripts.inspector.adjacent_sign_pose import estimate_adjacent_pose
 
     following = defaultdict(list)
@@ -410,7 +426,7 @@ def adjacent_proposal(group, continuations, window, bounds, roads):
         "adjacent_frame_scale_and_optical_rays",
         roads,
     )
-    proposal["in_review_window"] = inside(result.fit.point, bounds)
+    proposal["in_review_window"] = window.covers(Point(result.fit.point))
     proposal["independent_sequence_count"] = len(
         {ray.sequence for ray in result.fit.rays}
     )
@@ -426,15 +442,23 @@ def build_document(
     name="Bad Herrenalb",
     center=CENTER,
     sequence_ranks=None,
+    boundary=None,
 ):
     if len(secret) < 32:
         raise ValueError("review ID key must contain at least 32 private bytes")
     place = place_window(name, center)
+    window = box(*place["bounds_en_m"])
+    if boundary is not None:
+        window = shape(transform_geom(WGS84, METRIC, boundary))
+        place.update(boundary_wgs84=boundary, bounds_en_m=window.bounds,
+                     bbox_wgs84=shape(boundary).bounds)
+        place.pop("bounds_ring_wgs84")
     bounds = place["bounds_en_m"]
     place["roads"] = local_roads(roads, bounds)
     place["road_attribution"] = roads.source.get("attribution")
     all_views = load_views(records, report)
-    views = [view for view in all_views if inside(view.ray.position, bounds)]
+    anchor_window = window.buffer(FOLLOW_ON_CONTEXT_M) if boundary is not None else window
+    views = [view for view in all_views if anchor_window.covers(Point(view.ray.position))]
     records_by_key = {"panoramax:" + row["observation_id"]: row for row in records}
     native_by_id = {row["annotation_id"]: row for row in report[1:-1]}
     if len(records_by_key) != len(records) or len(native_by_id) != len(report) - 2:
@@ -450,7 +474,6 @@ def build_document(
         (sequence, rank): image for (sequence, image), rank in sequence_ranks.items()
     }
     views_by_photo = defaultdict(list)
-    window = box(*bounds)
     if photos_by_rank:
         for view in all_views:
             if window.distance(Point(view.ray.position)) <= FOLLOW_ON_CONTEXT_M:
@@ -492,13 +515,13 @@ def build_document(
                     anchor_image_id=anchor["image_id"],
                     sequence_rank=anchor["sequence_rank"] + offset,
                     frame_offset=offset,
-                    in_review_window=inside(view.ray.position, bounds),
+                    in_review_window=window.covers(Point(view.ray.position)),
                 )
                 for anchor, offset, view in continuations
             ]
             diagnostic = follow_on_diagnostic(group, continuations, proposal)
             adjacent, status, details = adjacent_proposal(
-                group, continuations, window, bounds, roads
+                group, continuations, window, roads
             )
             diagnostic["adjacent_track_status"] = status
             diagnostic["adjacent_track_diagnostics"] = details
@@ -567,9 +590,13 @@ def main():
     )
     parser.add_argument("--place-name", help="Place name for a custom center")
     parser.add_argument("--center", nargs=2, type=float, metavar=("LON", "LAT"))
+    parser.add_argument("--boundary-file", type=Path, help="WGS84 municipality FeatureCollection")
+    parser.add_argument("--municipality", help="Eight-digit municipality AGS in the boundary file")
     args = parser.parse_args()
     if bool(args.place_name) != (args.center is not None):
         parser.error("--place-name and --center must be supplied together")
+    if bool(args.boundary_file) != bool(args.municipality):
+        parser.error("--boundary-file and --municipality must be supplied together")
     records, report = frozen_sources(args.rays, args.report)
     document = build_document(
         records,
@@ -581,6 +608,8 @@ def main():
         sequence_ranks=read_sequence_ranks(args.sequence_ranks)
         if args.sequence_ranks
         else None,
+        boundary=municipality_boundary(args.boundary_file, args.municipality)
+        if args.boundary_file else None,
     )
     if args.mobidata_inventory:
         from scripts.inspector.match_place_sign_inventory import attach_inventory_matches

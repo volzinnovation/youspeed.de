@@ -22,7 +22,11 @@ def captured_seconds(row):
     return value.timestamp()
 
 
-def in_review_window(row, place):
+def in_review_window(row, place, boundary=None):
+    if boundary is not None:
+        from shapely.geometry import Point
+
+        return boundary.covers(Point(row["longitude"], row["latitude"]))
     ring = place.get("bounds_ring_wgs84")
     if not ring:
         return True
@@ -36,6 +40,12 @@ def in_review_window(row, place):
 def attach_mobile_evidence(document, rows, bindings=None):
     """Keep associations provisional, retaining every existing group and pose."""
     bindings = bindings or {}
+    place = document.get("place", {})
+    boundary = None
+    if place.get("boundary_wgs84"):
+        from shapely.geometry import shape
+
+        boundary = shape(place["boundary_wgs84"])
     by_code = defaultdict(list)
     annotations = defaultdict(set)
     for group in document["groups"]:
@@ -108,7 +118,7 @@ def attach_mobile_evidence(document, rows, bindings=None):
                 "fix_id": row.get("fix_id"),
                 "fix_at": row.get("fix_at"),
                 "captured_at": row["captured_at"],
-                "in_review_window": in_review_window(row, document.get("place", {})),
+                "in_review_window": in_review_window(row, place, boundary),
                 "longitude": row["longitude"],
                 "latitude": row["latitude"],
                 "bearing_deg": row["bearing_degrees"],

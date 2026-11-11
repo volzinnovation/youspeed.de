@@ -29,7 +29,10 @@ def main():
     from scripts.youspeed.crop_exit_batch import require_fresh_controls
 
     review = json.loads(crop.private_file(args.review, 16 * 1024**2))
-    shape = json.dumps({"type": "Polygon", "coordinates": [review["place"]["bounds_ring_wgs84"]]})
+    place = review["place"]
+    shape = json.dumps(place.get("boundary_wgs84") or {
+        "type": "Polygon", "coordinates": [place["bounds_ring_wgs84"]],
+    })
     profile, taxonomy = crop.load_profile(args.assumptions), crop.load_taxonomy(args.catalog)
     dsn = crop.private_file(args.database_file, 8192).decode().strip()
 
