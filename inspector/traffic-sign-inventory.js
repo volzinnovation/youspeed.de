@@ -41,6 +41,17 @@
     }
     return result;
   }
+  function referenceExampleIndex(catalog, artwork = artworkIndex(catalog)) {
+    const result = new Map();
+    for (const sign of catalog?.signs ?? []) {
+      const example = artwork.get(sign.reference_example_sign_code);
+      if (sign.sign_code && !artwork.has(sign.sign_code) && example) {
+        result.set(sign.sign_code, {url: example.url, label: sign.label?.de ?? sign.sign_code,
+          code: sign.reference_example_sign_code});
+      }
+    }
+    return result;
+  }
   function safeLink(value) {
     try {const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password ? u.href : null;} catch {return null;}
   }
@@ -128,5 +139,5 @@
     }
     return {databaseChanged};
   }
-  return {querySpec, artworkIndex, escapeHTML, safeLink, createController};
+  return {querySpec, artworkIndex, referenceExampleIndex, escapeHTML, safeLink, createController};
 });

@@ -29,3 +29,20 @@ test('untrusted inventory metadata is escaped and source links cannot execute co
   assert.equal(core.safeLink('https://name:password@example.org'),null);
   assert.equal(core.safeLink('https://mobidata-bw.de/'),'https://mobidata-bw.de/');
 });
+test('family artwork is an explicit example while exact codes retain their own artwork', () => {
+  const catalog = JSON.parse(fs.readFileSync('shared/tsr/prolix-de-class-catalog-v1.json'));
+  const exact = core.artworkIndex(catalog);
+  const examples = core.referenceExampleIndex(catalog, exact);
+  for (const [family, variant, filename] of [
+    ['DE:262', 'DE:262-5,5', 'de-262-5.5.png'],
+    ['DE:263', 'DE:263-8', 'de-263-8.png'],
+    ['DE:315', 'DE:315-50', 'de-315-50.png'],
+  ]) {
+    assert.equal(exact.has(family), false);
+    assert.equal(examples.get(family).code, variant);
+    assert.equal(examples.get(family).url, exact.get(variant).url);
+    assert.ok(exact.get(variant).url.endsWith(filename));
+    assert.ok(!catalog.class_labels.includes(variant));
+  }
+  assert.equal(examples.has('DE:274-30'), false);
+});

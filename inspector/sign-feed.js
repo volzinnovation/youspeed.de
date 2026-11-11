@@ -18,8 +18,11 @@
   const coordinates = new Intl.NumberFormat("de", {minimumFractionDigits: 6, maximumFractionDigits: 6});
   const catalog = fetch("../shared/tsr/prolix-de-class-catalog-v1.json")
     .then(response => response.ok ? response.json() : null)
-    .then(YouSpeedTrafficSignInventory.artworkIndex)
-    .catch(() => new Map());
+    .catch(() => null)
+    .then(document => {
+      const exact = YouSpeedTrafficSignInventory.artworkIndex(document);
+      return {exact, examples: YouSpeedTrafficSignInventory.referenceExampleIndex(document, exact)};
+    });
   let request;
 
   function feedURL(ags) {
@@ -38,16 +41,26 @@
     const fields = feature.properties;
     const code = fields.stvo_nr;
     const azimuth = Number.isFinite(fields.azimut) ? `${angle.format(fields.azimut)}°` : "Offen";
-    const art = artwork.get(code);
+    const example = artwork.examples.get(code);
+    const art = artwork.exact.get(code) ?? example;
     const pictogram = document.createElement(art ? "img" : "span");
+    let iconContent = pictogram;
     if (art) {
       pictogram.src = art.url;
-      pictogram.alt = art.label;
+      pictogram.alt = example ? `Beispiel für ${art.label}` : art.label;
       pictogram.style.transform = Number.isFinite(fields.azimut) ? `rotate(${fields.azimut}deg)` : "";
+      if (example) {
+        iconContent = document.createElement("div");
+        iconContent.className = "feed-reference-icon";
+        const badge = document.createElement("b");
+        badge.textContent = "?";
+        badge.setAttribute("aria-hidden", "true");
+        iconContent.append(pictogram, badge);
+      }
     } else {
       pictogram.textContent = code;
     }
-    const icon = L.divIcon({className: "feed-icon", html: pictogram, iconSize: [30, 30]});
+    const icon = L.divIcon({className: "feed-icon", html: iconContent, iconSize: [30, 30]});
     const detail = document.createElement("div");
     detail.className = "feed-detail";
     const title = document.createElement("strong");
@@ -58,6 +71,7 @@
       ["Position", `${coordinates.format(latitude)}, ${coordinates.format(longitude)}`],
       ["Erstmals erfasst (UTC)", fields.first_discovered_on],
       ["Gruppe", fields.id],
+      ...(example ? [["Piktogramm", `Beispiel ${example.code} · Wert oder Variante offen`]] : []),
     ]) {
       const term = document.createElement("dt");
       const description = document.createElement("dd");
@@ -67,7 +81,7 @@
     }
     detail.append(title, list);
     const tooltip = document.createElement("span");
-    tooltip.textContent = `${code} · ${azimuth}`;
+    tooltip.textContent = `${code} · ${azimuth}${example ? " · Beispielpiktogramm" : ""}`;
     const marker = L.marker([latitude, longitude], {icon, title: tooltip.textContent})
       .bindPopup(detail).bindTooltip(tooltip).addTo(signs);
     marker.on("popupopen", () => {

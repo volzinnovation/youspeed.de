@@ -69,8 +69,10 @@ Die Gemeindeauswahl bestimmt den WFS-Filter. Der Link **WFS · GeoJSON**
 zeigt dieselbe Abfrage, die der Inspector zum Zeichnen der Karte verwendet.
 Ein Klick auf ein Zeichen ergänzt die Gruppen-ID im Kartenlink.
 Die Karte dreht das gemeinsame Zeichenpiktogramm mit dem ausgegebenen
-Azimut im Uhrzeigersinn ab geografisch Nord. Für Klassen ohne gemeinsames
-Piktogramm erscheint der Klassencode.
+Azimut im Uhrzeigersinn ab geografisch Nord. Wenn nur die Zeichenfamilie
+bekannt ist, kennzeichnet ein Fragezeichen ein verfügbares Beispielpiktogramm.
+Die Detailansicht nennt dessen Beispielcode und weist auf den offenen Wert
+oder die offene Variante hin. Ohne Piktogramm erscheint der Klassencode.
 
 1. Je Gemeinde einen privaten Ortsprüfungs-Snapshot erzeugen. Beim Aufruf von
    `python -m scripts.inspector.build_place_sign_review` zusätzlich
