@@ -7,6 +7,10 @@ import CryptoKit
 import ImageIO
 import OSLog
 import UniformTypeIdentifiers
+
+@_silgen_name("ysp_german_town_sign_face")
+private func germanTownSignFace(_ rgba: UnsafePointer<UInt8>, _ width: Double,
+                                _ height: Double, _ townExit: Int32) -> Int32
 @preconcurrency import Vision
 
 #if TRAFFIC_SIGN_RUNTIME_STANDALONE_TYPECHECK
@@ -649,6 +653,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private let unknownThreshold: Double
     private let detectorThreshold: Double
     private let usesTwoDetectorWindows: Bool
+    private let verifiesGermanTownFaces: Bool
     private let detectorContext = CIContext(options: [.cacheIntermediates: false])
 
     private struct DetectorPass {
@@ -698,6 +703,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
         detectorThreshold = verifiedPack.trialDetectorThreshold ?? unknownThreshold
         usesTwoDetectorWindows = useTwoDetectorWindows ?? (verifiedPack.trialDetectorThreshold != nil)
+        verifiesGermanTownFaces = verifiedPack.manifest.countries == ["DE"]
     }
 
     func detections(
@@ -736,6 +742,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
         return try perform(
             VNImageRequestHandler(ciImage: input.uprightSource, options: [:]),
+            source: input.uprightSource, context: detectorContext,
             detectorPasses: [DetectorPass(handler: VNImageRequestHandler(cgImage: input.image, options: [:]),
                                           sourceRegion: input.geometry.sourceRegion(for:))]
         )
@@ -752,7 +759,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         let inputs = try windows.map { window in
             try TrafficSignDetectorInput(source: upright, orientation: .up, context: context, window: window)
         }
-        return try perform(VNImageRequestHandler(ciImage: upright, options: [:]),
+        return try perform(VNImageRequestHandler(ciImage: upright, options: [:]), source: upright, context: context,
             detectorPasses: inputs.map { input in
                 DetectorPass(handler: VNImageRequestHandler(cgImage: input.image, options: [:]),
                              sourceRegion: input.geometry.sourceRegion(for:))
@@ -761,16 +768,17 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 
     private func perform(
         _ handler: VNImageRequestHandler,
-        detectorPasses: [DetectorPass]? = nil
+        source: CIImage,
+        context: CIContext,
+        detectorPasses: [DetectorPass]
     ) throws -> TrafficSignTwoStageInferenceResultV2 {
         inferenceLock.lock()
         defer { inferenceLock.unlock() }
 
-        let passes = detectorPasses ?? [DetectorPass(handler: handler, sourceRegion: { $0 })]
         let detectorStartedAt = ProcessInfo.processInfo.systemUptime
         var admittedProposals: [(confidence: Float, box: CGRect)] = []
         var proposalsTruncated = false
-        for pass in passes {
+        for pass in detectorPasses {
             let request = VNCoreMLRequest(model: detectorModel)
             request.imageCropAndScaleOption = .scaleFit
             try pass.handler.perform([request])
@@ -802,7 +810,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             let result = try classify(
                 object.box,
                 detectorConfidence: Double(object.confidence),
-                using: handler
+                using: handler, source: source, context: context
             )
             classifierLatencyMs += max(
                 0,
@@ -839,7 +847,9 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private func classify(
         _ visionBox: CGRect,
         detectorConfidence: Double,
-        using handler: VNImageRequestHandler
+        using handler: VNImageRequestHandler,
+        source: CIImage,
+        context: CIContext
     ) throws -> TrafficSignSpatialAssembly.ClassifiedDetection? {
         let classifierRegion = Self.classifierRegion(for: visionBox)
         guard Self.isValidNormalizedRegion(classifierRegion) else { return nil }
@@ -854,6 +864,11 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         }
 
         guard let contractBox = Self.contractBox(from: visionBox) else { return nil }
+        let classID = classification.identifier
+        if verifiesGermanTownFaces && (classID == "city:start" || classID == "city:end") {
+            guard Self.matchesTownFace(source: source, context: context, box: visionBox,
+                                       townExit: classID == "city:end") else { return nil }
+        }
         let mapping = mappingsByClassID[classification.identifier]
         let score = min(detectorConfidence, Double(classification.confidence))
         return TrafficSignSpatialAssembly.ClassifiedDetection(
@@ -877,6 +892,30 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             classifierRawScore: Double(classification.confidence),
             classifierCalibratedConfidence: nil
         )
+    }
+
+    static func matchesTownFace(source: CIImage, context: CIContext, box: CGRect, townExit: Bool) -> Bool {
+        let extent = source.extent
+        let crop = CGRect(x: extent.minX + box.minX * extent.width, y: extent.minY + box.minY * extent.height,
+                          width: box.width * extent.width, height: box.height * extent.height)
+        guard crop.width >= 24, crop.height >= 16 else { return false }
+        let width = 80, height = 64
+        let size = CGRect(x: 0, y: 0, width: width, height: height)
+        let scaled = source.cropped(to: crop)
+            .transformed(by: CGAffineTransform(translationX: -crop.minX, y: -crop.minY))
+            .transformed(by: CGAffineTransform(scaleX: size.width / crop.width, y: size.height / crop.height))
+        guard let rgb = CGColorSpace(name: CGColorSpace.sRGB),
+              let image = context.createCGImage(scaled, from: size, format: .RGBA8, colorSpace: rgb) else { return false }
+        // Drawing the CGImage gives the native check top-down sRGB rows.
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        return pixels.withUnsafeMutableBufferPointer { buffer in
+            guard let base = buffer.baseAddress,
+                  let bitmap = CGContext(data: base, width: width, height: height, bitsPerComponent: 8,
+                                         bytesPerRow: width * 4, space: rgb,
+                                         bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return false }
+            bitmap.draw(image, in: size)
+            return germanTownSignFace(base, Double(crop.width), Double(crop.height), townExit ? 1 : 0) != 0
+        }
     }
 
     static func shadowAssembly(

@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,6 +22,45 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class AndroidLiteRtTrafficSignInstrumentedTest {
+    @Test
+    fun germanTownFacesRejectPhotographedDirectionSigns() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val baseline = AndroidTrafficSignModelPackLoader.load(context)
+        val pack = AndroidTrafficSignModelPackLoader.townTrial(context, baseline) ?: baseline
+        val fixtures = instrumentation.context.assets
+        val rows = JSONArray(fixtures.open("tsr-town-face/cases.json").bufferedReader().use { it.readText() })
+        AndroidLiteRtTrafficSignInferenceEngine(pack).use { engine ->
+            for (i in 0 until rows.length()) {
+                val row = rows.getJSONObject(i)
+                val name = row.getString("file")
+                val source = requireNotNull(fixtures.open("tsr-town-face/$name").use(BitmapFactory::decodeStream))
+                try {
+                    val box = NormalizedTrafficSignBoundingBox(row.getDouble("x"), row.getDouble("y"),
+                        row.getDouble("width"), row.getDouble("height"))
+                    assertFalse("$name accepted as DE:310", engine.matchesTownFace(source, box, townExit = false))
+                    assertFalse("$name accepted as DE:311", engine.matchesTownFace(source, box, townExit = true))
+                    val result = engine.recognizeAllWithDiagnostics(source)
+                    assertFalse(name, result.detections.any { it.candidate.rawClassId in setOf("city:start", "city:end") })
+                    Log.i("YouSpeedTownTest", "$name: ${result.detectorProposalCount} proposals, no town detections")
+                } finally {
+                    source.recycle()
+                }
+            }
+            for (code in listOf(310, 311)) {
+                val source = requireNotNull(context.assets.open("tsr/sign-pictograms/png/de-$code.png")
+                    .use(BitmapFactory::decodeStream))
+                try {
+                    val face = NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)
+                    assertTrue("DE:$code rejected", engine.matchesTownFace(source, face, townExit = code == 311))
+                    assertFalse("DE:$code accepted as other town class", engine.matchesTownFace(source, face, townExit = code != 311))
+                } finally {
+                    source.recycle()
+                }
+            }
+        }
+    }
+
     @Test
     fun townTwoWindowLatencyUsesGpuAndOriginalCoordinates() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()

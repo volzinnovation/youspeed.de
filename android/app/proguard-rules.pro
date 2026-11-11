@@ -22,3 +22,4 @@
 
 # The shared packed reader exposes a small named JNI ABI.
 -keep class de.youspeed.android.alpha.RuntimePackedNative { *; }
+-keep class de.youspeed.android.alpha.GermanTownSignFace { *; }

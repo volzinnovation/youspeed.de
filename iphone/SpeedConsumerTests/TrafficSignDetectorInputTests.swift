@@ -8,6 +8,55 @@ import CoreML
 final class TrafficSignDetectorInputTests: XCTestCase {
     private let context = CIContext(options: [.cacheIntermediates: false])
 
+    @MainActor
+    func testGermanTownFacesRejectPhotographedDirectionSigns() throws {
+        struct Case: Decodable { let file: String; let x: Double; let y: Double; let width: Double; let height: Double }
+        let directory = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
+        let baseline = try TrafficSignModelPackDirectoryLoader.load(from: directory,
+            runtimeVersion: UIDevice.current.systemVersion, appVersion: "1.5", countryCode: "DE")
+        let backend = try TrafficSignRuntimeBootstrap.townTrial(baseline, countryCode: "DE")?.1
+            ?? TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: baseline)
+        let bundle = Bundle(for: Self.self)
+        let manifest = try XCTUnwrap(bundle.url(forResource: "cases", withExtension: "json", subdirectory: "tsr-town-face"))
+        for sample in try JSONDecoder().decode([Case].self, from: Data(contentsOf: manifest)) {
+            let url = try XCTUnwrap(bundle.url(forResource: sample.file, withExtension: nil, subdirectory: "tsr-town-face"))
+            let image = try XCTUnwrap(CIImage(contentsOf: url))
+            let box = CGRect(x: sample.x, y: 1 - sample.y - sample.height, width: sample.width, height: sample.height)
+            for exit in [false, true] {
+                XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+                    source: image, context: context, box: box, townExit: exit), sample.file)
+            }
+            let result = try backend.shadowInference(source: image, orientation: .up, context: context)
+            XCTAssertFalse(result.legacyDetections.contains { ["city:start", "city:end"].contains($0.rawClassId) }, sample.file)
+            print("Town direction test \(sample.file): \(result.legacyDetections.map(\.rawClassId))")
+        }
+        for code in [310, 311] {
+            let url = try XCTUnwrap(Bundle.main.url(forResource: "de-\(code)", withExtension: "png",
+                                                    subdirectory: "sign-pictograms/png"))
+            let image = try XCTUnwrap(CIImage(contentsOf: url))
+            let box = CGRect(x: 0, y: 0, width: 1, height: 1)
+            XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+                source: image, context: context, box: box, townExit: code == 311))
+            XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+                source: image, context: context, box: box, townExit: code != 311))
+        }
+    }
+
+    func testTownExitCropPreservesStrikeDirectionAndIgnoresWhiteOutsideBox() throws {
+        let url = try XCTUnwrap(Bundle.main.url(forResource: "de-311", withExtension: "png",
+                                                subdirectory: "sign-pictograms/png"))
+        let image = try XCTUnwrap(CIImage(contentsOf: url))
+        let w = image.extent.width, h = image.extent.height
+        let frame = CGRect(x: 0, y: 0, width: w * 2, height: h * 3)
+        let sign = image.transformed(by: CGAffineTransform(translationX: w / 2, y: h * 2))
+        let source = sign.composited(over: CIImage(color: CIColor(red: 1, green: 1, blue: 1)).cropped(to: frame))
+        let box = CGRect(x: 0.25, y: 2.0 / 3, width: 0.5, height: 1.0 / 3)
+        XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+            source: source, context: context, box: box, townExit: true))
+        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+            source: source, context: context, box: box, townExit: false))
+    }
+
     func testTwoEdgeWindowsMapAndMergeOverlappingSourceProposals() throws {
         let windows = TrafficSignDetectorGeometry.twoEdgeWindows(width: 1920, height: 1080)
         XCTAssertEqual(windows.map(\.minX), [0, 840])

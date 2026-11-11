@@ -4,11 +4,13 @@ get_filename_component(REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../../.." ABSO
 add_library(youspeed_packed_runtime SHARED
     packed_runtime_jni.cpp
     packed_sqlite_jni.cpp
+    town_sign_face_jni.cpp
     vendor/sqlite/sqlite3.c
     "${REPO_ROOT}/shared/runtime-storage-prototype/zstd_decoder.c"
     "${REPO_ROOT}/shared/runtime-storage-prototype/packed_runtime.cpp"
     "${REPO_ROOT}/shared/runtime-storage-prototype/packed_sqlite_vfs.cpp"
-    "${REPO_ROOT}/shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp")
+    "${REPO_ROOT}/shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp"
+    "${REPO_ROOT}/shared/tsr/german_town_sign_face.cpp")
 target_compile_features(youspeed_packed_runtime PRIVATE cxx_std_17)
 # Full regional SQLite scans and block decompression also run in device Debug
 # builds. Keep native code optimized there while retaining the debug symbols;
@@ -20,6 +22,7 @@ set_target_properties(youspeed_packed_runtime PROPERTIES C_VISIBILITY_PRESET hid
 target_include_directories(youspeed_packed_runtime PRIVATE
     "${REPO_ROOT}/shared/runtime-storage-prototype"
     "${REPO_ROOT}/shared/runtime-sign-nodes-prototype"
+    "${REPO_ROOT}/shared/tsr"
     "${CMAKE_CURRENT_LIST_DIR}/vendor/sqlite")
 target_link_libraries(youspeed_packed_runtime PRIVATE z)
 target_link_options(youspeed_packed_runtime PRIVATE "-Wl,-z,max-page-size=16384")

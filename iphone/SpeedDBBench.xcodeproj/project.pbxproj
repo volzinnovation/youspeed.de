@@ -84,6 +84,7 @@
 		4EF4287DC4F61579DE64FA4F /* JournalZIPTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7B2DF75D1A9DE54408CC1A /* JournalZIPTests.swift */; };
 		4F0869F2CF922E1DDBAA2D65 /* legal.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9C00B7D4BAE2E00537C6B0B6 /* legal.txt */; };
 		4F74D049C1C2FDBE21F4558D /* tsr-panoramax-49e25e66.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4BC8711F5E9A8499C659EB9A /* tsr-panoramax-49e25e66.jpg */; };
+		5021D049B28E42CC09D4244E /* german_town_sign_face.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 945F1E6CBA8EA72AF868ED29 /* german_town_sign_face.cpp */; };
 		50B6F461896711F643FEE106 /* MatcherSequenceParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8318609B6D73E64E94BC69 /* MatcherSequenceParityTests.swift */; };
 		524C3B22AA71D1C92F44258B /* penalty-documentation in Resources */ = {isa = PBXBuildFile; fileRef = 04C2F0D2C62B67E17CA605B3 /* penalty-documentation */; };
 		5251B59580E44D7B457DEE32 /* TrafficSignDocumentationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 191791D7FE8882C94B6118FF /* TrafficSignDocumentationView.swift */; };
@@ -118,6 +119,7 @@
 		6B3B5E89C4B9320CBA398A01 /* TrafficSignApplicability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39703EF2C065320F653FE16A /* TrafficSignApplicability.swift */; };
 		6C6125765D21A773F707A807 /* SignCollectionContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9843690D1958EF7BBE17372F /* SignCollectionContract.swift */; };
 		6D21DF47C1B897F79D26AF2C /* CandidateAdmissionParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6A8ADF8A021CE971882EEE6 /* CandidateAdmissionParityTests.swift */; };
+		6DB5AA79CA76184E8C1426AC /* tsr-town-face in Resources */ = {isa = PBXBuildFile; fileRef = 675C582BD38028DA172FA8C8 /* tsr-town-face */; };
 		6DBB2000AE27F73707ED5140 /* UpcomingSpeedLimit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E675B0492905028498AA9A /* UpcomingSpeedLimit.swift */; };
 		6E34DC6950AD6D1F4789029A /* LaneDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1443061001BB609384462B /* LaneDetectionTests.swift */; };
 		6F60D7A507FE2DF64AC89067 /* SignCollectionObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A1288B4004BB946CCDB0DBD /* SignCollectionObserver.swift */; };
@@ -402,6 +404,7 @@
 		5F0F730708C353FE43CCCCF7 /* RoadBoundaryPresentationGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoadBoundaryPresentationGateTests.swift; sourceTree = "<group>"; };
 		636D2CC32CFDDF07624F055C /* SpeedReferenceMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedReferenceMachine.swift; sourceTree = "<group>"; };
 		64B3222389B58867565BEF82 /* PenaltyDocumentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PenaltyDocumentationTests.swift; sourceTree = "<group>"; };
+		675C582BD38028DA172FA8C8 /* tsr-town-face */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tsr-town-face"; path = "../tests/fixtures/tsr-town-face"; sourceTree = SOURCE_ROOT; };
 		68FFEA14CC3B9A22101A4B5C /* baden-wuerttemberg.poly */ = {isa = PBXFileReference; path = "baden-wuerttemberg.poly"; sourceTree = "<group>"; };
 		69D8F4F2E27174A61DB39470 /* PackedBundleRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackedBundleRuntimeTests.swift; sourceTree = "<group>"; };
 		69FF9109F78E912ED14AD0E5 /* hessen.poly */ = {isa = PBXFileReference; path = hessen.poly; sourceTree = "<group>"; };
@@ -436,6 +439,7 @@
 		9316AE70B5E6970D0B7C06A1 /* candidate-admission-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "candidate-admission-v1.json"; sourceTree = "<group>"; };
 		93E309A6D9FCEB5490D68E8B /* rheinland-pfalz.poly */ = {isa = PBXFileReference; path = "rheinland-pfalz.poly"; sourceTree = "<group>"; };
 		942A2BB5FC87F70F18503773 /* runtime_sign_nodes.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = runtime_sign_nodes.cpp; sourceTree = "<group>"; };
+		945F1E6CBA8EA72AF868ED29 /* german_town_sign_face.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = german_town_sign_face.cpp; sourceTree = "<group>"; };
 		9555D2DA081CCC7879470683 /* replay_track.kml */ = {isa = PBXFileReference; path = replay_track.kml; sourceTree = "<group>"; };
 		9843690D1958EF7BBE17372F /* SignCollectionContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionContract.swift; sourceTree = "<group>"; };
 		98DD2E5EF42CC8EFC99702FF /* V3SpeedLimitServicePool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V3SpeedLimitServicePool.swift; sourceTree = "<group>"; };
@@ -801,6 +805,7 @@
 			children = (
 				A10A47E6F78B1DFA38EBE5F7 /* collection-contract-v1 */,
 				5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */,
+				945F1E6CBA8EA72AF868ED29 /* german_town_sign_face.cpp */,
 				309E97F1DBD1520586110FA8 /* prolix-be-class-catalog-v1.json */,
 				19061D4394196CBC45064188 /* prolix-ch-class-catalog-v1.json */,
 				243D12B482203C249B54D205 /* prolix-de-class-catalog-v1.json */,
@@ -937,6 +942,7 @@
 			isa = PBXGroup;
 			children = (
 				D251CFDDFEAD599EF3D19C22 /* tsr-ocr-32 */,
+				675C582BD38028DA172FA8C8 /* tsr-town-face */,
 			);
 			path = fixtures;
 			sourceTree = "<group>";
@@ -1132,6 +1138,7 @@
 				CD94F53A9AD2D2538DDFBB9E /* tsr-ocr-32 in Resources */,
 				B361E0C91048B627E117297B /* tsr-panoramax-0906fc23.jpg in Resources */,
 				4F74D049C1C2FDBE21F4558D /* tsr-panoramax-49e25e66.jpg in Resources */,
+				6DB5AA79CA76184E8C1426AC /* tsr-town-face in Resources */,
 				C693A28032D08DEB12D23AF5 /* upcoming-speed-limit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1343,6 +1350,7 @@
 				FD62AB20C68AC0EB6376D543 /* VisionDismissalVoice.swift in Sources */,
 				38A23CFD1A1F18CBE2616222 /* VisualRoadCalibration.swift in Sources */,
 				7D2D9A46045098111BF3C9C1 /* VisualRoadCalibrationView.swift in Sources */,
+				5021D049B28E42CC09D4244E /* german_town_sign_face.cpp in Sources */,
 				65AE338D121F30F208779311 /* packed_runtime.cpp in Sources */,
 				54227A836007BA17237C2BD6 /* packed_sqlite_vfs.cpp in Sources */,
 				B39B1F76B7773BD87AFC2CD9 /* runtime_sign_nodes.cpp in Sources */,
@@ -1582,7 +1590,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10093;
+				CURRENT_PROJECT_VERSION = 10097;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1729,7 +1737,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 10093;
+				CURRENT_PROJECT_VERSION = 10097;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;

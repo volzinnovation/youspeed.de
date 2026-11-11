@@ -473,6 +473,9 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
     private val classifierBitmap = Bitmap.createBitmap(CLASSIFIER_SIZE, CLASSIFIER_SIZE, Bitmap.Config.ARGB_8888)
     private val detectorPixels = IntArray(DETECTOR_SIZE * DETECTOR_SIZE)
     private val classifierPixels = IntArray(CLASSIFIER_SIZE * CLASSIFIER_SIZE)
+    private val townFaceBitmap = Bitmap.createBitmap(GermanTownSignFace.WIDTH, GermanTownSignFace.HEIGHT, Bitmap.Config.ARGB_8888)
+    private val townFacePixels = IntArray(GermanTownSignFace.WIDTH * GermanTownSignFace.HEIGHT)
+    private val verifiesGermanTownFaces = verifiedPack.modelPack.countries == listOf("DE")
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
     private val rgbTensorEncoder = TrafficSignRgbTensorEncoder()
     private val mappingsByClassId = verifiedPack.modelPack.classMapping.associateBy(TrafficSignClassMapping::classId)
@@ -629,7 +632,8 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
 
     /** Runs the pinned classifier on an explicitly supplied crop; used for reproducible capability probes. */
     internal fun classifyCropForDiagnostic(source: Bitmap): TrafficSignDetection? = classify(
-        source, AndroidYoloProposal(1f, NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)), minimumScore = 0.0,
+        source, AndroidYoloProposal(1f, NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)),
+        minimumScore = 0.0, verifyTownFace = false,
     ).detection
 
     private data class ClassificationResult(
@@ -638,7 +642,12 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         val inferenceMs: Double = 0.0,
     )
 
-    private fun classify(source: Bitmap, proposal: AndroidYoloProposal, minimumScore: Double = verifiedPack.modelPack.thresholds.unknown): ClassificationResult {
+    private fun classify(
+        source: Bitmap,
+        proposal: AndroidYoloProposal,
+        minimumScore: Double = verifiedPack.modelPack.thresholds.unknown,
+        verifyTownFace: Boolean = true,
+    ): ClassificationResult {
         val box = proposal.box
         val left = ((box.x - box.width * HORIZONTAL_CROP_PADDING) * source.width).coerceAtLeast(0.0)
         val top = ((box.y - box.height * TOP_CROP_PADDING) * source.height).coerceAtLeast(0.0)
@@ -692,6 +701,10 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         }
         if (bestIndex < 0) return ClassificationResult(null, null, classifierInferenceMs)
         val classId = verifiedPack.displayCatalog.classId(bestIndex)
+        if (bestScore < minimumScore ||
+            (verifyTownFace && verifiesGermanTownFaces && (classId == "city:start" || classId == "city:end") &&
+                !matchesTownFace(source, box, townExit = classId == "city:end"))
+        ) return ClassificationResult(null, bestScore.toDouble(), classifierInferenceMs)
         val mapping = mappingsByClassId[classId]
         val combinedScore = min(proposal.score.toDouble(), bestScore.toDouble())
         val detection = TrafficSignDetection(
@@ -712,10 +725,33 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
             cropQuality = box.area,
         )
         return ClassificationResult(
-            detection = detection.takeIf { bestScore >= minimumScore },
+            detection = detection,
             classifierScore = bestScore.toDouble(),
             inferenceMs = classifierInferenceMs,
         )
+    }
+
+    internal fun matchesTownFace(source: Bitmap, box: NormalizedTrafficSignBoundingBox, townExit: Boolean): Boolean {
+        val width = box.width * source.width
+        val height = box.height * source.height
+        val matrix = android.graphics.Matrix().apply {
+            setRectToRect(
+                RectF(
+                    (box.x * source.width).toFloat(), (box.y * source.height).toFloat(),
+                    ((box.x + box.width) * source.width).toFloat(), ((box.y + box.height) * source.height).toFloat(),
+                ),
+                RectF(0f, 0f, GermanTownSignFace.WIDTH.toFloat(), GermanTownSignFace.HEIGHT.toFloat()),
+                android.graphics.Matrix.ScaleToFit.FILL,
+            )
+        }
+        Canvas(townFaceBitmap).apply {
+            drawColor(Color.BLACK)
+            drawBitmap(source, matrix, paint)
+        }
+        townFaceBitmap.getPixels(
+            townFacePixels, 0, GermanTownSignFace.WIDTH, 0, 0, GermanTownSignFace.WIDTH, GermanTownSignFace.HEIGHT,
+        )
+        return GermanTownSignFace.accepts(townFacePixels, width, height, townExit)
     }
 
     override fun close() {
@@ -723,6 +759,7 @@ internal class AndroidLiteRtTrafficSignInferenceEngine(
         classifier.close()
         detectorWindow.close()
         classifierBitmap.recycle()
+        townFaceBitmap.recycle()
     }
 
     private fun writeRgbFloats(buffer: ByteBuffer, pixels: IntArray) {
