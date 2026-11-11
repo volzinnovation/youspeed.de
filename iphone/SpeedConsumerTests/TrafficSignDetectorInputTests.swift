@@ -8,6 +8,23 @@ import CoreML
 final class TrafficSignDetectorInputTests: XCTestCase {
     private let context = CIContext(options: [.cacheIntermediates: false])
 
+    func testPanoramaxTownFaces() throws {
+        struct Sample: Decodable { let file: String; let code: Int }
+        let bundle = Bundle(for: Self.self)
+        let directory = "tsr-town-face"
+        let manifest = try XCTUnwrap(bundle.url(forResource: "panoramax-crops", withExtension: "json", subdirectory: directory))
+        let box = CGRect(x: 0, y: 0, width: 1, height: 1)
+        for sample in try JSONDecoder().decode([Sample].self, from: Data(contentsOf: manifest)) {
+            let url = try XCTUnwrap(bundle.url(forResource: sample.file, withExtension: nil, subdirectory: directory))
+            let image = try XCTUnwrap(CIImage(contentsOf: url))
+            for code in [310, 311] {
+                XCTAssertEqual(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+                    source: image, context: context, box: box, townExit: code == 311),
+                    sample.code == code, "\(sample.file), DE:\(code)")
+            }
+        }
+    }
+
     @MainActor
     func testGermanTownFacesRejectPhotographedDirectionSigns() throws {
         struct Case: Decodable { let file: String; let x: Double; let y: Double; let width: Double; let height: Double }

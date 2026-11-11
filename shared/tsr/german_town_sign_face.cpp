@@ -91,11 +91,57 @@ bool hasPaleInset(const uint8_t *rgba, int l, int t, int r, int b) {
     }
     return false;
 }
+
+// Follow the rising strike through the lower half of a town exit. Sampling
+// along the strike avoids pulling the fit toward red-tinted text or borders.
+bool hasExitStrike(const uint8_t *rgba, const std::array<Tone, W * H> &tones,
+                   int l, int t, int r, int b, bool small) {
+    const int w = r - l, h = b - t;
+    const int flank = std::max(4, h / 9);
+    constexpr int samples = 11;
+    const auto green = [&](int x, int y) { return int(rgba[4 * (y * W + x) + 1]); };
+    const auto redness = [&](int x, int y) {
+        const auto *p = rgba + 4 * (y * W + x);
+        return 100 * (int(p[0]) - p[1]) / std::max(1, int(p[0]));
+    };
+    for (int center = t + h * 46 / 100; center < t + h * 88 / 100; ++center) {
+        for (int rise = 18; rise <= 81; rise += 3) {
+            int colored = 0, faintLeft = 0, faintRight = 0;
+            for (int i = 0; i < samples; ++i) {
+                const int x = l + (w * (14 + 72 * i / (samples - 1)) + 50) / 100;
+                const int y = center + int(std::lround(rise * (l + w / 2.0 - x) / 100));
+                if (y - 2 < t || y + 2 >= b) continue;
+                colored += tones[(y - 2) * W + x] == Red || tones[y * W + x] == Red
+                    || tones[(y + 2) * W + x] == Red;
+                if (!small || center < t + h * 64 / 100 || rise < 24
+                    || y - flank < t || y + flank >= b) continue;
+
+                // In distant views the strike blends with the yellow face.
+                // Require a darker band with a red shift relative to its
+                // immediate surroundings on both halves of the same line.
+                const int core = green(x, y - 2) + 2 * green(x, y) + green(x, y + 2);
+                const int above = green(x, y - flank) + green(x, y - flank + 1);
+                const int below = green(x, y + flank) + green(x, y + flank - 1);
+                const int tint = std::max({redness(x, y - 2), redness(x, y), redness(x, y + 2)});
+                if (2 * std::min(above, below) - core >= 24
+                    && 2 * tint - redness(x, y - flank) - redness(x, y + flank) >= 3) {
+                    ++(i < samples / 2 ? faintLeft : faintRight);
+                }
+            }
+            if (colored >= 9 || (faintLeft >= 2 && faintRight >= 2 && faintLeft + faintRight >= 6))
+                return true;
+        }
+    }
+    return false;
+}
 }
 
 int32_t ysp_german_town_sign_face(const uint8_t *rgba, double width, double height, int32_t town_exit) {
-    if (!rgba || !std::isfinite(width) || !std::isfinite(height) || width < 24 || height < 16
-        || width < 0.94 * height || width > 2.35 * height) return 0;
+    // Allow perspective and a small amount of background around the
+    // roughly 3:2 town panel. Wide wayfinding and detour plaques fail here.
+    if (!rgba || !std::isfinite(width) || !std::isfinite(height)
+        || width < (town_exit ? 18 : 24) || height < (town_exit ? 12 : 16)
+        || width < 0.94 * height || width > (town_exit ? 2.35 : 2.10) * height) return 0;
 
     std::array<Tone, W * H> tones{};
     std::array<int, W> columns{};
@@ -124,7 +170,7 @@ int32_t ysp_german_town_sign_face(const uint8_t *rgba, double width, double heig
     while (b > t && rows[b - 1] < W / 4) --b;
     const int w = r - l, h = b - t;
     if (w < W * 0.68 || h < H * (town_exit ? 0.58 : 0.62) || width * w * H < 0.94 * height * h * W
-        || width * w * H > 2.30 * height * h * W) return 0;
+        || width * w * H > (town_exit ? 2.30 : 2.10) * height * h * W) return 0;
 
     // Verify coverage at all four corners as well as in the middle. A
     // chevron-shaped panel can meet the overall color and aspect checks.
@@ -230,21 +276,5 @@ int32_t ysp_german_town_sign_face(const uint8_t *rgba, double width, double heig
     // Genuine 311 can have an up arrow above the crossed-out town name.
     // Require the red rising strike, spread across the panel rather than
     // a red logo or a single red patch; never use the arrow as exit proof.
-    if (red * 100 < area * 2) return 0;
-    int n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0, syy = 0;
-    for (int x = il; x < ir; ++x) {
-        int count = 0, sum = 0;
-        for (int y = it; y < ib; ++y) if (tones[y * W + x] == Red) {
-            ++count; sum += y;
-        }
-        if (count == 0) continue;
-        const int y = sum / count;
-        ++n; sx += x; sy += y; sxx += x*x; sxy += x*y; syy += y*y;
-    }
-    if (n * 100 < (ir - il) * 39) return 0;
-    const double covariance = double(n) * sxy - sx * sy;
-    const double xVariance = double(n) * sxx - sx * sx;
-    const double yVariance = double(n) * syy - sy * sy;
-    return covariance < -0.20 * xVariance && covariance > -1.40 * xVariance
-        && covariance * covariance >= 0.70 * xVariance * yVariance;
+    return hasExitStrike(rgba, tones, l, t, r, b, width < 32 || height < 22);
 }

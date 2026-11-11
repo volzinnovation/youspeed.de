@@ -23,6 +23,30 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidLiteRtTrafficSignInstrumentedTest {
     @Test
+    fun panoramaxTownFaces() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val fixtures = instrumentation.context.assets
+        val rows = JSONArray(fixtures.open("tsr-town-face/panoramax-crops.json").bufferedReader().use { it.readText() })
+        val pack = AndroidTrafficSignModelPackLoader.load(instrumentation.targetContext)
+        val box = NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)
+        AndroidLiteRtTrafficSignInferenceEngine(pack).use { engine ->
+            for (i in 0 until rows.length()) {
+                val sample = rows.getJSONObject(i)
+                val name = sample.getString("file")
+                val source = requireNotNull(fixtures.open("tsr-town-face/$name").use(BitmapFactory::decodeStream))
+                try {
+                    for (code in listOf(310, 311)) {
+                        assertEquals("$name, DE:$code", sample.getInt("code") == code,
+                            engine.matchesTownFace(source, box, townExit = code == 311))
+                    }
+                } finally {
+                    source.recycle()
+                }
+            }
+        }
+    }
+
+    @Test
     fun germanTownFacesRejectPhotographedDirectionSigns() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext

@@ -898,7 +898,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         let extent = source.extent
         let crop = CGRect(x: extent.minX + box.minX * extent.width, y: extent.minY + box.minY * extent.height,
                           width: box.width * extent.width, height: box.height * extent.height)
-        guard crop.width >= 24, crop.height >= 16 else { return false }
+        guard !crop.isEmpty else { return false }
         let width = 80, height = 64
         let size = CGRect(x: 0, y: 0, width: width, height: height)
         let scaled = source.cropped(to: crop)

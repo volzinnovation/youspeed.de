@@ -1,0 +1,30 @@
+[
+  {
+    "file": "bad-herrenalb-exit.png",
+    "code": 311
+  },
+  {
+    "file": "dobel-entry.png",
+    "code": 310
+  },
+  {
+    "file": "dobel-exit-distant.png",
+    "code": 311
+  },
+  {
+    "file": "dobel-exit.png",
+    "code": 311
+  },
+  {
+    "file": "neusatz-direction.png",
+    "code": 0
+  },
+  {
+    "file": "wildbader-detour.png",
+    "code": 0
+  },
+  {
+    "file": "eyachbruecke-direction.png",
+    "code": 0
+  }
+]

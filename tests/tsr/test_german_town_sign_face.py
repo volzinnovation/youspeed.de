@@ -1,5 +1,6 @@
 """Exercise the same native face check used by the Android and iPhone runtimes."""
 import ctypes
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -37,6 +38,19 @@ def town_face(tmp_path_factory):
 def official(code):
     with Image.open(TSR / f"sign-pictograms/png/de-{code}.png") as image:
         return image.convert("RGB")
+
+
+FIXTURES = ROOT / "tests/fixtures/tsr-town-face"
+
+
+@pytest.mark.parametrize(
+    "sample", json.loads((FIXTURES / "panoramax-crops.json").read_text()),
+    ids=lambda sample: sample["file"],
+)
+def test_panoramax_town_face(town_face, sample):
+    with Image.open(FIXTURES / sample["file"]) as image:
+        assert town_face(image) == (sample["code"] == 310)
+        assert town_face(image, exit_sign=True) == (sample["code"] == 311)
 
 
 def test_entry_exit_and_low_exposure(town_face):
