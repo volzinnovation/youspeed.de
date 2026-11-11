@@ -7,7 +7,7 @@ from shapely.geometry import LineString
 from shapely.strtree import STRtree
 
 from scripts.inspector import build_place_sign_review as review
-from scripts.tsr.collection.estimate_sign_poses import Ray, angle, subtract
+from scripts.tsr.collection.estimate_sign_poses import Fit, Ray, angle, subtract
 
 
 def test_metric_window_and_clipped_road_background():
@@ -55,8 +55,18 @@ def test_nominal_crossing_does_not_claim_position_uncertainty():
     rays = [
         ray(i, point, angle(subtract(target, point))) for i, point in enumerate(cameras)
     ]
-    no_road = SimpleNamespace(fallback=lambda *_: None)
-    result = review.propose([SimpleNamespace(ray=r) for r in rays], bounds, no_road)
+    no_road = SimpleNamespace(ways=[], fallback=lambda *_: None)
+    point = review.nominal_intersection(rays, bounds)
+    assert point == pytest.approx(target, abs=1e-8)
+    assert (
+        review.propose([SimpleNamespace(ray=r) for r in rays], bounds, no_road) is None
+    )
+    result = review.render_proposal(
+        Fit(point, 0, rays, ()),
+        "nominal_review",
+        "nominal_optical_ray_crossing",
+        no_road,
+    )
     assert result["position_status"] == "nominal_review"
     assert result["position_radius_m"] is None
     assert result["support_count"] == 2
@@ -66,6 +76,107 @@ def test_nominal_crossing_does_not_claim_position_uncertainty():
 
     contradictory = ray(2, (target[0] - 10, target[1] - 8), 270)
     assert review.nominal_intersection([*rays, contradictory], bounds) is None
+
+
+@pytest.mark.parametrize("road_side", ["right", "left"])
+@pytest.mark.parametrize(
+    ("cameras", "target", "roads", "expected"),
+    [
+        (
+            (14, 28),
+            (2, 33),
+            [("20", [(0, -20), (0, 60)])],
+            (1, 33, "twoSightingRightOfWay", 180),
+        ),
+        (
+            (52, 38),
+            (-2, 33),
+            [("20", [(0, -20), (0, 60)])],
+            (-1, 33, "twoSightingRightOfWay", 0),
+        ),
+        (
+            (14, 28),
+            (2, 33),
+            [("20", [(0, 0), (0, 33)]), ("31", [(0, 33), (18, 33)])],
+            (1, 33, "twoSightingRightOfJunction", 180),
+        ),
+        (
+            (0, 5),
+            (1, 33),
+            [("20", [(0, -5), (0, 33)]), ("31", [(0, 33), (20, 33)])],
+            (1, 33, "twoSightingRightOfJunction", 180),
+        ),
+        (
+            (14, 28),
+            (1, 33),
+            [("20", [(0, -20), (0, 60)]), ("21", [(0, -20), (0, 60)])],
+            None,
+        ),
+    ],
+)
+def test_two_sighting_road_fallback_matches_streetshots_cases(
+    cameras, target, roads, expected, road_side
+):
+    # Same metre-based geometry as the iPhone SignPoseTests, translated to
+    # the Inspector's projected review window.
+    bounds = review.place_window()["bounds_en_m"]
+    west, south, east, north = bounds
+    origin = ((west + east) / 2, (south + north) / 2)
+
+    def absolute(point):
+        return tuple(a + b for a, b in zip(point, origin))
+
+    mirror = 1 if road_side == "right" else -1
+    target = (mirror * target[0], target[1])
+    views = []
+    for index, camera in enumerate(cameras):
+        position = (0, camera)
+        record = {
+            "source": "panoramax",
+            "observation_id": str(index),
+            "image_id": str(index),
+            "sequence_id": str(index),
+            "sign_code": "DE:274-30",
+            "pose_basis": "assumed",
+            "captured_at": f"2026-11-10T12:00:0{index}Z",
+            "bearing_degrees": angle(subtract(target, position)),
+            "bearing_error_deg": 3,
+            "horizontal_error_m": 1.5,
+        }
+        views.append(SimpleNamespace(ray=Ray.parse(record, absolute(position), 0)))
+
+    ways = []
+    for way_id, coords in roads:
+        points = [absolute((mirror * x, y)) for x, y in coords]
+        ways.append(
+            SimpleNamespace(key=way_id, points=points, geometry=LineString(points))
+        )
+    index = SimpleNamespace(ways=ways, index=STRtree([way.geometry for way in ways]))
+    result = review.propose(list(reversed(views)), bounds, index, road_side=road_side)
+    if expected is None:
+        assert result is None
+        return
+
+    expected_east, expected_north, expected_method, grid_azimuth = expected
+    longitude, latitude = result["longitude"], result["latitude"]
+    xs, ys = transform(review.WGS84, review.METRIC, [longitude], [latitude])
+    _, rotation = review.project([longitude], [latitude])[0]
+    assert (xs[0], ys[0]) == pytest.approx(
+        absolute((mirror * expected_east, expected_north)), abs=1e-6
+    )
+    assert (result["azimut_deg"] + rotation) % 360 == pytest.approx(
+        grid_azimuth, abs=1e-6
+    )
+    assert result["azimut_method"] == "road_tangent_two_sighting"
+    assert result["position_method"] == expected_method.replace(
+        "Right", road_side.title()
+    )
+    assert result["road_side"] == road_side
+    assert result["position_status"] == "two_sighting_road_review"
+    assert result["position_radius_m"] is None
+    assert result["osm_way_id"] == "20"
+    assert result["osm_distance_m"] == 1
+    assert result["support_count"] == 2
 
 
 def test_frozen_rays_must_match_the_private_report_snapshot(tmp_path):

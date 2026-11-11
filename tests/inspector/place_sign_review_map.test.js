@@ -165,3 +165,14 @@ test("draws source inventory positions and azimuth, then clears them for an unma
   app.control.show(place, {observations, proposal: null}, 0);
   assert.ok([...references, ...arrows].every(layer => layer.removed));
 });
+
+test("labels left-side fallback and preserves the label on older right-side snapshots", () => {
+  for (const [roadSide, word] of [["left", "links"], [undefined, "rechts"]]) {
+    const app = harness();
+    app.control.show(place, {observations, proposal: {
+      longitude: 8.435, latitude: 48.795, position_status: "two_sighting_road_review",
+      road_side: roadSide,
+    }}, 0);
+    assert.ok(app.layers.some(layer => layer.tooltip?.includes(`1 m ${word} der Straße`)));
+  }
+});

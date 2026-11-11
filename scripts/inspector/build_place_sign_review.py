@@ -13,6 +13,7 @@ from pathlib import Path
 from fiona.transform import transform, transform_geom
 from shapely.geometry import Point, box, shape
 
+from scripts.inspector import two_sighting_road_pose
 from scripts.tsr.collection.estimate_sign_poses import (
     METRIC,
     MAX_RANGE_M,
@@ -46,7 +47,9 @@ from scripts.tsr.collection.sign_identities import sign_token
 CENTER = (8.4364, 48.7978)
 HALF_SIZE_M = 1000
 MAX_PRIVATE_INPUT_BYTES = 64 * 1024**2
-REVIEW_PRIORITY = {"bounded_review": 0, "coarse_review": 1, "nominal_review": 2}
+REVIEW_PRIORITY = {
+    "bounded_review": 0, "coarse_review": 1, "two_sighting_road_review": 2, "nominal_review": 2,
+}
 MAX_FOLLOW_ON_FRAMES = 2
 FOLLOW_ON_CONTEXT_M = 100
 
@@ -139,10 +142,15 @@ def nominal_intersection(rays, bounds):
     return min(candidates)[1] if candidates else None
 
 
-def propose(group, bounds, roads):
+def propose(group, bounds, roads, *, road_side="right"):
     rays = independent([view.ray for view in group])
     if len(rays) < 2:
         return None
+    if len(rays) == 2:
+        placement = two_sighting_road_pose.estimate(rays, roads, road_side)
+        if placement is None or not inside(placement.point, bounds):
+            return None
+        return render_two_sighting(placement, rays)
     fit, status, method = None, "bounded_review", "optical_ray_intersection"
     if len(rays) >= MIN_VIEWS:
         fit, _ = fit_position(rays)
@@ -160,6 +168,27 @@ def propose(group, bounds, roads):
         status, method = "nominal_review", "nominal_optical_ray_crossing"
     return render_proposal(fit, status, method, roads)
 
+
+def render_two_sighting(placement, rays):
+    east, north = placement.point
+    longitude, latitude = (values[0] for values in transform(METRIC, WGS84, [east], [north]))
+    _, rotation = project([longitude], [latitude])[0]
+    proxy = image_bearing_candidate(rays)
+    return {
+        "longitude": longitude,
+        "latitude": latitude,
+        "position_method": placement.method,
+        "position_status": "two_sighting_road_review",
+        "position_radius_m": None,
+        "support_count": len(rays),
+        "azimut_deg": (angle(placement.approach) + 180 - rotation) % 360,
+        "azimut_method": "road_tangent_two_sighting",
+        "azimut_image_spread_deg": proxy.spread if proxy else None,
+        "osm_way_id": placement.way_id,
+        "osm_distance_m": two_sighting_road_pose.OFFSET_M,
+        "road_side": placement.road_side,
+        "osm_direction_basis": "camera_approach",
+    }
 
 def render_proposal(fit, status, method, roads):
     east, north = fit.point
@@ -443,10 +472,14 @@ def build_document(
     center=CENTER,
     sequence_ranks=None,
     boundary=None,
+    road_side="right",
 ):
+    if road_side not in two_sighting_road_pose.ROAD_SIDES:
+        raise ValueError("road side must be 'left' or 'right'")
     if len(secret) < 32:
         raise ValueError("review ID key must contain at least 32 private bytes")
     place = place_window(name, center)
+    place["two_sighting_road_side"] = road_side
     window = box(*place["bounds_en_m"])
     if boundary is not None:
         window = shape(transform_geom(WGS84, METRIC, boundary))
@@ -500,7 +533,7 @@ def build_document(
                         break
                     used_photos.add(candidate.ray.image)
                     continuations.append((row, offset, candidate))
-        proposal = propose(group, bounds, roads)
+        proposal = propose(group, bounds, roads, road_side=road_side)
         result = {
             "id": sign_token(secret, "place-sign-review-v1", group[0].ray.key),
             "sign_code": group[0].ray.code,
@@ -571,6 +604,8 @@ def main():
     parser.add_argument("--rays", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--road-graph", type=Path, required=True)
+    parser.add_argument("--road-side", choices=two_sighting_road_pose.ROAD_SIDES, default="right",
+                        help="Side of the way for two-sighting estimates, relative to travel (default: right)")
     parser.add_argument(
         "--sequence-ranks",
         type=Path,
@@ -605,6 +640,7 @@ def main():
         read_private(args.id_key_file, 4096),
         name=args.place_name or "Bad Herrenalb",
         center=tuple(args.center) if args.center else CENTER,
+        road_side=args.road_side,
         sequence_ranks=read_sequence_ranks(args.sequence_ranks)
         if args.sequence_ranks
         else None,

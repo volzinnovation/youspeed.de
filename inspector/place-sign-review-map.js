@@ -3,11 +3,17 @@
 
   const colors = {area: "#536b81", camera: "#2676b9", proposal: "#7650c4", inventory: "#087847"};
   const positionLabels = {coarse_review: "Grobe Positionshypothese", nominal_review: "Nominale Positionshypothese"};
-  const azimuthLabels = {reverse_image_ray_proxy: "Näherung aus Bildsichtstrahlen", road_tangent_with_image_proxy: "Straßenachse mit Bildhinweis"};
+  const azimuthLabels = {reverse_image_ray_proxy: "Näherung aus Bildsichtstrahlen", road_tangent_with_image_proxy: "Straßenachse mit Bildhinweis", road_tangent_two_sighting: "Straßenachse in Anfahrtrichtung"};
   const earthRadius = 6371008.8;
   const sightlineLength = 100;
   const radians = Math.PI / 180;
   const format = new Intl.NumberFormat("de-DE", {maximumFractionDigits: 1});
+
+  function twoSightingRoadLabel(proposal) {
+    return proposal.road_side === "left"
+      ? "Zwei Sichtungen · 1 m links der Straße"
+      : "Zwei Sichtungen · 1 m rechts der Straße";
+  }
 
   function point(latitude, longitude) {
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude) ||
@@ -118,6 +124,8 @@
       const label = before ? "Vorher · Panoramax" : after ? "Nachher · mit mobiler Evidenz"
         : proposal.position_status === "adjacent_track_review"
         ? "Vorgeschlagene Position aus Folgeaufnahmen"
+        : proposal.position_status === "two_sighting_road_review"
+        ? twoSightingRoadLabel(proposal)
         : positionLabels[proposal.position_status] ?? "Vorgeschlagene Schildposition";
       const radius = proposal.position_radius_m;
       if (positive(radius)) {
@@ -125,7 +133,7 @@
           .addTo(geometryLayers);
       }
       const azimuth = displayProposalAzimuth(proposal.azimut_deg);
-      const roadHeading = proposal.azimut_method === "road_tangent_with_image_proxy" || proposal.azimut_method?.endsWith("_fallback");
+      const roadHeading = ["road_tangent_with_image_proxy", "road_tangent_two_sighting"].includes(proposal.azimut_method) || proposal.azimut_method?.endsWith("_fallback");
       drawAzimuth(position, azimuth, color, before || roadHeading);
       const headingLabel = proposal.azimut_method?.includes("proxy") ? "Azimut-Hinweis" : "Azimut";
       const detail = [label, positive(radius) ? `Positionsradius ${format.format(radius)} m` : "Positionsradius offen",
@@ -273,5 +281,5 @@
     };
   }
 
-  root.YouSpeedPlaceSignReviewMap = {create, displayProposalAzimuth};
+  root.YouSpeedPlaceSignReviewMap = {create, displayProposalAzimuth, twoSightingRoadLabel};
 })(window);

@@ -62,6 +62,14 @@ normalisierten Sichtstrahlen und dem eingefrorenen OSM-Straßennetz.
 Für einen anderen Ort die passenden Quellen sowie
 `--place-name NAME --center LON LAT` angeben.
 
+Bei genau zwei unabhängigen Sichtungen verwenden Inspector und StreetShots
+denselben Vorschlag: 1 m seitlich von der OSM-Wegachse, auch zwischen
+Kreuzungen. Die Seite gilt relativ zur Anfahrtrichtung. Standard ist rechts.
+Für Großbritannien beim Snapshot-Build `--road-side left` angeben. Eine
+passende Kreuzung kann als Bezugspunkt dienen.
+Sind Weg oder Position mehrdeutig, bleibt die Gruppe offen. Bestehende
+Snapshots zeigen die neue Schätzung nach einem erneuten lokalen Build.
+
 ## WFS-Karte für Bad Herrenalb und Pforzheim
 
 **WFS-Karte** im Tab **Zeichen vor Ort** öffnet die Karte in Fenstergröße.

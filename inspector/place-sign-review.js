@@ -261,7 +261,10 @@
         : "Standort und Azimut sind für diese Gruppe noch offen.";
       return;
     }
-    const title = adjacent ? labels.adjacent_review : labels[proposal.position_status] || "Standortvorschlag";
+    const title = adjacent ? labels.adjacent_review
+      : proposal.position_status === "two_sighting_road_review"
+      ? window.YouSpeedPlaceSignReviewMap.twoSightingRoadLabel(proposal)
+      : labels[proposal.position_status] || "Standortvorschlag";
     const point = `${proposal.latitude.toFixed(6)}, ${proposal.longitude.toFixed(6)}`;
     const radius = Number.isFinite(proposal.position_radius_m)
       ? `${adjacent ? "Bedingter Radius " : "± "}${meters(proposal.position_radius_m)}` : "Positionsunsicherheit offen";
