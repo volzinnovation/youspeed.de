@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WFS-Karte · Streetshots Inspector</title>
+    <link rel="icon" href="./streetshots-road.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="./sign-feed.css" />
+    <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script defer src="./traffic-sign-inventory.js"></script>
+    <script defer src="./map-tiles.js"></script>
+    <script defer src="./sign-feed.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="feed-back" href="./#place-signs">Streetshots Inspector</a>
+      <label>Gemeinde
+        <select id="feed-city">
+          <option value="bad-herrenalb">Bad Herrenalb</option>
+          <option value="pforzheim">Pforzheim</option>
+        </select>
+      </label>
+      <a id="feed-source">WFS · GeoJSON</a>
+      <span id="feed-status" role="status"></span>
+    </header>
+    <main id="feed-map" aria-label="Verkehrszeichen mit Azimut auf der Karte"></main>
+  </body>
+</html>

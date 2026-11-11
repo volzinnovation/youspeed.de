@@ -27,6 +27,7 @@ from inspector.place_sign_review import (
     PlaceSignReviewStore,
 )
 from inspector.sign_positions import SignPositionStore, SignPositionsError  # noqa: E402
+from inspector.sign_wfs import ROUTE as SIGN_WFS_ROUTE, SignWFSError, query_snapshot
 MAX_IMAGE_BYTES = 5 * 1024**2
 VOLZ_DB_ADDRESS = "141.47.91.52"
 ACTIVE_MEDIA = """
@@ -740,6 +741,26 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             raise PlaceSignReviewError("Unbekanntes Bild für die Ortsprüfung.", 404)
         self.image_response(*store.image(*match.groups()), head=head)
 
+    def sign_wfs(self, query, head):
+        config = getattr(self.server, "sign_wfs_config", None)
+        host = self.headers["Host"]
+        if (config is None or self.client_address[0] != "127.0.0.1"
+                or host not in {f"127.0.0.1:{self.server.server_port}",
+                                f"localhost:{self.server.server_port}"}):
+            raise InspectorError("WFS-Snapshot ist hier nicht eingerichtet.", 404)
+        try:
+            body, content_type, status = query_snapshot(
+                self.server.sign_wfs_mapserv, config, host, query
+            )
+        except SignWFSError as error:
+            raise InspectorError(str(error), error.status) from None
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        if not head:
+            self.wfile.write(body)
+
     def request_allowed(self, head=False):
         host = self.headers.get("Host", "")
         if len(self.headers.get_all("Host", [])) != 1 or host not in self.server.allowed_hosts:
@@ -876,7 +897,9 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             try:
                 if len(parsed.query) > 2048:
                     raise InspectorError("Abfrage zu lang.", 400)
-                if parsed.path == PLACE_SIGN_REVIEW_ROUTE or parsed.path.startswith(PLACE_SIGN_REVIEW_ROUTE + "/"):
+                if parsed.path == SIGN_WFS_ROUTE:
+                    self.sign_wfs(parsed.query, head)
+                elif parsed.path == PLACE_SIGN_REVIEW_ROUTE or parsed.path.startswith(PLACE_SIGN_REVIEW_ROUTE + "/"):
                     self.place_sign_review(parsed, head)
                 elif parsed.path in ("/api/sign-positions", "/inspector/api/sign-positions"):
                     if parsed.query:
@@ -964,7 +987,20 @@ def arguments(argv=None):
     parser.add_argument("--sign-positions-file", type=Path, default=os.environ.get("YOUSPEED_SIGN_POSITIONS_FILE"), help="Private external static fit export; sources rechecked on every request")
     parser.add_argument("--place-sign-review-file", type=Path, help="Owner-only external place review snapshot; loopback only")
     parser.add_argument("--place-sign-review-media-dir", type=Path, help="Optional owner-only directory of native Panoramax JPEGs named by picture UUID")
+    parser.add_argument("--sign-wfs-config", type=Path, help="Owner-only MapServer 8 configuration outside the checkout")
+    parser.add_argument("--sign-wfs-mapserv", type=Path, help="Path to the local MapServer CGI executable")
     args = parser.parse_args(argv)
+    if bool(args.sign_wfs_config) != bool(args.sign_wfs_mapserv):
+        parser.error("--sign-wfs-config and --sign-wfs-mapserv are required together")
+    if args.sign_wfs_config:
+        args.sign_wfs_config = args.sign_wfs_config.resolve()
+        args.sign_wfs_mapserv = args.sign_wfs_mapserv.resolve()
+        if (args.bind != "127.0.0.1" or args.sign_wfs_config.is_relative_to(ROOT)
+                or not args.sign_wfs_config.is_file()
+                or args.sign_wfs_config.stat().st_mode & 0o077
+                or args.sign_wfs_config.parent.stat().st_mode & 0o077
+                or not os.access(args.sign_wfs_mapserv, os.X_OK)):
+            parser.error("WFS requires loopback, an owner-only external configuration, and an executable mapserv")
     if args.place_sign_review_media_dir and not args.place_sign_review_file:
         parser.error("--place-sign-review-media-dir requires --place-sign-review-file")
     if args.place_sign_review_file:
@@ -991,6 +1027,8 @@ def main():
     server.lane_videos = lane_videos
 
     server.sign_positions = SignPositionStore(args.sign_positions_file, store)
+    server.sign_wfs_config = args.sign_wfs_config
+    server.sign_wfs_mapserv = args.sign_wfs_mapserv
     if args.place_sign_review_file:
         server.place_sign_review = PlaceSignReviewStore(
             args.place_sign_review_file,

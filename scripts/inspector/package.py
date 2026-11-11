@@ -18,7 +18,7 @@ def main():
     for extension in ("js", "css", "html"):
         files.extend((root / "inspector").glob("*." + extension))
     files.append(root / "inspector/streetshots-road.svg")
-    files.extend(root / "inspector" / name for name in ("server.py", "lane_video.py", "crop_review_proxy.py", "sign_positions.py", "place_sign_review.py", "requirements.txt", "report-crops-grants.sql", "README.md"))
+    files.extend(root / "inspector" / name for name in ("server.py", "lane_video.py", "crop_review_proxy.py", "sign_positions.py", "place_sign_review.py", "sign_wfs.py", "requirements.txt", "report-crops-grants.sql", "README.md"))
     files.append(root / "scripts/inspector/install-volz-db.py")
     files.append(root / "scripts/inspector/update-volz-db.py")
     files.extend(path for path in (root / "shared/tsr/fixtures").rglob("*")

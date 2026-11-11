@@ -62,6 +62,64 @@ normalisierten Sichtstrahlen und dem eingefrorenen OSM-Straßennetz.
 Für einen anderen Ort die passenden Quellen sowie
 `--place-name NAME --center LON LAT` angeben.
 
+## WFS-Karte für Bad Herrenalb und Pforzheim
+
+**WFS-Karte** im Tab **Zeichen vor Ort** öffnet die Karte in Fenstergröße.
+Die Gemeindeauswahl bestimmt den WFS-Filter. Der Link **WFS · GeoJSON**
+zeigt dieselbe Abfrage, die der Inspector zum Zeichnen der Karte verwendet.
+Ein Klick auf ein Zeichen ergänzt die Gruppen-ID im Kartenlink.
+Die Karte dreht das gemeinsame Zeichenpiktogramm mit dem ausgegebenen
+Azimut im Uhrzeigersinn ab geografisch Nord. Für Klassen ohne gemeinsames
+Piktogramm erscheint der Klassencode.
+
+1. Je Gemeinde einen privaten Ortsprüfungs-Snapshot erzeugen. Beim Aufruf von
+   `python -m scripts.inspector.build_place_sign_review` zusätzlich
+   `--boundary-file GRENZEN.geojson --municipality AGS` setzen. Die
+   Grenzdatei enthält WGS84-Polygon-Features mit `properties.kind` =
+   `gemeinde_ags` und `properties.id` = AGS. Bad Herrenalb hat AGS
+   `08235033`, Pforzheim `08231000`. Für mobile Evidenz zuerst
+   `collect_place_mobile_evidence` mit einem Snapshot für das jeweilige
+   Gemeindegebiet ausführen und die Sammlung bei einem neuen Build über
+   `--mobile-collection` übernehmen. Die Freigabe- und Löschkontrollen des
+   Report-Backends müssen bei der Sammlung aktuell sein.
+2. Beide Gemeinde-Snapshots zusammen verarbeiten:
+
+   ```sh
+   python -m scripts.inspector.build_city_sign_wfs \
+     --boundaries /private/sign-review/gemeinden.geojson \
+     --bad-herrenalb /private/sign-review/bad-herrenalb.json \
+     --pforzheim /private/sign-review/pforzheim.json \
+     --output-directory /private/sign-review/wfs
+   ```
+
+   Der Build ersetzt den geprüften GeoPackage-Datenstand atomar. Er nutzt
+   die verfeinerte Position, wenn eine belastbare Verfeinerung vorliegt.
+   Gruppen mit unbekannter Position oder einer Position außerhalb der
+   Gemeinde erscheinen nur in der Batch-Statistik. `first_discovered_on`
+   ist das früheste belegte UTC-Aufnahmedatum und bleibt für dieselbe
+   Gruppen-ID über Batch-Läufe erhalten. `datum` ist das jüngste
+   Aufnahmedatum der zugehörigen Panoramax-Aufnahmen und der für die
+   Verfeinerung verwendeten mobilen Evidenz. GML verwendet EPSG:25832
+   standardmäßig, GeoJSON WGS84 in der Reihenfolge Längengrad, Breitengrad.
+3. Mit einem lokalen MapServer 8 (OGR/GeoPackage) den Inspector starten:
+
+   ```sh
+   python inspector/server.py --bind 127.0.0.1 --port 8769 \
+     --sign-wfs-mapserv /path/to/mapserv \
+     --sign-wfs-config /private/sign-review/wfs/mapserver.conf
+   ```
+
+   Der Inspector bedient WFS 2.0 `GetCapabilities`,
+   `DescribeFeatureType` und `GetFeature` unter
+   `/inspector/api/sign-wfs` mit dem Layer `youspeed:verkehrszeichen`.
+   Der Kartenaufruf lautet `/inspector/sign-feed.html?city=pforzheim`
+   oder `/inspector/sign-feed.html?city=bad-herrenalb`.
+
+Der WFS-Snapshot ist ein privater Batch-Arbeitsstand. Die Dateien enthalten
+keine Bildlinks oder Quellen-IDs. Die öffentliche Veröffentlichung über
+live-eu verwendet die geprüfte Quellenfreigabe und die dortige
+Veröffentlichungspipeline.
+
 ## Verkehrszeichen im Offline-Bestand
 
 Nach dem Laden eines Bundles mit `traffic_sign_inventory` zeigt **Karte & TSR**
