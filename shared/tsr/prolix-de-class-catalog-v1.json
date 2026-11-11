@@ -1100,7 +1100,8 @@
         "nl": "Maximumaslast"
       },
       "display_eligible": false,
-      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+      "notes": "The classifier identifies the sign family. Its printed value remains unknown.",
+      "reference_example_sign_code": "DE:263-8"
     },
     {
       "class_id": "maxheight",
@@ -1113,7 +1114,8 @@
         "nl": "Maximumhoogte"
       },
       "display_eligible": false,
-      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+      "notes": "The classifier identifies the sign family. Its printed value remains unknown.",
+      "reference_example_sign_code": "DE:265-3,8"
     },
     {
       "class_id": "maxlength",
@@ -1126,7 +1128,8 @@
         "nl": "Maximumlengte"
       },
       "display_eligible": false,
-      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+      "notes": "The classifier identifies the sign family. Its printed value remains unknown.",
+      "reference_example_sign_code": "DE:266-10"
     },
     {
       "class_id": "maxspeed:10",
@@ -1309,7 +1312,8 @@
         "nl": "Maximumgewicht"
       },
       "display_eligible": false,
-      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+      "notes": "The classifier identifies the sign family. Its printed value remains unknown.",
+      "reference_example_sign_code": "DE:262-5,5"
     },
     {
       "class_id": "maxwidth",
@@ -1322,7 +1326,8 @@
         "nl": "Maximumbreedte"
       },
       "display_eligible": false,
-      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+      "notes": "The classifier identifies the sign family. Its printed value remains unknown.",
+      "reference_example_sign_code": "DE:264-2"
     },
     {
       "class_id": "min_distance",
@@ -1335,7 +1340,8 @@
         "nl": "Minimumafstand"
       },
       "display_eligible": false,
-      "notes": "Model identifies the sign family, not its printed value. Do not display a fabricated number; maximum-speed ends use the national unnumbered end pictogram."
+      "notes": "The classifier identifies the sign family. Its printed value remains unknown.",
+      "reference_example_sign_code": "DE:273-70"
     },
     {
       "class_id": "motorway:end",
@@ -1567,7 +1573,8 @@
         "nl": "Doodlopende weg voor auto’s"
       },
       "display_eligible": false,
-      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype."
+      "notes": "Wildcard sign family: the classifier does not identify the exact pictogram subtype.",
+      "reference_example_sign_code": "DE:357-50"
     },
     {
       "class_id": "no_hgv",
@@ -1778,7 +1785,8 @@
         "nl": "Eenrichtingsweg"
       },
       "display_eligible": false,
-      "notes": "Closest German sign family is DE:220 (Einbahnstraße); the classifier omits the left/right layout variant, so no pictogram is displayed."
+      "notes": "Closest German sign family is DE:220 (Einbahnstraße); the classifier omits the left/right layout variant, so no pictogram is displayed.",
+      "reference_example_sign_code": "DE:220-10"
     },
     {
       "class_id": "other",
@@ -1934,7 +1942,8 @@
         "nl": "Haaks parkeren"
       },
       "display_eligible": false,
-      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted.",
+      "reference_example_sign_code": "DE:315-50"
     },
     {
       "class_id": "parking:sidewalk",
@@ -1947,7 +1956,8 @@
         "nl": "Parkeren op de stoep"
       },
       "display_eligible": false,
-      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted."
+      "notes": "The class does not determine the exact layout or direction; no representative subtype is substituted.",
+      "reference_example_sign_code": "DE:315-50"
     },
     {
       "class_id": "pedestrian:start",
@@ -1978,7 +1988,8 @@
         "nl": "Gescheiden fiets- en voetpad"
       },
       "display_eligible": false,
-      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented."
+      "notes": "The class does not identify the left/right pictogram variant; no subtype is invented.",
+      "reference_example_sign_code": "DE:241-30"
     },
     {
       "class_id": "pedestrian_bicycle:start",
@@ -2685,6 +2696,552 @@
         "exact_subtype_inferred": false
       },
       "notes": "Exact inventory/reference artwork for DE:625-20, 500 × 500 mm. The official catalogue names the right-pointing direction; historical Aufstellung links means left-side placement. Existing arrow:red covers a broader mixed family and must not be treated as proof of this exact subtype. Not an additional classifier output."
+    },
+    {
+      "class_id": "DE:220-10",
+      "sign_code": "DE:220-10",
+      "image_path": "tsr/sign-pictograms/png/de-220-10.png",
+      "label": {
+        "de": "Einbahnstraße, linksweisend",
+        "en": "One-way street, left arrow",
+        "fr": "Sens unique, flèche gauche",
+        "nl": "Eenrichtingsstraat, pijl links"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:220-20",
+      "sign_code": "DE:220-20",
+      "image_path": "tsr/sign-pictograms/png/de-220-20.png",
+      "label": {
+        "de": "Einbahnstraße, rechtsweisend",
+        "en": "One-way street, right arrow",
+        "fr": "Sens unique, flèche droite",
+        "nl": "Eenrichtingsstraat, pijl rechts"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:241-30",
+      "sign_code": "DE:241-30",
+      "image_path": "tsr/sign-pictograms/png/de-241-30.png",
+      "label": {
+        "de": "Getrennter Rad- und Gehweg, Radweg links",
+        "en": "Separated cycleway and footway, cycleway on left",
+        "fr": "Pistes cyclable et piétonne séparées, vélo à gauche",
+        "nl": "Gescheiden fiets- en voetpad, fietspad links"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:241-31",
+      "sign_code": "DE:241-31",
+      "image_path": "tsr/sign-pictograms/png/de-241-31.png",
+      "label": {
+        "de": "Getrennter Geh- und Radweg, Radweg rechts",
+        "en": "Separated footway and cycleway, cycleway on right",
+        "fr": "Pistes piétonne et cyclable séparées, vélo à droite",
+        "nl": "Gescheiden voet- en fietspad, fietspad rechts"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:262-5,5",
+      "sign_code": "DE:262-5,5",
+      "image_path": "tsr/sign-pictograms/png/de-262-5.5.png",
+      "label": {
+        "de": "Gewichtsbeschränkung 5,5 t",
+        "en": "Weight limit 5.5 t",
+        "fr": "Limitation de poids 5,5 t",
+        "nl": "Maximumgewicht 5,5 t"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:263-8",
+      "sign_code": "DE:263-8",
+      "image_path": "tsr/sign-pictograms/png/de-263-8.png",
+      "label": {
+        "de": "Achslastbeschränkung 8 t",
+        "en": "Axle weight limit 8 t",
+        "fr": "Limitation de charge par essieu 8 t",
+        "nl": "Maximumaslast 8 t"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:264-2",
+      "sign_code": "DE:264-2",
+      "image_path": "tsr/sign-pictograms/png/de-264-2.png",
+      "label": {
+        "de": "Breitenbeschränkung 2 m",
+        "en": "Width limit 2 m",
+        "fr": "Limitation de largeur 2 m",
+        "nl": "Maximumbreedte 2 m"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:264-2,3",
+      "sign_code": "DE:264-2,3",
+      "image_path": "tsr/sign-pictograms/png/de-264-2.3.png",
+      "label": {
+        "de": "Breitenbeschränkung 2,3 m",
+        "en": "Width limit 2.3 m",
+        "fr": "Limitation de largeur 2,3 m",
+        "nl": "Maximumbreedte 2,3 m"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:265-3,8",
+      "sign_code": "DE:265-3,8",
+      "image_path": "tsr/sign-pictograms/png/de-265-3.8.png",
+      "label": {
+        "de": "Höhenbeschränkung 3,8 m",
+        "en": "Height limit 3.8 m",
+        "fr": "Limitation de hauteur 3,8 m",
+        "nl": "Maximumhoogte 3,8 m"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:266-10",
+      "sign_code": "DE:266-10",
+      "image_path": "tsr/sign-pictograms/png/de-266-10.png",
+      "label": {
+        "de": "Längenbeschränkung 10 m",
+        "en": "Length limit 10 m",
+        "fr": "Limitation de longueur 10 m",
+        "nl": "Maximumlengte 10 m"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:273-70",
+      "sign_code": "DE:273-70",
+      "image_path": "tsr/sign-pictograms/png/de-273-70.png",
+      "label": {
+        "de": "Mindestabstand 70 m",
+        "en": "Minimum distance 70 m",
+        "fr": "Distance minimale 70 m",
+        "nl": "Minimumafstand 70 m"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-50",
+      "sign_code": "DE:315-50",
+      "image_path": "tsr/sign-pictograms/png/de-315-50.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs links",
+        "en": "Pavement parking, partly parallel left",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à gauche",
+        "nl": "Parkeren op de stoep, half parallel links"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-51",
+      "sign_code": "DE:315-51",
+      "image_path": "tsr/sign-pictograms/png/de-315-51.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs links, Anfang",
+        "en": "Pavement parking, partly parallel left, start",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à gauche, début",
+        "nl": "Parkeren op de stoep, half parallel links, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-52",
+      "sign_code": "DE:315-52",
+      "image_path": "tsr/sign-pictograms/png/de-315-52.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs links, Ende",
+        "en": "Pavement parking, partly parallel left, end",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à gauche, fin",
+        "nl": "Parkeren op de stoep, half parallel links, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-53",
+      "sign_code": "DE:315-53",
+      "image_path": "tsr/sign-pictograms/png/de-315-53.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs links, Mitte",
+        "en": "Pavement parking, partly parallel left, middle",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à gauche, milieu",
+        "nl": "Parkeren op de stoep, half parallel links, midden"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-55",
+      "sign_code": "DE:315-55",
+      "image_path": "tsr/sign-pictograms/png/de-315-55.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs rechts",
+        "en": "Pavement parking, partly parallel right",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à droite",
+        "nl": "Parkeren op de stoep, half parallel rechts"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-56",
+      "sign_code": "DE:315-56",
+      "image_path": "tsr/sign-pictograms/png/de-315-56.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs rechts, Anfang",
+        "en": "Pavement parking, partly parallel right, start",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à droite, début",
+        "nl": "Parkeren op de stoep, half parallel rechts, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-57",
+      "sign_code": "DE:315-57",
+      "image_path": "tsr/sign-pictograms/png/de-315-57.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs rechts, Ende",
+        "en": "Pavement parking, partly parallel right, end",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à droite, fin",
+        "nl": "Parkeren op de stoep, half parallel rechts, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-58",
+      "sign_code": "DE:315-58",
+      "image_path": "tsr/sign-pictograms/png/de-315-58.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb längs rechts, Mitte",
+        "en": "Pavement parking, partly parallel right, middle",
+        "fr": "Stationnement sur le trottoir, partiel parallèle à droite, milieu",
+        "nl": "Parkeren op de stoep, half parallel rechts, midden"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-60",
+      "sign_code": "DE:315-60",
+      "image_path": "tsr/sign-pictograms/png/de-315-60.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs links",
+        "en": "Pavement parking, fully parallel left",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à gauche",
+        "nl": "Parkeren op de stoep, volledig parallel links"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-61",
+      "sign_code": "DE:315-61",
+      "image_path": "tsr/sign-pictograms/png/de-315-61.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs links, Anfang",
+        "en": "Pavement parking, fully parallel left, start",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à gauche, début",
+        "nl": "Parkeren op de stoep, volledig parallel links, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-62",
+      "sign_code": "DE:315-62",
+      "image_path": "tsr/sign-pictograms/png/de-315-62.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs links, Ende",
+        "en": "Pavement parking, fully parallel left, end",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à gauche, fin",
+        "nl": "Parkeren op de stoep, volledig parallel links, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-63",
+      "sign_code": "DE:315-63",
+      "image_path": "tsr/sign-pictograms/png/de-315-63.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs links, Mitte",
+        "en": "Pavement parking, fully parallel left, middle",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à gauche, milieu",
+        "nl": "Parkeren op de stoep, volledig parallel links, midden"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-65",
+      "sign_code": "DE:315-65",
+      "image_path": "tsr/sign-pictograms/png/de-315-65.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs rechts",
+        "en": "Pavement parking, fully parallel right",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à droite",
+        "nl": "Parkeren op de stoep, volledig parallel rechts"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-66",
+      "sign_code": "DE:315-66",
+      "image_path": "tsr/sign-pictograms/png/de-315-66.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs rechts, Anfang",
+        "en": "Pavement parking, fully parallel right, start",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à droite, début",
+        "nl": "Parkeren op de stoep, volledig parallel rechts, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-67",
+      "sign_code": "DE:315-67",
+      "image_path": "tsr/sign-pictograms/png/de-315-67.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs rechts, Ende",
+        "en": "Pavement parking, fully parallel right, end",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à droite, fin",
+        "nl": "Parkeren op de stoep, volledig parallel rechts, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-68",
+      "sign_code": "DE:315-68",
+      "image_path": "tsr/sign-pictograms/png/de-315-68.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz längs rechts, Mitte",
+        "en": "Pavement parking, fully parallel right, middle",
+        "fr": "Stationnement sur le trottoir, intégral parallèle à droite, milieu",
+        "nl": "Parkeren op de stoep, volledig parallel rechts, midden"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-70",
+      "sign_code": "DE:315-70",
+      "image_path": "tsr/sign-pictograms/png/de-315-70.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer links",
+        "en": "Pavement parking, partly perpendicular left",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à gauche",
+        "nl": "Parkeren op de stoep, half haaks links"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-71",
+      "sign_code": "DE:315-71",
+      "image_path": "tsr/sign-pictograms/png/de-315-71.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer links, Anfang",
+        "en": "Pavement parking, partly perpendicular left, start",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à gauche, début",
+        "nl": "Parkeren op de stoep, half haaks links, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-72",
+      "sign_code": "DE:315-72",
+      "image_path": "tsr/sign-pictograms/png/de-315-72.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer links, Ende",
+        "en": "Pavement parking, partly perpendicular left, end",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à gauche, fin",
+        "nl": "Parkeren op de stoep, half haaks links, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-73",
+      "sign_code": "DE:315-73",
+      "image_path": "tsr/sign-pictograms/png/de-315-73.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer links, Mitte",
+        "en": "Pavement parking, partly perpendicular left, middle",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à gauche, milieu",
+        "nl": "Parkeren op de stoep, half haaks links, midden"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-75",
+      "sign_code": "DE:315-75",
+      "image_path": "tsr/sign-pictograms/png/de-315-75.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer rechts",
+        "en": "Pavement parking, partly perpendicular right",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à droite",
+        "nl": "Parkeren op de stoep, half haaks rechts"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-76",
+      "sign_code": "DE:315-76",
+      "image_path": "tsr/sign-pictograms/png/de-315-76.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer rechts, Anfang",
+        "en": "Pavement parking, partly perpendicular right, start",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à droite, début",
+        "nl": "Parkeren op de stoep, half haaks rechts, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-77",
+      "sign_code": "DE:315-77",
+      "image_path": "tsr/sign-pictograms/png/de-315-77.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer rechts, Ende",
+        "en": "Pavement parking, partly perpendicular right, end",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à droite, fin",
+        "nl": "Parkeren op de stoep, half haaks rechts, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-78",
+      "sign_code": "DE:315-78",
+      "image_path": "tsr/sign-pictograms/png/de-315-78.png",
+      "label": {
+        "de": "Parken auf Gehwegen, halb quer rechts, Mitte",
+        "en": "Pavement parking, partly perpendicular right, middle",
+        "fr": "Stationnement sur le trottoir, partiel perpendiculaire à droite, milieu",
+        "nl": "Parkeren op de stoep, half haaks rechts, midden"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-81",
+      "sign_code": "DE:315-81",
+      "image_path": "tsr/sign-pictograms/png/de-315-81.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz quer links, Anfang",
+        "en": "Pavement parking, fully perpendicular left, start",
+        "fr": "Stationnement sur le trottoir, intégral perpendiculaire à gauche, début",
+        "nl": "Parkeren op de stoep, volledig haaks links, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-82",
+      "sign_code": "DE:315-82",
+      "image_path": "tsr/sign-pictograms/png/de-315-82.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz quer links, Ende",
+        "en": "Pavement parking, fully perpendicular left, end",
+        "fr": "Stationnement sur le trottoir, intégral perpendiculaire à gauche, fin",
+        "nl": "Parkeren op de stoep, volledig haaks links, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-86",
+      "sign_code": "DE:315-86",
+      "image_path": "tsr/sign-pictograms/png/de-315-86.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz quer rechts, Anfang",
+        "en": "Pavement parking, fully perpendicular right, start",
+        "fr": "Stationnement sur le trottoir, intégral perpendiculaire à droite, début",
+        "nl": "Parkeren op de stoep, volledig haaks rechts, begin"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:315-87",
+      "sign_code": "DE:315-87",
+      "image_path": "tsr/sign-pictograms/png/de-315-87.png",
+      "label": {
+        "de": "Parken auf Gehwegen, ganz quer rechts, Ende",
+        "en": "Pavement parking, fully perpendicular right, end",
+        "fr": "Stationnement sur le trottoir, intégral perpendiculaire à droite, fin",
+        "nl": "Parkeren op de stoep, volledig haaks rechts, einde"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:357-50",
+      "sign_code": "DE:357-50",
+      "image_path": "tsr/sign-pictograms/png/de-357-50.png",
+      "label": {
+        "de": "Sackgasse, für Fuß- und Radverkehr durchlässig",
+        "en": "Dead end except for pedestrians and cyclists",
+        "fr": "Impasse sauf piétons et cyclistes",
+        "nl": "Doodlopende weg behalve voor voetgangers en fietsers"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:357-51",
+      "sign_code": "DE:357-51",
+      "image_path": "tsr/sign-pictograms/png/de-357-51.png",
+      "label": {
+        "de": "Sackgasse, für Fußverkehr durchlässig",
+        "en": "Dead end except for pedestrians",
+        "fr": "Impasse sauf piétons",
+        "nl": "Doodlopende weg behalve voor voetgangers"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
+    },
+    {
+      "class_id": "DE:357-52",
+      "sign_code": "DE:357-52",
+      "image_path": "tsr/sign-pictograms/png/de-357-52.png",
+      "label": {
+        "de": "Sackgasse, für Radverkehr durchlässig",
+        "en": "Dead end except for cyclists",
+        "fr": "Impasse sauf cyclistes",
+        "nl": "Doodlopende weg behalve voor fietsers"
+      },
+      "display_eligible": true,
+      "notes": "Exact inventory/reference artwork. This code does not add a classifier output."
     }
   ],
   "provenance": {

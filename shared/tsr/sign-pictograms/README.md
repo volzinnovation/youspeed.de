@@ -115,7 +115,7 @@ render different bytes and correctly fail that reproducibility check.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.
-All 120 assets already have transparent exteriors; do not turn white pixels
+The shared PNGs have transparent exteriors. Do not turn white pixels
 globally transparent, which would also erase required parts of the signs.
 
 `display_eligible` means that a faithful pictogram exists for the entry. It does
@@ -130,6 +130,16 @@ the original 134 indices and appending eight outputs. Additional exact
 inventory/reference entries, not model outputs. The model recognizes town
 boundaries as `city:start` and `city:end`; exact source-code aliases do not add
 outputs or establish recognition performance.
+
+The exact reference entries for DE:315 variants, numeric DE:262–266 and
+DE:273 variants, DE:220, DE:241 and DE:357 variants use the official
+Verkehrszeichenkatalog designations and the individually pinned Commons SVGs.
+Decimal codes retain the VzKat comma. Filenames use a dot for the decimal
+separator. The optional `reference_example_sign_code` points from a family
+entry to an example for the Inspector WFS map. The map marks the example
+with a question mark and identifies its example code on selection. Exact
+reference assets and family examples leave the classifier vocabulary and
+driving presentation rules unchanged.
 
 The numeric `DE:278-x` aliases are also available to the OSM/MobiData inventory
 display independently of the camera vocabulary. Use the exact source sign code
