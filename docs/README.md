@@ -2,6 +2,8 @@
 
 This directory contains the public technical documentation for YouSpeed.
 
+- [`tsr/STREETSHOTS_AI_BENCHMARK_STRATEGY_2026-11-12.md`](tsr/STREETSHOTS_AI_BENCHMARK_STRATEGY_2026-11-12.md): proposed StreetShots Survey AI strategy for all inventory object types, seven reference routes starting with a short development loop, wider commute/autobahn checks, reproducible Android/iPhone/server comparisons, pipeline versioning and evidence requirements for inventory changes
+
 - [`OPENSIGNMAP_CONCEPT_2026-11-04.md`](OPENSIGNMAP_CONCEPT_2026-11-04.md): Android-only OpenSignMap on a reference device, three-repository architecture, Panoramax/Baba comparison, survey database and OSM review, town coverage planning, Centipede RTK and 360° cameras, and AI-assisted engineering estimates
 
 - [`APP_IDENTITY_AND_SIGN_PARITY_2026-11-04.validation.json`](APP_IDENTITY_AND_SIGN_PARITY_2026-11-04.validation.json): build 10085 version/build labels, Android preview and secondary-sign parity repairs, packaged artwork checks and device-consolidation status
