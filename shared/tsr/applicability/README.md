@@ -89,8 +89,10 @@ JSON dependencies (Swift, Kotlin CLI, Python jsonschema are required):
 ```sh
 python3 scripts/tsr/applicability/replay.py --output /tmp/tsr-applicability-replay
 python3 -m pytest tests/tsr/test_applicability.py -q
-node --test tests/inspector/tsr_qa_core.test.js
 ```
+
+Run `node --test tests/inspector/tsr_qa_core.test.js` from the
+[Streetshots Inspector](https://github.com/volzinnovation/streetshots-inspector) checkout.
 
 The runner compiles the actual Swift and Kotlin implementations against identical
 proposal sequences, validates the input schema, checks exact associations,

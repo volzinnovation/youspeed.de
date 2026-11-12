@@ -1,3 +1,0 @@
--r requirements.txt
-Fiona>=1.10,<2
-Shapely>=2,<3

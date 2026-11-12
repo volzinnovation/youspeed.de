@@ -78,7 +78,7 @@ Relevant backend code is in
 [live inventory qualification](../../Woladen.de-analytics/commercial_backend/youspeed/crop_interest_inventory.py),
 and [crop reviews](../../Woladen.de-analytics/commercial_backend/youspeed/crop_reviews.py).
 The current Inspector joins phone media to sightings in
-[server.py](../inspector/server.py).
+[server.py](https://github.com/volzinnovation/streetshots-inspector/blob/main/inspector/server.py).
 
 ```mermaid
 flowchart LR

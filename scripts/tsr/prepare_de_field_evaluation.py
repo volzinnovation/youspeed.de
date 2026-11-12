@@ -21,6 +21,7 @@ from uuid import UUID
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT.parent / 'Woladen.de-analytics'))
+sys.path.insert(1, str(ROOT.parent / 'streetshots-inspector'))
 from inspector.server import CropStore, OBSERVATION_JOIN, LIVE_ACTIVE_MEDIA, PANORAMAX_JOIN, ACTIVE_PANORAMAX
 from scripts.inspector.panoramax_annotation_statistics import arguments, load_catalogs, load_mapping
 from scripts.tsr.source_annotation_labels import resolve_crop_labels

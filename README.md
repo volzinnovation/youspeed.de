@@ -149,7 +149,7 @@ issue and is retained as test evidence rather than a claim of recognition accura
 - [`android/`](android/): Android app, tests, and Gradle project
 - [`scripts/map/`](scripts/map/): OpenStreetMap bundle builders, validators, and release helpers
 - [`mapdata/`](mapdata/): map-data formats, lightweight fixtures, and reproducibility metadata
-- [`inspector/`](inspector/): local matcher and log-inspection tools
+- [Streetshots Inspector](https://github.com/volzinnovation/streetshots-inspector): local matcher and log-inspection tools
 - [`Web/`](Web/): source for the public website
 - [`sites/`](sites/): generated static website published by GitHub Pages
 - [`docs/`](docs/): technical and release documentation

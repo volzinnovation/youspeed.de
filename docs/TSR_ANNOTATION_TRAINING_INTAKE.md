@@ -47,8 +47,8 @@ label**. A missing model qualifier does not prove human authorship. Raw tags,
 source qualifiers, annotation identity and provenance remain attached to the
 record. Explicit review records identify the reviewer and accepted class.
 
-Refresh the class statistics from the repository root using the existing
-private Inspector report connection:
+Refresh the class statistics from the [Streetshots Inspector](https://github.com/volzinnovation/streetshots-inspector)
+repository root using the existing private Inspector report connection:
 
 ```sh
 python3 scripts/inspector/panoramax_annotation_statistics.py \

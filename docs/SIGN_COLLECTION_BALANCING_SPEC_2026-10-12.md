@@ -50,7 +50,7 @@ not be presented as a training-ready or planner-ready population.
 The raw CSV, snapshot, provenance assessment and assessment code are retained
 locally under `docs/collection-evidence/2026-10-12/`; drive evidence is excluded
 from this public repository. The maintained report command is
-[`scripts/inspector/sign_statistics.py`](../scripts/inspector/sign_statistics.py).
+[`scripts/inspector/sign_statistics.py`](https://github.com/volzinnovation/streetshots-inspector/blob/main/scripts/inspector/sign_statistics.py).
 
 ## Product behavior
 

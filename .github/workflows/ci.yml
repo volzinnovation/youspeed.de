@@ -184,18 +184,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
       - run: python -m pip install pytest jsonschema
       - uses: actions/download-artifact@v4
         with:
           pattern: applicability-*
           merge-multiple: true
           path: parity
-      - name: Validate contracts and Inspector
-        run: |
-          python -m pytest tests/tsr/test_applicability.py tests/tsr/test_contract_schemas.py tests/tsr/test_v2_contracts.py tests/tsr/test_passage_contracts.py -q
-          node --test tests/inspector/tsr_qa_core.test.js
+      - name: Validate contracts
+        run: python -m pytest tests/tsr/test_applicability.py tests/tsr/test_contract_schemas.py tests/tsr/test_v2_contracts.py tests/tsr/test_passage_contracts.py -q
       - name: Compare native associations, state, decisions and reasons
         run: python scripts/tsr/applicability/compare_outputs.py parity/applicability-swift.json parity/applicability-kotlin.json
