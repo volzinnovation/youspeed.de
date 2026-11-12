@@ -131,7 +131,7 @@ def features(document, ags, boundary, previous):
             id=identifier, stvo_nr=group["sign_code"], ost=east, nord=north,
             azimut=(azimuth + 180) % 360 if azimuth is not None else None,
             datum=max(days), first_discovered_on=first, gemeinde_ags=ags,
-            kreis_ags=ags[:5], position_status=pose["position_status"],
+            kreis_ags=ags[:5] if ags else None, position_status=pose["position_status"],
             sighting_count=len({row["image_id"] for row in panorama}) + len(mobile_ids),
             source_types="panoramax,mobile" if mobile else "panoramax",
         )
@@ -173,6 +173,19 @@ def build(directory, boundary_file, reviews):
     if len({row["properties"]["id"] for row in rows}) != len(rows):
         raise ValueError("sign group is present in both municipalities")
 
+    write_snapshot(directory, rows)
+    return summary
+
+
+def write_snapshot(directory, rows):
+    """Write already resolved features; generic scopes need no invented municipality."""
+    directory = Path(directory).resolve()
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if directory.stat().st_mode & 0o077:
+        raise ValueError("WFS output directory must be owner-only")
+    if len({row["properties"]["id"] for row in rows}) != len(rows):
+        raise ValueError("duplicate sign feature ID")
+    target = directory / f"{LAYER}.gpkg"
     with TemporaryDirectory(dir=directory) as working:
         working = Path(working)
         package = working / target.name
@@ -197,7 +210,6 @@ def build(directory, boundary_file, reviews):
             path.chmod(0o600)
             os.replace(path, directory / path.name)
         os.replace(package, target)
-    return summary
 
 
 def main():

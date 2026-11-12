@@ -23,6 +23,12 @@ def captured_seconds(row):
 
 
 def in_review_window(row, place, boundary=None):
+    if boundary is None:
+        geometry = place.get("scope_geometry_wgs84") or place.get("boundary_wgs84")
+        if geometry:
+            from shapely.geometry import shape
+
+            boundary = shape(geometry)
     if boundary is not None:
         from shapely.geometry import Point
 
@@ -42,10 +48,11 @@ def attach_mobile_evidence(document, rows, bindings=None):
     bindings = bindings or {}
     place = document.get("place", {})
     boundary = None
-    if place.get("boundary_wgs84"):
+    geometry = place.get("scope_geometry_wgs84") or place.get("boundary_wgs84")
+    if geometry:
         from shapely.geometry import shape
 
-        boundary = shape(place["boundary_wgs84"])
+        boundary = shape(geometry)
     by_code = defaultdict(list)
     annotations = defaultdict(set)
     for group in document["groups"]:

@@ -33,6 +33,9 @@ main.fls
 inspector/*.ndjson
 inspector/logs/
 
+# Private survey reference tracks and derived route metadata
+/shared/survey/reference-routes/
+
 # Opt-in TSR diagnostic captures and generated training artifacts
 tsr-data/
 shared/tsr/local-data/

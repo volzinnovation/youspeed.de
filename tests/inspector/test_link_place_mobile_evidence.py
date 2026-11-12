@@ -1,5 +1,8 @@
 import copy
 
+import pytest
+from shapely.geometry import box, mapping
+
 from scripts.inspector.link_place_mobile_evidence import attach_mobile_evidence
 
 
@@ -66,3 +69,33 @@ def test_shared_annotation_stays_explicit_and_rerun_clears_obsolete_links():
         assert entry["association"]["shared_panoramax_group_ids"] == ["group-a", "group-b"]
     attach_mobile_evidence(review, [])
     assert all("mobile_observations" not in group for group in review["groups"])
+
+
+@pytest.mark.parametrize("geometry_key", ["scope_geometry_wgs84", "boundary_wgs84"])
+def test_mobile_window_uses_polygon_holes_without_dropping_context_links(geometry_key):
+    review = document()
+    outer = box(8.43, 48.79, 8.45, 48.81)
+    hole = box(8.4399, 48.7999, 8.4401, 48.8001)
+    review["place"] = {
+        "bounds_ring_wgs84": list(outer.exterior.coords),
+        "boundary_wgs84": mapping(outer),
+        geometry_key: mapping(outer.difference(hole)),
+    }
+    attach_mobile_evidence(review, [mobile()])
+    # Scope membership is a label. Nearby evidence stays linked even outside
+    # the shape; source collection and the pose estimator own context gates.
+    entries = review["groups"][0]["mobile_observations"]
+    assert len(entries) == 1
+    assert entries[0]["in_review_window"] is False
+
+
+def test_square_generic_scope_preserves_mobile_window_membership():
+    review = document()
+    square = box(8.43, 48.79, 8.45, 48.81)
+    review["place"] = {"bounds_ring_wgs84": list(square.exterior.coords)}
+    original = copy.deepcopy(review)
+    attach_mobile_evidence(original, [mobile()])
+    review["place"]["scope_geometry_wgs84"] = mapping(square)
+    attach_mobile_evidence(review, [mobile()])
+    assert review["groups"] == original["groups"]
+    assert review["mobile_reference"] == original["mobile_reference"]

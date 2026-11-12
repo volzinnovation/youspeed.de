@@ -472,6 +472,7 @@ def build_document(
     center=CENTER,
     sequence_ranks=None,
     boundary=None,
+    scope_geometry=None,
     road_side="right",
 ):
     if road_side not in two_sighting_road_pose.ROAD_SIDES:
@@ -481,16 +482,25 @@ def build_document(
     place = place_window(name, center)
     place["two_sighting_road_side"] = road_side
     window = box(*place["bounds_en_m"])
+    if boundary is not None and scope_geometry is not None:
+        raise ValueError("supply an official boundary or a survey scope, not both")
     if boundary is not None:
         window = shape(transform_geom(WGS84, METRIC, boundary))
         place.update(boundary_wgs84=boundary, bounds_en_m=window.bounds,
                      bbox_wgs84=shape(boundary).bounds)
         place.pop("bounds_ring_wgs84")
+    if scope_geometry is not None:
+        window = shape(transform_geom(WGS84, METRIC, scope_geometry))
+        if window.is_empty or not window.is_valid or window.geom_type not in {"Polygon", "MultiPolygon"}:
+            raise ValueError("survey scope must be a valid polygon")
+        place.update(scope_geometry_wgs84=scope_geometry, bounds_en_m=window.bounds,
+                     bbox_wgs84=shape(scope_geometry).bounds, center_basis="configured_survey_scope")
+        place.pop("bounds_ring_wgs84")
     bounds = place["bounds_en_m"]
     place["roads"] = local_roads(roads, bounds)
     place["road_attribution"] = roads.source.get("attribution")
     all_views = load_views(records, report)
-    anchor_window = window.buffer(FOLLOW_ON_CONTEXT_M) if boundary is not None else window
+    anchor_window = window.buffer(FOLLOW_ON_CONTEXT_M) if boundary is not None or scope_geometry is not None else window
     views = [view for view in all_views if anchor_window.covers(Point(view.ray.position))]
     records_by_key = {"panoramax:" + row["observation_id"]: row for row in records}
     native_by_id = {row["annotation_id"]: row for row in report[1:-1]}

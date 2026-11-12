@@ -1146,3 +1146,84 @@ keine automatisch bestätigte Aufstellung oder Geltungsrichtung.
 Erklärvideo-Platz](osm-help.html). Der Video-Bereich hat die ID
 `explanation-video`; eine echte Aufnahme und Untertitel können später ergänzt
 werden. Es wird kein Beispielvideo ausgeliefert.
+
+## Wiederholbarer Survey-Batch für GPX oder Bounding Box
+
+Der Batch benötigt Python 3.10 oder neuer und die GIS-Abhängigkeiten aus
+`inspector/requirements-survey.txt` (`python -m pip install -r
+inspector/requirements-survey.txt`). Zum Ausliefern der erzeugten WFS-Ansichten
+wird zusätzlich die vorhandene MapServer-Installation verwendet.
+
+`python -m scripts.inspector.batch_survey_inventory` verwendet die bestehenden
+Inspector-Gruppierungs-, Straßenrichtungs-, Panoramax- und Mobile-Poseverfahren.
+Ein Lauf berechnet den kanonischen Kontext genau einmal. `--gpx` erzeugt einen
+30-m-Korridor in EPSG:25832; alternativ nimmt `--bbox WEST SOUTH EAST NORTH`
+WGS84-Koordinaten entgegen. Unterstützt wird der deutsche UTM32-Bereich
+(6–12° Ost, 47–56° Nord). GPX-Tracksegmente und größere Zeit-/Distanzlücken
+werden nicht verbunden; die Route wird am Ende nicht künstlich geschlossen.
+
+Mit `--context-bbox` oder `--context-geometry` bleibt die Berechnung auf einem
+festen größeren Kontext. `--context-geometry` liest ein WGS84-GeoJSON-Polygon
+oder MultiPolygon, auch als Feature, und erhält beispielsweise ein zuvor
+festgelegtes metrisches 2-km-Quadrat. Der Kontext muss den gesamten Exportbereich
+enthalten. Die Quellabfrage berücksichtigt zusätzlich einen 100-m-Kamerapuffer;
+die WFS-Auswahl richtet sich ausschließlich nach dem berechneten Schildpunkt.
+
+Beispiel mit bereits frisch eingelesenen, hashgebundenen Rohdaten:
+
+```sh
+python -m scripts.inspector.batch_survey_inventory \
+  --gpx /private/tmp/survey/route.gpx \
+  --context-geometry /private/tmp/survey/canonical-context.geojson \
+  --source-pack /private/tmp/survey/source-pack.json \
+  --adapter-root /absolute/path/Woladen.de-analytics \
+  --road-graph /private/tmp/survey/road-graph.json \
+  --id-key-file /private/tmp/survey/private-id.key \
+  --jurisdiction-boundaries /private/tmp/survey/official-boundaries.geojson \
+  --output-directory shared/survey/reference-routes/batches/example
+```
+
+`--adapter-root` verweist auf die bestehenden Backend-Normalisierer; der Default
+ist das Schwester-Repository `Woladen.de-analytics`. Der private ID-Schlüssel
+bleibt bei Wiederholungen gleich. Er wird niemals ausgegeben. Optionale aktuelle
+Bildprüfungen lassen sich mit `--review-decisions` und `--media-dir` erneut an die
+frisch aufgebauten Annotationen binden. Alte Gruppen, Positions-Snapshots oder
+GeoPackages sind keine zulässigen Eingaben.
+
+Ein Rohdatenmanifest hat `schema_version: 1`,
+`source_kind: "fresh_management_corpus"`, `no_previous_inventory_input: true`
+und `canonical_coverage_wgs84` als GeoJSON-Geometrie. Unter `files` stehen genau
+`report`, `rays`, `sequence_ranks`, `mobile_collection`, `panorama_receipt`,
+`normalization_receipt` und `mobile_receipt`, jeweils mit `path` und `sha256`.
+Die Aufnahmebelege binden Bericht, Ranglisten und Normalisierung an denselben
+Discovery-/Crop-Checkpoint; Mobile-Belege enthalten die aktuellen
+Kontrollprüfungen. Das ist ein aktuelles Einlesen des synchronisierten
+Management-Bestands, kein neu ausgelöster Panoramax-Import.
+
+Für die direkte erneute Aufnahme ersetzt `--backend-root /absolute/path/backend`
+den Parameter `--source-pack`. Zusätzlich sind `--database-file`, `--db-port`,
+`--assumptions` und `--catalog` anzugeben. Die vorhandenen read-only Adapter
+bleiben für Zulässigkeit und Kontrollprüfungen verantwortlich. Nur die exakt
+bekannte BH/PF-Geografieklausel wird durch die Kontextabfrage ersetzt; bei einer
+geänderten SQL-Vorlage bricht der Lauf ab. Bericht und Ranglisten verwenden
+getrennte `REPEATABLE READ READ ONLY`-Transaktionen mit verglichenen
+Corpus-Checkpoints. Verbindungsaufbau: 20 Sekunden; Abfragezeitlimit des
+Panoramax-Exporters unverändert 45 Sekunden. Rohdaten und private Helper-Logs
+liegen im benachbarten Verzeichnis `<output-directory>-sources`.
+
+Der Batch schreibt `groups-canonical.json`, die Evidenzansicht
+`groups-scope.json`, `scope.json`, `batch.json` sowie einen einzigen kanonischen
+GeoPackage unter `wfs-canonical/`. `wfs-area/mapserver.conf` und
+`wfs-scope/mapserver.conf` verweisen auf exakt diesen Datenbestand; gemeinsame
+Features behalten alle Geometrien und Eigenschaften. Die permanente
+ID-Filterklammerung ist gegen zusätzliche native MapServer-FES- und BBOX-Filter
+getestet. Ein ungeklärtes Schild bleibt ohne erfundenen WFS-Punkt.
+`--jurisdiction-boundaries` ordnet ausschließlich tatsächliche Gemeindegebiete
+zu; ohne diese Datei bleiben AGS-Felder leer. Survey-Polygone gelten niemals als
+amtliche Gemeindegrenzen. Für bestehende Gemeinde-Filter ist diese Option daher
+nötig.
+
+Ausgabeverzeichnisse müssen neu sein. Private Dateien erhalten Modus 0600,
+Verzeichnisse 0700. `shared/survey/reference-routes/` ist Git-ignoriert; dort
+liegen ausschließlich lokale Arbeitsartefakte. Der Batch startet keinen Server
+und veröffentlicht nichts.
