@@ -1,5 +1,7 @@
 # KI für intelligente Mobilität
 
+Kurzvorlesung für **Montag, 16. November 2026**: [Hugging Face – Modelle und Datensätze am Beispiel Panoramax](huggingface-panoramax-de-2026-11-16/README.md), 10 Folien mit Repository-Ansichten, versioniertem Download und kurzer Browserübung.
+
 Neue Vertiefung für **Montag, 26. Oktober 2026**: [Bildklassifikation mit KI – Wie verbessere ich ein vorhandenes KI-Modell?](tsr-sgblur-de-2026-10-26/README.md), 45 Minuten zu NN/CNN/YOLO, TSR/SGBlur, Prolix und dem Training von DE:310/DE:311 mit Panoramax-Boxen und Crops.
 
 **Profilprojekt IMo WS27-28 HSPF**  
