@@ -323,6 +323,27 @@ def asset_path(picture_id):
     )
 
 
+def local_picture(media_dir, picture_id):
+    """Read the same owner-only original for review and live annotation editing."""
+    if media_dir is None:
+        return None
+    canonical_uuid(picture_id)
+    try:
+        fd = os.open(media_dir, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        try:
+            info = os.fstat(fd)
+            if info.st_uid != os.getuid() or info.st_mode & 0o077:
+                raise ValueError("image directory must be owner-only")
+            try:
+                return private_bytes(picture_id + ".jpg", MAX_SOURCE_BYTES, dir_fd=fd)
+            except FileNotFoundError:
+                return None
+        finally:
+            os.close(fd)
+    except (ValueError, OSError) as error:
+        raise PlaceSignReviewError("Privates Bildverzeichnis ist nicht lesbar oder ungültig.") from error
+
+
 class PlaceSignReviewStore:
     def __init__(self, path, *, opener, media_dir=None, mobile_admitter=None):
         self.path = path
@@ -363,26 +384,7 @@ class PlaceSignReviewStore:
             self.slots.release()
 
     def local_photo(self, item):
-        if self.media_dir is None:
-            return None
-        try:
-            fd = os.open(self.media_dir, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
-            try:
-                info = os.fstat(fd)
-                if info.st_uid != os.getuid() or info.st_mode & 0o077:
-                    raise ValueError("image directory must be owner-only")
-                try:
-                    return private_bytes(
-                        item.picture + ".jpg", MAX_SOURCE_BYTES, dir_fd=fd
-                    )
-                except FileNotFoundError:
-                    return None
-            finally:
-                os.close(fd)
-        except (ValueError, OSError) as error:
-            raise PlaceSignReviewError(
-                "Privates Bildverzeichnis ist nicht lesbar oder ungültig."
-            ) from error
+        return local_picture(self.media_dir, item.picture)
 
     def upstream(self, path, accepted, limit):
         request = Request(

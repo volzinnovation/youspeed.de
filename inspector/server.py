@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import ssl
 import sys
 from urllib.parse import parse_qs, unquote, urlsplit
 import urllib.request
@@ -21,14 +22,19 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from inspector.crop_review_proxy import CropReviewProxy, ReviewProxyError
+from inspector.keycloak_login import KeycloakLogin
 from inspector.place_sign_review import (
     ROUTE as PLACE_SIGN_REVIEW_ROUTE,
     PlaceSignReviewError,
     PlaceSignReviewStore,
+    private_bytes,
 )
 from inspector.sign_positions import SignPositionStore, SignPositionsError  # noqa: E402
 from inspector.sign_wfs import ROUTE as SIGN_WFS_ROUTE, SignWFSError, query_snapshot
+from inspector.sign_annotations import ROUTE as SIGN_ANNOTATIONS_ROUTE, SignAnnotations, AnnotationEditorError
 MAX_IMAGE_BYTES = 5 * 1024**2
+ROUTE_REVIEW_API = "/inspector/api/route-review"
+MAX_ROUTE_REVIEW_BYTES = 12 * 1024**2
 VOLZ_DB_ADDRESS = "141.47.91.52"
 ACTIVE_MEDIA = """
  m.expires > EXTRACT(EPOCH FROM now())
@@ -377,7 +383,7 @@ class CropStore:
                     raise InspectorError("Report-Zugangsdaten-Datei ist leer.")
             except OSError:
                 raise InspectorError("Report-Zugangsdaten-Datei nicht lesbar.") from None
-        options = {"user": self.args.db_user, "dbname": "youspeed", "connect_timeout": 5,
+        options = {"user": self.args.db_user, "dbname": "youspeed", "connect_timeout": getattr(self.args, "db_connect_timeout", 20),
                    "row_factory": dict_row, "options": "-c default_transaction_read_only=on -c statement_timeout=10000"}
         if self.args.db_host:
             options["host"] = self.args.db_host
@@ -741,6 +747,38 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             raise PlaceSignReviewError("Unbekanntes Bild für die Ortsprüfung.", 404)
         self.image_response(*store.image(*match.groups()), head=head)
 
+    def route_review(self, parsed, head):
+        directory = getattr(self.server, "route_review_dir", None)
+        if (directory is None or self.client_address[0] != "127.0.0.1"
+                or self.headers.get("Host") not in {
+                    f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"
+                }):
+            raise InspectorError("Route comparison is unavailable on this server.", 404)
+        if parsed.query:
+            raise InspectorError("Route comparison does not accept query parameters.", 400)
+        try:
+            if parsed.path == ROUTE_REVIEW_API + "/data.json":
+                data = private_bytes(directory / "data.json", MAX_ROUTE_REVIEW_BYTES)
+                self.image_response(data, "application/json; charset=utf-8", head)
+                return
+            match = re.fullmatch(
+                rf"{ROUTE_REVIEW_API}/evidence/([A-Za-z0-9-]{{1,60}}\.jpg)", parsed.path
+            )
+            if match:
+                fd = os.open(directory / "evidence", os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                try:
+                    info = os.fstat(fd)
+                    if info.st_uid != os.getuid() or info.st_mode & 0o077:
+                        raise ValueError("route evidence directory must be owner-only")
+                    data = private_bytes(match[1], MAX_IMAGE_BYTES, dir_fd=fd)
+                finally:
+                    os.close(fd)
+                self.image_response(data, "image/jpeg", head)
+                return
+        except (OSError, ValueError):
+            raise InspectorError("Route comparison evidence is unavailable.", 404) from None
+        raise InspectorError("Unknown route comparison asset.", 404)
+
     def sign_wfs(self, query, head):
         config = getattr(self.server, "sign_wfs_config", None)
         host = self.headers["Host"]
@@ -767,7 +805,13 @@ class InspectorHandler(SimpleHTTPRequestHandler):
             self.json_response({"error": "Unbekannter Host."}, 403, head)
             return False
         origin = self.headers.get("Origin")
-        if (origin and origin not in {"http://" + host, "https://" + host}) or self.headers.get("Sec-Fetch-Site") == "cross-site":
+        login = getattr(self.server, "keycloak_login", None)
+        navigation = (login and self.command == "GET"
+                      and urlsplit(self.path).path in {"/", "/inspector/", "/inspector/index.html", login.login_path}
+                      and self.headers.get("Sec-Fetch-Mode") == "navigate"
+                      and self.headers.get("Sec-Fetch-Dest") == "document")
+        if ((origin and origin not in {"http://" + host, "https://" + host})
+                or (self.headers.get("Sec-Fetch-Site") == "cross-site" and not navigation)):
             self.json_response({"error": "Nur direkter Zugriff auf den privaten Inspector erlaubt."}, 403, head)
             return False
         return True
@@ -777,6 +821,111 @@ class InspectorHandler(SimpleHTTPRequestHandler):
         if proxy is None:
             raise ReviewProxyError("Prüfdienst ist noch nicht eingerichtet.", 503)
         return proxy.request(action, payload, self.headers.get("Authorization"))
+
+    def send_login_response(self, response, head=False):
+        data = response.body.encode("utf-8")
+        self.send_response(response.status)
+        for name, value in response.headers:
+            self.send_header(name, value)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Content-Security-Policy", "default-src 'none'; form-action 'self'; base-uri 'none'")
+        self.end_headers()
+        if not head:
+            self.wfile.write(data)
+
+    def login_allows(self, method, head=False):
+        login = getattr(self.server, "keycloak_login", None)
+        if login is None:
+            return True
+        host = urlsplit(login.origin).netloc
+        if self.headers.get_all("Host", []) != [host]:
+            self.json_response({"error": "Unbekannter Host."}, 403, head)
+            return False
+        parsed = urlsplit(self.path)
+        callback = parsed.path == login.callback_path and method == "GET"
+        if not callback and not self.request_allowed(head):
+            return False
+        if parsed.path in login.paths:
+            self.send_login_response(login.route(parsed.path, method, self.headers, parsed.query), head)
+            return False
+        identity = login.identity(self.headers)
+        if identity is None:
+            if method == "GET" and (parsed.path in {"/", "/inspector/", "/inspector/index.html"}
+                                    or "text/html" in self.headers.get("Accept", "")):
+                self.send_login_response(login.login_required(), head)
+            else:
+                self.json_response({"error": "Bitte im Inspector anmelden."}, 401, head)
+            return False
+        if method not in ("GET", "HEAD"):
+            if self.headers.get("Origin") != login.origin:
+                self.json_response({"error": "Ungültiger Ursprung."}, 403, head)
+                return False
+            if not identity.roles.intersection({"reviewer", "admin"}):
+                self.json_response({"error": "Dieses Konto hat keinen Prüfzugang."}, 403, head)
+                return False
+        return True
+
+    def local_origin(self, host):
+        scheme = "https" if getattr(self.server, "tls_enabled", False) else "http"
+        return f"{scheme}://{host}"
+
+    def sign_annotations(self, parsed, *, write=False, head=False):
+        """Loopback-only editor; token and journal never cross the browser boundary."""
+        try:
+            editor = getattr(self.server, "sign_annotations", None)
+            host = self.headers.get("Host")
+            if (editor is None or self.client_address[0] != "127.0.0.1"
+                    or self.server.server_address[0] != "127.0.0.1"
+                    or host not in {f"127.0.0.1:{self.server.server_port}", f"localhost:{self.server.server_port}"}):
+                raise AnnotationEditorError("annotation_editor_unavailable", 404)
+            if parsed.query:
+                raise AnnotationEditorError("annotation_query_not_supported")
+            if not write and parsed.path == SIGN_ANNOTATIONS_ROUTE + "/status":
+                self.json_response(editor.status(), head=head)
+                return
+            if not write and parsed.path == SIGN_ANNOTATIONS_ROUTE + "/history":
+                self.json_response(editor.history(), head=head)
+                return
+            match = re.fullmatch(SIGN_ANNOTATIONS_ROUTE + r"/pictures/([0-9a-f-]{36})(/photo|/annotations|/nearby)?", parsed.path)
+            if not match:
+                raise AnnotationEditorError("annotation_endpoint_not_found", 404)
+            picture_id, suffix = match.groups()
+            if not write and suffix == "/photo":
+                self.image_response(*editor.photo(picture_id), head=head)
+            elif not write and suffix == "/nearby":
+                result = editor.picture(picture_id, nearby=True)
+                self.json_response({"nearby": result["nearby"]}, head=head)
+            elif not write and suffix is None:
+                self.json_response(editor.picture(picture_id), head=head)
+            elif write and suffix == "/annotations":
+                if self.headers.get("Origin") != self.local_origin(host):
+                    raise AnnotationEditorError("same_origin_editor_required", 403)
+                lengths = self.headers.get_all("Content-Length", [])
+                if self.headers.get("Transfer-Encoding") or len(lengths) != 1 or not lengths[0].isdecimal():
+                    raise AnnotationEditorError("content_length_required")
+                length = int(lengths[0])
+                if not 0 < length <= 16384:
+                    raise AnnotationEditorError("annotation_payload_too_large", 413)
+                if self.headers.get_content_type() != "application/json":
+                    raise AnnotationEditorError("annotation_json_required", 415)
+                self.connection.settimeout(15)
+                data = self.rfile.read(length)
+                if len(data) != length:
+                    raise AnnotationEditorError("annotation_payload_incomplete")
+                try:
+                    payload = json.loads(data, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+                except (ValueError, UnicodeError):
+                    raise AnnotationEditorError("annotation_json_invalid") from None
+                self.json_response(editor.save(picture_id, payload))
+            else:
+                raise AnnotationEditorError("annotation_method_not_supported", 405)
+        except AnnotationEditorError as error:
+            self.json_response({"error": str(error), "uncertain": error.uncertain}, error.status, head)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception:
+            self.json_response({"error": "annotation_service_unavailable"}, 503, head)
 
     def review_post(self):
         if not self.request_allowed():
@@ -827,8 +976,8 @@ class InspectorHandler(SimpleHTTPRequestHandler):
         origin = self.headers.get("Origin")
         if (host not in self.server.allowed_hosts or self.client_address[0] != "127.0.0.1"
                 or self.headers.get("Sec-Fetch-Site") == "cross-site"
-                or (origin and origin != "http://" + host)
-                or (method != "GET" and origin != "http://" + host)):
+                or (origin and origin != self.local_origin(host))
+                or (method != "GET" and origin != self.local_origin(host))):
             self.json_response({"error": "Spurannotation erlaubt nur lokalen Same-Origin-Zugriff."}, 403, head)
             return
         decoder = getattr(self.server, "lane_videos", None)
@@ -875,12 +1024,19 @@ class InspectorHandler(SimpleHTTPRequestHandler):
                                getattr(error, "status", 500), head)
 
     def do_POST(self):
-        if urlsplit(self.path).path.startswith("/inspector/api/lanes/"):
+        if not self.login_allows("POST"):
+            return
+        if urlsplit(self.path).path.startswith(SIGN_ANNOTATIONS_ROUTE + "/"):
+            if self.request_allowed():
+                self.sign_annotations(urlsplit(self.path), write=True)
+        elif urlsplit(self.path).path.startswith("/inspector/api/lanes/"):
             self.lane_request("POST")
         else:
             self.review_post()
 
     def do_DELETE(self):
+        if not self.login_allows("DELETE"):
+            return
         if urlsplit(self.path).path.startswith("/inspector/api/lanes/"):
             self.lane_request("DELETE")
         else:
@@ -888,6 +1044,8 @@ class InspectorHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self, head=False):
         parsed = urlsplit(self.path)
+        if not self.login_allows("HEAD" if head else "GET", head):
+            return
         if not self.request_allowed(head):
             return
         if parsed.path.startswith("/inspector/api/lanes/"):
@@ -899,8 +1057,12 @@ class InspectorHandler(SimpleHTTPRequestHandler):
                     raise InspectorError("Abfrage zu lang.", 400)
                 if parsed.path == SIGN_WFS_ROUTE:
                     self.sign_wfs(parsed.query, head)
+                elif parsed.path.startswith(SIGN_ANNOTATIONS_ROUTE + "/"):
+                    self.sign_annotations(parsed, head=head)
                 elif parsed.path == PLACE_SIGN_REVIEW_ROUTE or parsed.path.startswith(PLACE_SIGN_REVIEW_ROUTE + "/"):
                     self.place_sign_review(parsed, head)
+                elif parsed.path == ROUTE_REVIEW_API or parsed.path.startswith(ROUTE_REVIEW_API + "/"):
+                    self.route_review(parsed, head)
                 elif parsed.path in ("/api/sign-positions", "/inspector/api/sign-positions"):
                     if parsed.query:
                         raise InspectorError("Ungültige Schildpositions-Abfrage.", 400)
@@ -971,11 +1133,19 @@ def arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bind", default="127.0.0.1", help="Loopback or the server's private VPN address")
     parser.add_argument("--port", type=int, default=8080)
+    parser.add_argument("--tls-cert", type=Path, help="PEM certificate for the private loopback HTTPS listener")
+    parser.add_argument("--tls-key", type=Path, help="Private PEM key for the HTTPS listener")
     parser.add_argument("--allowed-host", action="append", default=[], help="Additional browser Host header, including port; e.g. volz-db:8080")
     parser.add_argument("--database-file", type=Path, default=default_connection_file())
     parser.add_argument("--db-user", default=os.environ.get("YOUSPEED_REPORT_USER", "youspeed_report"))
     parser.add_argument("--db-host", default=None, help="Override the credential file's PostgreSQL host")
     parser.add_argument("--db-port", type=int, default=None)
+    parser.add_argument("--db-connect-timeout", type=int, default=20, choices=range(1, 61), metavar="SECONDS",
+                        help="Bounded PostgreSQL connection timeout (1–60 seconds; default 20 for VPN tunnels)")
+    parser.add_argument("--sign-annotations-backend-root", type=Path, default=ROOT.parent / "Woladen.de-analytics",
+                        help="Existing management checkout providing the Panoramax annotation transport")
+    parser.add_argument("--sign-annotations-token-file", type=Path, help="Owner-only Panoramax token; never sent to the browser")
+    parser.add_argument("--sign-annotations-journal", type=Path, help="Owner-only external correction SQLite; share between Inspector views")
     parser.add_argument("--review-service-url", default=os.environ.get("YOUSPEED_CROP_REVIEW_URL"), help="Separately authenticated backend review origin (HTTPS, loopback HTTP or private youspeed-review service); no browser-selected destinations")
     parser.add_argument("--media-root", type=Path, default=os.environ.get("YOUSPEED_MANAGEMENT_MEDIA_ROOT"), help="Read-only path to management-media on volz-db (or its read-only mount)")
     parser.add_argument("--mobile-image-proxy-url", default=os.environ.get("YOUSPEED_MOBILE_IMAGE_PROXY_URL"), help="Fixed HTTP loopback origin of a private Inspector reached through an SSH tunnel; image bytes only")
@@ -987,9 +1157,16 @@ def arguments(argv=None):
     parser.add_argument("--sign-positions-file", type=Path, default=os.environ.get("YOUSPEED_SIGN_POSITIONS_FILE"), help="Private external static fit export; sources rechecked on every request")
     parser.add_argument("--place-sign-review-file", type=Path, help="Owner-only external place review snapshot; loopback only")
     parser.add_argument("--place-sign-review-media-dir", type=Path, help="Optional owner-only directory of native Panoramax JPEGs named by picture UUID")
+    parser.add_argument("--route-review-dir", type=Path, help="Owner-only route comparison snapshot directory outside the checkout; loopback only")
     parser.add_argument("--sign-wfs-config", type=Path, help="Owner-only MapServer 8 configuration outside the checkout")
     parser.add_argument("--sign-wfs-mapserv", type=Path, help="Path to the local MapServer CGI executable")
     args = parser.parse_args(argv)
+    if bool(args.tls_cert) != bool(args.tls_key) or (args.tls_cert and args.bind != "127.0.0.1"):
+        parser.error("Direct HTTPS requires --tls-cert, --tls-key and loopback binding")
+    if args.sign_annotations_token_file and not args.sign_annotations_journal:
+        parser.error("--sign-annotations-token-file requires --sign-annotations-journal")
+    if (args.sign_annotations_token_file or args.sign_annotations_journal) and args.bind != "127.0.0.1":
+        parser.error("Sign annotation editing requires loopback binding")
     if bool(args.sign_wfs_config) != bool(args.sign_wfs_mapserv):
         parser.error("--sign-wfs-config and --sign-wfs-mapserv are required together")
     if args.sign_wfs_config:
@@ -1003,6 +1180,12 @@ def arguments(argv=None):
             parser.error("WFS requires loopback, an owner-only external configuration, and an executable mapserv")
     if args.place_sign_review_media_dir and not args.place_sign_review_file:
         parser.error("--place-sign-review-media-dir requires --place-sign-review-file")
+    if args.route_review_dir:
+        args.route_review_dir = args.route_review_dir.resolve()
+        path = args.route_review_dir
+        if (args.bind != "127.0.0.1" or path.is_relative_to(ROOT) or not path.is_dir()
+                or path.stat().st_uid != os.getuid() or path.stat().st_mode & 0o077):
+            parser.error("Route comparison requires loopback and an owner-only external directory")
     if args.place_sign_review_file:
         if args.bind != "127.0.0.1":
             parser.error("--place-sign-review-file requires --bind 127.0.0.1")
@@ -1014,6 +1197,12 @@ def arguments(argv=None):
 
 def main():
     args = arguments()
+    login = KeycloakLogin.from_env("inspector")
+    tls = None
+    if args.tls_cert:
+        tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        tls.minimum_version = ssl.TLSVersion.TLSv1_2
+        tls.load_cert_chain(args.tls_cert, args.tls_key)
     lane_videos = None
     if args.bind == "127.0.0.1":
         from lane_video import LaneVideos, VideoError
@@ -1023,12 +1212,21 @@ def main():
             print(str(error), flush=True)
     store = CropStore(args)
     server = ThreadingHTTPServer((args.bind, args.port), InspectorHandler)
+    server.tls_enabled = tls is not None
+    if tls:
+        server.socket = tls.wrap_socket(server.socket, server_side=True)
     server.store = store
+    server.keycloak_login = login
     server.lane_videos = lane_videos
+    server.sign_annotations = SignAnnotations(backend_root=args.sign_annotations_backend_root,
+                                              token_file=args.sign_annotations_token_file,
+                                              journal_file=args.sign_annotations_journal,
+                                              media_dir=args.place_sign_review_media_dir)
 
     server.sign_positions = SignPositionStore(args.sign_positions_file, store)
     server.sign_wfs_config = args.sign_wfs_config
     server.sign_wfs_mapserv = args.sign_wfs_mapserv
+    server.route_review_dir = args.route_review_dir
     if args.place_sign_review_file:
         server.place_sign_review = PlaceSignReviewStore(
             args.place_sign_review_file,
@@ -1039,9 +1237,12 @@ def main():
     server.review_proxy = CropReviewProxy(args.review_service_url)
     server.allowed_hosts = {f"{args.bind}:{server.server_port}", f"volz-db:{server.server_port}",
                             f"{VOLZ_DB_ADDRESS}:{server.server_port}", *args.allowed_host}
+    if login:
+        server.allowed_hosts.add(urlsplit(login.origin).netloc)
     if args.bind == "127.0.0.1":
         server.allowed_hosts.add(f"localhost:{server.server_port}")
-    print(f"Inspector: http://{args.bind}:{server.server_port}/inspector/#crops", flush=True)
+    origin = login.origin if login else f"{'https' if tls else 'http'}://{args.bind}:{server.server_port}"
+    print(f"Inspector: {origin}/inspector/#crops", flush=True)
     print(f"Default report user: {args.db_user}. Database credentials stay server-side.", flush=True)
     try:
         server.serve_forever()

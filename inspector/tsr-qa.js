@@ -232,6 +232,8 @@
   function setMode(mode, options = {}) {
     if (mode.startsWith("place-signs?")) mode = "place-signs";
     if (mode === "sign-positions") mode = "positions";
+    if (state.mode === "place-signs" && mode !== "place-signs"
+        && window.YouSpeedSignAnnotations?.canLeave() === false) return;
     state.mode = ["tsr", "crops", "positions", "place-signs"].includes(mode) ? mode : "matcher";
     const tsrActive = state.mode === "tsr";
     const matcherActive = state.mode === "matcher";

@@ -18,9 +18,17 @@ def main():
     for extension in ("js", "css", "html"):
         files.extend((root / "inspector").glob("*." + extension))
     files.append(root / "inspector/streetshots-road.svg")
-    files.extend(root / "inspector" / name for name in ("server.py", "lane_video.py", "crop_review_proxy.py", "sign_positions.py", "place_sign_review.py", "sign_wfs.py", "requirements.txt", "report-crops-grants.sql", "README.md"))
+    files.extend(root / "inspector" / name for name in (
+        "server.py", "keycloak_login.py", "lane_video.py", "crop_review_proxy.py",
+        "sign_positions.py", "place_sign_review.py", "sign_wfs.py", "sign_annotations.py",
+        "requirements.txt", "report-crops-grants.sql", "README.md",
+    ))
     files.append(root / "scripts/inspector/install-volz-db.py")
     files.append(root / "scripts/inspector/update-volz-db.py")
+    files.append(root / "scripts/inspector/live-eu.Dockerfile")
+    files.append(root / "scripts/inspector/live-eu.Dockerfile.dockerignore")
+    files.append(root / "scripts/inspector/live-eu.compose.yml")
+    files.extend(path for path in (root / "inspector/keycloak-theme").rglob("*") if path.is_file())
     files.extend(path for path in (root / "shared/tsr/fixtures").rglob("*")
                  if path.is_file() and path.suffix in {".json", ".ppm", ".png", ".jpg", ".jpeg"})
     files.extend((root / "shared/tsr/sign-pictograms/png").rglob("*.png"))

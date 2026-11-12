@@ -23,6 +23,7 @@
   }
 
   function reset() {
+    window.YouSpeedSignAnnotations?.reset();
     request?.abort();
     request = null;
     map?.destroy();
@@ -45,6 +46,8 @@
     element("mobidata-only").checked = false;
     element("mobile-only").disabled = true;
     element("mobile-only").checked = false;
+    element("unresolved-only").disabled = true;
+    element("unresolved-only").checked = false;
     element("content").hidden = true;
     element("title").textContent = "Verkehrszeichen vor Ort";
     element("scope").textContent = "";
@@ -194,6 +197,7 @@
   function selectObservation(index, historyMode = "replaceState") {
     const observation = observations[index];
     if (!observation) return;
+    if (selectedIndex !== index && window.YouSpeedSignAnnotations?.canLeave() === false) return;
     if (selectedIndex !== index) {
       selectedIndex = index;
       [...element("gallery").children, ...element("follow-gallery").children, ...element("mobile-gallery").children].forEach((button, i) => {
@@ -202,6 +206,7 @@
       showImage(observation, index);
       showImageMeta(observation, index);
       map?.selectObservation(index);
+      window.YouSpeedSignAnnotations?.select({observation, observations, group});
     }
     updateLink(historyMode);
   }
@@ -337,6 +342,10 @@
   }
 
   function showGroup(id, {photo = null, historyMode = "replaceState", exact = false} = {}) {
+    if (window.YouSpeedSignAnnotations?.canLeave() === false) {
+      element("group").value = group?.id || "";
+      return;
+    }
     const changed = group?.id !== id;
     group = data.groups.find(item => item.id === id);
     element("content").hidden = !group;
@@ -348,6 +357,8 @@
       return;
     }
     status("");
+    const routeLink = element("route-link");
+    if (routeLink) routeLink.href = "./route-review.html?" + new URLSearchParams({group: group.id});
     if (changed) {
       const following = group.follow_on_observations || [];
       const mobile = group.mobile_observations || [];
@@ -393,9 +404,12 @@
     const filter = element("filter").value.trim().toLowerCase();
     const mobidataOnly = element("mobidata-only").checked;
     const mobileOnly = element("mobile-only").checked;
+    const unresolvedOnly = element("unresolved-only").checked;
     const groups = data.groups.filter(item =>
       item.sign_code.toLowerCase().includes(filter) && (!mobidataOnly || item.mobidata_matches?.length)
         && (!mobileOnly || item.mobile_observations?.length)
+        && (!unresolvedOnly || (item.benchmark_review?.identity_status !== "mixed_group_excluded"
+          && !(item.mobile_refinement?.status === "refined" ? item.mobile_refinement.proposal : item.proposal)))
     );
     const input = element("group");
     input.replaceChildren(...groups.map(item => {
@@ -418,11 +432,15 @@
     element("filter").value = "";
     element("mobidata-only").checked = false;
     element("mobile-only").checked = false;
+    element("unresolved-only").checked = false;
     fillGroups(id ?? data.default_group_id, {
       photo: params.get("photo"),
       exact: id !== null,
       historyMode: id === null ? "replaceState" : null
     });
+    if (group && params.get("image") && params.get("mode") === "sequence") {
+      window.YouSpeedSignAnnotations?.openPicture(params.get("image"), "sequence");
+    }
   }
 
   async function load() {
@@ -441,12 +459,14 @@
       if (!payload.place?.name || !Array.isArray(payload.groups)) throw new Error("Ungültige Ortsdaten.");
       data = payload;
       element("title").textContent = data.place.name;
-      element("scope").textContent = `2 km × 2 km um die Ortsmitte · ${data.groups.length} Zeichengruppen`;
+      const scope = data.place.scope_label || (data.place.bounds_ring_wgs84 ? "2 km × 2 km um die Ortsmitte" : "Prüfgebiet");
+      element("scope").textContent = `${scope} · ${data.groups.length} Zeichengruppen`;
       const counts = data.mobile_reference?.collection_counts;
       if (counts) element("scope").textContent += ` · ${counts.crop} Crops und ${counts.sighting} Sichtungen erfasst`;
       element("filter").disabled = false;
       element("mobidata-only").disabled = false;
       element("mobile-only").disabled = false;
+      element("unresolved-only").disabled = false;
       applyLocation();
       if (data.mobile_reference && data.mobile_reference.availability !== "available") {
         status("Mobile Kandidaten warten auf aktuelle Quelldaten sowie Freigabe- und Löschkontrollen. Panoramax-Gruppen sind verfügbar.");
@@ -459,12 +479,23 @@
   }
 
   element("group").addEventListener("change", event => showGroup(event.target.value, {historyMode: "pushState"}));
+  for (const [name, offset] of [["previous-group", -1], ["next-group", 1]]) {
+    element(name).addEventListener("click", () => {
+      const input = element("group");
+      const option = input.options[input.selectedIndex + offset];
+      if (option && window.YouSpeedSignAnnotations?.canLeave() !== false) {
+        input.value = option.value;
+        showGroup(option.value, {historyMode: "pushState"});
+      }
+    });
+  }
   function filterGroups() {
     fillGroups(group?.id, {photo: observationId(observations[selectedIndex])});
   }
   element("filter").addEventListener("input", filterGroups);
   element("mobidata-only").addEventListener("change", filterGroups);
   element("mobile-only").addEventListener("change", filterGroups);
+  element("unresolved-only").addEventListener("change", filterGroups);
   element("compare").addEventListener("click", () => {
     const matched = observations[selectedIndex]?.association?.matched_annotation_id;
     const index = observations.findIndex(item => item.annotation_id === matched);
@@ -478,9 +509,41 @@
       element("copy-status").textContent = "Den Direktlink über das Kontextmenü kopieren.";
     }
   });
-  element("refresh").addEventListener("click", () => void load());
+  element("refresh").addEventListener("click", () => {
+    if (window.YouSpeedSignAnnotations?.canLeave() !== false) void load();
+  });
   element("fit-area").addEventListener("click", () => map?.fitPlace());
   element("fit-group").addEventListener("click", () => map?.fitGroup());
+  window.addEventListener("youspeed:annotation-picture", event => {
+    const {picture, independent} = event.detail;
+    if (!map || !data || !group) return;
+    if (independent) {
+      const observation = {image_id: picture.id, latitude: picture.latitude, longitude: picture.longitude,
+        camera_heading_deg: picture.heading_deg, bearing_deg: picture.heading_deg, bearing_error_deg: null,
+        horizontal_error_m: null, captured_at: picture.captured_at};
+      map.show(data.place, {id: picture.id, observations: [observation], proposal: null}, 0);
+      map.fitGroup();
+      element("proposal").textContent = "Bildnavigation entlang der Fahrt · Kameraposition und Blickrichtung";
+      element("refinement").hidden = true;
+      element("inventory").hidden = true;
+      const hash = "#place-signs?" + new URLSearchParams({group: group.id, image: picture.id, mode: "sequence"});
+      history.replaceState(null, "", hash);
+      element("permalink").href = new URL(window.location.pathname + hash, window.location.origin).href;
+      element("copy-status").textContent = "";
+    } else {
+      const index = observations.findIndex(item => item.image_id === picture.id);
+      if (index >= 0) { selectedIndex = index; updateLink("replaceState"); }
+      map.show(data.place, {...group, observations}, Math.max(0, index));
+      showProposal(group.proposal); showRefinement(); showInventory();
+    }
+  });
+  window.addEventListener("youspeed:annotation-close", () => {
+    if (map && data && group) {
+      const index = selectedIndex; selectedIndex = -1; selectObservation(index);
+      map.show(data.place, {...group, observations}, Math.max(0, selectedIndex));
+      showProposal(group.proposal); showRefinement(); showInventory();
+    }
+  });
   function activate() {
     if (data) applyLocation();
     else if (!request) void load();

@@ -1,0 +1,8 @@
+#kc-header-wrapper {
+    text-align: center;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1.1;
+    text-transform: none;
+}

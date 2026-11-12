@@ -70,6 +70,61 @@ passende Kreuzung kann als Bezugspunkt dienen.
 Sind Weg oder Position mehrdeutig, bleibt die Gruppe offen. Bestehende
 Snapshots zeigen die neue Schätzung nach einem erneuten lokalen Build.
 
+## Annotationen und Bildnavigation
+
+**Bilder & Annotationen** in **Zeichen vor Ort** öffnet die aktuelle
+Panoramax-Aufnahme mit ihren live geladenen Annotationen. **Bilder dieser
+Gruppe** vergleicht die Aufnahmen eines Zeichens. **Entlang der Fahrt · alle
+Bilder** folgt den vorherigen/nächsten Bildern der Panoramax-Sequenz, auch
+wenn sie noch keine Annotation enthalten. Die Pfeiltasten wechseln Bilder;
+Eingabefelder behalten ihre normale Tastaturbedienung. Weitere Aufnahmen am
+Ort werden nach Kameraabstand und Richtungsdifferenz angeboten. Die Karte
+zeigt in dieser Navigation die jeweils aktuelle Kamera und Blickrichtung.
+
+Die Klassensuche findet StVO-Nummern, deutsche Namen und Modellklassen.
+Der alternative Picker enthält genau die 142 `class_labels` des gemeinsamen
+DE-Katalogs. Beide verwenden dessen deutsche Bezeichnungen und vorhandene
+Piktogramme aus `shared/tsr/sign-pictograms/`. **Zeichenbilder mittig im Rahmen
+zeigen** blendet die Piktogramme auf den Annotationen ein oder aus. Klassen
+ohne eindeutiges Piktogramm behalten eine Textbezeichnung.
+
+Neue Rechtecke werden in Originalbild-Pixeln gezeichnet. Die API schreibt
+Panoramax-native `shape`-Rechtecke und `semantics`-Einträge: bekannte Codes als
+`osm|traffic_sign`, ausgewählte Modellklassen zusätzlich als
+`youspeed|tsr_class`. Eine Klasse ohne StVO-Code erhält keinen erfundenen Code.
+Andere vorhandene Tags bleiben erhalten. Panoramax 2.15 unterstützt bei
+bestehenden Annotationen semantische Änderungen, aber keine Änderung des
+Rahmens; deshalb sind deren Geometriefelder gesperrt.
+
+Zum Speichern den lokalen Inspector mit vorhandenem Panoramax-Zugang und
+einem privaten, externen SQLite-Journal starten (bei mehreren WFS-Ansichten
+denselben Journalpfad verwenden):
+
+```sh
+python3 inspector/server.py --bind 127.0.0.1 --port 8080 \
+  --place-sign-review-file /private/place-review/groups.json \
+  --sign-annotations-backend-root /path/to/Woladen.de-analytics \
+  --sign-annotations-token-file /private/place-review/panoramax-token.txt \
+  --sign-annotations-journal /private/place-review/corrections.sqlite
+```
+
+Token, Journal und übergeordnetes Verzeichnis müssen nur dem Eigentümer
+zugänglich sein. Ohne Schreibzugang funktioniert die Bildnavigation im
+Lesemodus. Der Browser erhält keinen Token. Vor jedem Speichern werden die
+aktuelle Annotation und die geladene Revision verglichen. Original,
+gewünschtes Ergebnis und bestätigtes Ergebnis bleiben im Journal; die
+Oberfläche zeigt die letzten 100 Korrekturen. Unklare Speicherantworten werden
+über dieselbe UUID abgeglichen, ohne eine zweite Annotation anzulegen.
+Ungespeicherte Änderungen müssen vor dem Bildwechsel gespeichert oder
+verworfen werden. Bestehende Benchmark-Versionen bleiben eingefroren;
+der nächste frische Datenbank-Build übernimmt die synchronisierten Änderungen
+nach deren Aufnahme in den Panoramax-Corpus.
+Der bestehende Sichtstrahl-Extractor verarbeitet dabei weiterhin die passenden
+`osm|traffic_sign`-Codes. Reine Familien- oder Negativklassen in
+`youspeed|tsr_class` bleiben als manuelle Annotation und im Journal erhalten;
+sie werden dadurch noch nicht zu positionierten Inventarobjekten oder
+freigegebenen Trainingslabels.
+
 ## WFS-Karte für Bad Herrenalb und Pforzheim
 
 **WFS-Karte** im Tab **Zeichen vor Ort** öffnet die Karte in Fenstergröße.
@@ -129,6 +184,56 @@ Der WFS-Snapshot ist ein privater Batch-Arbeitsstand. Die Dateien enthalten
 keine Bildlinks oder Quellen-IDs. Die öffentliche Veröffentlichung über
 live-eu verwendet die geprüfte Quellenfreigabe und die dortige
 Veröffentlichungspipeline.
+
+### Fahrtvergleich
+
+**Fahrtvergleich** ist aus **Zeichen vor Ort** und der **WFS-Karte** erreichbar.
+Ein Gruppenlink übergibt die unveränderte Inspector-Gruppen-ID. Karte,
+Gruppenauswahl und Tabelle öffnen dieselbe Gruppe. Die Detailansicht zeigt
+beide Telefonprotokolle, verfügbare Ausschnitte, historische Sichtungen und
+Panoramax-Annotationen. Bildgeprüfte Schilder außerhalb des Ortssnapshots
+erscheinen als Fahrtgruppen mit offener Schildposition. Unsichere Zuordnungen
+sind unter **Unassigned evidence** erreichbar. Der GeoJSON-Export übernimmt
+die sichtbaren Gruppen mit einer Inspector-Schildposition.
+
+Für einen direkten Plattformvergleich lässt sich der Snapshot auf gleichzeitig
+in derselben Richtung gefahrene Abschnitte begrenzen. Dazu
+`scripts.inspector.route_review_overlap` mit den Android-ZIP-Exporten
+(`--android`) und iPhone-Ereignisdateien (`--iphone`) zusätzlich zum
+Vergleichssnapshot und zu den Ortsgruppen ausführen. Die Oberfläche zeigt
+den Überlappungsumfang und die Panoramax-Annotationen in einer eigenen
+Spalte. Zusätzliche Fotos ohne prüfbare Aufnahmezeit werden in diesem
+Vergleich nicht berücksichtigt.
+
+Der Fahrtvergleich startet mit den bildgeprüften Abweichungen. Für jede
+Gruppe stehen Android-Ausschnitt, iPhone-Ausschnitt und Panoramax-Referenz
+nebeneinander. Mögliche Abweichungen haben eine eigene Ansicht. Fehlt ein
+gespeicherter Ausschnitt oder ein verknüpftes Panoramax-Bild, steht dies
+in der entsprechenden Spalte.
+
+Einen vorbereiteten Fahrtvergleich den Ortsprüfungsgruppen zuordnen:
+
+```sh
+python3 -m scripts.inspector.group_route_review \
+  --comparison /private/route-review/input.json \
+  --place bad-herrenalb /private/place-review/bad-herrenalb.json \
+  --output /private/route-review/data.json
+```
+
+Den lokalen Inspector mit einem vorbereiteten Vergleichssnapshot starten:
+
+```sh
+python3 inspector/server.py --bind 127.0.0.1 --port 8080 \
+  --place-sign-review-file /private/place-review/bad-herrenalb.json \
+  --route-review-dir /private/route-review
+```
+
+Der private Ordner liegt außerhalb des Repositorys und enthält `data.json`
+sowie die darin referenzierten JPEGs unter `evidence/`. Ordner und Dateien
+müssen dem lokalen Benutzer gehören und für andere Benutzer gesperrt sein.
+Die Daten werden nur über Loopback bereitgestellt. Das übliche
+Inspector-Deployment-Paket enthält die Oberfläche, aber keine Fahrtprotokolle
+oder Bilder aus dem Snapshot.
 
 ## Verkehrszeichen im Offline-Bestand
 
@@ -331,7 +436,7 @@ python3 -m venv /tmp/youspeed-inspector-venv
 ```
 
 Der Standardbenutzer ist **`youspeed_report`**, die Datenbank **`youspeed`**.
-Es gibt keinen Browser-Login: ausschließlich der Server verwendet die bereits
+Im lokalen Standardmodus gibt es keinen Browser-Login. Der Server verwendet die bereits
 eingerichteten Report-Zugangsdaten. Er sucht zuerst `YOUSPEED_DATABASE_URL_FILE`,
 dann `/srv/woladen/config/youspeed/database-report.txt`,
 `/run/secrets/youspeed/database.txt` und die vorhandene lokale Datei im
@@ -341,6 +446,51 @@ Zugangsdaten (`PGHOST`, `PGPORT`, `PGPASSFILE`/`.pgpass`) und
 `YOUSPEED_DATABASE_URL`. Ohne Datei/Hostkonfiguration ist der Host `volz-db`.
 `--database-file`, `--db-host`, `--db-port` und `--db-user` erlauben explizite
 Overrides. Passwörter gehören ausschließlich in private Dateien/Umgebungen.
+
+#### Gemeinsame Anmeldung mit Panoramax
+
+Inspector und OSM-Korrekturen können dieselben Konten aus dem bestehenden
+Keycloak-Realm `panoramax` verwenden. In Keycloak je einen vertraulichen
+OpenID-Connect-Client anlegen, etwa `youspeed-inspector` und `youspeed-osm`.
+Client-Authentifizierung, Standard Flow und PKCE S256 aktivieren. Als
+Weiterleitungsadresse genau die jeweilige HTTPS-Origin mit `/auth/callback`
+registrieren. Für OSM-Korrekturen ist das `https://osm.youspeed.de/auth/callback`.
+
+- Inspector akzeptiert die Client-Rollen `reader`, `reviewer` und `admin`.
+  Schreibzugriffe erfordern `reviewer` oder `admin`. Der vorhandene
+  Prüfschlüssel autorisiert weiterhin Zugriffe auf den Prüfdienst.
+- OSM-Korrekturen erfordert die Client-Rolle `user` im eigenen Client.
+  Der Dienst bindet die temporäre Arbeitsfläche an das angemeldete Konto.
+
+Für jeden Client einen Mapper vom Typ **User Client Role** konfigurieren.
+Den jeweiligen Client auswählen, seine Rollen als mehrwertigen String-Claim
+`resource_access.<client-id>.roles` in das **ID-Token** aufnehmen und die
+Rollenzuordnungen auf den jeweiligen Client beschränken. Der Dienst erwartet
+RS256. Rollenänderungen greifen bei einer erneuten Anmeldung, spätestens
+nach Ablauf der 30-minütigen Tool-Anmeldung.
+
+Im Keycloak Admin REST API heißt das Mapper-Feld für den Namen des Claims
+`claim.name`. Beide Clients können die Login-Theme `streetshots` aus
+`inspector/keycloak-theme/streetshots` verwenden. Die Theme als
+`/opt/keycloak/themes/streetshots` beim Keycloak-Start bereitstellen und
+am jeweiligen Client auswählen.
+
+Den Inspector hinter einem HTTPS-Proxy mit unverändertem öffentlichem Host
+betreiben. Dem Python-Prozess `YOUSPEED_INSPECTOR_OIDC_ORIGIN` (HTTPS-Origin
+ohne abschließenden Schrägstrich), `YOUSPEED_INSPECTOR_OIDC_ISSUER` (kanonischer
+Realm-Issuer), `YOUSPEED_INSPECTOR_OIDC_CLIENT_ID` und
+`YOUSPEED_INSPECTOR_OIDC_CLIENT_SECRET_FILE` übergeben. Die Secret-Datei
+privat und lesbar für den Dienst halten. Die OSM-Compose-Datei verwendet
+`YOUSPEED_OSM_OIDC_ISSUER`, `YOUSPEED_OSM_OIDC_CLIENT_ID` und
+`YOUSPEED_OSM_OIDC_SECRET_SOURCE` für die Secret-Datei auf dem Host.
+Über **Konto** lässt sich die jeweilige Tool-Anmeldung beenden.
+
+Auf dem Mac kann der Inspector HTTPS direkt auf Loopback bereitstellen
+(`--bind 127.0.0.1 --port 18443 --tls-cert <PEM> --tls-key <KEY>`). Für
+diese Variante lautet die registrierte Rückrufadresse
+`https://localhost:18443/auth/callback`. Das lokale Browserprofil muss
+dem HTTPS-Zertifikat für `localhost` vertrauen. Die Report-Datenbank und
+Bilder bleiben über die vorhandenen privaten SSH-Weiterleitungen erreichbar.
 
 Direkt **auf volz-db** mit erreichbarem privaten PostgreSQL-Endpunkt starten:
 

@@ -13,6 +13,7 @@
     />
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="./place-sign-review.css" />
+    <link rel="stylesheet" href="./sign-annotations.css" />
   </head>
   <body>
     <header class="app-header">
@@ -53,6 +54,7 @@
         <a class="mode-switch-button" href="https://osm.youspeed.de/" target="_blank" rel="noopener">OSM-Korrekturen</a>
       </nav>
       <div class="workspace-locality">
+        <a href="/auth/account" data-account-link hidden>Konto</a>
         <span class="workspace-locality-dot" aria-hidden="true"></span>
         <span id="workspace-locality-label">QA-Daten lokal verarbeitet</span>
       </div>
@@ -306,12 +308,14 @@
             <span>Gruppen-ID</span>
             <code id="place-sign-group-id"></code>
             <a id="place-sign-permalink">Direktlink</a>
+            <a id="place-sign-route-link">Diese Gruppe im Fahrtvergleich</a>
             <button id="place-sign-copy-link" type="button">Link kopieren</button>
             <span id="place-sign-copy-status" role="status" aria-live="polite"></span>
           </div>
         </div>
         <div class="place-sign-controls">
           <a href="./sign-feed.html">WFS-Karte</a>
+          <a href="./route-review.html">Fahrtvergleich</a>
           <label for="place-sign-filter">Zeichenklasse
             <input id="place-sign-filter" type="search" placeholder="z. B. 205" disabled />
           </label>
@@ -326,6 +330,10 @@
           <label class="place-sign-mobidata-filter">
             <input id="place-sign-mobile-only" type="checkbox" disabled />
             Mit mobilen Kandidaten
+          </label>
+          <label class="place-sign-mobidata-filter">
+            <input id="place-sign-unresolved-only" type="checkbox" disabled />
+            Standort offen
           </label>
         </div>
       </header>
@@ -358,6 +366,50 @@
             <h2 id="place-sign-gallery-title">Aufnahmen</h2>
             <span id="place-sign-photo-count" class="hint"></span>
           </header>
+          <div class="sign-annotation-toolbar">
+            <button id="place-sign-previous-group" type="button">← Gruppe</button>
+            <button id="place-sign-next-group" type="button">Gruppe →</button>
+            <button id="sign-annotation-open" type="button">Bilder &amp; Annotationen</button>
+          </div>
+          <section id="sign-annotation-editor" class="sign-annotation-editor" aria-label="Panoramax-Annotationen" hidden>
+            <header><h3>Panoramax-Annotationen</h3><button id="sign-annotation-close" type="button">Zur Gruppenansicht</button></header>
+            <div class="sign-annotation-navigation">
+              <label>Bildnavigation<select id="sign-annotation-mode"><option value="group">Bilder dieser Gruppe</option><option value="sequence">Entlang der Fahrt · alle Bilder</option></select></label>
+              <button id="sign-annotation-previous" type="button" disabled>← Vorheriges Bild</button>
+              <button id="sign-annotation-next" type="button" disabled>Nächstes Bild →</button>
+              <label>Weitere Aufnahmen am Ort<select id="sign-annotation-nearby" disabled><option value="">Nach Abstand und Blickrichtung</option></select></label>
+            </div>
+            <p id="sign-annotation-location" class="hint"></p>
+            <div id="sign-annotation-stage" class="sign-annotation-stage" tabindex="0" aria-label="Bildannotation. Vorhandenen Rahmen auswählen oder neuen Rahmen ziehen."></div>
+            <p id="sign-annotation-status" role="status" aria-live="polite"></p>
+            <form id="sign-annotation-form" class="sign-annotation-form">
+              <label>Annotation im Bild<select id="sign-annotation-selection" disabled><option value="">Annotation wählen</option></select></label>
+              <div class="sign-annotation-picker">
+                <label>StVO-Nummer oder deutscher Name<input id="sign-annotation-class" role="combobox" aria-autocomplete="list" aria-controls="sign-annotation-suggestions" aria-expanded="false" placeholder="205, Vorfahrt, Höchstgeschwindigkeit …" autocomplete="off" disabled /></label>
+                <div id="sign-annotation-suggestions" class="sign-annotation-options" role="listbox" aria-label="Passende Verkehrszeichen" hidden></div>
+                <button id="sign-annotation-class-picker" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="sign-annotation-classes" disabled>142 TSR-Klassen auswählen ▾</button>
+                <div id="sign-annotation-classes" class="sign-annotation-options" role="listbox" aria-label="142 TSR-Klassen" hidden></div>
+              </div>
+              <div class="sign-annotation-selection-preview"><img id="sign-annotation-icon" alt="" hidden /><p id="sign-annotation-class-label" class="hint"></p></div>
+              <label class="sign-annotation-icon-toggle"><input id="sign-annotation-show-icons" type="checkbox" checked />Zeichenbilder mittig im Rahmen zeigen</label>
+              <fieldset class="sign-annotation-box"><legend>Rahmen im Originalbild · Pixel</legend>
+                <label>Links<input id="sign-annotation-left" type="number" min="0" step="1" disabled /></label>
+                <label>Oben<input id="sign-annotation-top" type="number" min="0" step="1" disabled /></label>
+                <label>Rechts<input id="sign-annotation-right" type="number" min="0" step="1" disabled /></label>
+                <label>Unten<input id="sign-annotation-bottom" type="number" min="0" step="1" disabled /></label>
+              </fieldset>
+              <div class="sign-annotation-actions">
+                <button id="sign-annotation-new" type="button" disabled>Neues Zeichen</button>
+                <button id="sign-annotation-redraw" type="button" disabled>Rahmen neu ziehen</button>
+                <button id="sign-annotation-discard" type="button" disabled>Änderung verwerfen</button>
+                <button id="sign-annotation-save" type="submit" disabled>In Panoramax speichern</button>
+              </div>
+            </form>
+            <details><summary>Manuelle Korrekturen</summary>
+              <p>Gespeicherte Korrekturen werden mit Originalannotation und Ergebnis protokolliert. Gruppen und WFS werden beim nächsten Benchmark aktualisiert.</p>
+              <ol id="sign-annotation-history" class="sign-annotation-history"></ol>
+            </details>
+          </section>
           <figure class="place-sign-figure">
             <div id="place-sign-stage" class="place-sign-stage" aria-live="polite"></div>
             <figcaption>
@@ -774,12 +826,15 @@
     <script src="./lane-annotations.js"></script>
     <script src="./tsr-qa-core.js"></script>
     <script src="./tsr-qa.js"></script>
+    <script src="./keycloak-menu.js" defer></script>
     <script src="./crop-review-core.js"></script>
     <script src="./crop-review.js"></script>
     <script src="./backend-crops.js"></script>
     <script src="./sign-positions-core.js"></script>
     <script src="./sign-positions.js"></script>
     <script src="./place-sign-review-map.js"></script>
+    <script src="./sign-annotations-core.js"></script>
+    <script src="./sign-annotations.js"></script>
     <script src="./place-sign-review.js"></script>
   </body>
 </html>

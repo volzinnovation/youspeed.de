@@ -1,0 +1,63 @@
+name: youspeed-private-inspector
+services:
+  inspector:
+    image: "youspeed-private-inspector:${INSPECTOR_RELEASE:?set release ID}"
+    restart: unless-stopped
+    network_mode: host
+    user: "${INSPECTOR_UID:?set service uid}:${INSPECTOR_GID:?set service gid}"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m
+    volumes:
+      - "${INSPECTOR_CONFIG:?set private config path}:/run/inspector-config:ro"
+      - "${INSPECTOR_STATE:?set private journal path}:/var/lib/inspector:rw"
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      YOUSPEED_INSPECTOR_OIDC_ORIGIN: https://localhost:18443
+      YOUSPEED_INSPECTOR_OIDC_ISSUER: https://panoramax.woladen.de/auth/realms/panoramax
+      YOUSPEED_INSPECTOR_OIDC_CLIENT_ID: youspeed-inspector
+      YOUSPEED_INSPECTOR_OIDC_CLIENT_SECRET_FILE: /run/inspector-config/client-secret
+    command:
+      - --bind
+      - "127.0.0.1"
+      - --port
+      - "18443"
+      - --tls-cert
+      - /run/inspector-config/localhost.pem
+      - --tls-key
+      - /run/inspector-config/localhost.key
+      - --database-file
+      - /run/inspector-config/database-report.txt
+      - --db-host
+      - "127.0.0.1"
+      - --db-port
+      - "18780"
+      - --db-connect-timeout
+      - "5"
+      - --mobile-image-proxy-url
+      - http://127.0.0.1:18080
+      - --panoramax-mapping-file
+      - /app/commercial_backend/youspeed/panoramax-reverse-v1.json
+      - --sign-annotations-backend-root
+      - /app
+      - --sign-annotations-token-file
+      - /run/inspector-config/panoramax-token.txt
+      - --sign-annotations-journal
+      - /var/lib/inspector/annotation-corrections.sqlite
+      - --place-sign-review-file
+      - /run/inspector-config/groups-loop.json
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import http.client, ssl;
+          c = http.client.HTTPSConnection('localhost', 18443, timeout=4,
+          context=ssl.create_default_context(cafile='/run/inspector-config/localhost.pem'));
+          c.request('GET', '/auth/status'); assert c.getresponse().status == 401
+      interval: 30s
+      timeout: 5s
+      retries: 3

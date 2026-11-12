@@ -4,7 +4,7 @@ body {
   height: 100vh;
   height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   background: #0e1521;
   color: #edf2fb;
   font: 0.875rem system-ui, sans-serif;
@@ -67,3 +67,20 @@ select {
 .feed-detail dl { margin: 0.5rem 0 0; }
 .feed-detail dt { font-weight: 600; }
 .feed-detail dd { margin: 0 0 0.35rem; overflow-wrap: anywhere; }
+.feed-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem 1rem;
+  padding: .6rem 1rem;
+}
+.feed-legend-question, .feed-legend-code {
+  display: inline-block;
+  padding: .1rem .35rem;
+  border: 1px solid #a6b8d3;
+  border-radius: .3rem;
+  background: #162640;
+  color: #fff;
+}
+.feed-legend-code { background: #fff; color: #162640; }
+.feed-legend-sign { width: 1.05rem; height: 1.05rem; object-fit: contain; vertical-align: middle; }

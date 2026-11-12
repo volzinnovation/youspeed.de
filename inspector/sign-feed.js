@@ -79,7 +79,10 @@
       description.textContent = value ?? "Offen";
       list.append(term, description);
     }
-    detail.append(title, list);
+    const compare = document.createElement("a");
+    compare.href = "./route-review.html?" + new URLSearchParams({group: fields.id});
+    compare.textContent = "Gruppe im Fahrtvergleich öffnen";
+    detail.append(title, list, compare);
     const tooltip = document.createElement("span");
     tooltip.textContent = `${code} · ${azimuth}${example ? " · Beispielpiktogramm" : ""}`;
     const marker = L.marker([latitude, longitude], {icon, title: tooltip.textContent})
