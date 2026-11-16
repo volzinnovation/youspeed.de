@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>__ROUTE_TITLE__</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-size-base: 15px;
+      --background: light-dark(#fff, #16191d);
+      --foreground: light-dark(#1b2430, #eef1f4);
+      --muted-foreground: light-dark(#566476, #b2bdc9);
+      --border: light-dark(#cdd6df, #586371);
+      --destructive: light-dark(#a72921, #ff9c90);
+      --green: light-dark(#267329, #83d989);
+      --viz-series-1: light-dark(#2b70a6, #74baf5);
+      --viz-series-2: light-dark(#276082, #8bc4e7);
+      --viz-series-3: light-dark(#7750a3, #c5a0f8);
+    }
+    body { background: var(--background); color: var(--foreground); font: var(--font-size-base)/1.45 system-ui, sans-serif; margin: 0; }
+    main { width: min(1080px, 100% - 2rem); margin: 1.5rem auto; }
+    h2, p { margin: 0; }
+    .text-muted { color: var(--muted-foreground); }
+    .text-small { font-size: .8rem; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .table { border-collapse: collapse; width: 100%; }
+    .table th, .table td { border-bottom: 1px solid var(--border); text-align: start; vertical-align: top; padding: .35em .4em; }
+    button, select { font: inherit; }
+    svg, summary { cursor: pointer; }
+  </style>
+</head>
+<body>
+<main>
+<!-- Chart fragment -->
+<section id="route-speed-limits">
+  <style>
+    #route-speed-limits { --missing-sign: light-dark(#98600c, #f4bd70); display: grid; gap: calc(var(--font-size-base) * .7); }
+    #route-speed-limits .route-header { display: grid; gap: calc(var(--font-size-base) * .25); padding-right: 90px; }
+    #route-speed-limits .chart { width: 100%; height: 420px; display: block; }
+    #route-speed-limits .chart text { fill: var(--foreground); dominant-baseline: middle; pointer-events: none; }
+    #route-speed-limits .chart .secondary { fill: var(--muted-foreground); }
+    #route-speed-limits .chart .axis { stroke: var(--border); }
+    #route-speed-limits .chart .guide { stroke: var(--border); opacity: .55; }
+    #route-speed-limits .chart .way { fill: var(--viz-series-1); }
+    #route-speed-limits .chart .way-conflict { fill: var(--destructive); }
+    #route-speed-limits .chart .way-missing-sign { fill: var(--missing-sign); }
+    #route-speed-limits .chart .way-agreement { fill: var(--green, var(--viz-series-2)); }
+    #route-speed-limits .chart .mobi { stroke: var(--viz-series-2); }
+    #route-speed-limits .chart .mapillary { stroke: var(--viz-series-3); }
+    #route-speed-limits .chart .conflict { stroke: var(--destructive); }
+    #route-speed-limits .chart .missing-sign { stroke: var(--missing-sign); }
+    #route-speed-limits .chart .agreement { stroke: var(--green, var(--viz-series-2)); }
+    #route-speed-limits .chart .selection { stroke: var(--foreground); stroke-dasharray: 3 3; pointer-events: none; }
+    #route-speed-limits .chart .way-edge { stroke: var(--background); pointer-events: none; }
+    #route-speed-limits .chart .mark-label { paint-order: stroke; stroke: var(--background); stroke-width: 3px; stroke-linejoin: round; }
+    #route-speed-limits .controls { display: flex; gap: calc(var(--font-size-base) * .75); flex-wrap: wrap; align-items: center; }
+    #route-speed-limits .distance-control { display: flex; flex: 1 1 230px; gap: calc(var(--font-size-base) * .5); align-items: center; }
+    #route-speed-limits .distance-control input { flex: 1; min-width: 70px; }
+    #route-speed-limits .distance-control output { min-width: 70px; text-align: right; }
+    #route-speed-limits .sign-details { display: grid; gap: 3px; }
+    #route-speed-limits .sign-details ul { margin: 0; padding-left: 1.25em; }
+    #route-speed-limits .chart-key { display: flex; flex-wrap: wrap; justify-content: space-between; column-gap: 1em; }
+    #route-speed-limits .conflict-table { margin-top: .5em; }
+    #route-speed-limits .conflict-table th, #route-speed-limits .conflict-table td { overflow-wrap: anywhere; }
+    #route-speed-limits [hidden] { display: none; }
+  </style>
+  <header class="route-header">
+    <h2>__ROUTE_TITLE__</h2>
+    <p class="text-small text-muted" id="route-speed-limits-summary"></p>
+  </header>
+  <div class="controls">
+    <label class="form-label">Route view
+      <select class="form-select" id="route-speed-limits-window"></select>
+    </label>
+    <label class="form-label">Mapillary last seen
+      <select class="form-select" id="route-speed-limits-mapillary-age">
+        <option value="0">All dates</option>
+        <option value="1">Past year</option>
+        <option value="3">Past 3 years</option>
+        <option value="5">Past 5 years</option>
+      </select>
+    </label>
+    <label class="form-label distance-control" for="route-speed-limits-position">
+      Inspect distance
+      <input type="range" class="form-range" id="route-speed-limits-position" step="any">
+      <output class="text-small tabular-nums" id="route-speed-limits-distance" for="route-speed-limits-position"></output>
+    </label>
+  </div>
+  <svg class="chart cursor-interaction" id="route-speed-limits-plot" role="img" aria-label="Distance along the route. The first OSM bundle bar compares with MobiData signs and the second compares with Mapillary signs."></svg>
+  <div class="chart-key text-small text-muted" aria-label="Chart legend">
+    <span><span style="color:var(--green, var(--viz-series-2))" aria-hidden="true">●</span> Agreement</span>
+    <span><span style="color:var(--destructive)" aria-hidden="true">●</span> Conflict</span>
+    <span><span style="color:var(--missing-sign)" aria-hidden="true">●</span> No matching sign at speed change</span>
+    <span><span style="color:var(--viz-series-1)" aria-hidden="true">●</span> No comparable sign</span>
+    <span><span aria-hidden="true">×</span> Dashed tick marks the end of the posted speed limit</span>
+    <span>Distance along GPX · start → finish</span>
+  </div>
+  <div class="sign-details text-small" id="route-speed-limits-detail" aria-live="polite"></div>
+  <details id="route-speed-limits-conflicts">
+    <summary id="route-speed-limits-conflict-summary"></summary>
+    <table class="table table-sm conflict-table text-small tabular-nums">
+      <thead>
+        <tr><th scope="col">Distance</th><th scope="col">Bundle</th><th scope="col">Sign evidence</th><th scope="col">OSM way</th></tr>
+      </thead>
+      <tbody id="route-speed-limits-conflict-rows"></tbody>
+    </table>
+  </details>
+  <script type="application/json" id="route-speed-limits-data">
+    __ROUTE_DATA__
+  </script>
+  <script>
+    (() => {
+      const root = document.getElementById('route-speed-limits');
+      const svg = root.querySelector('#route-speed-limits-plot');
+      const windowInput = root.querySelector('#route-speed-limits-window');
+      const mapillaryAge = root.querySelector('#route-speed-limits-mapillary-age');
+      const positionInput = root.querySelector('#route-speed-limits-position');
+      const distanceOutput = root.querySelector('#route-speed-limits-distance');
+      const detail = root.querySelector('#route-speed-limits-detail');
+      const data = JSON.parse(root.querySelector('#route-speed-limits-data').textContent);
+      const km = distance => (distance / 1000).toFixed(1);
+      const sections = [[0, data.length]];
+      if (data.length > 6000) {
+        for (let a = 0; a < data.length; a += 5000) {
+          const end = a + 6000 >= data.length ? data.length : a + 5000;
+          sections.push([a, end]);
+          if (end === data.length) break;
+        }
+      }
+      sections.forEach(([a, b], index) => {
+        windowInput.add(new Option(index === 0 ? 'Full route' : `${km(a)}–${km(b)} km`, index));
+      });
+      const position = {start: 0, end: data.length, selected: null, section: null};
+      const comparisons = [
+        {provider: 'MobiData', events: data.mobi, barTop: 113},
+        {provider: 'Mapillary', events: data.mapillary, barTop: 209},
+      ];
+      const [, mapillaryComparison] = comparisons;
+      const conflictLookup = new Map();
+      const eventKey = (provider, station, id, section) => JSON.stringify([provider, station, id, section]);
+      const sectionCount = data.segments.filter(segment => segment[3] !== null).length;
+      root.querySelector('#route-speed-limits-summary').textContent =
+        `${km(data.length)} km · ${sectionCount} OSM way sections · Speeds in km/h`;
+      mapillaryAge.disabled = !data.mapillary_loaded;
+      const conflictDetails = root.querySelector('#route-speed-limits-conflicts');
+      const conflictSummary = root.querySelector('#route-speed-limits-conflict-summary');
+      const conflictRows = root.querySelector('#route-speed-limits-conflict-rows');
+      const transitionSignRadius = 50;
+      const runSegments = [];
+      data.segments.forEach(([a, b, value], index) => {
+        if (runSegments.at(-1)?.[2] === value) runSegments.at(-1)[1] = b;
+        else runSegments.push([a, b, value, index]);
+      });
+
+      function missingTransitionSigns({provider, events}) {
+        if (provider === 'Mapillary' && !data.mapillary_loaded) return [];
+        return runSegments.flatMap(([at, end, next, index], run) => {
+          const previous = runSegments[run - 1];
+          if (!previous || previous[2] === '?' || !/^\d+$/.test(next)) return [];
+          const match = events.some(([station, value, kind]) =>
+            value === next && !kind.endsWith('_end') &&
+            previous[0] <= station && station < end && Math.abs(station - at) <= transitionSignRadius);
+          return match ? [] : [[at, provider, next, null, index, null, false, previous[2]]];
+        });
+      }
+
+      function applyMapillaryAge() {
+        const years = Number(mapillaryAge.value);
+        mapillaryComparison.events = data.mapillary;
+        if (years) {
+          const now = new Date();
+          const year = now.getFullYear() - years;
+          const month = now.getMonth();
+          const day = Math.min(now.getDate(), new Date(year, month + 1, 0).getDate());
+          const cutoff = new Date(year, month, day).getTime();
+          mapillaryComparison.events = data.mapillary.filter(([, , , , , , lastSeen]) =>
+            Number.isFinite(lastSeen) && cutoff <= lastSeen && lastSeen <= now.getTime());
+        }
+        const retained = new Set(mapillaryComparison.events.map(([at, , , id, , index]) =>
+          eventKey('Mapillary', at, id, index)));
+        const conflicts = data.conflicts.filter(([at, provider, , , index, id]) =>
+          provider !== 'Mapillary' || retained.has(eventKey(provider, at, id, index)));
+        conflictLookup.clear();
+        for (const comparison of comparisons) {
+          comparison.conflicts = conflicts.filter(([, provider]) => provider === comparison.provider);
+          comparison.missingSigns = missingTransitionSigns(comparison);
+          comparison.missingBySection = new Map(comparison.missingSigns.map(gap => [gap[4], gap]));
+          comparison.conflictsBySection = new Map();
+          for (const conflict of comparison.conflicts) {
+            const [at, provider, , , index, id] = conflict;
+            conflictLookup.set(eventKey(provider, at, id, index), conflict);
+            if (!comparison.conflictsBySection.has(index)) comparison.conflictsBySection.set(index, []);
+            comparison.conflictsBySection.get(index).push(conflict);
+          }
+          comparison.agreements = new Set(comparison.events
+            .filter(([, value, kind, , , index]) => !kind.endsWith('_end') && data.segments[index][2] === value)
+            .map(event => event[5]));
+        }
+        renderConflictTable(conflicts, comparisons.flatMap(comparison => comparison.missingSigns));
+        updatePlot();
+        inspect();
+      }
+
+      function element(tag, attrs, text) {
+        const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+        for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
+        if (text !== undefined) node.textContent = text;
+        svg.append(node);
+        return node;
+      }
+      function line(x1, y1, x2, y2, className, attrs = {}) {
+        return element('line', {x1, y1, x2, y2, class: className, ...attrs});
+      }
+      function label(x, y, text, attrs = {}) {
+        return element('text', {x, y, ...attrs}, text);
+      }
+      function leftEdge() { return 8; }
+      function rightEdge() { return Math.max(16, svg.clientWidth - 8); }
+      function plotX(s) {
+        return leftEdge() + (s - position.start) / (position.end - position.start) * (rightEdge() - leftEdge());
+      }
+      function marks(events, provider, baseline, direction, className) {
+        const visible = events.filter(([s]) => position.start <= s && s <= position.end);
+        const width = rightEdge() - leftEdge();
+        const lastLabel = [-Infinity, -Infinity, -Infinity];
+        const valueLocations = new Map();
+        visible.forEach(([s, value, kind, id, , index]) => {
+          const x = plotX(s);
+          const ending = kind.endsWith('_end');
+          const conflict = conflictLookup.get(eventKey(provider, s, id, index));
+          const agreement = !ending && data.segments[index][2] === value;
+          const text = ending ? `×${value}` : conflict ? `${value}!` : value;
+          const labelX = Math.max(leftEdge() + 13, Math.min(rightEdge() - 13, x));
+          const tier = lastLabel.findIndex(previous => labelX - previous >= 26);
+          const previousSame = valueLocations.get(text) ?? -Infinity;
+          const attachLabel = tier >= 0 && labelX - previousSame >= (width > 500 ? 13 : 18);
+          const tip = baseline + direction * (attachLabel ? 16 + 13 * tier : 8);
+          const markClass = conflict ? `${className} conflict` : agreement ? `${className} agreement` : className;
+          line(x, baseline, x, tip, markClass,
+            {'stroke-width': conflict || agreement ? 2 : 1.5, 'stroke-dasharray': ending ? '2 2' : 'none', opacity: .82,
+              'data-tooltip': conflict
+                ? `${km(s)} km · Bundle ${conflict[2]} · ${provider} ${value} km/h`
+                : `${km(s)} km · ${provider} ${ending ? 'end of ' : ''}${value} km/h${agreement ? ' · Agrees with bundle' : ''}`});
+          if (attachLabel) {
+            lastLabel[tier] = labelX;
+            valueLocations.set(text, labelX);
+            label(labelX, tip + 7 * direction, text, {'text-anchor': 'middle', class: 'text-small mark-label'});
+          }
+        });
+      }
+      function comparisonLabels(issues, baseline) {
+        const visible = issues.filter(([at]) => position.start <= at && at <= position.end)
+          .sort((a, b) => a[0] - b[0]);
+        const labelWidth = 143;
+        const rightmost = [-Infinity, -Infinity];
+        const width = rightEdge() - leftEdge();
+        if (width < labelWidth) return;
+        let previous = null;
+        for (const row of visible) {
+          const [at, , base, posted, , , , previousLimit] = row;
+          const missing = posted === null;
+          if (!missing && previous && base === previous[2] && posted === previous[3] &&
+              plotX(at) - plotX(previous[0]) < 55) continue;
+          const x = plotX(at);
+          const center = Math.max(leftEdge() + labelWidth / 2, Math.min(rightEdge() - labelWidth / 2, x));
+          const tier = rightmost.findIndex(edge => center - labelWidth / 2 >= edge);
+          if (tier < 0) continue;
+          rightmost[tier] = center + labelWidth / 2;
+          previous = row;
+          const y = baseline + 13 + 17 * tier;
+          line(x, baseline, center, y - 5, missing ? 'missing-sign' : 'conflict',
+            {'stroke-width': 1, opacity: .75, 'pointer-events': 'none'});
+          const comparison = missing ? `${previousLimit} → ${base}` : `${base} ≠ ${posted}`;
+          label(center, y, `${km(at)} km · ${comparison}`, {
+            'text-anchor': 'middle', class: 'text-small mark-label',
+          });
+        }
+      }
+      function updatePlot() {
+        const width = svg.clientWidth;
+        if (width < 1) return;
+        svg.replaceChildren();
+        svg.setAttribute('viewBox', `0 0 ${width} 420`);
+        const plotStart = leftEdge(), plotEnd = rightEdge();
+        const full = position.end - position.start > 10000;
+        const span = position.end - position.start;
+        const minimumTick = span / Math.max(2, Math.floor(width / 76));
+        const tickStep = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000]
+          .find(step => step >= minimumTick) ?? 200000;
+        const ticks = [];
+        for (let s = Math.ceil(position.start / tickStep) * tickStep; s <= position.end; s += tickStep) ticks.push(s);
+        for (const y of [79, 324, 388]) line(plotStart, y, plotEnd, y, 'axis');
+        for (const tick of ticks) {
+          const x = plotX(tick);
+          line(x, 79, x, 388, 'guide');
+          line(x, 388, x, 393, 'axis');
+          const anchor = x - plotStart < 20 ? 'start' : plotEnd - x < 20 ? 'end' : 'middle';
+          label(x, 404, `${km(tick)} km`,
+            {'text-anchor': anchor, class: 'text-small secondary'});
+        }
+        label(plotStart, 13, 'MobiData BW', {'font-weight': 500});
+        label(plotStart, 300, 'Mapillary', {'font-weight': 500});
+        label(plotEnd, 13, 'Sign azimuth ±30°', {'text-anchor': 'end', class: 'text-small secondary'});
+        const mapillaryStatus = !data.mapillary_loaded ? 'No overlay supplied'
+          : !data.mapillary.length ? 'No matching signs'
+          : !mapillaryComparison.events.length ? 'No signs in selected period'
+          : mapillaryAge.value === '0' ? `${data.mapillary.length} signs`
+          : `${mapillaryComparison.events.length} of ${data.mapillary.length} signs`;
+        label(plotEnd, 300, mapillaryStatus, {'text-anchor': 'end', class: 'text-small secondary'});
+        marks(data.mobi, 'MobiData', 79, -1, 'mobi');
+        marks(mapillaryComparison.events, 'Mapillary', 324, 1, 'mapillary');
+        for (const comparison of comparisons) {
+          bundleBar(comparison, full ? runSegments : data.segments);
+        }
+        if (position.selected !== null) {
+          const x = plotX(position.selected);
+          line(x, 79, x, 388, 'selection');
+        }
+      }
+
+      function bundleBar({provider, barTop, conflicts, conflictsBySection, missingSigns, missingBySection, agreements}, labelSegments) {
+        const barBottom = barTop + 28;
+        label(leftEdge(), barTop - 12, `OSM bundle vs ${provider}`, {'font-weight': 500});
+        data.segments.forEach(([a, b, value, wayId, , road], index) => {
+          if (b <= position.start || a >= position.end) return;
+          const x = plotX(Math.max(a, position.start));
+          const end = plotX(Math.min(b, position.end));
+          const differences = conflictsBySection.get(index);
+          const missing = missingBySection.get(index);
+          const agreement = agreements.has(index);
+          const opacity = differences || missing || agreement ? .49 : value === '?' ? .08 : .12 + Math.min(100, Number(value) || 100) * .003;
+          const wayDetail = wayId === null ? road : `${value} km/h · ${road} · OSM way ${wayId}`;
+          const excerpt = differences?.map(([at, provider, base, posted]) =>
+            `${km(at)} km · Bundle ${base} · ${provider} ${posted} km/h`).join('\n');
+          const gap = missing ? `\n${km(a)} km · No sign confirming ${missing[7]} → ${value} km/h within ${transitionSignRadius} m` : '';
+          const status = differences ? 'Conflict' : missing ? 'Missing sign' : agreement ? 'Agreement' : 'No comparable sign';
+          element('rect', {x, y: barTop, width: end - x, height: 28, 'data-provider': provider,
+            class: differences ? 'way way-conflict' : missing ? 'way way-missing-sign' : agreement ? 'way way-agreement' : 'way', opacity,
+            'data-tooltip': `${provider} · ${status} · ${wayDetail} · ${km(a)}–${km(b)} km${excerpt ? '\n' + excerpt : ''}${gap}`});
+          if (differences) {
+            line(x, barBottom + 3, end, barBottom + 3, 'conflict', {'stroke-width': 2, 'pointer-events': 'none'});
+          }
+          if (a > position.start) line(x, barBottom - 6, x, barBottom, 'way-edge', {'stroke-width': .8, opacity: .85});
+        });
+        comparisonLabels([...conflicts, ...missingSigns], barBottom + 3);
+        for (const [a, b, value] of labelSegments) {
+          if (b <= position.start || a >= position.end) continue;
+          const x = plotX(Math.max(a, position.start));
+          const end = plotX(Math.min(b, position.end));
+          if (end - x >= (value.length > 2 ? 27 : 20)) {
+            label((x + end) / 2, barTop + 13, value, {'text-anchor': 'middle', class: 'text-small'});
+          }
+        }
+      }
+
+      function inspect() {
+        const s = position.selected;
+        distanceOutput.textContent = s === null ? '— km' : `${km(s)} km`;
+        detail.replaceChildren();
+        if (s === null) return;
+        const segment = position.section === null
+          ? (data.segments.find(([, end]) => s < end) ?? data.segments.at(-1))
+          : data.segments[position.section];
+        const [start, end, value, way, direction, road, source, condition] = segment;
+        const caption = document.createElement('p');
+        const identity = way === null ? road : `${road} · ${value === '?' ? 'Unknown base limit' : value + ' km/h'} · OSM way ${way} ${direction === 1 ? 'forward' : 'backward'}`;
+        caption.textContent = `${identity} · ${km(start)}–${km(end)} km · ${source}${condition ? ' · Conditional or specific tags ' + condition : ''}`;
+        detail.append(caption);
+
+        const radius = Math.min(160, Math.max(12, 6 * (position.end - position.start) / (rightEdge() - leftEdge())));
+        const nearby = comparisons.flatMap(({provider, events}) =>
+          events.filter(([at]) => Math.abs(at - s) <= radius).map(event => [provider, ...event]));
+        if (!nearby.length) return;
+        const list = document.createElement('ul');
+        nearby.sort((a, b) => a[1] - b[1]);
+        for (const [provider, at, number, kind, id, description, index, lastSeen] of nearby) {
+          const item = document.createElement('li');
+          const event = kind.endsWith('_end') ? 'end of ' : kind.startsWith('speed_zone') ? 'zone ' : '';
+          const conflict = conflictLookup.get(eventKey(provider, at, id, index));
+          const difference = conflict ? ` · Bundle ${conflict[2]} km/h${conflict[6] ? ' · Adjacent way matches' : ''}` : '';
+          item.textContent = `${provider} · ${km(at)} km · ${event}${number} km/h${difference} · ${description}`;
+          if (provider === 'Mapillary') {
+            if (Number.isFinite(lastSeen)) {
+              item.append(` · Last seen ${new Date(lastSeen).toLocaleDateString()}`);
+            }
+            const link = document.createElement('a');
+            link.href = 'https://www.mapillary.com/app/?mapFeature=' + encodeURIComponent(id);
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = id;
+            item.append(' · ', link);
+          } else {
+            item.setAttribute('data-tooltip', `MobiData record ${id}`);
+          }
+          list.append(item);
+        }
+        detail.append(list);
+      }
+
+      function selectPosition(s, section = null) {
+        position.section = section;
+        position.selected = Math.max(position.start, Math.min(position.end, s));
+        positionInput.value = position.selected;
+        positionInput.setAttribute('aria-valuetext', `${km(position.selected)} kilometres from the start`);
+        updatePlot();
+        inspect();
+        if (window.parent !== window) {
+          window.parent.postMessage({type: 'youspeed-route-position', station: position.selected}, '*');
+        }
+      }
+
+      function selectWindow() {
+        [position.start, position.end] = sections[Number(windowInput.value)];
+        positionInput.min = position.start;
+        positionInput.max = position.end;
+        if (position.selected !== null) {
+          selectPosition(position.selected, position.selected >= position.start && position.selected <= position.end ? position.section : null);
+        } else {
+          positionInput.value = position.start;
+          updatePlot();
+          inspect();
+        }
+      }
+      windowInput.addEventListener('change', selectWindow);
+      mapillaryAge.addEventListener('change', applyMapillaryAge);
+      positionInput.addEventListener('input', () => selectPosition(positionInput.valueAsNumber));
+      svg.addEventListener('click', event => {
+        const x = event.clientX - svg.getBoundingClientRect().left;
+        selectPosition(position.start + (x - leftEdge()) / (rightEdge() - leftEdge()) * (position.end - position.start));
+      });
+      function renderConflictTable(conflicts, missingSigns) {
+        const issues = [...conflicts, ...missingSigns].sort((a, b) => a[0] - b[0]);
+        conflictDetails.hidden = !issues.length;
+        conflictSummary.textContent =
+          `${conflicts.length} posted-limit ${conflicts.length === 1 ? 'conflict' : 'conflicts'} · ${missingSigns.length} missing transition ${missingSigns.length === 1 ? 'sign' : 'signs'}`;
+        conflictRows.replaceChildren();
+        for (const [at, provider, base, posted, index, , adjacentMatch, previousLimit] of issues) {
+          const row = document.createElement('tr');
+          const station = document.createElement('td');
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-ghost';
+          button.textContent = `${km(at)} km`;
+          button.addEventListener('click', () => {
+            const zoom = sections.findIndex(([a, b], i) => i > 0 && a <= at && at <= b);
+            windowInput.value = Math.max(0, zoom);
+            selectWindow();
+            selectPosition(at, index);
+            svg.scrollIntoView({block: 'nearest'});
+          });
+          station.append(button);
+          row.append(station);
+          const [, , , way, , road] = data.segments[index];
+          const bundle = posted === null ? `${previousLimit} → ${base}` : base;
+          const evidence = posted === null
+            ? `${provider} · No matching sign within ${transitionSignRadius} m`
+            : `${provider} ${posted}`;
+          for (const value of [bundle, evidence, `${way} · ${road}${adjacentMatch ? ' · Adjacent way matches' : ''}`]) {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.append(cell);
+          }
+          conflictRows.append(row);
+        }
+      }
+      applyMapillaryAge();
+      selectWindow();
+      new ResizeObserver(() => { updatePlot(); inspect(); }).observe(svg);
+    })();
+  </script>
+</section>
+<!-- Chart fragment -->
+</main>
+</body>
+</html>
