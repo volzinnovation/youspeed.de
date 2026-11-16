@@ -153,6 +153,12 @@ private fun TripHistoryHeader() {
 @Composable
 private fun TripHistoryRow(trip:JSONObject,enabled:Boolean,onClick:()->Unit,onShare:()->Unit,onDelete:()->Unit) {
     val id=trip.getString("id");val unknown=jt("Unknown location","Ort unbekannt","Lieu inconnu","Onbekende locatie")
+    val endPlace = trip.optString("end_place").ifBlank {
+        trip.optString("last_known_end_place").takeIf { it.isNotBlank() }?.let { place ->
+            val lastKnown = jt("Last known", "Zuletzt bekannt", "Dernier lieu connu", "Laatst bekend")
+            "$lastKnown · ${place.replace("\n", ", ")}"
+        } ?: unknown
+    }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val compact=maxWidth<600.dp
         Column {
@@ -160,7 +166,7 @@ private fun TripHistoryRow(trip:JSONObject,enabled:Boolean,onClick:()->Unit,onSh
             TripHistoryAction(enabled,onShare,"trip-$id-share",jt("Share drive with GPS and TSR logs","Fahrt mit GPS- und TSR-Protokollen teilen","Partager le trajet et les journaux GPS et TSR","Rit met GPS- en TSR-logboeken delen")) {
                 Icon(Icons.Default.Share,contentDescription=null,modifier=Modifier.size(20.dp))
             }
-            listOf(tripDateCell(trip,compact),trip.optString("start_place").ifBlank {unknown},trip.optString("end_place").ifBlank {unknown},TripJournalPresentation.distanceKilometres(trip.optDouble("distance"))).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-$id-cell-$index",compact,onClick=onClick)}
+            listOf(tripDateCell(trip,compact),trip.optString("start_place").ifBlank {unknown},endPlace,TripJournalPresentation.distanceKilometres(trip.optDouble("distance"))).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-$id-cell-$index",compact,onClick=onClick)}
             TripHistoryCell(if(trip.has("odo_end")) TripJournalPresentation.odometerKilometres(trip.optDouble("odo_end")) else "—",4,"trip-$id-cell-4",compact,onClick=onClick)
             TripHistoryAction(enabled,onDelete,"trip-$id-delete",jt("Delete","Löschen","Supprimer","Verwijderen")) {
                 Icon(Icons.Default.Delete,contentDescription=null,tint=MaterialTheme.colorScheme.error,modifier=Modifier.size(20.dp))
@@ -388,7 +394,7 @@ private fun ArchivedTripJournalDetailScreen(journal:TripJournal,mediaCleanup:((L
     val filtered=trips.filter { t ->
         t.optDouble("start")>=from && t.optDouble("start")<to && (signFilter.isBlank() || t.optString("sign_classes").contains(signFilter,true)) && (mediaFilter=="all" || t.optInt(if(mediaFilter=="photo") "photo_count" else "video_count")>0) && (!interruptedOnly || t.optString("state")=="interrupted" || t.optInt("gap_count")>0) &&
             (vehicleFilter.isBlank() || t.optString("vehicle").contains(vehicleFilter,true)) &&
-            (search.isBlank() || listOf("vehicle","start_place","end_place").any { t.optString(it).contains(search,true) } || tripDate(t.optDouble("start")).contains(search,true))
+            (search.isBlank() || listOf("vehicle","start_place","end_place","last_known_end_place").any { t.optString(it).contains(search,true) } || tripDate(t.optDouble("start")).contains(search,true))
     }
     val trip=trips.firstOrNull { it.optString("id")==selected }
     val discoveries=remember(events) { TripJournalProjection.discoveries(events) }

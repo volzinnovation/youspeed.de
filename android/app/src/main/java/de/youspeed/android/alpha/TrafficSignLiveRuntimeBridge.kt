@@ -43,7 +43,7 @@ class TrafficSignLiveRuntimeBridge<F : TrafficSignNormalizedFrameHandle>(
         require(detectorArtifact != null) {
             "The live TSR bridge requires Android detector lineage"
         }
-        require(runtimeArtifact.sha256 == detectorArtifact.sha256) {
+        require(runtimeArtifact == detectorArtifact || AndroidTrafficSignModelPackLoader.isTownTrialArtifact(modelPack, runtimeArtifact)) {
             "The live TSR bridge runtime artifact must be the pack's Android detector"
         }
         if (modelPack.pipeline == TrafficSignPipeline.PROPOSAL_CLASSIFICATION) {

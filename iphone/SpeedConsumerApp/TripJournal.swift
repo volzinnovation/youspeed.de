@@ -111,7 +111,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
         let committed = transaction {
             self.sql("CREATE TABLE IF NOT EXISTS trips(id TEXT PRIMARY KEY,start REAL,end REAL,state TEXT,distance REAL DEFAULT 0,duration REAL DEFAULT 0,odo_start REAL,odo_end REAL)")
             let columns = Set(self.rows("PRAGMA table_info(trips)").compactMap { $0["name"] as? String })
-            for (name, type) in [("last_observed", "REAL"), ("end_reason", "TEXT"), ("timezone_seconds", "INTEGER"), ("vehicle", "TEXT"), ("observed", "REAL DEFAULT 0"), ("start_place", "TEXT"), ("end_place", "TEXT"), ("history_version", "INTEGER DEFAULT 0"), ("counter_distance_end", "REAL")] where !columns.contains(name) {
+            for (name, type) in [("last_observed", "REAL"), ("end_reason", "TEXT"), ("timezone_seconds", "INTEGER"), ("vehicle", "TEXT"), ("observed", "REAL DEFAULT 0"), ("start_place", "TEXT"), ("end_place", "TEXT"), ("last_known_end_place", "TEXT"), ("history_version", "INTEGER DEFAULT 0"), ("counter_distance_end", "REAL")] where !columns.contains(name) {
                 self.sql("ALTER TABLE trips ADD COLUMN \(name) \(type)")
             }
             self.sql("CREATE TABLE IF NOT EXISTS events(seq INTEGER PRIMARY KEY AUTOINCREMENT,trip TEXT,kind TEXT,time REAL,payload TEXT)")
@@ -212,27 +212,32 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
     }
     /// Called once after closure/finalization (or once for metadata repair), never by a view.
     private func storeHistoryMetadata(_ id: String) {
-        guard let trip = rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<2", [id]).first else { return }
+        guard let trip = rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<3", [id]).first else { return }
         let startName = (trip["start_place"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
         let endName = (trip["end_place"] as? String).flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
-        if let startName, let endName {
-            sql("UPDATE trips SET start_place=?,end_place=?,history_version=2 WHERE id=?", [startName, endName, id])
+        if startName != nil, endName != nil {
+            sql("UPDATE trips SET history_version=3 WHERE id=?", [id])
             return
         }
-        let points = rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq", [id]).map(JournalEvent.init).filter { $0.trackEligible && $0.coordinate != nil }
-        func label(_ point: JournalEvent?) -> Any {
-            guard let point else { return NSNull() }
-            let context = rows("SELECT * FROM events WHERE trip=? AND kind IN ('gps','place','gap') AND time>=? AND time<=? ORDER BY time,seq", [id, String(point.time.timeIntervalSince1970-15), String(point.time.timeIntervalSince1970+15)]).map { row -> JournalEvent in
-                var row=row; if row["kind"] as? String == "gps" { row["kind"]="place" }; return JournalEvent(row)
-            }
-            let names = JournalHistoryPresentation.endpointNames(trip: [:], events: [point] + context)
-            if names.start == journalText("location_unknown") { return NSNull() }
-            return names.start
+        let points = rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq", [id])
+            .map(JournalEvent.init).filter { $0.trackEligible && $0.coordinate != nil }
+        func context(_ point: JournalEvent?, lookback: TimeInterval) -> [JournalEvent] {
+            guard let point else { return [] }
+            let time = point.time.timeIntervalSince1970
+            return rows("SELECT * FROM events WHERE trip=? AND kind IN ('gps','place','gap') AND time>=? AND time<=? ORDER BY time,seq",
+                        [id, String(time - lookback), String(time + 15)]).map(JournalEvent.init)
         }
-        sql("UPDATE trips SET start_place=?,end_place=?,history_version=2 WHERE id=?", [(startName as Any?) ?? label(points.first), (endName as Any?) ?? label(points.last), id])
+        let start = startName ?? JournalHistoryPresentation.endpointName(points.first, events: context(points.first, lookback: 15))
+        let endContext = endName == nil
+            ? context(points.last, lookback: JournalHistoryPresentation.lastKnownPlaceWindow) : []
+        let end = endName ?? JournalHistoryPresentation.endpointName(points.last, events: endContext)
+        let lastKnownEnd = end == nil
+            ? JournalHistoryPresentation.endpointName(points.last, events: endContext, lastKnown: true) : nil
+        sql("UPDATE trips SET start_place=?,end_place=?,last_known_end_place=?,history_version=3 WHERE id=?",
+            [(start as Any?) ?? NSNull(), (end as Any?) ?? NSNull(), (lastKnownEnd as Any?) ?? NSNull(), id])
     }
     private func backfillHistoryMetadata() {
-        for row in rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<2") {
+        for row in rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<3") {
             if let id = row["id"] as? String { storeHistoryMetadata(id) }
         }
     }
@@ -699,7 +704,7 @@ final class TripJournal: ObservableObject, @unchecked Sendable {
                 self.sql("DELETE FROM events"); self.sql("DELETE FROM bindings"); self.sql("DELETE FROM trips")
                 self.sql("UPDATE counters SET origin=?,distance=?,usage=? WHERE id=1", [origin, distance, usage])
                 for trip in trips {
-                    let fields = ["id", "start", "end", "state", "distance", "duration", "odo_start", "odo_end", "last_observed", "end_reason", "timezone_seconds", "vehicle", "observed", "start_place", "end_place", "history_version", "counter_distance_end"]
+                    let fields = ["id", "start", "end", "state", "distance", "duration", "odo_start", "odo_end", "last_observed", "end_reason", "timezone_seconds", "vehicle", "observed", "start_place", "end_place", "last_known_end_place", "history_version", "counter_distance_end"]
                     let restored = ["active", "finalizing"].contains(trip["state"] as? String ?? "")
                     self.sql("INSERT INTO trips(\(fields.joined(separator: ","))) VALUES(\(fields.map { _ in "?" }.joined(separator: ",")))", fields.map { key -> Any in if restored && key == "state" { return "interrupted" }; if restored && key == "end_reason" { return "backup_restored" }; return trip[key] ?? NSNull() })
                 }
@@ -929,7 +934,7 @@ private enum TripJournalExport {
         }
         let visible = all.filter { !hidden($0.coordinate) }
         var trip = original
-        trip.removeValue(forKey:"history_version"); trip.removeValue(forKey:"counter_distance_end")
+        trip.removeValue(forKey:"history_version"); trip.removeValue(forKey:"counter_distance_end"); trip.removeValue(forKey:"last_known_end_place")
         if !options.includeOdometer { trip.removeValue(forKey: "odo_start"); trip.removeValue(forKey: "odo_end") }
         if options.masked { for key in ["vehicle", "start_place", "end_place"] { trip.removeValue(forKey: key) } }
         let envelope: [String: Any] = ["schema_version": 1, "generated_at": ISO8601DateFormatter().string(from: Date()), "measurement_policy_version": 1, "coordinate_order": "longitude,latitude", "distance_unit": "metre", "duration_unit": "second", "timestamp_unit": "unix_seconds_utc", "in_progress_snapshot": ["active", "finalizing"].contains(trip["state"] as? String ?? ""), "masked": options.masked, "trip": trip]
@@ -1154,23 +1159,31 @@ enum JournalHistoryPresentation {
         formatter.minimumFractionDigits = 1; formatter.maximumFractionDigits = 1
         return formatter.string(from: NSNumber(value: value)) ?? "—"
     }
+    static let lastKnownPlaceWindow: TimeInterval = 30
+
     static func endpointNames(trip: [String: Any], events: [JournalEvent]) -> (start: String, end: String) {
         let points = events.filter { $0.trackEligible && $0.coordinate != nil }
         func name(_ key: String, endpoint: JournalEvent?) -> String {
             if let stored = trip[key] as? String, !stored.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return stored }
-            guard let endpoint, let coordinate = endpoint.coordinate else { return journalText("location_unknown") }
-            let candidate = events.filter { event in
-                guard event.kind == "place" || event.kind == "gps", abs(event.time.timeIntervalSince(endpoint.time)) <= 15,
-                      let place = event.coordinate else { return false }
-                let from = min(event.time, endpoint.time), to = max(event.time, endpoint.time)
-                guard !events.contains(where: { $0.kind == "gap" && $0.time > from && $0.time <= to }) else { return false }
-                let tolerance = max(50, max(endpoint.payload["accuracy"] as? Double ?? 0, event.payload["accuracy"] as? Double ?? 0))
-                guard tolerance.isFinite, CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude).distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude)) <= tolerance else { return false }
-                return !placeName(event).isEmpty
-            }.min { abs($0.time.timeIntervalSince(endpoint.time)) < abs($1.time.timeIntervalSince(endpoint.time)) }
-            return candidate.map(placeName) ?? journalText("location_unknown")
+            return endpointName(endpoint, events: events) ?? journalText("location_unknown")
         }
         return (name("start_place", endpoint: points.first), name("end_place", endpoint: points.last))
+    }
+
+    static func endpointName(_ endpoint: JournalEvent?, events: [JournalEvent], lastKnown: Bool = false) -> String? {
+        guard let endpoint, let coordinate = endpoint.coordinate else { return nil }
+        let window = lastKnown ? lastKnownPlaceWindow : 15
+        let candidate = events.filter { event in
+            guard event.kind == "place" || (!lastKnown && event.kind == "gps"),
+                  abs(event.time.timeIntervalSince(endpoint.time)) <= window,
+                  !lastKnown || event.time <= endpoint.time, let place = event.coordinate else { return false }
+            let from = min(event.time, endpoint.time), to = max(event.time, endpoint.time)
+            guard !events.contains(where: { $0.kind == "gap" && $0.time > from && $0.time <= to }) else { return false }
+            let tolerance = lastKnown ? 200 : max(50, max(endpoint.payload["accuracy"] as? Double ?? 0, event.payload["accuracy"] as? Double ?? 0))
+            guard tolerance.isFinite, CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude).distance(from: CLLocation(latitude: place.latitude, longitude: place.longitude)) <= tolerance else { return false }
+            return !placeName(event).isEmpty
+        }.min { abs($0.time.timeIntervalSince(endpoint.time)) < abs($1.time.timeIntervalSince(endpoint.time)) }
+        return candidate.map(placeName)
     }
     private static func placeName(_ event: JournalEvent) -> String {
         let context = event.payload["road_context"] as? [String: Any] ?? event.payload["roadContext"] as? [String: Any] ?? [:]
@@ -1443,7 +1456,10 @@ struct TripJournalView: View {
     }
     private func historyRow(_ trip: [String: Any]) -> some View {
         let id = trip["id"] as? String ?? ""
-        let names = (start: trip["start_place"] as? String ?? journalText("location_unknown"), end: trip["end_place"] as? String ?? journalText("location_unknown"))
+        let endPlace = trip["end_place"] as? String ?? (trip["last_known_end_place"] as? String).map {
+            "\(journalText("last_known_location")) · \($0.replacingOccurrences(of: "\n", with: ", "))"
+        } ?? journalText("location_unknown")
+        let names = (start: trip["start_place"] as? String ?? journalText("location_unknown"), end: endPlace)
         let start = Date(timeIntervalSince1970: trip["start"] as? Double ?? 0)
         let end = Date(timeIntervalSince1970: trip["end"] as? Double ?? 0)
         return HStack(alignment: .top, spacing: 0) {
@@ -1901,6 +1917,7 @@ func journalText(_ key: String) -> String {
         "table_end": ["End location", "Zielort", "Lieu d’arrivée", "Aankomstplaats"],
         "table_distance": ["Distance (km)", "Distanz (km)", "Distance (km)", "Afstand (km)"],
         "table_odo_end": ["Car (km)", "Auto (km)", "Voiture (km)", "Auto (km)"],
+        "last_known_location": ["Last known", "Zuletzt bekannt", "Dernier lieu connu", "Laatst bekend"],
         "location_unknown": ["Unknown location", "Ort unbekannt", "Lieu inconnu", "Onbekende locatie"],
         "details": ["Details, map and logs", "Details, Karte und Protokolle", "Détails, carte et journaux", "Details, kaart en logboeken"],
         "share_drive": ["Share drive with GPS and TSR logs", "Fahrt mit GPS- und TSR-Protokollen teilen", "Partager le trajet et les journaux GPS et TSR", "Rit met GPS- en TSR-logboeken delen"],

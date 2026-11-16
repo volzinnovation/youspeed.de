@@ -236,7 +236,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
         }
         require(
             modelPack.detector.artifacts.contains(runtimeArtifact) ||
-                modelPack.classifier?.artifacts?.contains(runtimeArtifact) == true,
+                modelPack.classifier?.artifacts?.contains(runtimeArtifact) == true ||
+                AndroidTrafficSignModelPackLoader.isTownTrialArtifact(modelPack, runtimeArtifact),
         ) { "Traffic-sign runtime artifact does not belong to the model pack" }
 
         val confirmationWindowMs = confirmationWindowMsOverride ?: modelPack.thresholds.confirmationWindowMs

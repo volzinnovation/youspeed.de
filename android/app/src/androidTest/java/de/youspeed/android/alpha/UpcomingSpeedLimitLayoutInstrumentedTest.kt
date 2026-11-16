@@ -37,6 +37,28 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class UpcomingSpeedLimitLayoutInstrumentedTest {
     @get:Rule val compose = createEmptyComposeRule()
+    @Test fun tunnelStatusReplacesCurrentSpeedUntilExit() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val intent = Intent(context, MainActivity::class.java).putExtra("screenshot_state", "camera-limit-active")
+        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+            lateinit var ui: androidx.compose.runtime.MutableState<ConsumerUiState>
+            scenario.onActivity { activity ->
+                val controller = activity.sessionController
+                ui = mutableStateOf(controller.uiState.copy(tunnelModeState = TunnelModeState.ACTIVE))
+                activity.setContent {
+                    MaterialTheme {
+                        MainScreen(controller, ui.value, true, {}, {}, {}, {}, {}, {}, {}, {}, {})
+                    }
+                }
+            }
+            compose.onNodeWithTag("tunnel-status").assertIsDisplayed()
+            compose.onNodeWithTag("primary-metric").assertDoesNotExist()
+            compose.runOnIdle { ui.value = ui.value.copy(tunnelModeState = TunnelModeState.INACTIVE) }
+            compose.onNodeWithTag("tunnel-status").assertDoesNotExist()
+            compose.onNodeWithTag("primary-metric").assertIsDisplayed()
+        }
+    }
+
     @Test fun upcomingSignFitsEveryMountWithRecorderAndLargerText() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext

@@ -101,7 +101,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
             try {
                 opened.execSQL("CREATE TABLE IF NOT EXISTS trips(id TEXT PRIMARY KEY,start REAL,end REAL,state TEXT,distance REAL DEFAULT 0,duration REAL DEFAULT 0,odo_start REAL,odo_end REAL)")
                 val columns=opened.rawQuery("PRAGMA table_info(trips)",null).use { c -> buildSet { while(c.moveToNext()) add(c.getString(1)) } }
-                mapOf("last_observed" to "REAL", "end_reason" to "TEXT", "timezone_seconds" to "REAL", "vehicle" to "TEXT", "observed" to "REAL DEFAULT 0", "start_place" to "TEXT", "end_place" to "TEXT", "history_version" to "INTEGER DEFAULT 0", "counter_distance_end" to "REAL").forEach { (name,type) ->
+                mapOf("last_observed" to "REAL", "end_reason" to "TEXT", "timezone_seconds" to "REAL", "vehicle" to "TEXT", "observed" to "REAL DEFAULT 0", "start_place" to "TEXT", "end_place" to "TEXT", "last_known_end_place" to "TEXT", "history_version" to "INTEGER DEFAULT 0", "counter_distance_end" to "REAL").forEach { (name,type) ->
                     if(name !in columns) opened.execSQL("ALTER TABLE trips ADD COLUMN $name $type")
                 }
                 opened.execSQL("CREATE TABLE IF NOT EXISTS events(seq INTEGER PRIMARY KEY AUTOINCREMENT,trip TEXT,kind TEXT,time REAL,payload TEXT)")
@@ -157,26 +157,34 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
     internal fun mediaEvents(id:String):List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM events WHERE trip=? AND kind='media' ORDER BY time,seq",arrayOf(id))}}.get()
     /** The history table reads saved facts only, independent of the number/size of events. */
     fun history():List<JSONObject> = worker.submit<List<JSONObject>> {withDatabase {rows("SELECT * FROM trips ORDER BY start DESC").filterNot {it.optString("id") in hiddenShortTrips}}}.get()
-    private fun storeHistoryMetadata(id:String) {
-        val trip=rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<2",arrayOf(id)).firstOrNull() ?: return
-        val startName=trip.optString("start_place").takeIf {it.isNotBlank()}
-        val endName=trip.optString("end_place").takeIf {it.isNotBlank()}
-        if(startName!=null && endName!=null) {
-            db.execSQL("UPDATE trips SET history_version=2 WHERE id=?",arrayOf(id))
+    private fun storeHistoryMetadata(id: String) {
+        val trip = rows("SELECT * FROM trips WHERE id=? AND COALESCE(history_version,0)<3", arrayOf(id)).firstOrNull() ?: return
+        val startName = trip.optString("start_place").takeIf { it.isNotBlank() }
+        val endName = trip.optString("end_place").takeIf { it.isNotBlank() }
+        if (startName != null && endName != null) {
+            db.execSQL("UPDATE trips SET history_version=3 WHERE id=?", arrayOf(id))
             return
         }
-        val points=rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq",arrayOf(id)).filter {TripJournalProjection.trackEligible(TripJournalProjection.payload(it))}
-        fun label(point:JSONObject?):String? {
-            if(point==null) return null
-            val t=point.optDouble("time")
-            val context=rows("SELECT * FROM events WHERE trip=? AND kind IN ('gps','place','gap') AND time>=? AND time<=? ORDER BY time,seq",arrayOf(id,(t-15).toString(),(t+15).toString()))
-                .map {if(it.optString("kind")=="gps") JSONObject(it.toString()).put("kind","place") else it}
-            return TripJournalProjection.endpointPlaces(JSONObject(),listOf(point)+context).first
+        val points = rows("SELECT * FROM events WHERE trip=? AND kind='gps' ORDER BY time,seq", arrayOf(id))
+            .filter { TripJournalProjection.trackEligible(TripJournalProjection.payload(it)) }
+        fun context(point: JSONObject?, lookback: Double): List<JSONObject> {
+            if (point == null) return emptyList()
+            val time = point.optDouble("time")
+            return rows("SELECT * FROM events WHERE trip=? AND kind IN ('gps','place','gap') AND time>=? AND time<=? ORDER BY time,seq",
+                arrayOf(id, (time - lookback).toString(), (time + 15).toString()))
         }
-        db.execSQL("UPDATE trips SET start_place=?,end_place=?,history_version=2 WHERE id=?",arrayOf(startName ?: label(points.firstOrNull()),endName ?: label(points.lastOrNull()),id))
+        val start = points.firstOrNull()
+        val end = points.lastOrNull()
+        val resolvedStart = startName ?: TripJournalProjection.endpointPlace(start, context(start, 15.0))
+        val endContext = if (endName == null) context(end, TripJournalProjection.LAST_KNOWN_PLACE_WINDOW_SECONDS) else emptyList()
+        val resolvedEnd = endName ?: TripJournalProjection.endpointPlace(end, endContext)
+        val lastKnownEnd = if (resolvedEnd == null) TripJournalProjection.endpointPlace(end, endContext, lastKnown = true) else null
+        db.execSQL("UPDATE trips SET start_place=?,end_place=?,last_known_end_place=?,history_version=3 WHERE id=?",
+            arrayOf(resolvedStart, resolvedEnd, lastKnownEnd, id))
     }
     private fun backfillHistoryMetadata() {
-        rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<2").forEach {storeHistoryMetadata(it.getString("id"))}
+        rows("SELECT id FROM trips WHERE state NOT IN ('active','finalizing') AND COALESCE(history_version,0)<3")
+            .forEach { storeHistoryMetadata(it.getString("id")) }
     }
     /** The owner requested straight-line separation, including stationary endpoint fixes. */
     private fun discardShortTrip(id:String):Boolean {
@@ -457,7 +465,7 @@ class TripJournal internal constructor(private val context: Context, heartbeat: 
         TripJournalFiles.validateBackup(payload)
         transaction {
             listOf("events","bindings","trips","counters").forEach { db.execSQL("DELETE FROM $it") }
-            mapOf("counters" to listOf("id","origin","distance","usage"),"trips" to listOf("id","start","end","state","distance","duration","odo_start","odo_end","last_observed","end_reason","timezone_seconds","vehicle","observed","start_place","end_place","history_version","counter_distance_end"),"events" to listOf("seq","trip","kind","time","payload"),"bindings" to listOf("session","trip")).forEach { (table,columns) ->
+            mapOf("counters" to listOf("id","origin","distance","usage"),"trips" to listOf("id","start","end","state","distance","duration","odo_start","odo_end","last_observed","end_reason","timezone_seconds","vehicle","observed","start_place","end_place","last_known_end_place","history_version","counter_distance_end"),"events" to listOf("seq","trip","kind","time","payload"),"bindings" to listOf("session","trip")).forEach { (table,columns) ->
                 val values=payload.getJSONArray(table)
                 for(i in 0 until values.length()) {
                     val row=values.getJSONObject(i)

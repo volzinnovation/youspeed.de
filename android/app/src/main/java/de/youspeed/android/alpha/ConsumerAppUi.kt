@@ -1454,28 +1454,41 @@ private fun MetricStatusBlock(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = if (alignContentToTop && !showsStopPrompt) Arrangement.Top else Arrangement.Center,
     ) {
-        if(showsStopPrompt) {
+        if (showsStopPrompt) {
             stopPrompt?.invoke(foreground)
-        }
-        if(stopPrompt==null || !safeStop) {
-        Text(
-            displayedPrimaryMetric,
-            color = foreground,
-            style = primaryMetricTextStyle(ui = ui, baseSize = primaryMetricFont),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.testTag("primary-metric"),
-            maxLines = if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) 2 else 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            if (secondaryMetric.isBlank()) " " else secondaryMetric,
-            color = foreground.copy(alpha = if (secondaryMetric.isBlank()) 0f else 1f),
-            style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.testTag("secondary-metric"),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        } else if (ui.tunnelModeState == TunnelModeState.ACTIVE && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
+            val iconSize = with(LocalDensity.current) { (primaryMetricFont * 0.72f).toDp() }
+            Icon(
+                painterResource(R.drawable.ic_tunnel_status),
+                contentDescription = null,
+                tint = foreground,
+                modifier = Modifier.size(iconSize),
+            )
+            Text(
+                stringResource(R.string.ui_tunnel),
+                color = foreground,
+                style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
+                modifier = Modifier.testTag("tunnel-status"),
+            )
+        } else {
+            Text(
+                displayedPrimaryMetric,
+                color = foreground,
+                style = primaryMetricTextStyle(ui = ui, baseSize = primaryMetricFont),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag("primary-metric"),
+                maxLines = if (ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) 2 else 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (secondaryMetric.isBlank()) " " else secondaryMetric,
+                color = foreground.copy(alpha = if (secondaryMetric.isBlank()) 0f else 1f),
+                style = roundedUiTextStyle(size = secondaryFont, weight = FontWeight.Bold),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.testTag("secondary-metric"),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

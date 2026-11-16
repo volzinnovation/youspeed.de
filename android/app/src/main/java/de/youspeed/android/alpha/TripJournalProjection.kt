@@ -82,28 +82,47 @@ internal class TripJournalMediaLibrary(files:File,noBackup:File) {
 internal object TripJournalProjection {
     fun payload(event:JSONObject):JSONObject=runCatching { JSONObject(event.optString("payload")) }.getOrDefault(JSONObject())
     fun trackEligible(payload:JSONObject)=payload.optBoolean("track_eligible",payload.optBoolean("valid")) && payload.optDouble("latitude").let {it.isFinite() && it in -90.0..90.0} && payload.optDouble("longitude").let {it.isFinite() && it in -180.0..180.0}
-    fun endpointPlaces(trip:JSONObject,events:List<JSONObject>):Pair<String?,String?> {
-        fun name(p:JSONObject):String? {
-            fun text(vararg keys:String)=keys.firstNotNullOfOrNull {key->p.optString(key).trim().takeIf {it.isNotEmpty() && it!="null"}}
-            val street=text("street_name","streetName");val city=text("city_name","cityName")
-            return listOfNotNull(street,city?.takeUnless {it==street}).takeIf {it.isNotEmpty()}?.joinToString("\n")
+    const val LAST_KNOWN_PLACE_WINDOW_SECONDS = 30.0
+
+    fun endpointPlaces(trip: JSONObject, events: List<JSONObject>): Pair<String?, String?> {
+        val eligibleEvents = events.filter { it.optString("kind") != "gps" || trackEligible(payload(it)) }
+        val points = eligibleEvents.filter { it.optString("kind") == "gps" }
+            .sortedBy { it.optDouble("time") }
+        return (trip.optString("start_place").trim().ifEmpty { null } ?: endpointPlace(points.firstOrNull(), eligibleEvents)) to
+            (trip.optString("end_place").trim().ifEmpty { null } ?: endpointPlace(points.lastOrNull(), eligibleEvents))
+    }
+
+    fun endpointPlace(point: JSONObject?, events: List<JSONObject>, lastKnown: Boolean = false): String? {
+        if (point == null) return null
+        val fix = payload(point)
+        val time = point.optDouble("time")
+        val window = if (lastKnown) LAST_KNOWN_PLACE_WINDOW_SECONDS else 15.0
+        val candidates = events.mapNotNull { event ->
+            val context = payload(event)
+            val kind = event.optString("kind")
+            if (kind != "place" && (lastKnown || kind != "gps")) return@mapNotNull null
+            val eventTime = event.optDouble("time")
+            val delta = kotlin.math.abs(eventTime - time)
+            if (!delta.isFinite() || delta > window || (lastKnown && eventTime > time)) return@mapNotNull null
+            fun text(vararg keys: String) = keys.firstNotNullOfOrNull { key ->
+                context.optString(key).trim().takeIf { it.isNotEmpty() && it != "null" }
+            }
+            val street = text("street_name", "streetName")
+            val city = text("city_name", "cityName")
+            val label = listOfNotNull(street, city?.takeUnless { it == street }).joinToString("\n")
+            if (label.isEmpty()) return@mapNotNull null
+            val radius = if (lastKnown) 200.0 else maxOf(50.0, fix.optDouble("accuracy", 0.0), context.optDouble("accuracy", 0.0))
+            val latitude = context.optDouble("latitude")
+            val longitude = context.optDouble("longitude")
+            if (!latitude.isFinite() || !longitude.isFinite()) return@mapNotNull null
+            val distance = InventorySignRuntime.distance(fix.optDouble("latitude"), fix.optDouble("longitude"), latitude, longitude)
+            if (!radius.isFinite() || !distance.isFinite() || distance > radius || events.any {
+                    it.optString("kind") == "gap" && it.optDouble("time") > minOf(time, eventTime) &&
+                        it.optDouble("time") <= maxOf(time, eventTime)
+                }) return@mapNotNull null
+            Triple(delta, distance, label)
         }
-        val points=events.filter {it.optString("kind")=="gps" && trackEligible(payload(it))}.sortedBy {it.optDouble("time")}
-        val contexts=events.filter {it.optString("kind")=="place" || it.optString("kind")=="gps" && trackEligible(payload(it))}
-        fun endpoint(point:JSONObject?):String? {
-            if(point==null) return null
-            val p=payload(point);val t=point.optDouble("time")
-            return contexts.mapNotNull {event ->
-                val context=payload(event);val label=name(context) ?: return@mapNotNull null
-                val eventTime=event.optDouble("time");val delta=kotlin.math.abs(eventTime-t)
-                if(!delta.isFinite() || delta>15 || !context.optDouble("latitude").isFinite() || !context.optDouble("longitude").isFinite()) return@mapNotNull null
-                val radius=maxOf(50.0,p.optDouble("accuracy",0.0),context.optDouble("accuracy",0.0))
-                val distance=InventorySignRuntime.distance(p.optDouble("latitude"),p.optDouble("longitude"),context.optDouble("latitude"),context.optDouble("longitude"))
-                if(!radius.isFinite() || !distance.isFinite() || distance>radius || events.any {it.optString("kind")=="gap" && it.optDouble("time")>minOf(t,eventTime) && it.optDouble("time")<=maxOf(t,eventTime)}) return@mapNotNull null
-                Triple(delta,distance,label)
-            }.minWithOrNull(compareBy<Triple<Double,Double,String>> {it.first}.thenBy {it.second})?.third
-        }
-        return (trip.optString("start_place").trim().takeIf {it.isNotEmpty()} ?: endpoint(points.firstOrNull())) to (trip.optString("end_place").trim().takeIf {it.isNotEmpty()} ?: endpoint(points.lastOrNull()))
+        return candidates.minWithOrNull(compareBy<Triple<Double, Double, String>> { it.first }.thenBy { it.second })?.third
     }
     fun discoveries(events:List<JSONObject>):List<JSONObject> {
         val groups=linkedMapOf<String,JSONObject>()

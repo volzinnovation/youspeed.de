@@ -79,6 +79,8 @@ internal data class AndroidTrafficSignVerifiedPack(
 internal object AndroidTrafficSignModelPackLoader {
     const val PACK_ASSET_ROOT = "tsr/DE.panoramax-bootstrap.tsrmodelpack"
     const val MANIFEST_ASSET_PATH = "$PACK_ASSET_ROOT/manifest.json"
+    private const val TOWN_TRIAL_PATH = "town_yolo26n_trial_float16.tflite"
+    private const val TOWN_TRIAL_SHA256 = "9bf554f86b0e8e695430905e97bfd7eabdb713941d94c5ea1dcaaab7cb692041"
 
     fun load(context: Context, countryCode: String = "DE"): AndroidTrafficSignVerifiedPack {
         val normalizedCountry = AndroidTrafficSignModelPackSelection.availableCountryCode(countryCode)
@@ -131,25 +133,32 @@ internal object AndroidTrafficSignModelPackLoader {
     }
 
     fun townTrial(context: Context, baseline: AndroidTrafficSignVerifiedPack): AndroidTrafficSignVerifiedPack? {
-        if (!BuildConfig.DEBUG || "DE" !in baseline.modelPack.countries) return null
-        val file = File(context.filesDir, "town_yolo26n_trial_float16.tflite")
+        val artifact = townTrialArtifact(baseline.modelPack) ?: return null
+        val file = File(context.filesDir, artifact.path)
         if (!file.isFile) return null
         return runCatching {
-            val hash = "9bf554f86b0e8e695430905e97bfd7eabdb713941d94c5ea1dcaaab7cb692041"
             val mapped = file.inputStream().use { input ->
                 input.channel.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, 0, input.channel.size())
             }
-            verifyDigest(mapped, hash, file.name)
+            verifyDigest(mapped, artifact.sha256, file.name)
             baseline.copy(
-                detectorArtifact = baseline.detectorArtifact.copy(
-                    path = file.name,
-                    sha256 = hash,
-                    sourceCheckpointSha256 = "f02bf99483c5ad2b79f254b1623b18593ed780c8f3c2df7051331633bb1a2a36",
-                ),
+                detectorArtifact = artifact,
                 detectorModel = mapped,
                 trialDetectorThreshold = 0.840783,
             )
         }.onFailure { Log.w("YouSpeedTSR", "Town detector could not be verified. Using SGBlur.", it) }.getOrNull()
+    }
+
+    fun isTownTrialArtifact(pack: TrafficSignModelPack, artifact: TrafficSignArtifact): Boolean =
+        artifact == townTrialArtifact(pack)
+
+    private fun townTrialArtifact(pack: TrafficSignModelPack): TrafficSignArtifact? {
+        if (!BuildConfig.DEBUG || "DE" !in pack.countries) return null
+        return pack.androidArtifact()?.copy(
+            path = TOWN_TRIAL_PATH,
+            sha256 = TOWN_TRIAL_SHA256,
+            sourceCheckpointSha256 = "f02bf99483c5ad2b79f254b1623b18593ed780c8f3c2df7051331633bb1a2a36",
+        )
     }
 
     private fun mapAndVerify(context: Context, packAssetRoot: String, artifact: TrafficSignArtifact): MappedByteBuffer {
@@ -1073,7 +1082,8 @@ internal class AndroidTrafficSignCameraRuntime(
         mainExecutor.execute {
             if (closed.get()) return@execute
             if (requestedModelCountryCode == selected &&
-                (modelLoading || (loadedModelCountryCode == selected && bridge != null))
+                (modelLoading || recognitionUnavailable || !controller.isTrafficSignRecognitionRuntimeEnabled() ||
+                    (loadedModelCountryCode == selected && bridge != null))
             ) return@execute
             requestedModelCountryCode = selected
             recognitionRuntimeSerial++
@@ -1182,18 +1192,13 @@ internal class AndroidTrafficSignCameraRuntime(
         modelLoading = true
         startupExecutor.execute {
             val loaded = runCatching {
-                    val baseline = AndroidTrafficSignModelPackLoader.load(context, countryCode)
-                    fun open(pack: AndroidTrafficSignVerifiedPack) = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context, { labels -> controller.signCollection.wantsCropFrame(
-                        pack.modelPack.countries.firstOrNull { Regex("^[A-Z]{2}$").matches(it) } ?: "unknown",
-                        pack.manifestSHA256, pack.classifierArtifact.sha256, labels) })
-                    val trialPack = if (allowTownTrial) AndroidTrafficSignModelPackLoader.townTrial(context, baseline) else null
-                    val trial = trialPack?.let { candidate ->
-                        runCatching { candidate to open(candidate) }
-                            .onFailure { Log.w("YouSpeedTSR", "Town detector failed startup. Using SGBlur.", it) }
-                            .getOrNull()
-                    }
-                    val (pack, runtimeBackend) = trial ?: (baseline to open(baseline))
-                    if (trial != null) Log.i("YouSpeedTSR", "Town YOLO26n active at 0.840783 on GPU")
+                val baseline = AndroidTrafficSignModelPackLoader.load(context, countryCode)
+                fun open(pack: AndroidTrafficSignVerifiedPack): LoadedRuntime {
+                    val runtimeBackend = AndroidLiteRtTrafficSignBackend(pack, ::currentThermalState, context, { labels ->
+                        controller.signCollection.wantsCropFrame(
+                            pack.modelPack.countries.firstOrNull() ?: "unknown",
+                            pack.manifestSHA256, pack.classifierArtifact.sha256, labels)
+                    })
                     val runtimeBridge = try { TrafficSignLiveRuntimeBridge(
                         pathPreparer = { frame: CameraXTrafficSignFrame, preparation ->
                             val thermal = context.getSystemService(PowerManager::class.java)?.currentThermalStatus ?: PowerManager.THERMAL_STATUS_NONE
@@ -1241,7 +1246,7 @@ internal class AndroidTrafficSignCameraRuntime(
                         confirmationWindowMsOverride = runtimeBackend.startupResult.timingProfile.confirmationWindowMs,
                         onRuntimeUnavailable = { detail, failedGeneration -> mainExecutor.execute {
                             if (!closed.get() && generation.get() == startGeneration && recognitionRuntimeSerial == runtimeSerial) {
-                                if (trial != null) {
+                                if (pack.trialDetectorThreshold != null) {
                                     townTrialFailed = true
                                     Log.w("YouSpeedTSR", "Town detector stopped processing frames. Using SGBlur. $detail")
                                     bridge?.close()
@@ -1263,7 +1268,16 @@ internal class AndroidTrafficSignCameraRuntime(
                         runtimeBackend.close()
                         throw failure
                     }
-                    LoadedRuntime(pack, runtimeBackend, runtimeBridge)
+                    return LoadedRuntime(pack, runtimeBackend, runtimeBridge)
+                }
+
+                val trialPack = if (allowTownTrial) AndroidTrafficSignModelPackLoader.townTrial(context, baseline) else null
+                val trial = trialPack?.let { candidate ->
+                    runCatching { open(candidate) }
+                        .onFailure { Log.w("YouSpeedTSR", "Town detector failed startup. Using SGBlur.", it) }
+                        .getOrNull()
+                }
+                trial ?: open(baseline)
             }
             mainExecutor.execute main@{
                 if (closed.get() || generation.get() != startGeneration || recognitionRuntimeSerial != runtimeSerial) {
@@ -1276,12 +1290,16 @@ internal class AndroidTrafficSignCameraRuntime(
                     return@main
                 }
                 loaded.onFailure { failure ->
+                    Log.w("YouSpeedTSR", "Recognition startup failed for $countryCode", failure)
                     if (controller.uiState.trafficSignGeneration != recognitionGeneration) loadRecognitionRuntime()
                     else stopRecognitionAfterFailure(failure.message?.takeIf(String::isNotBlank) ?: failure.javaClass.simpleName,
                         recognitionGeneration)
                 }.onSuccess { runtime ->
                     runtime.backend?.startupResult?.let(controller::onTrafficSignStartupMeasured)
                     runtime.pack?.let {
+                        it.trialDetectorThreshold?.let { threshold ->
+                            Log.i("YouSpeedTSR", "Town YOLO26n active at $threshold on GPU")
+                        }
                         loadedModelCountryCode = AndroidTrafficSignModelPackSelection.availableCountryCode(
                             it.modelPack.countries.firstOrNull()
                         )

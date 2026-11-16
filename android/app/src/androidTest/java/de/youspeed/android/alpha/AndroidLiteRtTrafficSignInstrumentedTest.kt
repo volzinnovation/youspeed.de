@@ -86,6 +86,22 @@ class AndroidLiteRtTrafficSignInstrumentedTest {
     }
 
     @Test
+    fun verifiedTownDetectorIsAcceptedByTheLiveOrchestrator() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val baseline = AndroidTrafficSignModelPackLoader.load(context)
+        val pack = requireNotNull(AndroidTrafficSignModelPackLoader.townTrial(context, baseline))
+        TrafficSignRecognitionOrchestrator(
+            modelPack = pack.modelPack,
+            runtimeArtifact = pack.detectorArtifact,
+            backend = TrafficSignRecognitionBackend<BitmapFrame> { _, _ -> error("No frame submitted") },
+            contextSnapshot = TrafficSignDetectionContextSnapshot { null },
+            conditionsSnapshot = { TrafficSignAnalysisConditions() },
+            monotonicClockNanos = System::nanoTime,
+            observer = TrafficSignFinalizedPassageForwarder(submitFinalizedPassage = { false }),
+        ).close()
+    }
+
+    @Test
     fun townTwoWindowLatencyUsesGpuAndOriginalCoordinates() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext

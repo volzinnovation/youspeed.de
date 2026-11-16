@@ -20,6 +20,37 @@ class TripJournalInstrumentedTest {
             assertEquals(metres,TripJournal.endpointSeparationMeters(0.0,0.0,latitude,0.0),0.000001)
         }
     }
+    @Test fun garageArrivalRetainsLastMatchedPlaceSeparatelyFromTheDestination() = withJournalRoot { context, _ ->
+        val start = (System.currentTimeMillis() / 1000).toDouble()
+        var seconds = 0L
+        TripJournal(context, heartbeat = false, wallClock = { start + seconds }, elapsedClock = { seconds * 1000 }).use { journal ->
+            journal.setEnabled(true)
+            journal.start()
+            fun fix(at: Long, latitude: Double, accuracy: Float = 3f) {
+                seconds = at
+                journal.location(android.location.Location("gps").apply {
+                    this.latitude = latitude
+                    longitude = 8.0
+                    this.accuracy = accuracy
+                    speed = 10f
+                    time = ((start + at) * 1000).toLong()
+                    elapsedRealtimeNanos = (at + 1) * 1_000_000_000L
+                })
+                journal.snapshot()
+            }
+            fix(0, 49.0)
+            journal.matchedPlace(start, "Garage approach", null, 49.0, 8.0, 3.0)
+            journal.snapshot()
+            fix(9, 49.0007)
+            fix(18, 49.0013)
+            fix(24, 49.0013, accuracy = 100f)
+            journal.stop()
+            journal.completeFinalizerForTesting()
+            val trip = journal.history().single()
+            assertFalse(trip.has("end_place"))
+            assertEquals("Garage approach", trip.getString("last_known_end_place"))
+        }
+    }
     @Test fun shortLoopIsDiscardedWithoutEditorAndCountersOrMediaAreNotDeleted() = withJournalRoot {context,_ ->
         var tick=0L
         val wall=System.currentTimeMillis()/1000.0
@@ -251,7 +282,7 @@ class TripJournalInstrumentedTest {
         TripJournal(context,heartbeat=false).use {reopened ->
             val saved=reopened.history().single()
             assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
-            assertEquals(2,saved.getInt("history_version"))
+            assertEquals(3,saved.getInt("history_version"))
         }
     }
 
@@ -283,7 +314,7 @@ class TripJournalInstrumentedTest {
             val saved=journal.history().single()
             assertEquals("Startstraße\nKarlsruhe",saved.getString("start_place"))
             assertEquals("Zielstraße\nKarlsruhe",saved.getString("end_place"))
-            assertEquals(2,saved.getInt("history_version"))
+            assertEquals(3,saved.getInt("history_version"))
             listOf("distance","end","duration").forEach {assertEquals(it,pending.opt(it),saved.opt(it))}
             journal.matchedPlace(at,"Too late",null,49.0,8.0,3.0)
             assertEquals(2,journal.events(id).count {it.optString("kind")=="place"})
@@ -315,7 +346,7 @@ class TripJournalInstrumentedTest {
             val after=repaired.history().single()
             assertEquals("Preserved",after.getString("start_place"))
             assertEquals("Captured",after.getString("end_place"))
-            assertEquals(2,after.getInt("history_version"))
+            assertEquals(3,after.getInt("history_version"))
             listOf("distance","end","duration").forEach {assertEquals(it,before.opt(it),after.opt(it))}
         }
         SQLiteDatabase.openDatabase(database.path,null,SQLiteDatabase.OPEN_READWRITE).use {db ->
@@ -324,7 +355,7 @@ class TripJournalInstrumentedTest {
         TripJournal(context,heartbeat=false).use {reopened ->
             val stable=reopened.history().single()
             assertEquals("Preserved",stable.getString("start_place"));assertFalse(stable.has("end_place"))
-            assertEquals(2,stable.getInt("history_version"))
+            assertEquals(3,stable.getInt("history_version"))
         }
     }
 }

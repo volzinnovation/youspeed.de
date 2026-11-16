@@ -73,7 +73,7 @@ internal object TripJournalFiles {
         val masked=options.masked
         val radius=if(masked) options.maskRadiusMetres else 0.0
         val logs=options.includeRawLogs && !masked
-        val trip=JSONObject(original.toString()).apply {remove("sign_classes");remove("history_version");remove("counter_distance_end")}
+        val trip=JSONObject(original.toString()).apply {remove("sign_classes");remove("history_version");remove("counter_distance_end");remove("last_known_end_place")}
         val id=trip.getString("id")
         val root=File(context.filesDir,"trip-exports/$id/youspeed-trip-${iso(trip.getDouble("start")).take(10)}-${UUID.randomUUID()}")
         check(root.mkdirs()) { "Unable to prepare export; check available storage" }
