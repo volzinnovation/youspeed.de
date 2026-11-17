@@ -67,9 +67,10 @@ class UpcomingSpeedLimitTests {
         assertNull(tracker.presentation(100, false, true, 3000))
     }
 
-    @Test fun distanceRoundsUpOnlyForDisplay() {
-        assertEquals(300, candidate.copy(distanceM=299.1).displayDistanceM)
-        assertEquals(10, candidate.copy(distanceM=0.1).displayDistanceM)
+    @Test fun previewOpacityFadesLinearlyFrom300To30Meters() {
+        for ((distance, opacity) in listOf(450.0 to 0f, 300.0 to 0f, 165.0 to 0.5f, 30.0 to 1f, 5.0 to 1f, Double.NaN to 0f)) {
+            assertEquals("Distance $distance", opacity, candidate.copy(distanceM = distance).previewOpacity, 0.0001f)
+        }
     }
 
     @Test fun unprovenFarJumpOnSameRelationPreservesSuppressionAcrossGapAndJitter() {

@@ -632,7 +632,7 @@ final class ScreenOrientationUITests: XCTestCase {
                 let plate = app.descendants(matching: .any)["dashboard.speedSignSupplementaryText"]
                 XCTAssertTrue(preview.waitForExistence(timeout: 20))
                 XCTAssertTrue(main.exists); XCTAssertTrue(secondary.exists); XCTAssertTrue(plate.exists)
-                XCTAssertTrue(preview.label.contains("20")); XCTAssertTrue(preview.label.contains("120"))
+                XCTAssertEqual(preview.label, "Upcoming speed limit, 20 kilometres per hour.")
                 let window = app.windows.firstMatch.frame
                 XCTAssertGreaterThanOrEqual(preview.frame.minX, window.minX)
                 XCTAssertLessThanOrEqual(preview.frame.maxY, window.maxY)

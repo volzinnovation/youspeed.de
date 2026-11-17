@@ -561,6 +561,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }))
     @Published private(set) var inventorySecondarySign: InventoryTrafficSign?
     private var inventorySecondaryDisplay = InventorySecondaryDisplaySelection()
+    private var lastInventoryEndEncounterID: String?
+    private var inventorySecondaryExpiryTask: Task<Void, Never>?
+    private var cameraSecondaryDisplayWindow = SecondarySignDisplayWindow()
+    private var cameraSecondaryDeadline: ContinuousClock.Instant?
+    private var cameraSecondaryExpiryTask: Task<Void, Never>?
+    @Published private var cameraSecondaryExpired = false
     private var lastInventoryDisplayDiagnostic: String?
     private var secondaryUIPresentationTracker=SignUIPresentationTracker()
     private var primaryUIPresentationTracker=SignUIPresentationTracker()
@@ -632,7 +638,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if let inventorySecondarySign {
             return trafficSignPresentationCatalog?.sign(forInventory: inventorySecondarySign)
         }
-        return trafficSignPictogram
+        return cameraSecondaryExpired ? nil : trafficSignPictogram
     }
     var inventorySecondaryValueText: String? {
         guard let sign = inventorySecondarySign, let valueText = sign.parameterText else { return nil }
@@ -712,6 +718,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var onboardingHasPreciseLocation = false
     deinit {
         upcomingSpeedLimitExpiryTask?.cancel()
+        inventorySecondaryExpiryTask?.cancel()
+        cameraSecondaryExpiryTask?.cancel()
         penaltyCountryExpiryTask?.cancel()
         bundleMetadataTask?.cancel()
         bundleMetadataIndexTask?.cancel()
@@ -735,6 +743,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var stationarySpeedObservedAt: Date?
     @Published private(set) var isVisionDismissalListening = false
     @Published private(set) var upcomingSpeedLimit: UpcomingSpeedLimitCandidate?
+    @Published private(set) var inactiveSpeedLimitPreview: ConditionalSpeedPreview?
     var upcomingSpeedLimitForDisplay: UpcomingSpeedLimitCandidate? {
         guard !isInSpeedCaptureMode, trafficSignPendingSpeedKmh == nil, !trafficSignEndOverlayVisible else { return nil }
 #if DEBUG
@@ -1353,6 +1362,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedReferenceTickTask: Task<Void, Never>?
     private var speedReferenceLastLocation: CLLocation?
     private var conditionalClockContext: (rule: ConditionalSpeedRules.Reevaluation, way: String, path: String, generation: UInt64)?
+    private var conditionalBundlePreview: ConditionalSpeedPreview?
+    private var conditionalCameraPreview: (scope: String, value: ConditionalSpeedPreview)?
     private var conditionalClockMinute: Int?
     private var conditionalOCRAuthorityGate = ConditionalOCRInterpretation.AuthorityGate()
     private struct LiveConditionalCamera {
@@ -3085,16 +3096,25 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if newDrive { upcomingSpeedLimitTracker.reset() }
         else { upcomingSpeedLimitTracker.invalidate(reason: reason) }
         upcomingSpeedLimit = nil
+        inactiveSpeedLimitPreview = nil
     }
 
     private func refreshUpcomingSpeedLimit(now: Date = Date()) {
+        let obscured = !isDriving || !trafficSignApplicationIsActive || mapLookupWorker.isPaused || isInSpeedCaptureMode
+            || trafficSignPendingSpeedKmh != nil || trafficSignEndOverlayVisible || speedReference.machine?.pendingContext == true
+        let camera = conditionalCameraPreview.flatMap { $0.scope == conditionalOCRAuthorityScope ? $0.value : nil }
+        let bundle = conditionalClockContext.flatMap { context in
+            context.path == activeDBPath && context.way == limitWayID && context.generation == trafficSignContextGeneration
+                && latestTrafficSignDetectionContext?.matchedWayStable == true ? conditionalBundlePreview : nil
+        }
+        let inactive = !obscured && !effectiveSpeedLimitState.source.isStale
+            ? [camera, bundle].compactMap { $0 }.first { $0.speedKmh != effectiveSpeedLimitState.value.speedKmh }
+            : nil
+        if inactiveSpeedLimitPreview != inactive { inactiveSpeedLimitPreview = inactive }
         let selected = upcomingSpeedLimitTracker.selection(currentKmh: effectiveSpeedLimitState.value.speedKmh,
             unlimited: effectiveSpeedLimitState.value == .unlimited,
             currentIsStale: effectiveSpeedLimitState.source.isStale,
-            obscured: !isDriving || !trafficSignApplicationIsActive || mapLookupWorker.isPaused || isInSpeedCaptureMode
-                || trafficSignPendingSpeedKmh != nil || trafficSignEndOverlayVisible
-                || speedReference.machine?.pendingContext == true,
-            now: now)
+            obscured: obscured, now: now)
         if upcomingSpeedLimit != selected { upcomingSpeedLimit = selected }
         let snapshot = upcomingSpeedLimitTracker.snapshot
         let signature = "\(selected?.identity ?? "none")|\(upcomingSpeedLimitTracker.reason)"
@@ -3219,8 +3239,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         updateVisionDismissalVoiceWindow()
     }
 
-    private func conditionalBundleApplicability(_ rule:ConditionalSpeedRules.Reevaluation,selected:SpeedReferenceValue?,at:Date) -> [String:Any] {
-        let evaluation = rule.evaluate(at:at)
+    private func conditionalBundleApplicability(_ rule:ConditionalSpeedRules.Reevaluation,selected:SpeedReferenceValue?,
+                                                at:Date, evaluation: ConditionalSpeedRules.Result) -> [String:Any] {
         let ast = rule.rulesJSON.data(using:.utf8).flatMap { try? JSONSerialization.jsonObject(with:$0) } ?? [:]
         return ["status":selected == nil ? "unresolved":"applicable",
             "context_revision":speedReference.machine?.applicabilityRevision ?? 0,
@@ -3237,16 +3257,18 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               context.path == activeDBPath, context.way == limitWayID,
               context.generation == trafficSignContextGeneration else {
             conditionalClockContext = nil
+            conditionalBundlePreview = nil
             return
         }
         let result = context.rule.evaluate(at: now)
+        conditionalBundlePreview = result.inactivePreview
         currentBundledSpeedLimitKmh = result.kmh
         currentBundledUnlimitedSpeedLimitActive = result.unlimited
         // Re-publish only the bundle producer. Camera/driver observation origins,
         // route matching and GPS freshness are never advanced by a clock tick.
         let value = EffectiveSpeedLimitState.base(localValue: nil, bundledSpeedKmh: result.kmh, bundledUnlimited: result.unlimited).value
         speedReference.bundle(id:"\(activeBundleVersion):\(context.way)",value:SpeedReferenceValue(value),
-            applicability:conditionalBundleApplicability(context.rule,selected:SpeedReferenceValue(value),at:now))
+            applicability:conditionalBundleApplicability(context.rule,selected:SpeedReferenceValue(value),at:now,evaluation:result))
         appendTSRLog("conditional_speed_clock way=\(context.way) unresolved=\(result.unresolved) reason=\(result.reason)", timestamp: now)
     }
 
@@ -3753,6 +3775,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             inventorySecondarySign = nil
             lastInventoryDisplayDiagnostic = nil
             inventoryBundleIdentity = bundle
+            lastInventoryEndEncounterID = nil
         }
         let lookup = result.inventorySigns
         let fresh = location.timestamp <= Date().addingTimeInterval(1)
@@ -3815,6 +3838,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     trafficSignOverridePolicy.clear()
                     invalidateTrafficSignInferenceContext()
                     publishEffectiveSpeedLimitState(end.effectiveState)
+                    let sign = lookup?.signs.first { $0.signID == boundary.signID }
+                        .flatMap { trafficSignPresentationCatalog?.sign(forInventory: $0) }
+                        ?? trafficSignPresentationCatalog?.endSign(for: boundary.code)
+                    if let sign { showTrafficSignEndOverlay(sign) }
+                    trafficSignDisplayState.invalidate(at: location.timestamp)
+                    trafficSignPictogram = trafficSignDisplayState.sign
+                    inventorySecondaryDisplay.replacedByCamera(at: location.timestamp)
                 }
             }
             appendTSRLog("inventory_boundary sign_id=\(boundary.signID) direction=\(boundary.direction)", timestamp:location.timestamp)
@@ -3827,11 +3857,26 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             bundleSHA256:activeBundleDBSHA256,bundleVersion:activeBundleVersion,
             heading:location.course.isFinite && (0..<360).contains(location.course) ? location.course : nil,
             headingAccuracy:location.courseAccuracy.isFinite && location.courseAccuracy >= 0 ? location.courseAccuracy : nil)
+        if inventorySecondaryDisplay.invalidateMapillary(heading: location.course, now: Date(), at: location.timestamp) {
+            secondaryDisplayChangeReason = "mapillary_heading_or_last_seen"
+            inventorySecondarySign = inventorySecondaryDisplay.sign
+            scheduleInventorySecondaryExpiry()
+        }
         // A usable geofence fix admits a new card. Loss of GPS or leaving the
         // geofence ends live evidence, while the last admitted card remains.
-        if positionUsable, lookup != nil {
+        if positionUsable, let lookup {
+            let endEncounter = inventorySignEncounters.visible.first { sign in
+                sign.isSpeedEnd && sign.signID != lookup.activeRule?.signID
+                    && !lookup.boundaries.contains { $0.signID == sign.signID }
+            }
+            if let endEncounter, endEncounter.signID != lastInventoryEndEncounterID,
+               let pictogram = trafficSignPresentationCatalog?.sign(forInventory: endEncounter) {
+                showTrafficSignEndOverlay(pictogram)
+            }
+            lastInventoryEndEncounterID = endEncounter?.signID
+            let previousTriggerAt = inventorySecondaryDisplay.triggeredAt
             if let held=inventorySecondarySign,
-               let live=lookup?.signs.first(where: { $0.signID == held.signID }),
+               let live=lookup.signs.first(where: { $0.signID == held.signID }),
                live.secondaryFaceStatus(heading:location.course,
                     headingAccuracy:location.courseAccuracy) == "known_opposite_face",
                inventorySecondaryDisplay.invalidateOppositeFace(signID:live.signID,at:location.timestamp) {
@@ -3839,8 +3884,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             }
             if inventorySecondaryDisplay.consume(inventorySignEncounters.visible, at:location.timestamp) {
                 secondaryDisplayChangeReason="inventory_trigger"
+                trafficSignDisplayState.invalidate(at: location.timestamp)
+                trafficSignPictogram = trafficSignDisplayState.sign
             }
             inventorySecondarySign = inventorySecondaryDisplay.sign
+            if inventorySecondaryDisplay.triggeredAt != previousTriggerAt {
+                scheduleInventorySecondaryExpiry()
+            }
         }
         logInventoryDisplaySelection(lookup:lookup, location:location,
             queryMs:result.queryTimeMs, lookupCompletedAt:lookupCompletedAt)
@@ -3849,6 +3899,49 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if !ids.isEmpty, driveCaptureCoordinator?.ingestInventorySigns(ids, location:location,
                 speedMetersPerSecond:speedKmh/3.6) == true { inventorySignEncounters.captureRequested(ids) }
         }
+    }
+
+    private func scheduleInventorySecondaryExpiry() {
+        inventorySecondaryExpiryTask?.cancel()
+        inventorySecondaryExpiryTask = nil
+        guard let sign = inventorySecondaryDisplay.sign, let triggeredAt = inventorySecondaryDisplay.triggeredAt else { return }
+        var delay: TimeInterval?
+        if SecondarySignDisplayPolicy.inventoryPresentation(sign) == .brief { delay = 3 }
+        if sign.sourceID == "mapillary-eval", let expires = sign.mapillaryDisplayExpiresAt {
+            let remaining = max(0, expires.addingTimeInterval(0.001).timeIntervalSinceNow)
+            delay = min(delay ?? remaining, remaining)
+        }
+        guard let delay else { return }
+        let signID = sign.signID
+        inventorySecondaryExpiryTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled, let self,
+                  self.inventorySecondaryDisplay.expire(signID: signID, triggeredAt: triggeredAt) else { return }
+            self.secondaryDisplayChangeReason = "secondary_timeout"
+            self.inventorySecondarySign = nil
+        }
+    }
+
+    private func updateCameraSecondaryExpiry(for sign: TrafficSignPresentationCatalog.Sign) -> Bool {
+        let clock = ContinuousClock()
+        let now = clock.now
+        let presentation = SecondarySignDisplayPolicy.presentation(sign.classID, signCode: sign.signCode,
+            country: trafficSignPresentationCatalog?.country ?? "DE")
+        let deadline = presentation == .brief ? cameraSecondaryDisplayWindow.observe(sign.classID, at: now) : nil
+        if let deadline, deadline <= now { return false }
+        guard deadline != cameraSecondaryDeadline else { return true }
+        cameraSecondaryDeadline = deadline
+        cameraSecondaryExpiryTask?.cancel()
+        cameraSecondaryExpiryTask = nil
+        if cameraSecondaryExpired { cameraSecondaryExpired = false }
+        guard let deadline else { return true }
+        cameraSecondaryExpiryTask = Task { @MainActor [weak self] in
+            try? await clock.sleep(until: deadline)
+            guard !Task.isCancelled, let self else { return }
+            self.secondaryDisplayChangeReason = "secondary_timeout"
+            self.cameraSecondaryExpired = true
+        }
+        return true
     }
 
     private func logInventoryDisplaySelection(lookup: InventorySignLookup?, location: CLLocation,
@@ -4353,6 +4446,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func reevaluateLiveCameraConditions(at now: Date) {
+        var preview: ConditionalSpeedPreview?
+        defer { conditionalCameraPreview = preview.map { (conditionalOCRAuthorityScope, $0) } }
         guard !conditionalOCRLive.isEmpty else { return }
         if speedReference.voice != nil {
             for key in conditionalOCRLive.keys {
@@ -4377,8 +4472,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 verdict = record.verdict(at:now,distanceM:speedReference.traveledMeters,scopeID:entry.scope,
                     generation:trafficSignContextGeneration)
             } else { verdict = .unresolved }
-            let applicable = verdict == .applicable && !entry.superseded
-                && visionDismissalGate.permits(track:key,observedAt:entry.originAt)
+            let eligible = !entry.superseded && visionDismissalGate.permits(track:key,observedAt:entry.originAt)
+            if preview == nil, eligible, entry.authorityEligible, liveConditionalScopeIsCurrent(entry) {
+                preview = entry.record?.inactivePreview(for: verdict, at: now, distanceM: speedReference.traveledMeters,
+                    scopeID: entry.scope, generation: trafficSignContextGeneration)
+            }
+            let applicable = verdict == .applicable && eligible
             let owned = speedReference.cameraEvidenceIDs.contains(key)
             if applicable && (entry.lastVerdict != .applicable || !owned) {
                 _ = speedReference.reevaluateObservedCamera(parentID:key,value:.init(kind:"numeric",kmh:entry.speed),
@@ -4620,13 +4719,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         }
         if displayPermitted && trafficSignPictogramEnabled {
             let previous=trafficSignDisplayState.sign
-            trafficSignDisplayState.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog)
+            var display = trafficSignDisplayState
+            let admitted = display.consume(emission.displayObservation, catalog: trafficSignPresentationCatalog) {
+                updateCameraSecondaryExpiry(for: $0)
+            }
+            trafficSignDisplayState = display
             trafficSignPictogram = trafficSignDisplayState.sign
             if previous != trafficSignDisplayState.sign {
                 secondaryDisplayChangeReason=trafficSignDisplayState.sign == nil ? "camera_unrenderable_sign" : "camera_sign"
             }
-            if let observation=emission.displayObservation,
-               trafficSignDisplayState.sign?.classID == observation.classID {
+            if admitted, !cameraSecondaryExpired {
                 if inventorySecondaryDisplay.replacedByCamera(at:emission.event.frameTimestampUtc) {
                     secondaryDisplayChangeReason="camera_sign"
                     inventorySecondarySign=inventorySecondaryDisplay.sign
@@ -4732,11 +4834,12 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         if trafficSignOverridePolicy.activeOverride?.trackId == passage.physicalTrackID {
             trafficSignOverridePolicy.clear()
         }
-        if passage.action.isSpeedLimitEnd || passage.action == .allRestrictionsEnd {
+        if passage.action.isSpeedLimitEnd {
             let recent = pendingTrafficSignEndDisplay.flatMap {
-                emission.event.frameTimestampUtc.timeIntervalSince($0.timestamp) <= 8 ? $0.classID : nil
+                abs(passage.lastSeenTimestampUTC.timeIntervalSince($0.timestamp)) <= 0.25 ? $0.classID : nil
             }
-            showTrafficSignEndOverlay(classID: recent ?? "maxspeed:end")
+            showTrafficSignEndOverlay(
+                trafficSignPresentationCatalog?.endSign(for: passage.action, recognizedClassID: recent))
             pendingTrafficSignEndDisplay = nil
         }
         visionDismissalFreshTrack = "\(trafficSignRecorderGeneration)|\(passage.physicalTrackID)"
@@ -5220,6 +5323,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         cancelTrafficSignSpeech(secondaryOnly: true)
         pendingTrafficSignEndDisplay = nil
         if !preserveDisplay {
+            cameraSecondaryExpiryTask?.cancel()
+            cameraSecondaryExpiryTask = nil
+            cameraSecondaryDeadline = nil
+            cameraSecondaryExpired = false
+            cameraSecondaryDisplayWindow = SecondarySignDisplayWindow()
             trafficSignDisplayState.reset()
             trafficSignPictogram = nil
         }
@@ -5230,8 +5338,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         trafficSignEndPictogram = nil
     }
 
-    private func showTrafficSignEndOverlay(classID: String) {
-        guard let sign = trafficSignPresentationCatalog?.endSign(for: classID) else { return }
+    private func showTrafficSignEndOverlay(_ sign: TrafficSignPresentationCatalog.Sign?) {
         trafficSignEndPictogram = sign
         trafficSignEndOverlayGeneration &+= 1
         let generation = trafficSignEndOverlayGeneration
@@ -9545,9 +9652,13 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let bundleValue = EffectiveSpeedLimitState.base(localValue: nil,
                         bundledSpeedKmh: result.speedLimitKmh, bundledUnlimited: bundledUnlimitedMatch).value
                     let selectedBundleValue = result.wayID == nil ? nil : SpeedReferenceValue(bundleValue)
-                    let evaluatedBundle = result.conditionalRuleContext.flatMap { rule in
-                        result.speedSource?.hasPrefix("INVENTORY_") == true ? nil
-                            : self.conditionalBundleApplicability(rule,selected:selectedBundleValue,at:Date())
+                    self.conditionalBundlePreview = nil
+                    let evaluatedBundle = self.conditionalClockContext.map { context in
+                        let now = Date()
+                        let evaluation = context.rule.evaluate(at: now)
+                        self.conditionalBundlePreview = evaluation.inactivePreview
+                        return self.conditionalBundleApplicability(context.rule, selected: selectedBundleValue, at: now,
+                            evaluation: evaluation)
                     }
                     self.speedReference.bundle(id:"\(self.activeBundleVersion):\(result.wayID ?? "none")",
                         value:selectedBundleValue,applicability:evaluatedBundle)
@@ -10303,6 +10414,12 @@ extension DriveSessionViewModel {
                 speedKmh: speedKmh, headingDegrees: headingDegrees, headingAccuracyDegrees: headingAccuracyDegrees)
         }
         await mapLookupWorker.waitUntilIdle()
+    }
+
+    func testReevaluateConditionalBundle(at timestamp: Date) {
+        conditionalClockMinute = nil
+        reevaluateConditionalClock(at: timestamp)
+        publishEffectiveSpeedLimitState(effectiveSpeedLimitState)
     }
 
     func testRefreshBundleInventory() async { await refreshDownloadedBundleInventory() }

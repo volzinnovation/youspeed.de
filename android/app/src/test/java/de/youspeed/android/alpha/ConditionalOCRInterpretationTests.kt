@@ -89,6 +89,10 @@ class ConditionalOCRInterpretationTests {
         assertEquals(ConditionalOCRInterpretation.Verdict.UNRESOLVED,record.verdict(now.plusSeconds(1),101.0,"road:10:forward",1))
         assertEquals(ConditionalOCRInterpretation.Verdict.APPLICABLE,record.verdict(now.plusSeconds(1),101.0,"road:10:forward",1,roadSurfaceWet=true))
         assertEquals(ConditionalOCRInterpretation.Verdict.INAPPLICABLE,record.verdict(now.plusSeconds(1),101.0,"road:10:forward",1,roadSurfaceWet=false))
+        assertNotNull(record.inactivePreview(ConditionalOCRInterpretation.Verdict.UNRESOLVED, now.plusSeconds(1),
+            101.0, "road:10:forward", 1))
+        assertNull(record.inactivePreview(ConditionalOCRInterpretation.Verdict.UNRESOLVED, now.plusSeconds(301),
+            101.0, "road:10:forward", 1))
         assertEquals(ConditionalOCRInterpretation.Verdict.UNRESOLVED,record.verdict(now.plusSeconds(301),101.0,"road:10:forward",1,roadSurfaceWet=true))
         assertEquals(ConditionalOCRInterpretation.Verdict.UNRESOLVED,record.verdict(now.plusSeconds(1),5101.0,"road:10:forward",1,roadSurfaceWet=true))
         assertEquals(ConditionalOCRInterpretation.Verdict.UNRESOLVED,record.verdict(now.plusSeconds(1),101.0,"road:10:forward",2,roadSurfaceWet=true))

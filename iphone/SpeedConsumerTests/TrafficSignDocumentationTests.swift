@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import XCTest
+import SQLite3
 @testable import SpeedConsumer
 
 final class ExpandedDEClassifierTests: XCTestCase {
@@ -249,5 +250,107 @@ final class UserCorrectionsDisabledTests: XCTestCase {
         })
         listener.stop()
         XCTAssertEqual(audio.category, category)
+    }
+}
+
+final class MapillarySignDisplayTests: XCTestCase {
+    private let now = ISO8601DateFormatter().date(from: "2026-11-17T12:00:00Z")!
+    private func sign() -> InventoryTrafficSign {
+        .init(signID: "mapillary-eval:1", sourceID: "mapillary-eval", recordKey: "1", snapshotSHA256: "sha",
+            code: "DE:101", kind: "secondary", numericValue: nil, unit: nil, parameterStatus: "mapillary_inventory_only",
+            latitude: 48, longitude: 8, radiusM: 10, pictogramCode: "DE:101", pictogramPath: nil,
+            modelClasses: [], distanceM: 0, mapillaryAzimuthDeg: 180, mapillaryLastSeenAt: now.addingTimeInterval(-60))
+    }
+
+    func testStrictThirtyDegreeThresholdAndWraparound() {
+        let sign = sign()
+        for (heading, expected) in [(29.999, true), (30.0, false), (330.0, false), (330.001, true),
+                                     (359.0, true), (180.0, false), (Double.nan, false)] {
+            XCTAssertEqual(sign.mapillaryDisplayEligible(heading: heading, now: now), expected)
+        }
+        XCTAssertFalse(sign.mapillaryDisplayEligible(heading: nil, now: now))
+        var missing = sign
+        missing.mapillaryAzimuthDeg = nil
+        XCTAssertFalse(missing.mapillaryDisplayEligible(heading: 0, now: now))
+    }
+
+    func testLastSeenTwelveMonthsUnknownAndFuture() throws {
+        var sign = sign()
+        sign.mapillaryLastSeenAt = ISO8601DateFormatter().date(from: "2025-11-17T12:00:00Z")
+        XCTAssertTrue(sign.mapillaryDisplayEligible(heading: 0, now: now))
+        sign.mapillaryLastSeenAt = sign.mapillaryLastSeenAt?.addingTimeInterval(-1)
+        XCTAssertFalse(sign.mapillaryDisplayEligible(heading: 0, now: now))
+        sign.mapillaryLastSeenAt = nil
+        XCTAssertFalse(sign.mapillaryDisplayEligible(heading: 0, now: now))
+        sign.mapillaryLastSeenAt = now.addingTimeInterval(1)
+        XCTAssertFalse(sign.mapillaryDisplayEligible(heading: 0, now: now))
+        sign.mapillaryLastSeenAt = ISO8601DateFormatter().date(from: "2024-02-29T12:00:00Z")
+        let anniversary = try XCTUnwrap(ISO8601DateFormatter().date(from: "2025-02-28T12:00:00Z"))
+        XCTAssertTrue(sign.mapillaryDisplayEligible(heading: 0, now: anniversary))
+        XCTAssertFalse(sign.mapillaryDisplayEligible(heading: 0, now: anniversary.addingTimeInterval(1)))
+    }
+
+    func testBundleMetadataParsesMillisecondsAndBothProviderISOFormats() throws {
+        let expected = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-17T12:00:00Z"))
+        for raw in [
+            #"{"aligned_direction":180,"last_seen_at":1794916800000}"#,
+            #"{"aligned_direction":180,"last_seen_at":"2026-11-17T12:00:00+0000"}"#,
+            #"{"aligned_direction":180,"last_seen_at":"2026-11-17T12:00:00.000Z"}"#
+        ] {
+            let parsed = InventoryTrafficSign.mapillaryMetadata(raw)
+            XCTAssertEqual(parsed.azimuth, 180)
+            XCTAssertEqual(parsed.lastSeen, expected)
+        }
+        for raw in [nil, "{}", #"{"last_seen_at":true}"#, #"{"last_seen_at":"unknown"}"#] {
+            XCTAssertNil(InventoryTrafficSign.mapillaryMetadata(raw).lastSeen)
+        }
+    }
+
+    func testSourceMetadataRoundTripsThroughTheNativeBundleReader() throws {
+        var database: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(":memory:", &database), SQLITE_OK)
+        let db = try XCTUnwrap(database)
+        defer { sqlite3_close(db) }
+        let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let schema = try String(contentsOf: repo.appendingPathComponent("mapdata/spec/traffic_sign_runtime_v1.sql"))
+        XCTAssertEqual(sqlite3_exec(db, schema, nil, nil, nil), SQLITE_OK)
+        let setup = """
+            CREATE TABLE traffic_sign_inventory(source_id TEXT,record_key TEXT,raw_properties_json TEXT);
+            INSERT INTO traffic_sign_capability VALUES('version','1'),('inventory_scope','display_only');
+            INSERT INTO traffic_sign_runtime VALUES('mapillary-eval:1','mapillary-eval','record','snapshot','DE:101','DE:101','secondary',NULL,NULL,'mapillary_inventory_only',8,48,0,10,'DE:101','tsr/sign-pictograms/png/de-101.png','[]');
+            INSERT INTO traffic_sign_association VALUES('mapillary-eval:1','inventory_only',NULL,NULL,NULL,NULL,NULL,'{}');
+            INSERT INTO traffic_sign_inventory VALUES('mapillary-eval','record','{"aligned_direction":180,"last_seen_at":1794916800000}');
+            """
+        XCTAssertEqual(sqlite3_exec(db, setup, nil, nil, nil), SQLITE_OK)
+        let lookup = try XCTUnwrap(InventorySignBundle.lookup(db: db, lat: 48, lon: 8, wayID: nil,
+            points: [], heading: 0, headingAccuracy: nil, accuracy: 5))
+        let sign = try XCTUnwrap(lookup.signs.first)
+        XCTAssertEqual(sign.mapillaryAzimuthDeg, 180)
+        XCTAssertEqual(sign.mapillaryLastSeenAt, now)
+        XCTAssertTrue(sign.mapillaryDisplayEligible(heading: 0, now: now))
+        XCTAssertFalse(sign.mapillaryDisplayEligible(heading: 30, now: now))
+    }
+
+    func testEncounterFiltersAndRetainedSelectionRechecksHeadingAndAge() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let runtime = InventorySignEncounterRuntime(journal: .init(url: root.appendingPathComponent("events.ndjson")))
+        let sign = sign()
+        let lookup = InventorySignLookup(signs: [sign], activeRule: nil, wayID: nil, direction: nil, chainageM: nil)
+        var selection = InventorySecondaryDisplaySelection()
+        runtime.update(lookup, bundle: "bundle", at: now, now: now, cameraEnabled: false,
+            cameraAvailable: false, classes: [], heading: 0)
+        XCTAssertEqual(runtime.visible, [sign])
+        XCTAssertTrue(selection.consume(runtime.visible, at: now))
+        XCTAssertTrue(selection.invalidateMapillary(heading: 30, now: now, at: now))
+        XCTAssertNil(selection.sign)
+        runtime.update(lookup, bundle: "bundle", at: now, now: now, cameraEnabled: false,
+            cameraAvailable: false, classes: [], heading: 30)
+        XCTAssertTrue(runtime.visible.isEmpty)
+        XCTAssertTrue(selection.consume([sign], at: now))
+        XCTAssertTrue(selection.invalidateMapillary(heading: nil, now: now, at: now))
+        XCTAssertTrue(selection.consume([sign], at: now))
+        let expired = try XCTUnwrap(ISO8601DateFormatter().date(from: "2027-11-17T12:00:00Z"))
+        XCTAssertTrue(selection.invalidateMapillary(heading: 0, now: expired, at: expired))
     }
 }

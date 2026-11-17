@@ -134,6 +134,10 @@ final class ConditionalOCRInterpretationTests: XCTestCase {
         XCTAssertEqual(record.verdict(at:now.addingTimeInterval(1),distanceM:101,scopeID:"road:10:forward",generation:1),.unresolved)
         XCTAssertEqual(record.verdict(at:now.addingTimeInterval(1),distanceM:101,scopeID:"road:10:forward",generation:1,roadSurfaceWet:true),.applicable)
         XCTAssertEqual(record.verdict(at:now.addingTimeInterval(1),distanceM:101,scopeID:"road:10:forward",generation:1,roadSurfaceWet:false),.inapplicable)
+        XCTAssertNotNil(record.inactivePreview(for: .unresolved, at: now.addingTimeInterval(1), distanceM: 101,
+            scopeID: "road:10:forward", generation: 1))
+        XCTAssertNil(record.inactivePreview(for: .unresolved, at: now.addingTimeInterval(301), distanceM: 101,
+            scopeID: "road:10:forward", generation: 1))
         XCTAssertEqual(record.verdict(at:now.addingTimeInterval(301),distanceM:101,scopeID:"road:10:forward",generation:1,roadSurfaceWet:true),.unresolved)
         XCTAssertEqual(record.verdict(at:now.addingTimeInterval(1),distanceM:5101,scopeID:"road:10:forward",generation:1,roadSurfaceWet:true),.unresolved)
         XCTAssertEqual(record.verdict(at:now.addingTimeInterval(1),distanceM:101,scopeID:"road:10:forward",generation:2,roadSurfaceWet:true),.unresolved)

@@ -1,6 +1,11 @@
 import Foundation
 import SQLite3
 
+struct ConditionalSpeedPreview: Equatable, Sendable {
+    let speedKmh: Int
+    let restrictionText: String
+}
+
 /// A bundle producer adapter. It does not alter reference-policy priority/expiry.
 enum ConditionalSpeedRules {
     struct Result: Equatable {
@@ -9,6 +14,7 @@ enum ConditionalSpeedRules {
         let unresolved: Bool
         let reason: String
         var reevaluation: Reevaluation? = nil
+        var inactivePreview: ConditionalSpeedPreview? = nil
     }
 
     struct Reevaluation: Codable, Equatable, Sendable {
@@ -267,13 +273,51 @@ enum ConditionalSpeedRules {
         guard keys.count <= 12 else { return unknown("too_many_unknown_contexts") }
         let orderedKeys = keys.sorted()
         var outcomes = Set<String>()
+        var assignments: [[String: Bool]] = []
         for mask in 0..<(1 << orderedKeys.count) {
             var assignment: [String: Bool] = [:]
             for (index, key) in orderedKeys.enumerated() { assignment[key] = (mask & (1 << index)) != 0 }
             outcomes.insert(outcome(assignment))
+            assignments.append(assignment)
         }
-        guard outcomes.count == 1, let selected = outcomes.first, selected != "unsupported", selected != "unknown" else { return unknown("conditional_applicability_unresolved") }
-        if selected == "unlimited" { return Result(kmh: nil, unlimited: true, unresolved: false, reason: "conditional_rules_evaluated") }
-        return Result(kmh: Int(selected.dropFirst(8)), unlimited: false, unresolved: false, reason: "conditional_rules_evaluated")
+        let preview = inactivePreview(tags: tags.reversed(), direction: context.direction,
+                                      selected: outcomes.count == 1 ? outcomes.first : nil) { condition in
+            assignments.allSatisfy { truth(condition, $0) }
+        }
+        guard outcomes.count == 1, let selected = outcomes.first, selected != "unsupported", selected != "unknown" else {
+            var result = unknown("conditional_applicability_unresolved")
+            result.inactivePreview = preview
+            return result
+        }
+        return Result(kmh: selected == "unlimited" ? nil : Int(selected.dropFirst(8)),
+            unlimited: selected == "unlimited", unresolved: false, reason: "conditional_rules_evaluated", inactivePreview: preview)
+    }
+
+    private static func inactivePreview(tags: ReversedCollection<[[String: Any]]>, direction: Int?,
+                                        selected: String?, alwaysApplies: ([String: Any]) -> Bool) -> ConditionalSpeedPreview? {
+        for tag in tags {
+            let scopedDirection = tag["direction"] as? Int ?? 0
+            guard tag["conditional"] as? Bool == true, tag["status"] as? String == "supported",
+                  tag["vehicle"] as? String != "hazmat", scopedDirection == 0 || scopedDirection == direction,
+                  let raw = tag["raw"] as? String, let clauses = tag["clauses"] as? [[String: Any]] else { continue }
+            let source = raw.unicodeScalars
+            for clause in clauses.reversed() {
+                guard let number = (clause["limit"] as? [String: Any])?["kmh"] as? NSNumber,
+                      number.doubleValue.isFinite, (1...400).contains(number.doubleValue),
+                      let condition = clause["condition"] as? [String: Any], !alwaysApplies(condition),
+                      let span = clause["source_span"] as? [Int], span.count == 2,
+                      span[0] >= 0, span[0] < span[1], span[1] <= source.count else { continue }
+                let speed = Int(number.doubleValue.rounded())
+                guard selected != "numeric:\(speed)" else { continue }
+                let clauseText = String(source[source.index(source.startIndex, offsetBy: span[0])..<source.index(source.startIndex, offsetBy: span[1])])
+                guard let separator = clauseText.firstIndex(of: "@") else { continue }
+                var text = clauseText[clauseText.index(after: separator)...].trimmingCharacters(in: .whitespacesAndNewlines)
+                if text.hasPrefix("("), text.hasSuffix(")") {
+                    text = text.dropFirst().dropLast().trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+                if !text.isEmpty { return ConditionalSpeedPreview(speedKmh: speed, restrictionText: text) }
+            }
+        }
+        return nil
     }
 }

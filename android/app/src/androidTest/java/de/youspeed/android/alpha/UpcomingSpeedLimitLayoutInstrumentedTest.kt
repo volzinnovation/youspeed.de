@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -56,6 +57,28 @@ class UpcomingSpeedLimitLayoutInstrumentedTest {
             compose.runOnIdle { ui.value = ui.value.copy(tunnelModeState = TunnelModeState.INACTIVE) }
             compose.onNodeWithTag("tunnel-status").assertDoesNotExist()
             compose.onNodeWithTag("primary-metric").assertIsDisplayed()
+        }
+    }
+
+    @Test fun inactiveLimitUsesTheUpcomingSlotAndAnnouncesTheRestriction() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val intent = Intent(context, MainActivity::class.java).putExtra("screenshot_state", "camera-limit-active")
+        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+            lateinit var ui: androidx.compose.runtime.MutableState<ConsumerUiState>
+            scenario.onActivity { activity ->
+                val controller = activity.sessionController
+                ui = mutableStateOf(controller.uiState.copy(upcomingSpeedLimit =
+                    UpcomingSpeedLimitCandidate("preview", "fixture", "snapshot", "rule", "1", 1, 200.0, 20, 120.0)))
+                activity.setContent {
+                    MaterialTheme { MainScreen(controller, ui.value, true, {}, {}, {}, {}, {}, {}, {}, {}, {}) }
+                }
+            }
+            val upcoming = compose.onNodeWithTag("upcoming-speed-limit").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+            compose.runOnIdle { ui.value = ui.value.copy(inactiveSpeedLimitPreview = ConditionalSpeedPreview(30, "20–7 Uhr")) }
+            compose.onNodeWithTag("upcoming-speed-limit").assertDoesNotExist()
+            val inactive = compose.onNodeWithTag("inactive-speed-limit").assertIsDisplayed()
+                .assertContentDescriptionEquals("30 km/h, 20–7 Uhr").fetchSemanticsNode().boundsInRoot
+            assertEquals(upcoming, inactive)
         }
     }
 
@@ -132,8 +155,8 @@ class UpcomingSpeedLimitLayoutInstrumentedTest {
                     val previewNode=compose.onNodeWithTag("upcoming-speed-limit")
                     try { previewNode.assertIsDisplayed() } catch(error: AssertionError) { throw AssertionError("$orientation recorder=$recorder scale=$scale: ${previewNode.fetchSemanticsNode().boundsInRoot}",error) }
                     val preview=previewNode.fetchSemanticsNode()
-                    assertTrue("Long distance remains available to accessibility",preview.config[androidx.compose.ui.semantics.SemanticsProperties.ContentDescription]
-                        .single().contains(previewCandidate.displayDistanceM.toString()))
+                    assertEquals(context.getString(R.string.upcoming_limit_accessibility, previewCandidate.speedKmh),
+                        preview.config[androidx.compose.ui.semantics.SemanticsProperties.ContentDescription].single())
                     val pane=compose.onNodeWithTag("main-sign-pane").fetchSemanticsNode().boundsInRoot
                     val raw=Rect(preview.positionInRoot.x,preview.positionInRoot.y,preview.positionInRoot.x+preview.size.width,preview.positionInRoot.y+preview.size.height)
                     assertTrue("Preview $raw fits sign pane $pane ($orientation, $recorder, $scale)",raw.left>=pane.left-1 && raw.top>=pane.top-1 && raw.right<=pane.right+1 && raw.bottom<=pane.bottom+1)

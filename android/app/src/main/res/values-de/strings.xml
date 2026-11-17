@@ -142,9 +142,7 @@
     <string name="ui_driving_photo_unavailable">Foto nicht verfügbar</string>
     <string name="ui_driving_photo_local_only">Speichert ein Foto lokal zur Prüfung. Es wird nichts hochgeladen.</string>
     <string name="ui_driving_photo_failed">Foto konnte nicht gespeichert werden. Erneut versuchen, sobald die Kamera bereit ist.</string>
-    <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">in %1$d m</string>
-    <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">in &lt;10 m</string>
-    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Kommende Geschwindigkeitsbegrenzung, %1$d Kilometer pro Stunde, %2$s</string>
+    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Kommende Geschwindigkeitsbegrenzung, %1$d Kilometer pro Stunde</string>
     <string name="inspector_track_share">Track teilen</string>
     <string name="inspector_track_save">Track im Inspector speichern</string>
     <string name="inspector_track_scope">Die GPX-Datei enthält Streckenkoordinaten und Zeitstempel. Sie wird privat in deinem Inspector-Konto gespeichert.</string>

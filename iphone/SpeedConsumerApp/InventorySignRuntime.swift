@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 import SQLite3
 
 /// The BW government inventory must never become a nationwide fallback merely
@@ -95,6 +96,48 @@ struct InventoryTrafficSign: Codable, Equatable, Sendable {
     var associatedDirection: Int? = nil
     var associationStatus: String? = nil
     var associatedHeadingDeg: Double? = nil
+    var mapillaryAzimuthDeg: Double? = nil
+    var mapillaryLastSeenAt: Date? = nil
+
+    /// Mapillary aligned_direction is the sign face. Its reader travels in the
+    /// opposite direction, matching the bundle's once-rotated orientation_deg.
+    func mapillaryDisplayEligible(heading: Double?, now: Date) -> Bool {
+        guard sourceID == "mapillary-eval" else { return true }
+        guard let azimuth = mapillaryAzimuthDeg, azimuth.isFinite, (0..<360).contains(azimuth),
+              let heading, heading.isFinite, (0..<360).contains(heading),
+              now.timeIntervalSince1970.isFinite, let seen = mapillaryLastSeenAt,
+              seen.timeIntervalSince1970.isFinite, seen <= now else { return false }
+        guard let expires = mapillaryDisplayExpiresAt, now <= expires else { return false }
+        return InventorySignBundle.angle(heading, (azimuth + 180).truncatingRemainder(dividingBy: 360)) < 30
+    }
+
+    var mapillaryDisplayExpiresAt: Date? {
+        guard let seen = mapillaryLastSeenAt else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        return calendar.date(byAdding: .year, value: 1, to: seen)
+    }
+
+    static func mapillaryMetadata(_ raw: String?) -> (azimuth: Double?, lastSeen: Date?) {
+        guard let raw, let data = raw.data(using: .utf8),
+              let value = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return (nil, nil) }
+        let angle = (value["aligned_direction"] as? NSNumber).flatMap {
+            CFGetTypeID($0) != CFBooleanGetTypeID() && $0.doubleValue.isFinite && (0..<360).contains($0.doubleValue)
+                ? $0.doubleValue : nil
+        }
+        if let number = value["last_seen_at"] as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() {
+            let milliseconds = number.doubleValue
+            return (angle, milliseconds.isFinite && milliseconds > 0 && milliseconds <= 8_640_000_000_000_000
+                ? Date(timeIntervalSince1970: milliseconds / 1000) : nil)
+        }
+        guard let text = value["last_seen_at"] as? String else { return (angle, nil) }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: text) { return (angle, date) }
+        formatter.formatOptions = [.withInternetDateTime]
+        return (angle, formatter.date(from: text))
+    }
+
     var parameterText: String? {
         if let speed = InventorySpeedEndCode.number(code) { return "\(speed) km/h" }
         guard parameterStatus == "parsed_source_value", let numericValue else { return nil }
@@ -103,6 +146,8 @@ struct InventoryTrafficSign: Codable, Equatable, Sendable {
     var confirmationSemanticsVerified: Bool {
         ["not_applicable","parsed_source_value","missing_value"].contains(parameterStatus)
     }
+    var canTriggerInventoryCapture: Bool { sourceID != "mapillary-eval" }
+    var isSpeedEnd: Bool { kind == "speed_limit_end" || code == "DE:282" }
     var requiresDirectedEvidence: Bool { ["speed_limit","speed_limit_end","settlement_boundary"].contains(kind) || code == "DE:282" }
     func secondaryFaceStatus(heading: Double?, headingAccuracy: Double?) -> String {
         guard !requiresDirectedEvidence else { return "directed_target" }
@@ -157,7 +202,7 @@ struct InventorySecondaryDisplaySelection {
     private var newestPresentationAt=Date.distantPast
     mutating func consume(_ eligible: [InventoryTrafficSign], at: Date = Date()) -> Bool {
         guard at.timeIntervalSince1970.isFinite, at >= newestPresentationAt else { return false }
-        let candidate = eligible.first { $0.kind != "speed_limit" }
+        let candidate = eligible.first { SecondarySignDisplayPolicy.inventoryPresentation($0) != .hidden }
         defer { lastCandidateID = candidate?.signID }
         guard let candidate, candidate.signID != lastCandidateID else { return false }
         let changed = sign?.signID != candidate.signID
@@ -172,9 +217,24 @@ struct InventorySecondaryDisplaySelection {
         sign = nil; triggeredAt = nil; newestPresentationAt=at
         return true
     }
+    mutating func invalidateMapillary(heading: Double?, now: Date, at: Date) -> Bool {
+        guard let sign, !sign.mapillaryDisplayEligible(heading: heading, now: now), at >= newestPresentationAt else { return false }
+        self.sign = nil
+        triggeredAt = nil
+        lastCandidateID = nil
+        newestPresentationAt = at
+        return true
+    }
+
     mutating func invalidateOppositeFace(signID: String, at: Date) -> Bool {
         guard sign?.signID == signID, at >= newestPresentationAt else { return false }
         sign=nil;triggeredAt=nil;newestPresentationAt=at
+        return true
+    }
+    mutating func expire(signID: String, triggeredAt: Date) -> Bool {
+        guard sign?.signID == signID, self.triggeredAt == triggeredAt else { return false }
+        sign = nil
+        self.triggeredAt = nil
         return true
     }
     mutating func reset() { sign = nil; triggeredAt = nil; lastCandidateID = nil; newestPresentationAt = .distantPast }
@@ -279,6 +339,18 @@ enum InventorySignBundle {
     private static func number(_ s: OpaquePointer, _ i: Int32) -> Double? {
         sqlite3_column_type(s, i) == SQLITE_NULL ? nil : sqlite3_column_double(s, i)
     }
+    private static func hasColumns(_ db: OpaquePointer, table: String, required: Set<String>) -> Bool {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "PRAGMA table_info(" + table + ")", -1, &statement, nil) == SQLITE_OK,
+              let statement else { return false }
+        defer { sqlite3_finalize(statement) }
+        var columns = Set<String>()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if let column = string(statement, 1) { columns.insert(column) }
+        }
+        return required.isSubset(of: columns)
+    }
+
     private static func hasRequiredColumns(_ db:OpaquePointer) -> Bool {
         let required:[String:Set<String>]=[
             "traffic_sign_runtime":["sign_id","source_id","record_key","snapshot_sha256","sign_code","normalized_code","kind","numeric_value","unit","parameter_status","lon","lat","orientation_deg","display_radius_m","pictogram_code","pictogram_path","model_classes_json"],
@@ -335,13 +407,19 @@ enum InventorySignBundle {
                        heading: Double?, headingAccuracy: Double?, accuracy: Double, matchStable: Bool = true,
                        allowMobiData: Bool = true) -> InventorySignLookup? {
         var statement: OpaquePointer?
-        guard sqlite3_prepare_v2(db, "SELECT value FROM traffic_sign_capability WHERE key='version'", -1, &statement, nil) == SQLITE_OK,
+        let capabilitySQL = """
+            SELECT value, (SELECT value FROM traffic_sign_capability WHERE key='inventory_scope')
+            FROM traffic_sign_capability WHERE key='version'
+            """
+        guard sqlite3_prepare_v2(db, capabilitySQL, -1, &statement, nil) == SQLITE_OK,
               let cap = statement else { return nil }
         let supported = sqlite3_step(cap) == SQLITE_ROW && string(cap,0) == "1"
+        let displayOnly = supported && string(cap,1) == "display_only"
         sqlite3_finalize(cap)
         guard supported, hasRequiredColumns(db), lat.isFinite, lon.isFinite, (-85..<85).contains(lat), (-180...180).contains(lon) else { return nil }
         let usable = accuracy.isFinite && (0...25).contains(accuracy)
-        let p = usable ? projection(lat: lat, lon: lon, points: points) : nil
+        // A proximity-only overlay has no matched road context of its own.
+        let p = usable && !displayOnly ? projection(lat: lat, lon: lon, points: points) : nil
         let direction = travelDirection(projection: p, heading: heading, headingAccuracy: headingAccuracy)
         var active: [InventoryTrafficRule] = []
         if matchStable, let wayID, let direction, let p {
@@ -371,10 +449,15 @@ enum InventorySignBundle {
         var signs: [InventoryTrafficSign] = []
         if usable {
             let dy = 30 / 111_195.08, dx = dy / cos(lat * .pi / 180)
+            let hasInventory = hasColumns(db, table: "traffic_sign_inventory",
+                required: ["source_id", "record_key", "raw_properties_json"])
+            let metadata = hasInventory
+                ? "(SELECT i.raw_properties_json FROM traffic_sign_inventory i WHERE i.source_id=s.source_id AND i.record_key=s.record_key)"
+                : "NULL"
             let sql = """
                 SELECT s.sign_id,s.source_id,s.record_key,s.snapshot_sha256,s.sign_code,s.kind,s.numeric_value,s.unit,
                        s.parameter_status,s.lat,s.lon,s.display_radius_m,s.pictogram_code,s.pictogram_path,s.model_classes_json,
-                       a.way_id,a.direction,a.status,a.local_heading_deg
+                       a.way_id,a.direction,a.status,a.local_heading_deg,\(metadata)
                 FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id
                 WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ?
                   \(allowMobiData ? "" : "AND s.source_id <> 'mobidata-bw-vzk'")
@@ -388,7 +471,10 @@ enum InventorySignBundle {
                     let d=distance(lat,lon,a,b)
                     guard d <= radius, radius == 10 || radius == 30, let id=string(q,0), let code=string(q,4) else { continue }
                     let classes=(string(q,14).flatMap { $0.data(using:.utf8) }.flatMap { try? JSONDecoder().decode([String].self,from:$0) }) ?? []
-                    signs.append(.init(signID:id,sourceID:string(q,1) ?? "",recordKey:string(q,2) ?? "",snapshotSHA256:string(q,3) ?? "",code:code,kind:string(q,5) ?? "secondary",numericValue:number(q,6),unit:string(q,7),parameterStatus:string(q,8) ?? "unknown",latitude:a,longitude:b,radiusM:radius,pictogramCode:string(q,12),pictogramPath:string(q,13),modelClasses:classes,distanceM:d,associatedWayID:string(q,15),associatedDirection:number(q,16).map(Int.init),associationStatus:string(q,17),associatedHeadingDeg:number(q,18)))
+                    let sourceID = string(q,1) ?? ""
+                    let metadata = sourceID == "mapillary-eval"
+                        ? InventoryTrafficSign.mapillaryMetadata(string(q,19)) : (azimuth: nil, lastSeen: nil)
+                    signs.append(.init(signID:id,sourceID:sourceID,recordKey:string(q,2) ?? "",snapshotSHA256:string(q,3) ?? "",code:code,kind:string(q,5) ?? "secondary",numericValue:number(q,6),unit:string(q,7),parameterStatus:string(q,8) ?? "unknown",latitude:a,longitude:b,radiusM:radius,pictogramCode:string(q,12),pictogramPath:string(q,13),modelClasses:classes,distanceM:d,associatedWayID:string(q,15),associatedDirection:number(q,16).map(Int.init),associationStatus:string(q,17),associatedHeadingDeg:number(q,18),mapillaryAzimuthDeg:metadata.azimuth,mapillaryLastSeenAt:metadata.lastSeen))
                 }
                 sqlite3_finalize(q)
             } else if let statement { sqlite3_finalize(statement) }
@@ -443,7 +529,7 @@ enum InventorySignBundle {
                 sqlite3_finalize(q)
             } else if let statement { sqlite3_finalize(statement) }
         }
-        return .init(signs:signs.sorted { ($0.distanceM,$0.signID) < ($1.distanceM,$1.signID) },activeRule:selected,wayID:wayID,direction:matchStable ? direction : nil,chainageM:p?.chainage,boundaries:boundaries)
+        return .init(signs:signs.sorted { ($0.distanceM,$0.signID) < ($1.distanceM,$1.signID) },activeRule:selected,wayID:displayOnly ? nil : wayID,direction:matchStable ? direction : nil,chainageM:p?.chainage,boundaries:boundaries)
     }
 }
 
@@ -582,7 +668,7 @@ final class InventorySignEncounterRuntime {
     let journal: InventorySignJournal
     init(journal: InventorySignJournal = .init()) { self.journal=journal }
     var pendingCaptureIDs: [String] { encounters.values.filter {
-        !$0.captureSaved && !$0.capturePending && $0.sign.targetMatches(way:$0.way,direction:$0.direction,
+        $0.sign.canTriggerInventoryCapture && !$0.captureSaved && !$0.capturePending && $0.sign.targetMatches(way:$0.way,direction:$0.direction,
             heading:$0.position["heading_deg"] as? Double,headingAccuracy:$0.position["heading_accuracy_deg"] as? Double)
     }.map(\.id).sorted() }
     private func event(_ e: Encounter, phase: String, at: Date, extra: [String:Any] = [:]) -> [String:Any] {
@@ -651,7 +737,7 @@ final class InventorySignEncounterRuntime {
                 lastFixAt:at,position:latestPosition,outcome:outcome)
             do { try journal.append(event(e,phase:"started",at:now)); encounters[key]=e } catch { }
         }
-        visible=candidates.filter { $0.targetMatches(way:lookup?.wayID,direction:lookup?.direction,heading:heading,headingAccuracy:headingAccuracy) }
+        visible=candidates.filter { $0.mapillaryDisplayEligible(heading: heading, now: now) && $0.targetMatches(way:lookup?.wayID,direction:lookup?.direction,heading:heading,headingAccuracy:headingAccuracy) }
     }
     func observe(_ observations: [Observation], now: Date, frameID: String? = nil, frameAt: Date? = nil,
                  frameWayID: String? = nil, frameDirection: Int? = nil, frameBundle: String? = nil) {

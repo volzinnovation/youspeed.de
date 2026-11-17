@@ -57,6 +57,7 @@ internal data class SpeedLookupResult(
     val inventoryBoundaryEvent: String? = null,
     val inventoryBoundarySignId: String? = null,
     val inventoryBoundaryAction: TrafficSignAction? = null,
+    val inventoryEndPictogram: TrafficSignPictogram? = null,
     val bundleSpeedProvenance: BundleSpeedProvenance? = null,
     val lookupStageMs: Map<String, Double> = emptyMap(),
     val upcomingSpeedLimits: UpcomingSpeedLimitSnapshot? = null,

@@ -6,6 +6,29 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class TrafficSignDisplayTests {
+    @Test fun briefSecondarySignWindowDoesNotRestartOnRepeatedOrAlternatingFrames() {
+        val window = SecondarySignDisplayWindow()
+        assertEquals(3_000L, window.observe("stop", 0))
+        assertEquals(4_000L, window.observe("give_way", 1_000))
+        assertEquals(3_000L, window.observe("stop", 2_000))
+        assertEquals(3_000L, window.observe("stop", 3_100))
+        assertEquals(9_100L, window.observe("stop", 6_100))
+        val policy = SecondarySignDisplayPolicy
+        for (identifier in listOf("bus:stop", "DE:315-50", "give_way", "stop", "priority:start", "no_parking")) {
+            assertEquals(identifier, SecondarySignDisplayPolicy.Presentation.BRIEF, policy.presentation(identifier))
+        }
+        for (identifier in listOf("DE:136-10", "DE:301")) {
+            assertEquals(identifier, SecondarySignDisplayPolicy.Presentation.PERSISTENT, policy.presentation(identifier))
+        }
+        for (identifier in listOf("arrow_through", "DE:222-10", "DE:310", "DE:311", "DE:278-70", "DE:274.2")) {
+            assertEquals(identifier, SecondarySignDisplayPolicy.Presentation.HIDDEN, policy.presentation(identifier))
+        }
+        assertEquals(SecondarySignDisplayPolicy.Presentation.PERSISTENT, policy.presentation("AB25", country = "FR"))
+        assertEquals(SecondarySignDisplayPolicy.Presentation.BRIEF, policy.presentation("AB3a", country = "FR"))
+        assertEquals(SecondarySignDisplayPolicy.Presentation.BRIEF, policy.presentation("C3", country = "FR"))
+        assertEquals(SecondarySignDisplayPolicy.Presentation.PERSISTENT, policy.presentation("B03", country = "NL"))
+    }
+
     @Test fun allFiveCountryManifestsUseActualVocabularyAndReviewedActions() {
         val root = listOf(File("../.."), File(".."), File(".")).first { File(it, "shared/tsr").isDirectory }
         val expected = mapOf(
@@ -47,7 +70,8 @@ class TrafficSignDisplayTests {
         assertEquals(first, TrafficSignDisplayPolicy.next(first, null, catalog))
         val second = TrafficSignDisplayPolicy.next(first, stop, catalog)
         assertEquals("stop", second?.classId)
-        assertNull(TrafficSignDisplayPolicy.next(second, observe("other"), catalog))
+        assertEquals(second, TrafficSignDisplayPolicy.next(second, observe("other"), catalog))
+        assertEquals(second, TrafficSignDisplayPolicy.next(second, observe("arrow_through"), catalog))
         assertEquals(second,TrafficSignDisplayPolicy.next(second, observe("maxspeed:30", TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, 30)), catalog))
         assertEquals(second,TrafficSignDisplayPolicy.next(second, observe("no:end"), catalog))
         assertEquals(second,TrafficSignDisplayPolicy.next(second, observe("motorway:end"), catalog))

@@ -144,9 +144,7 @@
     <string name="ui_driving_photo_unavailable">Foto niet beschikbaar</string>
     <string name="ui_driving_photo_local_only">Slaat één foto lokaal op voor controle. Er wordt niets geüpload.</string>
     <string name="ui_driving_photo_failed">De foto kon niet worden opgeslagen. Probeer opnieuw zodra de camera klaar is.</string>
-    <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">over %1$d m</string>
-    <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">over &lt;10 m</string>
-    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Komende snelheidslimiet, %1$d kilometer per uur, %2$s</string>
+    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Komende snelheidslimiet, %1$d kilometer per uur</string>
     <string name="inspector_track_share">Route delen</string>
     <string name="inspector_track_save">Route opslaan in Inspector</string>
     <string name="inspector_track_scope">Het GPX-bestand bevat routecoördinaten en tijdstippen. Het wordt privé opgeslagen in je Inspector-account.</string>

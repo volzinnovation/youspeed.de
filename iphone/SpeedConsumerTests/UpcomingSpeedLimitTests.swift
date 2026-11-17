@@ -6,6 +6,16 @@ import UIKit
 @testable import SpeedConsumer
 
 final class UpcomingSpeedLimitTests: XCTestCase {
+    func testPreviewOpacityFadesLinearlyFrom300To30Meters() {
+        let cases: [(Double, Double)] = [(450, 0), (300, 0), (165, 0.5), (30, 1), (5, 1), (.nan, 0)]
+        for (distance, opacity) in cases {
+            let candidate = UpcomingSpeedLimitCandidate(signID: "sign", sourceID: "test",
+                snapshotSHA256: "snapshot", ruleID: "rule", originWayID: "way", direction: 1,
+                stationM: 500, speedKmh: 70, distanceM: distance)
+            XCTAssertEqual(candidate.previewOpacity, opacity, accuracy: 0.0001, "Distance \(distance)")
+        }
+    }
+
     @MainActor func testVerifiedBundleRoadChangePublishesOnSecondFixAndRetiresOldCamera() async throws {
         let model=DriveSessionViewModel();Self.controllerLifetimes.append(model)
         defer {model.stopDriving()}

@@ -71,11 +71,21 @@ internal object ConditionalOCRInterpretation {
         val assemblyEvidence:TrafficSignConditionalAssemblyEvidence?=null)
     data class Record(val observation:Observation,val parsed:Parsed?,val verification:Verification,val reason:String,
         val supportingFrameIds:List<String>,val originalEvidenceAt:Instant,val originalEvidenceDistanceM:Double) {
+        private fun isCurrent(at: Instant, distanceM: Double, scopeId: String, generation: Long): Boolean =
+            verification == Verification.VERIFIED && scopeId == observation.scopeId && generation == observation.scopeGeneration &&
+                at >= originalEvidenceAt && java.time.Duration.between(originalEvidenceAt, at).toMillis() <= 300_000 &&
+                distanceM.isFinite() && distanceM >= originalEvidenceDistanceM && distanceM - originalEvidenceDistanceM <= 5000
+
+        fun inactivePreview(verdict: Verdict, at: Instant, distanceM: Double, scopeId: String,
+                            generation: Long): ConditionalSpeedPreview? {
+            if (!isCurrent(at, distanceM, scopeId, generation) ||
+                !(verdict == Verdict.INAPPLICABLE || (verdict == Verdict.UNRESOLVED && parsed?.condition == Condition.Wet))) return null
+            return ConditionalSpeedPreview(observation.primarySpeedKmh, observation.rawText)
+        }
+
         fun verdict(at:Instant,distanceM:Double,scopeId:String,generation:Long,clockTrusted:Boolean=true,
             uncertaintySeconds:Double=0.0,timeZoneId:String?="Europe/Berlin",roadSurfaceWet:Boolean?=null):Verdict {
-            if(verification!=Verification.VERIFIED || parsed==null || scopeId!=observation.scopeId || generation!=observation.scopeGeneration ||
-                at<originalEvidenceAt || java.time.Duration.between(originalEvidenceAt,at).toMillis()>300000 ||
-                !distanceM.isFinite() || distanceM<originalEvidenceDistanceM || distanceM-originalEvidenceDistanceM>5000) return Verdict.UNRESOLVED
+            if (parsed == null || !isCurrent(at, distanceM, scopeId, generation)) return Verdict.UNRESOLVED
             return when(val condition=parsed.condition) {
                 Condition.Informational -> Verdict.APPLICABLE
                 Condition.Wet -> when(roadSurfaceWet) { true->Verdict.APPLICABLE;false->Verdict.INAPPLICABLE;null->Verdict.UNRESOLVED }

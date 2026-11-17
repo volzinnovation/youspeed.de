@@ -6,6 +6,7 @@ import CoreImage
 import CryptoKit
 import ImageIO
 import SQLite3
+import SwiftUI
 import CoreLocation
 import zlib
 #if canImport(UIKit)
@@ -23254,6 +23255,24 @@ extension SpeedConsumerTests {
         InventorySignBundle.lookup(db:db,lat:lat,lon:lon,wayID:"1",points:[(48,8),(48,8.01)],
             heading:heading,headingAccuracy:headingAccuracy,accuracy:accuracy)
     }
+    func testDisplayOnlyInventoryDoesNotSupplyRoadContext() throws {
+        let db = try inventoryV15DB()
+        defer { sqlite3_close(db) }
+        let sql = """
+            INSERT INTO traffic_sign_capability VALUES('inventory_scope','display_only');
+            INSERT INTO traffic_sign_runtime VALUES('mapillary-eval:1','mapillary-eval','1','snapshot',
+                'DE:205','DE:205','secondary',NULL,NULL,'mapillary_inventory_only',
+                8.002,48,90,10,'DE:205','tsr/sign-pictograms/png/de-205.png','[]');
+            """
+        XCTAssertEqual(sqlite3_exec(db, sql, nil, nil, nil), SQLITE_OK)
+        let result = try XCTUnwrap(inventoryV15Lookup(db))
+        XCTAssertTrue(result.signs.contains { $0.signID == "mapillary-eval:1" })
+        XCTAssertNil(result.activeRule)
+        XCTAssertNil(result.wayID)
+        XCTAssertNil(result.direction)
+        XCTAssertNil(result.chainageM)
+        XCTAssertTrue(result.boundaries.isEmpty)
+    }
     func testInventoryV15CapabilityAbsenceAndUnknownVersionPreserveOldBundles() throws {
         var db: OpaquePointer?; sqlite3_open(":memory:",&db)
         defer { sqlite3_close(db) }
@@ -23590,6 +23609,28 @@ extension SpeedConsumerTests {
         XCTAssertEqual(events.filter { $0["outcome"] as? String == "ambiguous" }.count,3)
     }
 
+    func testMapillaryInventoryDisplaysWithoutTriggeringCapture() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let runtime = InventorySignEncounterRuntime(journal: .init(url: root.appendingPathComponent("events.ndjson")))
+        let sign = InventoryTrafficSign(signID: "mapillary-eval:1", sourceID: "mapillary-eval", recordKey: "1",
+            snapshotSHA256: "test", code: "DE:274.1", kind: "secondary", numericValue: nil, unit: nil,
+            parameterStatus: "mapillary_inventory_only", latitude: 48, longitude: 8, radiusM: 10,
+            pictogramCode: "DE:274.1", pictogramPath: "tsr/sign-pictograms/png/de-274.1.png",
+            modelClasses: [], distanceM: 0, associationStatus: "inventory_only",
+            mapillaryAzimuthDeg: 180, mapillaryLastSeenAt: Date().addingTimeInterval(-3600))
+        let now = Date()
+        runtime.update(.init(signs: [sign], activeRule: nil, wayID: "1", direction: 1, chainageM: 0),
+                       bundle: "trial", at: now, now: now, cameraEnabled: true, cameraAvailable: true, classes: [], heading: 0)
+        XCTAssertEqual(runtime.visible.map(\.signID), [sign.signID])
+        XCTAssertTrue(runtime.pendingCaptureIDs.isEmpty)
+        let bundle = Bundle(for: SpeedConsumerAppDelegate.self)
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(bundle: bundle))
+        XCTAssertEqual(catalog.sign(forInventory: sign)?.imageURL(bundle: bundle)?.lastPathComponent, "de-274.1.png")
+        let credit = try XCTUnwrap(SourceAttributionCatalog.load(bundle: bundle)?.entries.first { $0.id == "mapillary-eval" })
+        XCTAssertEqual(SourceAttribution.webURL(credit.sourceURL)?.absoluteString, "https://www.mapillary.com/")
+    }
+
     func testInventoryV15DetachedCaptureAndFinishRetainOriginalFixProvenance() throws {
         let root=FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:root) }
@@ -23901,7 +23942,7 @@ final class V15DriveDisplayMetadataTests: XCTestCase {
             }
         }
     }
-    private func sign(_ id: String, code: String = "DE:222", kind: String = "secondary") -> InventoryTrafficSign {
+    private func sign(_ id: String, code: String = "DE:101", kind: String = "secondary") -> InventoryTrafficSign {
         .init(signID:id,sourceID:"actual-source",recordKey:id,snapshotSHA256:"snapshot",
             code:code,kind:kind,numericValue:nil,unit:nil,parameterStatus:"not_applicable",
             latitude:48,longitude:8,radiusM:10,pictogramCode:nil,pictogramPath:nil,
@@ -23936,6 +23977,19 @@ final class V15DriveDisplayMetadataTests: XCTestCase {
         XCTAssertEqual(display.sign,next)
         display.consume([])
         XCTAssertTrue(display.consume([first]),"A genuine re-entry may trigger the original sign again")
+    }
+    func testInventorySecondaryExpiryPreservesEncounterAndCannotClearNewTrigger() {
+        var display = InventorySecondaryDisplaySelection()
+        let stop = sign("stop", code: "DE:206")
+        let start = Date(timeIntervalSince1970: 1000)
+        XCTAssertTrue(display.consume([stop], at: start))
+        XCTAssertTrue(display.expire(signID: stop.signID, triggeredAt: start))
+        XCTAssertFalse(display.consume([stop], at: start.addingTimeInterval(3)))
+        XCTAssertNil(display.sign)
+        display.consume([], at: start.addingTimeInterval(4))
+        XCTAssertTrue(display.consume([stop], at: start.addingTimeInterval(5)))
+        XCTAssertFalse(display.expire(signID: stop.signID, triggeredAt: start))
+        XCTAssertEqual(display.sign, stop)
     }
     func testTextOnlyUnsupportedSignIsRetainedWithoutInventingPictogramOrCameraEvidence() {
         var display=InventorySecondaryDisplaySelection()
@@ -24033,6 +24087,30 @@ extension SpeedConsumerTests {
 }
 
 extension V15DriveDisplayMetadataTests {
+    func testBriefSecondarySignWindowDoesNotRestartOnRepeatedOrAlternatingFrames() {
+        var window = SecondarySignDisplayWindow()
+        let start = ContinuousClock().now
+        XCTAssertEqual(window.observe("stop", at: start), start + .seconds(3))
+        XCTAssertEqual(window.observe("give_way", at: start + .seconds(1)), start + .seconds(4))
+        XCTAssertEqual(window.observe("stop", at: start + .seconds(2)), start + .seconds(3))
+        XCTAssertEqual(window.observe("stop", at: start + .milliseconds(3100)), start + .seconds(3))
+        XCTAssertEqual(window.observe("stop", at: start + .milliseconds(6100)), start + .milliseconds(9100))
+        typealias Policy = SecondarySignDisplayPolicy
+        for identifier in ["bus:stop", "DE:315-50", "give_way", "stop", "priority:start", "no_parking"] {
+            XCTAssertEqual(Policy.presentation(identifier), .brief, identifier)
+        }
+        for identifier in ["DE:136-10", "DE:301"] {
+            XCTAssertEqual(Policy.presentation(identifier), .persistent, identifier)
+        }
+        for identifier in ["arrow_through", "DE:222-10", "DE:310", "DE:311", "DE:278-70", "DE:274.2"] {
+            XCTAssertEqual(Policy.presentation(identifier), .hidden, identifier)
+        }
+        XCTAssertEqual(Policy.presentation("AB25", country: "FR"), .persistent)
+        XCTAssertEqual(Policy.presentation("AB3a", country: "FR"), .brief)
+        XCTAssertEqual(Policy.presentation("C3", country: "FR"), .brief)
+        XCTAssertEqual(Policy.presentation("B03", country: "NL"), .persistent)
+    }
+
     func testUIPresentationLifecycleDeduplicatesRerendersAndRecordsReplacementAndVisibility() {
         var tracker=SignUIPresentationTracker()
         let start=Date(timeIntervalSince1970:1000)
@@ -24074,6 +24152,8 @@ extension V15DriveDisplayMetadataTests {
         XCTAssertEqual(display.sign?.classID,"give_way")
         display.consume(observation("stop",3,sha:"wrong-model"),catalog:catalog)
         XCTAssertEqual(display.sign?.classID,"give_way","Unadmitted evidence cannot invalidate the card")
+        display.consume(observation("arrow_through",3.5),catalog:catalog)
+        XCTAssertEqual(display.sign?.classID,"give_way")
         display.consume(observation("stop",4),catalog:catalog)
         XCTAssertEqual(display.sign?.classID,"stop")
         display.invalidate(at:Date(timeIntervalSince1970:3))
@@ -24119,7 +24199,7 @@ extension SpeedConsumerTests {
         var result=try staleReferenceDirectionFixture()
         let at=Date()
         let warning=InventoryTrafficSign(signID:"warning",sourceID:"source",recordKey:"warning",snapshotSHA256:"source-sha",
-            code:"DE:222",kind:"secondary",numericValue:nil,unit:nil,parameterStatus:"not_applicable",latitude:48,longitude:8,
+            code:"DE:101",kind:"secondary",numericValue:nil,unit:nil,parameterStatus:"not_applicable",latitude:48,longitude:8,
             radiusM:10,pictogramCode:nil,pictogramPath:nil,modelClasses:[],distanceM:2,
             associatedWayID:"adjacent-split",associatedDirection:1,associationStatus:"accepted",associatedHeadingDeg:90)
         func location(_ offset:Double,_ heading:Double) -> CLLocation {
@@ -24258,5 +24338,126 @@ extension SpeedConsumerTests {
         XCTAssertEqual(Set(diagnostics.map { $0.frame.frameId }).count, 2)
         XCTAssertEqual(deliveredEvents.first?.shadowEventV2?.eventId, diagnostics.last?.eventId)
         XCTAssertEqual(backend.invocationCount, 2)
+    }
+}
+
+final class LocalMapillaryPackedReplayTests: XCTestCase {
+    func testCompareInstalledPackedRoutes() async throws {
+        let root = try V3BundleManager.applicationSupportDirectory()
+        let fixture = root.appendingPathComponent("mapillary-eval-replay")
+        guard FileManager.default.fileExists(atPath: fixture.path) else { throw XCTSkip("Local Mapillary replay data is absent") }
+        let manifestData = try Data(contentsOf: fixture.appendingPathComponent("paths.json"))
+        let paths = try JSONDecoder().decode([String: String].self, from: manifestData)
+        let baselinePath = root.appendingPathComponent(try XCTUnwrap(paths["baseline"])).path
+        let trialPath = root.appendingPathComponent(try XCTUnwrap(paths["trial"])).path
+        let expectedVersion = paths["version"] ?? "2026-11-13-v1.5-mapillary-eval"
+        if let assets = paths["verifyPackedFiles"], assets == "true" {
+            let directory = URL(fileURLWithPath: trialPath).deletingLastPathComponent()
+            let data = try Data(contentsOf: directory.appendingPathComponent("bundle-manifest.v3.json"))
+            let manifest = try JSONDecoder().decode(V3BundleManifest.self, from: data)
+            let packed = try XCTUnwrap(manifest.packedBase)
+            for artifact in [manifest.db, packed.roads, try XCTUnwrap(packed.nodes)] {
+                let file = try FileHandle(forReadingFrom: directory.appendingPathComponent(artifact.file))
+                defer { try? file.close() }
+                var digest = SHA256()
+                while let bytes = try file.read(upToCount: 1_048_576), !bytes.isEmpty { digest.update(data: bytes) }
+                XCTAssertEqual(digest.finalize().map { String(format: "%02x", $0) }.joined(),
+                               artifact.uncompressedSHA256 ?? artifact.sha256)
+            }
+        }
+        let manager = V3BundleManager()
+        let catalog = try XCTUnwrap(TrafficSignPresentationCatalog.bundled(bundle: Bundle(for: SpeedConsumerAppDelegate.self)))
+        let baseline = V3SpeedLimitService(dbPath: baselinePath, countryCode: "DEU")
+        let trial = V3SpeedLimitService(dbPath: trialPath, countryCode: "DEU")
+        let route = try String(contentsOf: fixture.appendingPathComponent("replay.tsv"), encoding: .utf8)
+        var routeID = ""
+        var previous: SpeedLimitResult?
+        var baselinePassage = InventoryBoundaryPassageTracker()
+        var trialPassage = InventoryBoundaryPassageTracker()
+        var report: [String: [String: Int]] = [:]
+        var checkedArt = Set<String>()
+        var displaySamples: [String: TrafficSignPresentationCatalog.Sign] = [:]
+        for line in route.split(separator: "\n") {
+            let fields = line.split(separator: "\t")
+            let id = String(fields[0])
+            if id != routeID {
+                routeID = id
+                previous = nil
+                baselinePassage.reset()
+                trialPassage.reset()
+            }
+            let lat = try XCTUnwrap(Double(fields[1])), lon = try XCTUnwrap(Double(fields[2]))
+            let bearing = try XCTUnwrap(Double(fields[3]))
+            let context = WayMatchContext(preferredWayID: previous?.wayID, recentWayIDs: [previous?.wayID].compactMap { $0 },
+                preferredStreetRef: nil, recentStreetRefs: [], matchedFixCount: previous == nil ? 0 : 3)
+            let a = try baseline.lookupSpeedLimit(lat: lat, lon: lon, matchContext: context, headingDeg: bearing,
+                headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+            let b = try trial.lookupSpeedLimit(lat: lat, lon: lon, matchContext: context, headingDeg: bearing,
+                headingAccuracyDeg: 5, speedKmh: 40, horizontalAccuracyM: 5)
+            previous = a
+            guard a.wayID == b.wayID, a.speedLimitKmh == b.speedLimitKmh,
+                  a.isUnlimitedSpeedLimit == b.isUnlimitedSpeedLimit, a.insideCity == b.insideCity,
+                  a.citySource == b.citySource, a.bundleSpeedProvenance == b.bundleSpeedProvenance,
+                  a.inventorySigns?.activeRule == b.inventorySigns?.activeRule,
+                  a.inventorySigns?.boundaries == b.inventorySigns?.boundaries else {
+                return XCTFail("Baseline and trial results differ on \(id) at \(lat),\(lon)")
+            }
+            let aPass = baselinePassage.consume(a.inventorySigns, bundle: "baseline", latitude: lat, longitude: lon)
+            let bPass = trialPassage.consume(b.inventorySigns, bundle: expectedVersion, latitude: lat, longitude: lon)
+            XCTAssertEqual(aPass, bPass)
+            report[id, default: [:]]["fixes", default: 0] += 1
+            if a.inventorySigns?.activeRule?.sourceID == "mobidata-bw-vzk" {
+                report[id, default: [:]]["mobidataRuleFixes", default: 0] += 1
+            }
+            report[id, default: [:]]["mobidataTownEvents", default: 0] += aPass.filter {
+                $0.isBoundary && $0.sourceID == "mobidata-bw-vzk"
+            }.count
+            for sign in b.inventorySigns?.signs ?? [] where sign.sourceID == "mapillary-eval" {
+                if checkedArt.insert(sign.code).inserted {
+                    XCTAssertNotNil(catalog.sign(forInventory: sign)?.imageURL(bundle: Bundle(for: SpeedConsumerAppDelegate.self)))
+                }
+                report[id, default: [:]]["mapillaryHits", default: 0] += 1
+                if sign.code == "DE:274.1" {
+                    report[id, default: [:]]["zoneEntranceHits", default: 0] += 1
+                    displaySamples[id] = catalog.sign(forInventory: sign)
+                }
+            }
+        }
+        XCTAssertEqual(Set(report.keys), ["ss-r03", "ss-r04"])
+        for route in report.values {
+            XCTAssertGreaterThan(route["zoneEntranceHits", default: 0], 0)
+            XCTAssertGreaterThan(route["mobidataRuleFixes", default: 0], 0)
+        }
+        let local = try await manager.listDownloadedBundles()
+        XCTAssertTrue(local.contains { $0.bundleVersion == expectedVersion && $0.region == "baden-wuerttemberg" })
+        let output = try JSONEncoder().encode(report)
+        try output.write(to: fixture.appendingPathComponent("result.json"), options: .atomic)
+        print("MAPILLARY_REPLAY " + String(decoding: output, as: UTF8.self))
+        if paths["renderPictograms"] == "true" {
+            for id in ["ss-r03", "ss-r04"] {
+                try await render(try XCTUnwrap(displaySamples[id]), route: id, directory: fixture)
+            }
+        }
+    }
+
+    @MainActor
+    private func render(_ sign: TrafficSignPresentationCatalog.Sign, route: String, directory: URL) throws {
+        let renderer = ImageRenderer(content: MainView.TrafficSignPictogramView(sign: sign)
+            .frame(width: 96, height: 96).background(Color.white))
+        renderer.scale = 3
+        let image = try XCTUnwrap(renderer.uiImage)
+        let source = try XCTUnwrap(image.cgImage)
+        var pixels = [UInt8](repeating: 0, count: 4 * source.width * source.height)
+        let dark = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(data: buffer.baseAddress, width: source.width, height: source.height,
+                bitsPerComponent: 8, bytesPerRow: source.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return 0 }
+            context.draw(source, in: CGRect(x: 0, y: 0, width: source.width, height: source.height))
+            return stride(from: 0, to: buffer.count, by: 4).filter {
+                buffer[$0] < 95 && buffer[$0 + 1] < 95 && buffer[$0 + 2] < 95
+            }.count
+        }
+        XCTAssertGreaterThan(dark, 1_000, "The rendered sign should contain its black border and lettering")
+        try XCTUnwrap(image.pngData()).write(to: directory.appendingPathComponent("pictogram-\(route).png"))
     }
 }

@@ -22,6 +22,10 @@ struct UpcomingSpeedLimitCandidate: Codable, Equatable, Sendable {
     let stationM: Double
     let speedKmh: Int
     let distanceM: Double
+    var previewOpacity: Double {
+        guard distanceM.isFinite else { return 0 }
+        return min(1, max(0, (300 - distanceM) / (300 - 30)))
+    }
     var identity: String { sourceID + "|" + snapshotSHA256 + "|" + signID + "|" + String(direction) }
 }
 

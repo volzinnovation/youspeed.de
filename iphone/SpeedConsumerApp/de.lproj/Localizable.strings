@@ -539,11 +539,7 @@
 "speed.source.camera_pending" = "Kamera-Vorschlag";
 
 /* Upcoming physical speed limit preview. */
-"speed.upcoming.distance" = "in %d m";
-"speed.upcoming.distance.near" = "in <10 m";
-"speed.upcoming.distance.accessibility" = "in %d Metern";
-"speed.upcoming.distance.near.accessibility" = "in weniger als 10 Metern";
-"speed.upcoming.accessibility" = "Kommendes Tempolimit, %d Kilometer pro Stunde, %@.";
+"speed.upcoming.accessibility" = "Kommendes Tempolimit, %d Kilometer pro Stunde.";
 
 "inspector.files.title" = "Inspector-Dateien";
 "inspector.files.upload" = "Datei hochladen";
@@ -562,6 +558,7 @@
 "inspector.files.failed" = "Der Inspector konnte die Anfrage nicht abschließen.";
 "inspector.files.type" = "Wähle eine GPX-Strecke oder ein Textprotokoll.";
 "inspector.files.size" = "Die Datei ist leer oder zu groß.";
+
 "inspector.files.choose_trip" = "Aufgezeichnete Fahrt auswählen";
 "inspector.files.save_trip" = "Fahrt und Protokolle privat speichern";
 "inspector.track.share" = "Track teilen";

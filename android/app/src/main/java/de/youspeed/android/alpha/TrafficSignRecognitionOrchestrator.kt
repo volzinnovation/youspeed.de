@@ -743,7 +743,8 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                     displayObservation = if (created.qualifiedAnalyzedFrame &&
                         !active.accepted.driveSessionId.isNullOrBlank() && backendResult is TrafficSignBackendResult.Recognition
                     ) {
-                        TrafficSignDisplayPolicy.accepted(created.displayDetections, preferSecondary = true)?.let { candidate ->
+                        TrafficSignDisplayPolicy.accepted(created.displayDetections, preferSecondary = true,
+                            country = modelPack.countries.firstOrNull() ?: "DE")?.let { candidate ->
                             val index = created.collectionDetections.indexOfFirst {
                                 it.candidate.rawClassId == candidate.rawClassId && it.candidate.boundingBox == candidate.boundingBox
                             }

@@ -539,11 +539,7 @@
 "speed.source.camera_pending" = "Cameravoorstel";
 
 /* Upcoming physical speed limit preview. */
-"speed.upcoming.distance" = "over %d m";
-"speed.upcoming.distance.near" = "over <10 m";
-"speed.upcoming.distance.accessibility" = "over %d meter";
-"speed.upcoming.distance.near.accessibility" = "over minder dan 10 meter";
-"speed.upcoming.accessibility" = "Komende snelheidslimiet, %d kilometer per uur, %@.";
+"speed.upcoming.accessibility" = "Komende snelheidslimiet, %d kilometer per uur.";
 
 "inspector.files.title" = "Inspector-bestanden";
 "inspector.files.upload" = "Bestand uploaden";
@@ -562,6 +558,7 @@
 "inspector.files.failed" = "Inspector kon het verzoek niet voltooien.";
 "inspector.files.type" = "Kies een GPX-route of tekstlogboek.";
 "inspector.files.size" = "Het bestand is leeg of te groot.";
+
 "inspector.files.choose_trip" = "Opgenomen rit kiezen";
 "inspector.files.save_trip" = "Rit en logboeken privé opslaan";
 "inspector.track.share" = "Route delen";

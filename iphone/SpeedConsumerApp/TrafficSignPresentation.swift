@@ -1,5 +1,73 @@
 import Foundation
 
+enum SecondarySignDisplayPolicy {
+    enum Presentation { case hidden, brief, persistent }
+    static let lifetime: Duration = .seconds(3)
+
+    static func presentation(_ classID: String, signCode: String? = nil, country: String = "DE") -> Presentation {
+        let code = signCode ?? classID
+        let national = code.hasPrefix(country + ":") ? String(code.dropFirst(3)) : code
+        let base = String(national.prefix { $0 != "-" && $0 != "[" })
+        if classID.hasPrefix("arrow_") || classID.hasPrefix("city:") || classID.hasPrefix("city_limit:") {
+            return .hidden
+        }
+        switch country {
+        case "DE":
+            if ["209", "211", "214", "222", "274", "274.1", "274.2", "278", "282", "310", "311"].contains(base) {
+                return .hidden
+            }
+            if germanWarnings.contains(base) { return .persistent }
+        case "FR":
+            if national.hasPrefix("B21") || ["EB10", "EB20", "B31", "B33", "B51", "B55"].contains(base) {
+                return .hidden
+            }
+            if ["AB1", "AB2", "AB25"].contains(national) || national.range(of: "^A(?:K)?[0-9]", options: .regularExpression) != nil {
+                return .persistent
+            }
+        case "BE":
+            if national.hasPrefix("D1") || national.hasPrefix("D3") || ["F1", "F3", "C45", "C46"].contains(base) {
+                return .hidden
+            }
+            if national.range(of: "^A[0-9]", options: .regularExpression) != nil { return .persistent }
+        case "NL":
+            if national.hasPrefix("C04") || ["D02", "D03", "D04", "D05", "D06", "D07", "A02", "A02-ZE", "F08", "H01", "H02"].contains(national) {
+                return .hidden
+            }
+            if national.hasPrefix("J") || ["B03", "B04", "B05"].contains(national) { return .persistent }
+        case "CH":
+            if let number = Double(national), (2.32...2.41).contains(number) { return .hidden }
+            if ["2.53", "2.58", "2.59.4b", "2.59.6a"].contains(national) { return .hidden }
+            if national.hasPrefix("1.") || ["3.05", "3.06"].contains(national) { return .persistent }
+        default: break
+        }
+        return .brief
+    }
+
+    private static let germanWarnings: Set<String> = [
+        "101", "102", "103", "105", "112", "114", "117", "120", "121", "123", "124", "125",
+        "131", "136", "138", "142", "151", "301"
+    ]
+
+    static func inventoryPresentation(_ sign: InventoryTrafficSign) -> Presentation {
+        guard !["speed_limit", "speed_limit_end", "settlement_boundary"].contains(sign.kind),
+              !sign.modelClasses.contains(where: { $0.hasPrefix("city:") || $0.hasPrefix("arrow_") }) else { return .hidden }
+        return presentation(sign.code, country: String(sign.code.prefix(2)))
+    }
+}
+
+/// Each continuously observed camera sign gets one display window. Keep the
+/// deadline through alternating detections until that class has been absent.
+struct SecondarySignDisplayWindow {
+    private var windows: [String: (lastSeen: ContinuousClock.Instant, deadline: ContinuousClock.Instant)] = [:]
+
+    mutating func observe(_ classID: String, at now: ContinuousClock.Instant) -> ContinuousClock.Instant {
+        windows = windows.filter { now - $0.value.lastSeen < SecondarySignDisplayPolicy.lifetime }
+        let deadline = windows[classID]?.deadline ?? now + SecondarySignDisplayPolicy.lifetime
+        windows[classID] = (now, deadline)
+        return deadline
+    }
+}
+
 enum InventorySpeedEndCode {
     private static let expression = try! NSRegularExpression(
         pattern: "^DE:278(?:-([0-9]{1,3})|\\[([0-9]{1,3})(?:\\s*km/h)?\\])$")
@@ -102,10 +170,30 @@ struct TrafficSignPresentationCatalog: Decodable, Sendable {
         return signs.first { $0.signCode == code && $0.displayEligible && $0.imagePath != nil }
     }
 
+    func endSign(for action: TrafficSignStructuralAction, recognizedClassID: String?) -> Sign? {
+        if let recognizedClassID, let sign = sign(for: recognizedClassID),
+           sign.displayEligible, sign.imagePath != nil { return sign }
+        switch action {
+        case .maximumSpeedEnd(let speed):
+            if country == "DE", let speed, let sign = endSign(for: "DE:278-\(speed)") { return sign }
+            return endSign(for: country == "DE" ? "DE:278" : "maxspeed:end")
+        case .allRestrictionsEnd: return endSign(for: country == "FR" ? "B31" : "no:end")
+        case .zoneEnd(let speed):
+            return endSign(for: country == "FR" ? "B51" : speed.map { "zone:\($0):end" } ?? "zone:end")
+        case .pedestrianZoneEnd: return endSign(for: country == "FR" ? "B55" : "zone:pedestrian:end")
+        case .motorwayExit: return endSign(for: country == "FR" ? "C208" : "motorway:end")
+        case .motorroadExit: return endSign(for: country == "FR" ? "C108" : "trunk:end")
+        default: return nil
+        }
+    }
+
     func endSign(for classID: String) -> Sign? {
         // Use the recognized national artwork when available; numeric classes
         // without an artwork use that country's official end-restrictions sign.
         if let sign = sign(for: classID), sign.displayEligible, sign.imagePath != nil { return sign }
+        if classID == "DE:274.2" || (country == "DE" && classID == "zone:end") {
+            return sign(for: "zone:30:end")
+        }
         // A round end-restrictions sign must never stand in for a zone end.
         guard classID == "maxspeed:end" || classID.hasPrefix("B33-") else { return nil }
         return sign(for: country == "FR" ? "B31" : "no:end")
@@ -155,9 +243,10 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
         self.classifierCheckpointSHA256 = classifierCheckpointSHA256
     }
 
-    static func accepted(from primaryDetections: [TrafficSignDetection], timestamp: Date, classifierCheckpointSHA256: String?, preferSecondary: Bool = false) -> Self? {
+    static func accepted(from primaryDetections: [TrafficSignDetection], timestamp: Date, classifierCheckpointSHA256: String?, preferSecondary: Bool = false, country: String = "DE") -> Self? {
         guard let classifierCheckpointSHA256 else { return nil }
-        guard let detection = acceptedDetection(from: primaryDetections, preferSecondary: preferSecondary) else { return nil }
+        guard let detection = acceptedDetection(from: primaryDetections, preferSecondary: preferSecondary,
+                                                country: country) else { return nil }
         let candidate = TrafficSignRecognitionCandidate(
             rawClassId: detection.rawClassId, rawLabel: detection.rawLabel,
             semanticKind: detection.semantic.kind.rawValue, value: detection.semantic.value,
@@ -175,7 +264,8 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
     }
 
     /// Shared selection keeps the OCR source attached to the exact admitted sign.
-    static func acceptedDetection(from primaryDetections: [TrafficSignDetection], preferSecondary: Bool = false) -> TrafficSignDetection? {
+    static func acceptedDetection(from primaryDetections: [TrafficSignDetection], preferSecondary: Bool = false,
+                                  country: String = "DE") -> TrafficSignDetection? {
         let accepted = primaryDetections.filter {
             let score = $0.classifierRawScore ?? $0.rawScore
             let detectorScore = $0.detectorRawScore ?? $0.rawScore
@@ -190,7 +280,11 @@ struct TrafficSignDisplayObservation: Equatable, Sendable {
             if $0.boundingBox.area != $1.boundingBox.area { return $0.boundingBox.area > $1.boundingBox.area }
             return $0.rawClassId < $1.rawClassId
         }
-        return (preferSecondary ? accepted.first { $0.semantic.kind == .unknown } : nil) ?? accepted.first
+        let secondary = preferSecondary ? accepted.first {
+            $0.semantic.kind == .unknown &&
+                SecondarySignDisplayPolicy.presentation($0.rawClassId, country: country) != .hidden
+        } : nil
+        return secondary ?? accepted.first
     }
 }
 
@@ -198,21 +292,22 @@ struct TrafficSignDisplayState {
     private(set) var sign: TrafficSignPresentationCatalog.Sign?
     private var lastAcceptedAt = Date.distantPast
 
-    mutating func consume(_ observation: TrafficSignDisplayObservation?, catalog: TrafficSignPresentationCatalog?) {
+    @discardableResult
+    mutating func consume(_ observation: TrafficSignDisplayObservation?, catalog: TrafficSignPresentationCatalog?,
+                          canPresent: (TrafficSignPresentationCatalog.Sign) -> Bool = { _ in true }) -> Bool {
         guard let observation, observation.timestamp.timeIntervalSince1970.isFinite,
-              observation.timestamp > lastAcceptedAt else { return }
+              observation.timestamp > lastAcceptedAt else { return false }
         lastAcceptedAt = observation.timestamp
         guard let catalog, observation.classifierCheckpointSHA256 == catalog.classifierCheckpointSHA256,
-              catalog.canRecognize(observation.classID) else { return }
+              catalog.canRecognize(observation.classID) else { return false }
         // A numeric primary limit does not end an unrelated secondary sign.
         // Applicable typed ends/town transitions invalidate after admission.
-        guard !observation.affectsSpeed else { return }
-        guard
-              let next = catalog.sign(for: observation.classID), next.displayEligible else {
-            sign = nil
-            return
-        }
+        guard !observation.affectsSpeed else { return false }
+        guard let next = catalog.sign(for: observation.classID), next.displayEligible, next.imagePath != nil,
+              SecondarySignDisplayPolicy.presentation(next.classID, signCode: next.signCode, country: catalog.country) != .hidden,
+              canPresent(next) else { return false }
         sign = next
+        return true
     }
 
     mutating func invalidate(at timestamp: Date) {

@@ -1,6 +1,5 @@
 package de.youspeed.android.alpha
 
-import kotlin.math.ceil
 import kotlin.math.max
 
 /** Thirty seconds of observed travel, with the original 300 m minimum at low speed. */
@@ -22,7 +21,8 @@ data class UpcomingSpeedLimitCandidate(
     val originWayID: String, val direction: Int, val stationM: Double, val speedKmh: Int, val distanceM: Double,
 ) {
     internal val identity: String get() = "$sourceID|$snapshotSHA256|$signID|$direction"
-    val displayDistanceM: Int get() = (ceil(distanceM / 10.0) * 10).toInt()
+    val previewOpacity: Float
+        get() = if (distanceM.isFinite()) ((300.0 - distanceM) / (300.0 - 30.0)).coerceIn(0.0, 1.0).toFloat() else 0f
 }
 
 internal data class UpcomingSpeedLimitPath(

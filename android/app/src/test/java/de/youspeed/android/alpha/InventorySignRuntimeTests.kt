@@ -97,6 +97,18 @@ class InventorySignRuntimeTests {
         InventoryVisionEvidence(classId,score,frame,time.plusMillis(millis),box,"track","DE-pack","b".repeat(64),way,direction,"first")
     private fun outcomes() = events.mapNotNull { it["outcome"]?.jsonPrimitive?.content }
 
+    @Test fun mapillaryInventoryDisplaysWithoutTriggeringCapture() {
+        val mapillary = sign(id = "mapillary-eval:1", code = "DE:101", classes = emptySet()).copy(
+            sourceId = "mapillary-eval", parameterStatus = "mapillary_inventory_only",
+            pictogramPath = "tsr/sign-pictograms/png/de-101.png", associatedWayId = null,
+            associatedDirection = null, associationStatus = "inventory_only",
+            mapillaryAzimuthDeg = 180.0, mapillaryLastSeenAt = time.minusSeconds(3600))
+        val decision = evaluation(mapillary)
+        assertEquals(mapillary.id, decision.display?.id)
+        assertTrue(decision.captureSignIds.isEmpty())
+        assertTrue(runtime.registerCapture(listOf(mapillary.id)).isEmpty())
+    }
+
     @Test fun crossingSeveralTownStationsUsesLastContextAndCannotResurrectEarlierEntry() {
         val entry = sign("entry", "DE:310", 30.0, emptySet(), "settlement_boundary")
         val exit = sign("exit", "DE:311", 30.0, emptySet(), "settlement_boundary")
@@ -131,11 +143,11 @@ class InventorySignRuntimeTests {
         assertNotNull(evaluation(sign(),fix(9.9)).display)
         assertNotNull(evaluation(sign(),fix(10.0)).display)
     }
-    @Test fun townDisplayUsesThirtyMeters() {
+    @Test fun townNeverUsesSecondarySlot() {
         val town = sign(code="DE:310",radius=30.0,classes=emptySet(),kind="settlement_boundary")
         assertNull(evaluation(town,fix(30.1)).display)
-        assertNotNull(evaluation(town,fix(29.9)).display)
-        assertNotNull(evaluation(town,fix(30.0)).display)
+        assertNull(evaluation(town,fix(29.9)).display)
+        assertNull(evaluation(town,fix(30.0)).display)
     }
     @Test fun missingCapabilityStaleFixAndPoorAccuracyLeaveLegacyPathEmpty() {
         assertEquals(InventorySignDecision(),runtime.evaluate(InventorySignSnapshot(),fix(),time,true,true))
@@ -160,7 +172,7 @@ class InventorySignRuntimeTests {
         assertTrue(crossed.speedRule?.insideCity==true); assertNull(crossed.speedRule?.speedKmh)
         assertNull(evaluation(town,fix(5.0,2),rules,55.0).boundary)
         val beyond=evaluation(town,fix(50.0,3),rules,100.0)
-        assertEquals(town,beyond.display); assertTrue(beyond.speedRule?.insideCity==true); assertNull(beyond.speedRule?.speedKmh)
+        assertNull(beyond.display); assertTrue(beyond.speedRule?.insideCity==true); assertNull(beyond.speedRule?.speedKmh)
     }
     @Test fun sameStationFreshSpeedWinsAndSameContextBoundaryStillResets() {
         val town=sign(code="DE:310",radius=30.0,classes=emptySet(),kind="settlement_boundary")
@@ -248,7 +260,7 @@ class InventorySignRuntimeTests {
         assertNull(child.boundary)
         assertTrue(child.speedRule?.insideCity==true)
         assertTrue(child.insideCityContext==true)
-        assertEquals(town,child.display)
+        assertNull(child.display)
     }
     @Test fun parameterWithoutArtworkStillHasTextualDisplayAndLoggedProvenance() {
         val height=sign(code="DE:265-3.8",kind="maximum_height",classes=emptySet()).copy(value=3.8,unit="m",parameterStatus="parsed_source_value",pictogramPath=null)
@@ -288,9 +300,12 @@ class InventorySignRuntimeTests {
     }
     @Test fun directedEndSignTriggersOnlyInsideTenMetersAndAcceptedDirection() {
         val end=sign(code="DE:278",kind="speed_limit_end")
-        assertNull(evaluation(end,fix(10.1)).display)
-        assertNull(evaluation(end,fix(direction=-1)).display)
-        assertEquals("DE:278",evaluation(end,fix(9.9)).display?.code)
+        assertNull(evaluation(end,fix(10.1)).primaryEndEncounter)
+        assertNull(evaluation(end,fix(direction=-1)).primaryEndEncounter)
+        val sighting = evaluation(end,fix(9.9))
+        assertEquals("DE:278",sighting.primaryEndEncounter?.code)
+        assertNull(sighting.display)
+        assertNull(evaluation(end,fix(5.0, 1)).primaryEndEncounter)
     }
     @Test fun sourceSpecificSpeedEndsDisplayReviewedArtworkWithoutCameraVocabularyOrStoredPath() {
         for (source in listOf("mobidata-bw-vzk", "osm-traffic-sign")) {
@@ -300,8 +315,9 @@ class InventorySignRuntimeTests {
                         .copy(sourceId = source, pictogramPath = null)
                     val inventory = InventorySignRuntime { }
                     val decision = inventory.evaluate(InventorySignSnapshot(true, listOf(exact), localHeading = 0.0), fix(), time, false, false)
-                    assertEquals(exact, decision.display)
-                    assertEquals("tsr/sign-pictograms/png/de-278-$speed.png", decision.display?.pictogram(displayCatalog)?.imagePath)
+                    assertEquals(exact, decision.primaryEndEncounter)
+                    assertNull(decision.display)
+                    assertEquals("tsr/sign-pictograms/png/de-278-$speed.png", decision.primaryEndEncounter?.pictogram(displayCatalog)?.imagePath)
                     assertNull(displayCatalog.pictogram("DE:278-$speed")) // Inventory evidence never expands camera vocabulary.
                 }
             }
@@ -346,12 +362,13 @@ class InventorySignRuntimeTests {
         val snapshot = InventorySignSnapshot(true, listOf(forward), chainage = 50.0, localHeading = 0.0)
         fun assess(location: InventorySignFix) = InventorySignRuntime { }.evaluate(snapshot, location, location.at, false, false)
         val shown = assess(fix())
-        assertEquals(forward, shown.display)
-        assertEquals("tsr/sign-pictograms/png/de-278-70.png", shown.display?.pictogram(displayCatalog)?.imagePath)
+        assertEquals(forward, shown.primaryEndEncounter)
+        assertNull(shown.display)
+        assertEquals("tsr/sign-pictograms/png/de-278-70.png", shown.primaryEndEncounter?.pictogram(displayCatalog)?.imagePath)
         assertNull(shown.speedRule); assertNull(shown.boundary); assertNull(shown.boundaryAction)
         assertTrue(shown.permitsPostedFallback("10"))
         for (invalid in listOf(fix(10.1), fix(stable = false), fix(way = "20"), fix(direction = -1),
-            fix().copy(heading = 45.0), fix().copy(headingAccuracy = 36.0))) assertNull(assess(invalid).display)
+            fix().copy(heading = 45.0), fix().copy(headingAccuracy = 36.0))) assertNull(assess(invalid).primaryEndEncounter)
         assertEquals("DE:278-50", project(node, "10", -1, 0.0)?.code)
         assertNull(project(node, "20", 1, 0.0))
         assertNull(project(node, "10", 0, 0.0))
@@ -417,13 +434,25 @@ class InventorySignRuntimeTests {
         val next=evaluation(replacement,fix(seconds=2))
         assertEquals(replacement,next.display);assertTrue(next.displayChanged);assertEquals(time.plusSeconds(2),next.displayTriggeredAt)
         val end=sign("end","DE:282",kind="restriction_end")
-        assertEquals(end,evaluation(end,fix(seconds=3)).display)
+        val sighting = evaluation(end,fix(seconds=3))
+        assertEquals(end, sighting.primaryEndEncounter)
+        assertEquals(replacement, sighting.display)
     }
     @Test fun cameraReplacementWaitsForNewInventoryEncounter() {
         val original=sign();evaluation(original);runtime.replaceSecondaryWithCamera()
         assertNull(evaluation(original,fix(seconds=1)).display)
         assertNull(evaluation(original,fix(20.0,2)).display)
         assertEquals(original,evaluation(original,fix(seconds=3)).display)
+    }
+    @Test fun secondaryExpiryPreservesEncounterAndCannotClearNewTrigger() {
+        val stop = sign("stop", "DE:206")
+        assertEquals(stop, evaluation(stop).display)
+        runtime.expireSecondary(stop.id, time)
+        assertNull(evaluation(stop, fix(seconds = 3)).display)
+        assertNull(evaluation(stop, fix(20.0, 4)).display)
+        assertEquals(stop, evaluation(stop, fix(seconds = 5)).display)
+        runtime.expireSecondary(stop.id, time)
+        assertEquals(stop, evaluation(stop, fix(seconds = 6)).display)
     }
     @Test fun differentNearestInventorySignRearmsCameraReplacedCardLikeIPhone() {
         val first = sign("first")
@@ -674,5 +703,53 @@ class InventorySignRuntimeTests {
             InventorySignJournal(file).append(buildJsonObject { put("outcome","camera_off") })
             assertEquals("camera_off",Json.parseToJsonElement(file.readText().trim()).jsonObject["outcome"]?.jsonPrimitive?.content)
         } finally { requireNotNull(file.parentFile).deleteRecursively() }
+    }
+}
+
+class MapillarySignDisplayTests {
+    private val now = Instant.parse("2026-11-17T12:00:00Z")
+    private fun sign() = InventorySign("mapillary-eval:1", "mapillary-eval", "1", "sha", "DE:101", "secondary",
+        null, null, "mapillary_inventory_only", 48.0, 8.0, 10.0, null, emptySet(),
+        mapillaryAzimuthDeg = 180.0, mapillaryLastSeenAt = now.minusSeconds(60))
+
+    @Test fun strictlyLessThanThirtyDegreesAndWraparound() {
+        val sign = sign()
+        assertTrue(sign.mapillaryDisplayEligible(29.999, now))
+        assertFalse(sign.mapillaryDisplayEligible(30.0, now))
+        assertFalse(sign.mapillaryDisplayEligible(330.0, now))
+        assertTrue(sign.mapillaryDisplayEligible(330.001, now))
+        assertTrue(sign.mapillaryDisplayEligible(359.0, now))
+        assertFalse(sign.mapillaryDisplayEligible(180.0, now))
+        assertFalse(sign.mapillaryDisplayEligible(null, now))
+        assertFalse(sign.mapillaryDisplayEligible(Double.NaN, now))
+        assertFalse(sign.copy(mapillaryAzimuthDeg = null).mapillaryDisplayEligible(0.0, now))
+    }
+
+    @Test fun requiresLastSeenWithinTwelveMonthsAndRejectsFuture() {
+        val sign = sign()
+        assertTrue(sign.copy(mapillaryLastSeenAt = Instant.parse("2025-11-17T12:00:00Z")).mapillaryDisplayEligible(0.0, now))
+        assertFalse(sign.copy(mapillaryLastSeenAt = Instant.parse("2025-11-17T11:59:59Z")).mapillaryDisplayEligible(0.0, now))
+        assertFalse(sign.copy(mapillaryLastSeenAt = null).mapillaryDisplayEligible(0.0, now))
+        assertFalse(sign.copy(mapillaryLastSeenAt = now.plusSeconds(1)).mapillaryDisplayEligible(0.0, now))
+        val leap = sign.copy(mapillaryLastSeenAt = Instant.parse("2024-02-29T12:00:00Z"))
+        assertTrue(leap.mapillaryDisplayEligible(0.0, Instant.parse("2025-02-28T12:00:00Z")))
+        assertFalse(leap.mapillaryDisplayEligible(0.0, Instant.parse("2025-02-28T12:00:01Z")))
+        assertTrue(sign.copy(sourceId = "mobidata-bw-vzk", mapillaryLastSeenAt = null, mapillaryAzimuthDeg = null)
+            .mapillaryDisplayEligible(null, now))
+    }
+
+    @Test fun retainedWarningIsRemovedOnHeadingChangeMissingHeadingAndAgeExpiry() {
+        val sign = sign()
+        fun fix(at: Instant = now, heading: Double? = 0.0) =
+            InventorySignFix(48.0, 8.0, at, 5.0, null, 0, false, "bundle", heading, null)
+        val snapshot = InventorySignSnapshot(true, listOf(sign))
+        val runtime = InventorySignRuntime { }
+        assertEquals(sign, runtime.evaluate(snapshot, fix(), now, false, false).display)
+        assertNull(runtime.evaluate(snapshot, fix(now.plusSeconds(1), 30.0), now.plusSeconds(1), false, false).display)
+        assertEquals(sign, runtime.evaluate(snapshot, fix(now.plusSeconds(2)), now.plusSeconds(2), false, false).display)
+        assertNull(runtime.evaluate(InventorySignSnapshot(true), fix(now.plusSeconds(3), null), now.plusSeconds(3), false, false).display)
+        assertEquals(sign, runtime.evaluate(snapshot, fix(now.plusSeconds(4)), now.plusSeconds(4), false, false).display)
+        val expired = now.atZone(java.time.ZoneOffset.UTC).plusYears(1).toInstant()
+        assertNull(runtime.evaluate(snapshot, fix(expired), expired, false, false).display)
     }
 }

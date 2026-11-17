@@ -7,7 +7,7 @@ import org.junit.Test
 import java.time.Instant
 
 class ConditionalSpeedRulesInstrumentedTest {
-    private fun nightRules()=JSONObject("""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","clauses":[{"limit":{"kind":"numeric","kmh":30},"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}""")
+    private fun nightRules()=JSONObject("""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","raw":"30 @ (22:00-06:00)","clauses":[{"limit":{"kind":"numeric","kmh":30},"source_span":[0,18],"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}""")
     @Test fun outsideWindowUsesIndependentBaseAndNeverInventsOne() {
         val context=ConditionalSpeedRules.Context(atMs=Instant.parse("2026-10-23T10:00:00Z").toEpochMilli(),countryCode="DE",direction=1)
         assertEquals(90,ConditionalSpeedRules.evaluate(nightRules(),context,90,false).kmh)
@@ -23,9 +23,14 @@ class ConditionalSpeedRulesInstrumentedTest {
             val initial=requireNotNull(ConditionalSpeedRules.resolve(db,"12",1,90,false,
                 Instant.parse("2026-10-23T19:59:00Z").toEpochMilli(),"Europe/Paris","FR"))
             assertEquals(90,initial.kmh)
+            assertEquals(ConditionalSpeedPreview(30, "22:00-06:00"),initial.inactivePreview)
             val cached=requireNotNull(initial.reevaluation)
-            assertEquals(30,cached.evaluate(Instant.parse("2026-10-23T20:00:00Z").toEpochMilli()).kmh)
-            assertEquals(90,cached.evaluate(Instant.parse("2026-10-24T04:00:00Z").toEpochMilli()).kmh)
+            val active = cached.evaluate(Instant.parse("2026-10-23T20:00:00Z").toEpochMilli())
+            assertEquals(30,active.kmh)
+            assertEquals(null,active.inactivePreview)
+            val expired = cached.evaluate(Instant.parse("2026-10-24T04:00:00Z").toEpochMilli())
+            assertEquals(90,expired.kmh)
+            assertEquals(initial.inactivePreview,expired.inactivePreview)
         }
     }
     @Test fun partialCapabilityCannotExecuteRulesOrRestoreScalarFallback() {

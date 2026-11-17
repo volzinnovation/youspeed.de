@@ -27,6 +27,40 @@ class InventorySignDatabaseInstrumentedTest {
             }
         } finally { file.delete() }
     }
+    @Test fun mapillaryLastSeenAndAzimuthRoundTripThroughTheBundleReader() {
+        val file = fixture()
+        val now = Instant.parse("2026-11-17T12:00:00Z")
+        try {
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+                db.execSQL("CREATE TABLE traffic_sign_inventory(source_id TEXT,record_key TEXT,raw_properties_json TEXT)")
+                db.execSQL("INSERT INTO traffic_sign_runtime VALUES('mapillary-eval:1','mapillary-eval','map-record','snapshot','DE:101','DE:101','secondary',NULL,NULL,'mapillary_inventory_only',8,48,0,10,'DE:101','tsr/sign-pictograms/png/de-101.png','[]')")
+                db.execSQL("INSERT INTO traffic_sign_association VALUES('mapillary-eval:1','inventory_only',NULL,NULL,NULL,NULL)")
+                db.execSQL("INSERT INTO traffic_sign_inventory VALUES('mapillary-eval','map-record','{}')")
+            }
+            for (value in listOf("1794916800000", "\"2026-11-17T12:00:00+0000\"", "\"2026-11-17T12:00:00.000Z\"")) {
+                val raw = """{"aligned_direction":180,"last_seen_at":$value}"""
+                SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
+                    db.execSQL("UPDATE traffic_sign_inventory SET raw_properties_json=?", arrayOf(raw))
+                }
+                InventorySignDatabase(file.path).use { db ->
+                    val sign = db.read(48.0, 8.0, null, 0).signs.single { it.sourceId == "mapillary-eval" }
+                    assertEquals(180.0, sign.mapillaryAzimuthDeg!!, 0.0)
+                    assertEquals(now, sign.mapillaryLastSeenAt)
+                    assertTrue(sign.mapillaryDisplayEligible(0.0, now))
+                    assertFalse(sign.mapillaryDisplayEligible(30.0, now))
+                }
+            }
+            SQLiteDatabase.openDatabase(file.path, null, SQLiteDatabase.OPEN_READWRITE).use {
+                it.execSQL("UPDATE traffic_sign_inventory SET raw_properties_json=?", arrayOf(
+                    """{"aligned_direction":180,"first_seen_at":"2026-11-17T12:00:00Z","last_seen_at":"2024-11-17T12:00:00Z"}"""))
+            }
+            InventorySignDatabase(file.path).use { db ->
+                val sign = db.read(48.0, 8.0, null, 0).signs.single { it.sourceId == "mapillary-eval" }
+                assertFalse(sign.mapillaryDisplayEligible(0.0, now))
+            }
+        } finally { file.delete() }
+    }
+
     private fun fixture(version: String? = "1"): File {
         val file=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"inventory-${UUID.randomUUID()}.sqlite")
         SQLiteDatabase.openOrCreateDatabase(file,null).use { db ->

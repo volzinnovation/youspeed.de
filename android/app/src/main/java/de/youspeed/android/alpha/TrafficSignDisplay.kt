@@ -11,6 +11,77 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+internal object SecondarySignDisplayPolicy {
+    enum class Presentation { HIDDEN, BRIEF, PERSISTENT }
+    const val lifetimeMs = 3_000L
+
+    fun presentation(classId: String, signCode: String? = null, country: String = "DE"): Presentation {
+        val national = (signCode ?: classId).removePrefix("$country:")
+        val base = national.substringBefore('-').substringBefore('[')
+        if (classId.startsWith("arrow_") || classId.startsWith("city:") || classId.startsWith("city_limit:")) {
+            return Presentation.HIDDEN
+        }
+        when (country) {
+            "DE" -> {
+                if (base in setOf("209", "211", "214", "222", "274", "274.1", "274.2", "278", "282", "310", "311")) {
+                    return Presentation.HIDDEN
+                }
+                if (base in germanWarnings) return Presentation.PERSISTENT
+            }
+            "FR" -> {
+                if (national.startsWith("B21") || base in setOf("EB10", "EB20", "B31", "B33", "B51", "B55")) {
+                    return Presentation.HIDDEN
+                }
+                if (national in setOf("AB1", "AB2", "AB25") || frenchWarning.containsMatchIn(national)) return Presentation.PERSISTENT
+            }
+            "BE" -> {
+                if (national.startsWith("D1") || national.startsWith("D3") || base in setOf("F1", "F3", "C45", "C46")) {
+                    return Presentation.HIDDEN
+                }
+                if (belgianWarning.containsMatchIn(national)) return Presentation.PERSISTENT
+            }
+            "NL" -> {
+                if (national.startsWith("C04") || national in setOf("D02", "D03", "D04", "D05", "D06", "D07", "A02", "A02-ZE", "F08", "H01", "H02")) {
+                    return Presentation.HIDDEN
+                }
+                if (national.startsWith("J") || national in setOf("B03", "B04", "B05")) return Presentation.PERSISTENT
+            }
+            "CH" -> {
+                if (national.toDoubleOrNull()?.let { it in 2.32..2.41 } == true ||
+                    national in setOf("2.53", "2.58", "2.59.4b", "2.59.6a")) return Presentation.HIDDEN
+                if (national.startsWith("1.") || national in setOf("3.05", "3.06")) return Presentation.PERSISTENT
+            }
+        }
+        return Presentation.BRIEF
+    }
+
+    private val germanWarnings = setOf(
+        "101", "102", "103", "105", "112", "114", "117", "120", "121", "123", "124", "125",
+        "131", "136", "138", "142", "151", "301",
+    )
+    private val frenchWarning = Regex("^A(?:K)?[0-9]")
+    private val belgianWarning = Regex("^A[0-9]")
+
+    fun inventoryPresentation(sign: InventorySign): Presentation {
+        if (sign.kind in setOf("speed_limit", "speed_limit_end", "settlement_boundary") ||
+            sign.modelClasses.any { it.startsWith("city:") || it.startsWith("arrow_") }) return Presentation.HIDDEN
+        return presentation(sign.code, country = sign.code.take(2))
+    }
+}
+
+/** Continuous camera evidence keeps the original deadline, even when classes alternate. */
+internal class SecondarySignDisplayWindow {
+    private data class Window(val lastSeen: Long, val deadline: Long)
+    private val windows = mutableMapOf<String, Window>()
+
+    fun observe(classId: String, now: Long): Long {
+        windows.entries.removeAll { now - it.value.lastSeen >= SecondarySignDisplayPolicy.lifetimeMs }
+        val deadline = windows[classId]?.deadline ?: (now + SecondarySignDisplayPolicy.lifetimeMs)
+        windows[classId] = Window(now, deadline)
+        return deadline
+    }
+}
+
 internal object InventorySpeedEndCode {
     private val numbered = Regex("^DE:278(?:-([0-9]{1,3})|\\[([0-9]{1,3})(?:\\s*km/h)?\\])$")
     fun number(code: String): Int? = numbered.matchEntire(code)?.groupValues?.drop(1)
@@ -23,6 +94,7 @@ data class TrafficSignPictogram(
     val imagePath: String?,
     val labels: Map<String, String>,
     val speech: Map<String, String>? = null,
+    val signCode: String? = null,
 ) {
     fun label(locale: Locale = Locale.getDefault()): String = labels[locale.language] ?: labels.getValue("en")
 
@@ -48,12 +120,36 @@ internal object AndroidTrafficSignModelPackSelection {
 }
 
 internal class TrafficSignDisplayCatalog private constructor(
+    val country: String,
     val checkpointSha256: String,
     val classLabels: List<String>,
     private val pictograms: Map<String, TrafficSignPictogram>,
 ) {
     fun classId(index: Int): String = classLabels.getOrNull(index) ?: "classifier:$index"
     fun pictogram(classId: String): TrafficSignPictogram? = pictograms[classId].takeIf { classId in classLabels }
+
+    fun endSign(action: TrafficSignAction, recognizedClassId: String?): TrafficSignPictogram? {
+        pictograms[recognizedClassId]?.takeIf { it.imagePath != null }?.let { return it }
+        val classId = when (action.kind) {
+            TrafficSignActionKind.MAXIMUM_SPEED_END -> {
+                if (country == "DE") {
+                    pictograms["DE:278-${action.valueKmh}"]?.takeIf { it.imagePath != null }?.let { return it }
+                    "DE:278"
+                } else if (country == "FR") "B31" else "no:end"
+            }
+            TrafficSignActionKind.ALL_RESTRICTIONS_END -> if (country == "FR") "B31" else "no:end"
+            TrafficSignActionKind.ZONE_END -> when {
+                country == "FR" -> "B51"
+                country == "DE" && action.valueKmh == null -> "zone:30:end"
+                else -> "zone:${action.valueKmh}:end"
+            }
+            TrafficSignActionKind.PEDESTRIAN_ZONE_END -> if (country == "FR") "B55" else "zone:pedestrian:end"
+            TrafficSignActionKind.MOTORWAY_EXIT -> if (country == "FR") "C208" else "motorway:end"
+            TrafficSignActionKind.MOTORROAD_EXIT -> if (country == "FR") "C108" else "trunk:end"
+            else -> return null
+        }
+        return pictograms[classId]?.takeIf { it.imagePath != null }
+    }
 
     /** Bundle inventory can identify an exact sign independently of camera vocabulary. */
     fun inventorySpeedEnd(signCode: String, value: Double?, unit: String?, parameterStatus: String): TrafficSignPictogram? {
@@ -114,10 +210,11 @@ internal class TrafficSignDisplayCatalog private constructor(
                                 ?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }?.let { language to it }
                         }?.toMap()
                     }
-                    classId to TrafficSignPictogram(classId, imagePath, names, speech)
+                    val signCode = sign["sign_code"]?.jsonPrimitive?.contentOrNull
+                    classId to TrafficSignPictogram(classId, imagePath, names, speech, signCode)
                 }
             }.toMap()
-            return TrafficSignDisplayCatalog(root.getValue("classifier_checkpoint_sha256").jsonPrimitive.content, labels, pictograms)
+            return TrafficSignDisplayCatalog(country, root.getValue("classifier_checkpoint_sha256").jsonPrimitive.content, labels, pictograms)
         }
     }
 }
@@ -132,6 +229,9 @@ data class TrafficSignDisplayObservation(
         TrafficSignSemanticKind.MAXIMUM_SPEED_END,
         TrafficSignSemanticKind.ZONE_END,
         TrafficSignSemanticKind.ALL_RESTRICTIONS_END,
+        TrafficSignSemanticKind.PEDESTRIAN_ZONE_END,
+        TrafficSignSemanticKind.MOTORWAY_EXIT,
+        TrafficSignSemanticKind.MOTORROAD_EXIT,
     ),
     val capturedAtUtc: Instant? = null,
     val source: TrafficSignInputSource? = null,
@@ -231,7 +331,8 @@ internal object SecondaryTrafficSignSpeechPolicy {
 internal object TrafficSignDisplayPolicy {
     const val MINIMUM_SCORE = 0.90
 
-    fun accepted(detections: List<TrafficSignDetection>, preferSecondary: Boolean = false): TrafficSignCandidate? {
+    fun accepted(detections: List<TrafficSignDetection>, preferSecondary: Boolean = false,
+                 country: String = "DE"): TrafficSignCandidate? {
         val accepted = detections.map(TrafficSignDetection::candidate)
         .filter { candidate ->
             !candidate.rawClassId.startsWith("bad") && !candidate.rawClassId.startsWith("classifier:") &&
@@ -240,7 +341,8 @@ internal object TrafficSignDisplayPolicy {
                 (candidate.proposalRawScore?.let { it.isFinite() && it in 0.25..1.0 } != false)
         }
         val candidates = if (preferSecondary) accepted.filter {
-            it.normalizedPrimarySemantic().kind == TrafficSignSemanticKind.UNKNOWN
+            it.normalizedPrimarySemantic().kind == TrafficSignSemanticKind.UNKNOWN &&
+                SecondarySignDisplayPolicy.presentation(it.rawClassId, country = country) != SecondarySignDisplayPolicy.Presentation.HIDDEN
         }.takeIf { it.isNotEmpty() } ?: accepted else accepted
         return candidates.maxWithOrNull(compareBy<TrafficSignCandidate> { it.classifierRawScore ?: it.rawScore }.thenBy { it.rawScore })
     }
@@ -250,7 +352,11 @@ internal object TrafficSignDisplayPolicy {
         // Numeric/scope observations have their own speed lane. A committed typed
         // boundary explicitly invalidates the secondary lane after resolver admission.
         return when (candidate.normalizedPrimarySemantic().kind) {
-            TrafficSignSemanticKind.UNKNOWN, TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END -> catalog.pictogram(candidate.rawClassId)
+            TrafficSignSemanticKind.UNKNOWN, TrafficSignSemanticKind.NON_SPEED_RESTRICTION_END ->
+                catalog.pictogram(candidate.rawClassId)?.takeIf {
+                    it.imagePath != null && SecondarySignDisplayPolicy.presentation(it.classId, it.signCode, catalog.country) !=
+                        SecondarySignDisplayPolicy.Presentation.HIDDEN
+                } ?: current
             else -> current
         }
     }

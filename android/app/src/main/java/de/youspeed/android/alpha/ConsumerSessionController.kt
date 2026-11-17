@@ -226,6 +226,7 @@ data class ConsumerUiState(
     val speedLimitDisplayText: String? = null,
     val isUnlimitedSpeedLimitActive: Boolean = false,
     val upcomingSpeedLimit: UpcomingSpeedLimitCandidate? = null,
+    val inactiveSpeedLimitPreview: ConditionalSpeedPreview? = null,
     val limitWayId: String? = null,
     val limitStreetName: String? = null,
     val limitStreetBaseName: String? = null,
@@ -329,6 +330,7 @@ data class ConsumerUiState(
     val inventorySignSourceId: String? = null,
     val inventorySignPresentationId: String? = null,
     val cameraSecondaryPresentationId: String? = null,
+    val cameraSecondaryExpired: Boolean = false,
     val presentationForeground: Boolean = true,
     val inventorySignLogPath: String = "",
     val panoramaxTriggerMode: PanoramaxCaptureTriggerMode = PanoramaxCaptureTriggerMode.DISTANCE,
@@ -650,7 +652,9 @@ class ConsumerSessionController(
     private var daylightTransitionGeneration = 0
     @Volatile private var latestBundleReference: Pair<String, SpeedReferenceValue?> = "none" to null
     private var speedReferenceLastLocation: Location? = null
-    private data class ConditionalClockContext(val rule: ConditionalSpeedRules.Reevaluation, val way: String, val path: String, val generation: Long)
+    private data class ConditionalClockContext(val rule: ConditionalSpeedRules.Reevaluation, val way: String,
+        val path: String, val generation: Long, val preview: ConditionalSpeedPreview?)
+    @Volatile private var conditionalCameraPreview: Pair<String, ConditionalSpeedPreview>? = null
     @Volatile private var conditionalClockContext: ConditionalClockContext? = null
     private var conditionalClockMinute: Long? = null
     private val conditionalOCRAuthorityGate = ConditionalOCRInterpretation.AuthorityGate()
@@ -735,6 +739,11 @@ class ConsumerSessionController(
     private val supplementarySignSpeechGate = SecondaryTrafficSignSpeechGate()
     private var supplementarySpeechIncludedKey: String? = null
     private var supplementaryExpiry: Runnable? = null
+    private var cameraSecondaryWindowSession: String? = null
+    private var cameraSecondaryDisplayWindow = SecondarySignDisplayWindow()
+    private var cameraSecondaryDeadline: Long? = null
+    private var cameraSecondaryExpiry: Runnable? = null
+    private var inventorySecondaryExpiry: Runnable? = null
     private var lastNumericSignFeedback: Triple<Long, Int, Instant>? = null
     private var lastSupplementarySpeechDiagnostic: String? = null
     private val trafficSignDisplayDeliveryGate = TrafficSignDisplayDeliveryGate()
@@ -1040,6 +1049,8 @@ class ConsumerSessionController(
     fun dispose() {
         cancelVisionDismissalListening()
         supplementaryExpiry?.let(mainHandler::removeCallbacks)
+        cameraSecondaryExpiry?.let(mainHandler::removeCallbacks)
+        inventorySecondaryExpiry?.let(mainHandler::removeCallbacks)
         dashcamButtonActionGate.cancel()
         mainHandler.removeCallbacks(dashcamButtonActionTimeout)
         mainHandler.removeCallbacks(penaltyCountryExpiry)
@@ -1402,6 +1413,7 @@ class ConsumerSessionController(
                 return
             }
             val result = context.rule.evaluate(clock.millis())
+            conditionalClockContext = context.copy(preview = result.inactivePreview)
             val value = if (result.unlimited) SpeedReferenceValue("unlimited") else result.kmh?.let { SpeedReferenceValue("numeric", it) }
             updateBundledSpeedReference("${uiState.activeBundleVersion}:${context.way}", value,context.rule,result)
             appendRuntimeDiagnosticEvent("conditional_speed_clock", mapOf("way" to context.way, "unresolved" to result.unresolved, "reason" to result.reason))
@@ -2474,7 +2486,11 @@ class ConsumerSessionController(
     private fun reevaluateConditionalCamera() {
         var changed=false
         synchronized(trafficSignStateLock) {
-            if(conditionalCameraScope!=conditionalOCRAuthorityScope()) return@synchronized
+            if (conditionalCameraScope != conditionalOCRAuthorityScope()) {
+                conditionalCameraPreview = null
+                return@synchronized
+            }
+            var preview: Pair<String, ConditionalSpeedPreview>? = null
             val voiceActive=speedReference.voice()!=null
             conditionalCameraTracks.values.forEach {track ->
                 if(voiceActive) {
@@ -2486,6 +2502,12 @@ class ConsumerSessionController(
                 val newerCamera=speedReference.ordinaryCameraOrigin()?.first?.let {it>track.originElapsed}==true
                 if(ordinary!=null && ordinary !in track.aliases && (track.applied || newerCamera)) track.retired=true
                 val verdict=if(isDriving && isTrafficSignRecognitionRuntimeEnabled()) conditionalCameraVerdictLocked(track) else ConditionalOCRInterpretation.Verdict.UNRESOLVED
+                if (conditionalCameraLeader == track.id && !track.retired && !track.suppressedByVoice &&
+                    isDriving && isTrafficSignRecognitionRuntimeEnabled() &&
+                    visionDismissalGate.permits(track.id, track.originAt)) {
+                    track.record?.inactivePreview(verdict, clock.instant(), speedReference.traveledMeters, track.scope,
+                        track.generation)?.let { preview = track.scope to it }
+                }
                 val ownsCurrent=speedReference.cameraEvidenceIds().any {it in track.aliases}
                 val canOffer=verdict==ConditionalOCRInterpretation.Verdict.APPLICABLE && !track.suppressedByVoice &&
                     conditionalCameraLeader==track.id && (ordinary==null || ownsCurrent || track.freshVerification)
@@ -2514,6 +2536,8 @@ class ConsumerSessionController(
                 track.lastVerdict=verdict;track.freshVerification=false
             }
             if(changed) trafficSignStateRevision.incrementAndGet()
+            changed = changed || conditionalCameraPreview != preview
+            conditionalCameraPreview = preview
         }
         if(changed) mainHandler.post {updateState {this}}
     }
@@ -3377,7 +3401,7 @@ class ConsumerSessionController(
         if (observation.isSpeedLimitEnd && observation.generation == trafficSignGeneration.get() &&
             observation.driveSessionId == trafficSignDriveSessionId &&
             synchronized(trafficSignStateLock) { visionDismissalGate.permits(observation.candidate.trackId, observedAt) }) {
-            pendingTrafficSignEndDisplay = observation.candidate.rawClassId to clock.millis()
+            pendingTrafficSignEndDisplay = observation.candidate.rawClassId to observedAt.toEpochMilli()
         }
         mainHandler.post {
             if (isDisposed.get()) return@post
@@ -3402,15 +3426,20 @@ class ConsumerSessionController(
             updateState { copy(retainedTrafficSignSupplementaryText = TrafficSignSupplementaryDisplayPolicy.retained(
                 retainedTrafficSignSupplementaryText, observation.candidate.rawClassId, now = clock.instant())) }
             if (!uiState.otherTrafficSignDisplayEnabled) return@post
-            updateState { copy(lastTrafficSignPictogram = TrafficSignDisplayPolicy.next(
-                lastTrafficSignPictogram, observation, trafficSignDisplayCatalog,
-            )) }
-            val pictogram = uiState.lastTrafficSignPictogram
-                ?.takeIf { it.classId == observation.candidate.rawClassId && it.imagePath != null } ?: return@post
+            val next = TrafficSignDisplayPolicy.next(uiState.lastTrafficSignPictogram, observation, trafficSignDisplayCatalog)
+            val pictogram = next?.takeIf { it.classId == observation.candidate.rawClassId && it.imagePath != null }
+            if (pictogram == null) {
+                updateState { copy(lastTrafficSignPictogram = next) }
+                return@post
+            }
+            if (updateCameraSecondaryExpiry(pictogram, observation.driveSessionId)) return@post
             inventorySignRuntime.replaceSecondaryWithCamera()
-            updateState { copy(inventorySignPictogram = null, inventorySignParameterText = null, inventorySignCode = null,
-                inventorySignSourceId = null, inventorySignPresentationId = null,
-                cameraSecondaryPresentationId = "camera:${pictogram.classId}:${observation.candidate.trackId.orEmpty()}") }
+            updateState {
+                copy(lastTrafficSignPictogram = next, cameraSecondaryExpired = false,
+                    cameraSecondaryPresentationId = "camera:${pictogram.classId}:${observation.candidate.trackId.orEmpty()}",
+                    inventorySignPictogram = null, inventorySignParameterText = null,
+                    inventorySignCode = null, inventorySignSourceId = null, inventorySignPresentationId = null)
+            }
             val locale = Locale.getDefault()
             val phrase = pictogram.spokenText(locale)
             secondarySignSpeechGate.consume(
@@ -3435,6 +3464,50 @@ class ConsumerSessionController(
             }
             currentSupplementaryText()?.let(::maybeSpeakSupplementaryText)
         }
+    }
+
+    private fun updateCameraSecondaryExpiry(sign: TrafficSignPictogram, driveSessionId: String): Boolean {
+        if (cameraSecondaryWindowSession != driveSessionId) {
+            cameraSecondaryWindowSession = driveSessionId
+            cameraSecondaryDisplayWindow = SecondarySignDisplayWindow()
+        }
+        val now = SystemClock.uptimeMillis()
+        val presentation = SecondarySignDisplayPolicy.presentation(sign.classId, sign.signCode, trafficSignDisplayCatalog.country)
+        val deadline = if (presentation == SecondarySignDisplayPolicy.Presentation.BRIEF) cameraSecondaryDisplayWindow.observe(sign.classId, now) else null
+        if (deadline != null && deadline <= now) return true
+        if (deadline != cameraSecondaryDeadline) {
+            cameraSecondaryDeadline = deadline
+            cameraSecondaryExpiry?.let(mainHandler::removeCallbacks)
+            cameraSecondaryExpiry = null
+            if (deadline != null) {
+                val callback = Runnable { updateState { copy(cameraSecondaryExpired = true) } }
+                cameraSecondaryExpiry = callback
+                mainHandler.postAtTime(callback, deadline)
+            }
+        }
+        return false
+    }
+
+    private fun scheduleInventorySecondaryExpiry(sign: InventorySign?, triggeredAt: Instant?, presentationId: String?) {
+        inventorySecondaryExpiry?.let(mainHandler::removeCallbacks)
+        inventorySecondaryExpiry = null
+        if (sign == null || triggeredAt == null || presentationId == null) return
+        val brief = SecondarySignDisplayPolicy.inventoryPresentation(sign) == SecondarySignDisplayPolicy.Presentation.BRIEF
+        val expiresIn = if (sign.sourceId == "mapillary-eval") sign.mapillaryDisplayExpiresAt?.let {
+            Duration.between(clock.instant(), it.plusMillis(1))
+                .toMillis().coerceAtLeast(0)
+        } else null
+        val delay = if (brief) minOf(SecondarySignDisplayPolicy.lifetimeMs, expiresIn ?: Long.MAX_VALUE)
+            else expiresIn ?: return
+        val callback = Runnable {
+            if (uiState.inventorySignPresentationId == presentationId && !isDisposed.get()) {
+                inventorySignRuntime.expireSecondary(sign.id, triggeredAt)
+                updateState { copy(inventorySignPictogram = null, inventorySignParameterText = null, inventorySignCode = null,
+                    inventorySignSourceId = null, inventorySignPresentationId = null) }
+            }
+        }
+        inventorySecondaryExpiry = callback
+        mainHandler.postDelayed(callback, delay)
     }
 
     private fun currentSupplementaryText(): TrafficSignSupplementaryTextObservation? =
@@ -3543,19 +3616,17 @@ class ConsumerSessionController(
         if (secondarySpeechGeneration != trafficSignGeneration.get()) resetSecondaryTrafficSignSpeech(resetDedup = false)
     }
 
-    private fun showTrafficSignEndOverlay(expectedGeneration: Long, expectedSession: String, classId: String, evidence: TrafficSignPassageEvent) {
+    private fun showTrafficSignEndOverlay(expectedGeneration: Long, expectedSession: String?, sign: TrafficSignPictogram?,
+                                         evidence: TrafficSignPassageEvent? = null) {
         mainHandler.post {
             if (expectedGeneration != trafficSignGeneration.get() || expectedSession != trafficSignDriveSessionId || !isDriving) return@post
             if (isDisposed.get()) return@post
-            if (!synchronized(trafficSignStateLock) { visionDismissalGate.permits(evidence.physicalTrackId, evidence.firstSeenAtUtc) }) return@post
+            if (evidence != null && !synchronized(trafficSignStateLock) {
+                    visionDismissalGate.permits(evidence.physicalTrackId, evidence.firstSeenAtUtc)
+                }) return@post
             trafficSignEndOverlayGeneration += 1L
             val generation = trafficSignEndOverlayGeneration
             trafficSignEndOverlayHideRunnable?.let(mainHandler::removeCallbacks)
-            val sign = trafficSignDisplayCatalog.pictogram(classId)
-                ?: if (classId == "maxspeed:end" || classId.startsWith("B33-")) {
-                    trafficSignDisplayCatalog.pictogram(if (trafficSignModelCountryCode() == "FR") "B31" else "no:end")
-                } else null
-                ?: return@post
             updateState { copy(isTrafficSignEndOverlayVisible = true, trafficSignEndPictogram = sign) }
             val hide = Runnable {
                 if (generation == trafficSignEndOverlayGeneration) {
@@ -3999,10 +4070,15 @@ class ConsumerSessionController(
             val (resolved, revision) = outcome
             publishEffectiveTrafficSignLimit(resolved.first, resolved.second, event.generation,
                 expectedRevision = revision, submittedAtNanos = submittedAtNanos)
-            if (resolved.second != null && event.action.kind in setOf(TrafficSignActionKind.MAXIMUM_SPEED_END, TrafficSignActionKind.ALL_RESTRICTIONS_END, TrafficSignActionKind.ZONE_END)) {
-                val rawClass = pendingTrafficSignEndDisplay?.takeIf { clock.millis() - it.second <= 8_000 }?.first ?: "maxspeed:end"
+            if (resolved.second != null && event.action.kind in setOf(
+                    TrafficSignActionKind.MAXIMUM_SPEED_END, TrafficSignActionKind.ALL_RESTRICTIONS_END,
+                    TrafficSignActionKind.ZONE_END, TrafficSignActionKind.PEDESTRIAN_ZONE_END,
+                    TrafficSignActionKind.MOTORWAY_EXIT, TrafficSignActionKind.MOTORROAD_EXIT)) {
+                val rawClass = pendingTrafficSignEndDisplay
+                    ?.takeIf { kotlin.math.abs(event.lastSeenAtUtc.toEpochMilli() - it.second) <= 250 }?.first
                 pendingTrafficSignEndDisplay = null
-                showTrafficSignEndOverlay(event.generation, event.driveSessionId, rawClass, event)
+                showTrafficSignEndOverlay(event.generation, event.driveSessionId,
+                    trafficSignDisplayCatalog.endSign(event.action, rawClass), event)
             }
             appendRuntimeDiagnosticEvent("traffic_sign_passage_delivery", mapOf(
                 "eventId" to event.finalizedEventId,
@@ -7018,6 +7094,9 @@ class ConsumerSessionController(
                 appendRuntimeDiagnosticEvent("inventory_sign_log_error", mapOf("reason" to it.message, "pending_retry" to true))
             }
             inventoryCaptureSignIds = decision.captureSignIds
+            decision.primaryEndEncounter?.pictogram(trafficSignDisplayCatalog)?.let { sign ->
+                showTrafficSignEndOverlay(trafficSignGeneration.get(), trafficSignDriveSessionId, sign)
+            }
             val lookupCompletedAt = clock.instant()
             val queryMs = (System.nanoTime() - lookupStartedAtNanos) / 1_000_000.0
             postState {
@@ -7033,9 +7112,14 @@ class ConsumerSessionController(
                     "heading_deg" to heading, "heading_accuracy_deg" to location.bearingAccuracyDegrees.toDouble().takeIf { location.hasBearingAccuracy() },
                     "reason" to decision.displayChangeReason,
                     "face_relation" to decision.display?.secondaryFaceRelation(inventoryFix)))
+                val presentationId = decision.display?.let { "inventory:${it.id}:${decision.displayTriggeredAt}" }
+                if (presentationId != inventorySignPresentationId) {
+                    scheduleInventorySecondaryExpiry(decision.display, decision.displayTriggeredAt, presentationId)
+                }
                 copy(inventorySignPictogram = decision.display?.pictogram(trafficSignDisplayCatalog), inventorySignParameterText = decision.display?.parameterText, inventorySignCode = decision.display?.code,
                     inventorySignSourceId = decision.display?.sourceId,
-                    inventorySignPresentationId = decision.display?.let { "inventory:${it.id}:${decision.displayTriggeredAt}" })
+                    inventorySignPresentationId = presentationId,
+                    lastTrafficSignPictogram = if (decision.displayChanged && presentationId != null) null else lastTrafficSignPictogram)
                 }
             }
             val rule = decision.speedRule
@@ -7075,7 +7159,10 @@ class ConsumerSessionController(
             result
         }.let { inventoryResult ->
             nodePassage?.let { (fix,decision) ->
-                inventorySignDatabase?.applyNodeAmendments(inventoryResult,fix,decision,country,clock.millis())
+                val resultWithEnd = inventoryResult.copy(inventoryEndPictogram = decision.resetContextSign
+                    ?.takeIf { decision.boundary == "applicable_end" && it.id == decision.boundarySignId }
+                    ?.pictogram(trafficSignDisplayCatalog))
+                inventorySignDatabase?.applyNodeAmendments(resultWithEnd,fix,decision,country,clock.millis()) ?: resultWithEnd
             }?:inventoryResult
         }
     }
@@ -7191,7 +7278,12 @@ class ConsumerSessionController(
                 result.inventoryBoundaryAction ?: TrafficSignAction(TrafficSignActionKind.MAXIMUM_SPEED_END),
                 result.inventoryBoundarySignId.orEmpty(), effectiveBase,
             )
-            if (application.applied) speedReference.boundary("applicable_end")
+            if (application.applied) {
+                speedReference.boundary("applicable_end")
+                val sign = result.inventoryEndPictogram
+                    ?: result.inventoryBoundaryAction?.let { trafficSignDisplayCatalog.endSign(it, null) }
+                showTrafficSignEndOverlay(evaluationGeneration, trafficSignDriveSessionId, sign)
+            }
             immediateTrafficSignOverride = null
             inventorySignRuntime.acknowledgeBoundary(result.inventoryBoundarySignId)
         }
@@ -7266,11 +7358,13 @@ class ConsumerSessionController(
         updateTrafficSignRoadContextDebugStateLocked(context)
         val bundleOnly = trafficSignBaseLimit(null, null, result, countryCode)
         val evaluatedRule=result.conditionalRuleContext?.takeIf {result.bundleSpeedProvenance?.kind?.startsWith("inventory") != true}
+        val evaluation = evaluatedRule?.evaluate(clock.millis())
         updateBundledSpeedReference("$bundleVersion:${result.wayId ?: "none"}",
-            if (result.wayId == null) null else bundleOnly.resolution?.referenceValue(),evaluatedRule,null)
-        conditionalClockContext = result.conditionalRuleContext?.takeIf {
-            result.bundleSpeedProvenance?.kind?.startsWith("inventory") != true && result.wayId != null
-        }?.let { ConditionalClockContext(it, result.wayId!!, bundleDbPath, evaluationGeneration) }
+            if (result.wayId == null) null else bundleOnly.resolution?.referenceValue(), evaluatedRule, evaluation)
+        conditionalClockContext = evaluatedRule?.let { rule ->
+            result.wayId?.let { way -> ConditionalClockContext(rule, way, bundleDbPath, evaluationGeneration,
+                evaluation?.inactivePreview) }
+        }
         conditionalClockMinute = Math.floorDiv(clock.millis(), 60_000L)
         val effective = if (tsrEnabledForEvaluation || trafficSignResolver.activeAssertion() != null) {
             trafficSignResolver.reconcile(
@@ -7930,13 +8024,25 @@ class ConsumerSessionController(
         return state.copy(onboardingCompleted = false, onboardingStep = 0)
     }
 
-    private fun withUpcomingSpeedLimit(state: ConsumerUiState): ConsumerUiState = state.copy(
-        upcomingSpeedLimit = upcomingSpeedLimitTracker.presentation(state.speedLimitKmh, state.isUnlimitedSpeedLimitActive,
-            isDriving && applicationActive && !lookupToken.isPaused() && !state.effectiveSpeedLimitSource.isStale &&
-                state.effectiveSpeedLimitSource != EffectiveSpeedLimitSource.NONE && state.speedLimitDisplayText == null &&
-                state.trafficSignPendingSpeedKmh == null && !state.isTrafficSignEndOverlayVisible &&
-                speedReference.output()?.current == true && !speedReference.contextPending() && state.activeDBPath == upcomingBundlePath && state.activeBundleVersion == upcomingBundleVersion &&
-                !ConsumerMainScreenLogic.isInSpeedCaptureMode(state), clock.millis()))
+    private fun withUpcomingSpeedLimit(state: ConsumerUiState): ConsumerUiState {
+        val previewAllowed = isDriving && applicationActive && !lookupToken.isPaused() &&
+            !state.effectiveSpeedLimitSource.isStale && state.trafficSignPendingSpeedKmh == null &&
+            !state.isTrafficSignEndOverlayVisible && !speedReference.contextPending() &&
+            !ConsumerMainScreenLogic.isInSpeedCaptureMode(state)
+        val camera = conditionalCameraPreview?.takeIf { it.first == conditionalOCRAuthorityScope() }?.second
+        val bundle = conditionalClockContext?.takeIf {
+            it.path == state.activeDBPath && it.way == state.limitWayId && it.generation == trafficSignGeneration.get() &&
+                latestTrafficSignContext?.matchedWayStable == true
+        }?.preview
+        return state.copy(
+            inactiveSpeedLimitPreview = if (previewAllowed) listOfNotNull(camera, bundle)
+                .firstOrNull { it.speedKmh != state.speedLimitKmh } else null,
+            upcomingSpeedLimit = upcomingSpeedLimitTracker.presentation(state.speedLimitKmh, state.isUnlimitedSpeedLimitActive,
+                previewAllowed && state.effectiveSpeedLimitSource != EffectiveSpeedLimitSource.NONE &&
+                    state.speedLimitDisplayText == null && speedReference.output()?.current == true &&
+                    state.activeDBPath == upcomingBundlePath && state.activeBundleVersion == upcomingBundleVersion, clock.millis()),
+        )
+    }
 
     private fun preserveLastKnownLimit(state: ConsumerUiState): ConsumerUiState {
         val runtimeState = state.copy(trafficSignRuntimeStatus = recognitionStatus(state), presentationForeground = applicationActive)

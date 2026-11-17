@@ -250,10 +250,17 @@ struct MainView: View {
                     ZStack(alignment: .top) {
                         ZStack {
                             if viewModel.trafficSignEndOverlayVisible, !viewModel.isInSpeedCaptureMode,
-                               let sign = viewModel.trafficSignEndPictogram {
-                                TrafficSignPictogramView(sign: sign)
-                                    .frame(width: signSize, height: signSize)
-                                    .accessibilityIdentifier("dashboard.speedLimitEndSign")
+                               viewModel.trafficSignPendingSpeedKmh == nil {
+                                Group {
+                                    if let sign = viewModel.trafficSignEndPictogram {
+                                        TrafficSignPictogramView(sign: sign)
+                                    } else {
+                                        supplementaryRestrictionText(NSLocalizedString("limit.accessibility.end", comment: ""),
+                                            fontSize: min(24, signSize * 0.13))
+                                    }
+                                }
+                                .frame(width: signSize, height: signSize)
+                                .accessibilityIdentifier("dashboard.speedLimitEndSign")
                             } else {
                               SpeedLimitSignView(
                                 limitText: limitText,
@@ -401,14 +408,23 @@ struct MainView: View {
                 }
                 .environment(\.layoutDirection, .leftToRight)
                 .allowsHitTesting(viewModel.drivingControlsAllowed)
-                if let upcoming = viewModel.upcomingSpeedLimitForDisplay, !viewModel.isInSpeedCaptureMode {
-                    UpcomingSpeedLimitPreview(candidate: upcoming)
-                        .frame(width: 88, alignment: .leading)
-                        .position(x: screenInset + 44,
-                            y: landscape ? proxy.size.height - bottomPadding - 48
-                                : signTop + signSize - 34)
-                        .allowsHitTesting(false)
+                Group {
+                    if let inactive = viewModel.inactiveSpeedLimitPreview {
+                        UpcomingSpeedLimitPreview(speedKmh: inactive.speedKmh, restrictionText: inactive.restrictionText)
+                            .overlay(alignment: .top) {
+                                supplementaryRestrictionText(inactive.restrictionText, fontSize: 12)
+                                    .frame(width: 116)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .offset(x: 20, y: 61)
+                                    .accessibilityHidden(true)
+                            }
+                    } else if let upcoming = viewModel.upcomingSpeedLimitForDisplay, upcoming.previewOpacity > 0 {
+                        UpcomingSpeedLimitPreview(speedKmh: upcoming.speedKmh, opacity: upcoming.previewOpacity)
+                    }
                 }
+                .position(x: screenInset + 29,
+                    y: landscape ? proxy.size.height - bottomPadding - 58 : signTop + signSize - 44)
+                .allowsHitTesting(false)
                 if showsGravityAlignment {
                     GravityAlignmentOverlay(orientation: viewModel.screenOrientation, foregroundColor: primaryForegroundColor)
                         .frame(width: proxy.size.width * 0.1, height: proxy.size.height * 0.1)
@@ -680,7 +696,7 @@ struct MainView: View {
             .accessibilityLabel(Text(text))
     }
 
-    private struct TrafficSignPictogramView: View {
+    struct TrafficSignPictogramView: View {
         let sign: TrafficSignPresentationCatalog.Sign
         var showsMobiDataContour = false
 
@@ -2223,45 +2239,29 @@ private struct SpeedLimitSignView: View {
 }
 
 private struct UpcomingSpeedLimitPreview: View {
-    let candidate: UpcomingSpeedLimitCandidate
-    @ScaledMetric(relativeTo: .caption) private var captionSize: CGFloat = 15
-    private var roundedDistance: Int { Int(ceil(candidate.distanceM / 10) * 10) }
-    private var caption: String {
-        candidate.distanceM < 10
-            ? NSLocalizedString("speed.upcoming.distance.near", comment: "")
-            : String(format: NSLocalizedString("speed.upcoming.distance", comment: ""), roundedDistance)
-    }
-    private var spokenDistance: String {
-        candidate.distanceM < 10
-            ? NSLocalizedString("speed.upcoming.distance.near.accessibility", comment: "")
-            : String(format: NSLocalizedString("speed.upcoming.distance.accessibility", comment: ""), roundedDistance)
-    }
+    let speedKmh: Int
+    var opacity: Double = 1
+    var restrictionText: String? = nil
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ZStack {
-                Circle().fill(.white)
-                Circle().stroke(SpeedLimitSignPalette.borderColor, lineWidth: 5)
-                    .padding(2.5)
-                Text(String(candidate.speedKmh))
-                    .font(trafficSignNumberFont(size: 31))
-                    .foregroundStyle(.black)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
-                    .padding(8)
-            }
-            .frame(width: 58, height: 58)
-            Text(caption)
-                .font(.system(size: min(captionSize, 21), weight: .semibold))
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .frame(width: 76)
-                .padding(.horizontal, 3)
-                .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 3))
+        ZStack {
+            Circle().fill(.white)
+            Circle().stroke(restrictionText == nil ? SpeedLimitSignPalette.borderColor : SpeedLimitSignPalette.staleBorderColor,
+                lineWidth: 5)
+                .padding(2.5)
+            Text(String(speedKmh))
+                .font(trafficSignNumberFont(size: 31))
+                .foregroundStyle(.black)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .padding(8)
         }
+        .frame(width: 58, height: 58)
+        .opacity(opacity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(String(format: NSLocalizedString("speed.upcoming.accessibility", comment: ""), candidate.speedKmh, spokenDistance))
-        .accessibilityIdentifier("dashboard.upcomingSpeedLimit")
+        .accessibilityLabel(restrictionText.map { "\(speedKmh) km/h, \($0)" }
+            ?? String(format: NSLocalizedString("speed.upcoming.accessibility", comment: ""), speedKmh))
+        .accessibilityIdentifier(restrictionText == nil ? "dashboard.upcomingSpeedLimit" : "dashboard.inactiveSpeedLimit")
     }
 }
 

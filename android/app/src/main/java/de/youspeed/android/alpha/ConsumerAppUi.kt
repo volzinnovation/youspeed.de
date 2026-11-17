@@ -22,6 +22,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -58,6 +59,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -596,12 +598,13 @@ internal fun MainScreen(
         }
     }}
     val hasInventorySecondary = ui.inventorySignPictogram != null || ui.inventorySignCode != null
+    val cameraSecondaryPictogram = ui.lastTrafficSignPictogram.takeUnless { ui.cameraSecondaryExpired }
     val secondaryIdentity = if (hasInventorySecondary) ui.inventorySignPresentationId else ui.cameraSecondaryPresentationId
-        ?: ui.lastTrafficSignPictogram?.classId?.let { "camera:$it" }
+        ?: cameraSecondaryPictogram?.classId?.let { "camera:$it" }
     val secondarySource = if (hasInventorySecondary) ui.inventorySignSourceId ?: "inventory" else "camera"
-    val secondaryCode = if (hasInventorySecondary) ui.inventorySignCode else ui.lastTrafficSignPictogram?.classId
+    val secondaryCode = if (hasInventorySecondary) ui.inventorySignCode else cameraSecondaryPictogram?.classId
     val secondaryVisible = ui.otherTrafficSignDisplayEnabled && presentationVisible && ui.presentationForeground &&
-        secondaryIdentity != null && (hasInventorySecondary || ui.lastTrafficSignPictogram != null)
+        secondaryIdentity != null && (hasInventorySecondary || cameraSecondaryPictogram != null)
     PresentationCompositionTelemetry(controller,"secondary",secondaryIdentity,secondarySource,secondaryCode,secondaryVisible)
     val primaryKind = DriveEvidencePresentation.sourceKind(ui.effectiveSpeedLimitSource,
         ui.speedLimitKmh != null || ui.speedLimitDisplayText != null || ui.isUnlimitedSpeedLimitActive,ui.bundleSpeedProvenance)
@@ -767,10 +770,18 @@ internal fun MainScreen(
                             screenInset = screenInset,
                             landscape = landscape,
                         )
-                        if (pendingLimit == null && ui.isTrafficSignEndOverlayVisible && ui.trafficSignEndPictogram != null &&
+                        if (pendingLimit == null && ui.isTrafficSignEndOverlayVisible &&
                             !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
-                            RecognizedTrafficSignPictogram(ui.trafficSignEndPictogram,
-                                modifier = Modifier.testTag("speed-limit-end-sign"), signSize = signSize)
+                            val sign = ui.trafficSignEndPictogram
+                            if (sign != null) {
+                                RecognizedTrafficSignPictogram(sign,
+                                    modifier = Modifier.testTag("speed-limit-end-sign"), signSize = signSize)
+                            } else {
+                                SupplementaryRestrictionText(ConsumerUiStrings.text("End of speed restriction",
+                                    "Ende der Geschwindigkeitsbegrenzung", "Fin de la limitation de vitesse",
+                                    "Einde van de snelheidsbeperking"), fontSize = 18.sp, lineHeight = 20.sp,
+                                    modifier = Modifier.widthIn(max = signSize).testTag("speed-limit-end-sign"))
+                            }
                         } else SpeedLimitSign(
                             limitText = limitText, signSize = signSize, numberFontSize = primaryMetricFont,
                             showsUnlimitedIcon = pendingLimit == null && !showsPedestrianZoneSign && ui.isUnlimitedSpeedLimitActive &&
@@ -818,7 +829,7 @@ internal fun MainScreen(
                                         modifier = Modifier.widthIn(max = 150.dp).testTag("inventory-sign-parameter")) }
                                 }
                             }
-                            (if (hasInventorySecondary) ui.inventorySignPictogram else ui.lastTrafficSignPictogram)?.let { pictogram ->
+                            (if (hasInventorySecondary) ui.inventorySignPictogram else cameraSecondaryPictogram)?.let { pictogram ->
                                 val eyeTipInset = if (landscape) {
                                     max(10f, (signPaneWidth.value - signSize.value) / 4f).dp
                                 } else {
@@ -844,13 +855,16 @@ internal fun MainScreen(
                             }
                         }
                     }
-                    ui.upcomingSpeedLimit?.let { upcoming ->
-                        UpcomingSpeedLimitPreview(upcoming, foreground,
-                            Modifier.align(androidx.compose.ui.AbsoluteAlignment.BottomLeft)
-                                .absolutePadding(left = screenInset,
-                                    bottom = 4.dp)
-                                .widthIn(max = if (landscape) 160.dp else (signPaneWidth - signSize) / 2 + 30.dp),
-                            alignSignToLeft = landscape)
+                    val previewPosition = Modifier.align(androidx.compose.ui.AbsoluteAlignment.BottomLeft)
+                        .absolutePadding(left = screenInset, bottom = 24.dp)
+                    val inactive = ui.inactiveSpeedLimitPreview
+                    val upcoming = ui.upcomingSpeedLimit
+                    if (inactive != null) {
+                        InactiveSpeedLimitPreview(inactive, previewPosition)
+                    } else if (upcoming != null && upcoming.previewOpacity > 0f) {
+                        androidx.compose.runtime.key(upcoming.identity) {
+                            UpcomingSpeedLimitPreview(upcoming, previewPosition)
+                        }
                     }
 
                 }
@@ -1008,7 +1022,7 @@ private fun PresentationCompositionTelemetry(controller: ConsumerSessionControll
 }
 
 @Composable
-private fun RecognizedTrafficSignPictogram(
+internal fun RecognizedTrafficSignPictogram(
     pictogram: TrafficSignPictogram,
     modifier: Modifier = Modifier,
     signSize: androidx.compose.ui.unit.Dp = 72.dp,
@@ -1240,21 +1254,40 @@ private fun SupplementaryRestrictionText(
 }
 
 @Composable
-internal fun UpcomingSpeedLimitPreview(upcoming: UpcomingSpeedLimitCandidate, foreground: Color, modifier: Modifier = Modifier,
-                                     alignSignToLeft: Boolean = false) {
-    val caption = if (upcoming.distanceM < 10) stringResource(R.string.upcoming_limit_distance_near)
-        else stringResource(R.string.upcoming_limit_distance, upcoming.displayDistanceM)
-    val description = stringResource(R.string.upcoming_limit_accessibility, upcoming.speedKmh, caption)
-    Column(modifier.clearAndSetSemantics { contentDescription = description; semanticsTestTag = "upcoming-speed-limit" },
-        horizontalAlignment = if (alignSignToLeft) androidx.compose.ui.AbsoluteAlignment.Left else Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Box(Modifier.size(60.dp).background(Color.White, CircleShape).border(5.dp, Color(0xFFD81920), CircleShape),
-            contentAlignment = Alignment.Center) {
-            Text(upcoming.speedKmh.toString(), color = Color.Black, fontSize = 25.sp,
-                fontWeight = FontWeight.Bold, maxLines = 1)
+internal fun UpcomingSpeedLimitPreview(upcoming: UpcomingSpeedLimitCandidate, modifier: Modifier = Modifier) {
+    val description = stringResource(R.string.upcoming_limit_accessibility, upcoming.speedKmh)
+    val opacity = remember { Animatable(0f) }
+    LaunchedEffect(upcoming.previewOpacity) {
+        opacity.animateTo(upcoming.previewOpacity, tween(220))
+    }
+    PreviewSpeedLimitCircle(upcoming.speedKmh, Color(0xFFD81920), description, "upcoming-speed-limit",
+        modifier.alpha(opacity.value))
+}
+
+@Composable
+private fun InactiveSpeedLimitPreview(preview: ConditionalSpeedPreview, modifier: Modifier) {
+    Box(modifier) {
+        PreviewSpeedLimitCircle(preview.speedKmh, Color(0xFF7A8087), "${preview.speedKmh} km/h, ${preview.restrictionText}",
+            "inactive-speed-limit")
+        Box(Modifier.matchParentSize(), contentAlignment = Alignment.TopStart) {
+            SupplementaryRestrictionText(preview.restrictionText, fontSize = 12.sp, lineHeight = 13.sp,
+                modifier = Modifier.offset(y = 62.dp).wrapContentWidth(Alignment.Start, unbounded = true)
+                    .widthIn(max = 116.dp).clearAndSetSemantics { })
         }
-        Text(caption, color = foreground, fontSize = 14.sp, lineHeight = 17.sp,
-            textAlign = TextAlign.Center, modifier = Modifier.widthIn(min = 60.dp))
+    }
+}
+
+@Composable
+private fun PreviewSpeedLimitCircle(speedKmh: Int, borderColor: Color, description: String, tag: String,
+                                    modifier: Modifier = Modifier) {
+    Box(
+        modifier.size(60.dp)
+            .background(Color.White, CircleShape).border(5.dp, borderColor, CircleShape)
+            .clearAndSetSemantics { contentDescription = description; semanticsTestTag = tag },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(speedKmh.toString(), color = Color.Black, fontSize = 25.sp,
+            fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 

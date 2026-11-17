@@ -80,13 +80,25 @@ enum ConditionalOCRInterpretation {
         let supportingFrameIDs: [String]
         let originalEvidenceAt: Date
         let originalEvidenceDistanceM: Double
+        private func isCurrent(at: Date, distanceM: Double, scopeID: String, generation: UInt64) -> Bool {
+            verification == .verified && scopeID == observation.scopeID
+                && generation == observation.scopeGeneration && at >= originalEvidenceAt
+                && at.timeIntervalSince(originalEvidenceAt) <= 300 && distanceM.isFinite
+                && distanceM >= originalEvidenceDistanceM && distanceM - originalEvidenceDistanceM <= 5000
+        }
+
+        func inactivePreview(for verdict: Verdict, at: Date, distanceM: Double, scopeID: String,
+                             generation: UInt64) -> ConditionalSpeedPreview? {
+            guard isCurrent(at: at, distanceM: distanceM, scopeID: scopeID, generation: generation),
+                  verdict == .inapplicable || (verdict == .unresolved && parsed?.condition == .wet) else { return nil }
+            return ConditionalSpeedPreview(speedKmh: observation.primarySpeedKmh, restrictionText: observation.rawText)
+        }
+
         func verdict(at: Date, distanceM: Double, scopeID: String, generation: UInt64,
                      clockTrusted: Bool = true, uncertaintySeconds: Double = 0,
                      timeZoneID: String? = "Europe/Berlin", roadSurfaceWet: Bool? = nil) -> Verdict {
-            guard verification == .verified, let parsed, scopeID == observation.scopeID,
-                  generation == observation.scopeGeneration, at >= originalEvidenceAt,
-                  at.timeIntervalSince(originalEvidenceAt) <= 300, distanceM.isFinite,
-                  distanceM >= originalEvidenceDistanceM, distanceM - originalEvidenceDistanceM <= 5000 else { return .unresolved }
+            guard let parsed, isCurrent(at: at, distanceM: distanceM, scopeID: scopeID, generation: generation)
+            else { return .unresolved }
             switch parsed.condition {
             case .informational: return .applicable
             case .wet: return roadSurfaceWet.map { $0 ? .applicable : .inapplicable } ?? .unresolved

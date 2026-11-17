@@ -6,9 +6,12 @@ import org.json.JSONObject
 import java.time.Instant
 import java.time.ZoneId
 
+data class ConditionalSpeedPreview(val speedKmh: Int, val restrictionText: String)
+
 /** Declarative bundle producer adapter; reference-policy semantics stay separate. */
 object ConditionalSpeedRules {
-    data class Result(val kmh: Int?, val unlimited: Boolean, val unresolved: Boolean, val reason: String, val reevaluation: Reevaluation? = null)
+    data class Result(val kmh: Int?, val unlimited: Boolean, val unresolved: Boolean, val reason: String,
+        val reevaluation: Reevaluation? = null, val inactivePreview: ConditionalSpeedPreview? = null)
     data class Reevaluation(val rulesJSON: String, val baseKmh: Int?, val baseUnlimited: Boolean, val direction: Int?, val countryCode: String?, val timeZoneId: String? = null,
         val validFromUTC:Double?=null,val validUntilUTC:Double?=null,val fallbackRulesJSON:String?=null,
         val fallbackUnresolved:Boolean?=null,val fallbackReason:String?=null,
@@ -204,12 +207,44 @@ object ConditionalSpeedRules {
         }
         if (keys.size > 12) return unknown("too_many_unknown_contexts")
         val ordered = keys.toList()
-        val outcomes = (0 until (1 shl ordered.size)).map { mask ->
-            outcome(ordered.mapIndexed { index, key -> key to (mask and (1 shl index) != 0) }.toMap())
-        }.toSet()
-        val selected = outcomes.singleOrNull() ?: return unknown("conditional_applicability_unresolved")
-        if (selected == "unsupported" || selected == "unknown") return unknown("conditional_applicability_unresolved")
-        return Result(selected.removePrefix("numeric:").toIntOrNull(), selected == "unlimited", false, "conditional_rules_evaluated")
+        val assignments = (0 until (1 shl ordered.size)).asSequence().map { mask ->
+            ordered.mapIndexed { index, key -> key to (mask and (1 shl index) != 0) }.toMap()
+        }
+        val outcomes = assignments.map(::outcome).toSet()
+        val selected = outcomes.singleOrNull()
+        val preview = inactivePreview(tags.asReversed(), context.direction, selected) { condition ->
+            assignments.all { truth(condition, it) }
+        }
+        if (selected == null || selected == "unsupported" || selected == "unknown") {
+            return unknown("conditional_applicability_unresolved").copy(inactivePreview = preview)
+        }
+        return Result(selected.removePrefix("numeric:").toIntOrNull(), selected == "unlimited", false,
+            "conditional_rules_evaluated", inactivePreview = preview)
+    }
+
+    private fun inactivePreview(tags: List<JSONObject>, direction: Int?, selected: String?,
+                                alwaysApplies: (JSONObject) -> Boolean): ConditionalSpeedPreview? {
+        for (tag in tags) {
+            val scopedDirection = tag.optInt("direction")
+            if (!tag.optBoolean("conditional") || tag.optString("status") != "supported" ||
+                tag.optString("vehicle") == "hazmat" || (scopedDirection != 0 && scopedDirection != direction)) continue
+            val raw = tag.optString("raw")
+            val length = raw.codePointCount(0, raw.length)
+            for (clause in tag.optJSONArray("clauses")?.objects().orEmpty().asReversed()) {
+                val number = clause.optJSONObject("limit")?.optDouble("kmh", Double.NaN) ?: continue
+                if (number !in 1.0..400.0) continue
+                val speed = kotlin.math.floor(number + 0.5).toInt()
+                if ("numeric:$speed" == selected) continue
+                val condition = clause.optJSONObject("condition") ?: continue
+                if (alwaysApplies(condition)) continue
+                val span = clause.optJSONArray("source_span")?.ints() ?: continue
+                if (span.size != 2 || span[0] < 0 || span[0] >= span[1] || span[1] > length) continue
+                val source = raw.substring(raw.offsetByCodePoints(0, span[0]), raw.offsetByCodePoints(0, span[1]))
+                val text = source.substringAfter('@', "").trim().removeSurrounding("(", ")").trim()
+                if (text.isNotEmpty()) return ConditionalSpeedPreview(speed, text)
+            }
+        }
+        return null
     }
 
     private fun canonical(value: Any?): String = when (value) {

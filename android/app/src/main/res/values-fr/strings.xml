@@ -144,9 +144,7 @@
     <string name="ui_driving_photo_unavailable">Photo indisponible</string>
     <string name="ui_driving_photo_local_only">Enregistre une photo localement pour vérification. Aucun envoi.</string>
     <string name="ui_driving_photo_failed">La photo n’a pas pu être enregistrée. Réessayez lorsque la caméra est prête.</string>
-    <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">dans %1$d m</string>
-    <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">dans &lt;10 m</string>
-    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Limitation à venir, %1$d kilomètres par heure, %2$s</string>
+    <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Limitation à venir, %1$d kilomètres par heure</string>
     <string name="inspector_track_share">Partager le tracé</string>
     <string name="inspector_track_save">Enregistrer le tracé dans Inspector</string>
     <string name="inspector_track_scope">Le fichier GPX contient les coordonnées et les horodatages du trajet. Il sera enregistré en privé dans votre compte Inspector.</string>

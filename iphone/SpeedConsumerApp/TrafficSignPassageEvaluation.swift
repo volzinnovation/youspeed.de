@@ -2457,7 +2457,7 @@ extension TrafficSignStructuralAction {
 
     var isSpeedLimitEnd: Bool {
         switch self {
-        case .maximumSpeedEnd, .zoneEnd, .allRestrictionsEnd:
+        case .maximumSpeedEnd, .zoneEnd, .allRestrictionsEnd, .pedestrianZoneEnd, .motorwayExit, .motorroadExit:
             return true
         default:
             return false

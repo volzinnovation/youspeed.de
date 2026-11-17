@@ -1910,12 +1910,14 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
                     self.discardStaleWorkItem()
                     return
                 }
+                let country = self.verifiedPack.manifest.countries.first ?? "DE"
                 var displayObservation = TrafficSignDisplayObservation.accepted(
                     from: processed.displayDetections, timestamp: item.timestampUTC,
                     classifierCheckpointSHA256: self.verifiedPack.manifest.classifier?.sourceCheckpoint.sha256,
-                    preferSecondary: true
+                    preferSecondary: true, country: country
                 )
-                if let displayed = TrafficSignDisplayObservation.acceptedDetection(from: processed.displayDetections, preferSecondary: true),
+                if let displayed = TrafficSignDisplayObservation.acceptedDetection(from: processed.displayDetections,
+                    preferSecondary: true, country: country),
                    let index = processed.collectionDetections.firstIndex(where: { $0.rawClassId == displayed.rawClassId && $0.boundingBox == displayed.boundingBox }),
                    let track = processed.applicabilityDiagnostic.tracks.first(where: { $0.samples.last?.candidate.candidateId == "\(item.frameId):\(index)" }) {
                     displayObservation?.applicabilityDecision = processed.applicabilityDiagnostic.decisions.first { $0.trackId == track.trackId }
@@ -2014,12 +2016,15 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             detection.rawClassId == candidate?.rawClassId && detection.boundingBox == candidate?.boundingBox
                 && detection.semantic.value == candidate?.value && detection.semantic.kind.rawValue == candidate?.semanticKind
         } : nil
-        let acceptedDisplay = TrafficSignDisplayObservation.acceptedDetection(from: processed.displayDetections, preferSecondary: true)
+        let acceptedDisplay = TrafficSignDisplayObservation.acceptedDetection(from: processed.displayDetections,
+            preferSecondary: true, country: verifiedPack.manifest.countries.first ?? "DE")
         let pictogram = acceptedDisplay.flatMap { detection -> TrafficSignDetection? in
             guard let catalog = supplementaryPictogramCatalog,
                   catalog.classifierCheckpointSHA256 == verifiedPack.manifest.classifier?.sourceCheckpoint.sha256,
                   let sign = catalog.sign(for: detection.rawClassId), sign.displayEligible,
-                  sign.imagePath != nil else { return nil }
+                  sign.imagePath != nil,
+                  SecondarySignDisplayPolicy.presentation(sign.classID, signCode: sign.signCode, country: catalog.country) != .hidden
+            else { return nil }
             return detection
         }
         let primary = (numericDetection ?? pictogram).map {
