@@ -39,6 +39,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -680,6 +681,7 @@ internal fun RecorderParitySettings(controller: ConsumerSessionController) {
                 TextButton(onClick = controller::disconnectPanoramaxAccount, enabled = !ui.panoramaxAccountBusy) { Text(parityText("Disconnect account", "Konto trennen", "Déconnecter le compte", "Account loskoppelen")) }
             } else Button(onClick = controller::connectPanoramaxAccount, enabled = !ui.panoramaxAccountBusy) { Text(parityText("Connect account", "Konto verbinden", "Connecter le compte", "Account verbinden")) }
         }
+        MapillaryAccountSection(controller.mapillaryUpload)
     }
     if (details) SheetScaffold(parityText("Recognition details", "Erkennungsdetails", "Détails de reconnaissance", "Herkenningsdetails"),
         { details = false }, "traffic-sign-details-sheet") { TrafficSignDetailsContent(controller) }
@@ -836,6 +838,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
     var selected by remember { mutableStateOf(emptyMap<String, Set<String>>()) }
     var deleteConfirmation by remember { mutableStateOf(false) }
     var uploadConfirmation by remember { mutableStateOf(false) }
+    var mapillaryDialog by remember { mutableStateOf(false) }
     var focused by remember { mutableStateOf<Pair<String, String>?>(null) }
     val count = selected.values.sumOf { it.size }
     val uploadPlan = PanoramaxGalleryUploadPlan.create(ui.panoramaxBatches, selected, ui.panoramaxActiveUploadBatchIds)
@@ -901,6 +904,7 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                                     Text(itemStateLabel(item.state), style = MaterialTheme.typography.bodySmall)
                                     if (item.metadata.captureReason == "recognized_sign") Text(SignCollectionText.text("Traffic-sign capture", "Verkehrszeichen-Aufnahme") + " · " + (item.metadata.signEvidence?.size ?: 0), style = MaterialTheme.typography.bodySmall)
                                     if (item.metadata.captureReason == "inventory_sign") Text(SignCollectionText.text("Map-sign capture", "Kartenzeichen-Aufnahme") + " · " + (item.metadata.inventoryEncounterIds?.size ?: 0), style = MaterialTheme.typography.bodySmall)
+                                    if (item.itemId in controller.mapillaryUpload.state.uploadedItemIds) Text("Mapillary ✓",style=MaterialTheme.typography.bodySmall)
                                     item.metadata.trafficSignAnnotations.orEmpty().firstOrNull()?.speedLimitKmh?.let { Text("$it km/h", fontWeight = FontWeight.Bold) }
                                 }
                             }
@@ -961,6 +965,9 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
                     selected.keys.none { it in ui.panoramaxActiveUploadBatchIds },
                 onClick = { deleteConfirmation = true },
             )
+            GalleryAction(modifier=actionModifier.testTag("mapillary-gallery-open"),icon=Icons.Default.Upload,compact=compact,label="Mapillary",
+                enabled=count > 0 || controller.mapillaryUpload.state.pending.isNotEmpty() || controller.mapillaryUpload.state.uploading,
+                onClick={mapillaryDialog=true})
             if (ui.panoramaxActiveUploadBatchIds.isEmpty()) {
                 GalleryAction(
                     modifier = actionModifier,
@@ -984,6 +991,10 @@ internal fun PanoramaxGalleryContent(controller: ConsumerSessionController, comp
             }
         }
     }
+    if (mapillaryDialog) MapillaryUploadDialog(controller.mapillaryUpload,
+        photos = ui.panoramaxBatches.flatMap { batch -> batch.items.filter { it.itemId in selected[batch.batchId].orEmpty() } }
+            .map { MapillaryPhoto(it.itemId, controller.panoramaxOriginalFile(it), it.metadata) },
+        allowed = controller::canProcessMapillaryUploads, onDismiss = { mapillaryDialog = false })
     if (deleteConfirmation) ParityDeleteConfirmation(count, { deleteConfirmation = false }) {
         controller.deletePanoramaxItems(selected); selected = emptyMap(); deleteConfirmation = false
     }

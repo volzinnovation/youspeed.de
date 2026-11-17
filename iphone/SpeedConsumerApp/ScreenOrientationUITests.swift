@@ -322,6 +322,36 @@ final class LiveDeviceRecordingUITests: XCTestCase {
 }
 
 final class ScreenOrientationUITests: XCTestCase {
+    func testMapillaryAccountIsConfiguredInSettingsWithoutAnEmbeddedUser() throws {
+#if !targetEnvironment(simulator)
+        throw XCTSkip("Account UI smoke uses the isolated simulator; never changes a driver's account.")
+#else
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchEnvironment["YOUSPEED_SCREENSHOT_STATE"] = "camera-limit-active"
+        app.launchArguments = ["-youspeed.screen_orientation", "portrait", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        app.launch()
+        defer { app.terminate() }
+        let settings = app.buttons["dashboard.settingsButton"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 20)); settings.tap()
+        let token = app.secureTextFields["mapillary.account.token"]
+        for _ in 0..<50 where !token.isHittable {
+            app.coordinate(withNormalizedOffset: .init(dx: 0.5, dy: 0.75)).press(forDuration: 0.05,
+                thenDragTo: app.coordinate(withNormalizedOffset: .init(dx: 0.5, dy: 0.38)))
+        }
+        XCTAssertTrue(token.isHittable)
+        let connect = app.buttons["mapillary.account.connect"]
+        for _ in 0..<8 where !connect.isHittable {
+            app.coordinate(withNormalizedOffset: .init(dx: 0.5, dy: 0.75)).press(forDuration: 0.05,
+                thenDragTo: app.coordinate(withNormalizedOffset: .init(dx: 0.5, dy: 0.5)))
+        }
+        XCTAssertTrue(connect.exists); XCTAssertFalse(connect.isEnabled)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "mapillary-own-account-settings"
+        screenshot.lifetime = .keepAlways; add(screenshot)
+#endif
+    }
+
     /// The host test script seeds synthetic >100 MB logs in the isolated
     /// simulator app container and verifies their bytes after this UI action.
     func testKeepStartupLogsWithSeededLargeSyntheticHistory() throws {

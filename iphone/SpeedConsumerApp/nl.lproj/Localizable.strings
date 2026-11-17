@@ -566,3 +566,31 @@
 "inspector.track.scope" = "Het GPX-bestand bevat routecoördinaten en tijdstippen. Het wordt privé opgeslagen in je Inspector-account.";
 "inspector.track.saved" = "Route opgeslagen in Inspector.";
 "inspector.track.recording" = "Uploaden naar Inspector is mogelijk zodra de opname is gestopt.";
+
+/* Mapillary photo contributions. */
+"mapillary.account" = "Mapillary-account";
+"mapillary.token" = "Persoonlijk uploadtoken";
+"mapillary.token_help" = "Verbind je eigen account met een Mapillary-gebruikerstoken met uploadrechten. Het wordt veilig op dit apparaat bewaard.";
+"mapillary.token_link" = "Mapillary-ontwikkelaarsinstellingen";
+"mapillary.connect" = "Account verbinden";
+"mapillary.disconnect" = "Account loskoppelen";
+"mapillary.connected" = "Verbonden";
+"mapillary.disconnected" = "Losgekoppeld";
+"mapillary.account_required" = "Verbind je Mapillary-account in Instellingen met een gebruikerstoken met uploadrechten.";
+"mapillary.upload" = "Uploaden naar Mapillary";
+"mapillary.selected" = "%d foto’s geselecteerd";
+"mapillary.scope" = "De geselecteerde foto’s, opnametijden en GPS-posities worden naar je account geüpload en op Mapillary gepubliceerd.";
+"mapillary.stop" = "Upload stoppen";
+"mapillary.close" = "Sluiten";
+"mapillary.pending" = "Wachtende Mapillary-uploads";
+"mapillary.resume_count" = "%d foto’s hervatten";
+"mapillary.preparing" = "Foto’s voorbereiden";
+"mapillary.uploading" = "Foto’s uploaden";
+"mapillary.submitting" = "Indienen bij Mapillary";
+"mapillary.submitted" = "Ingediend bij Mapillary voor verwerking.";
+"mapillary.paused" = "Upload gepauzeerd. Hervat na de opname en andere uploads.";
+"mapillary.failed" = "Mapillary-upload mislukt. Wachtende foto’s blijven beschikbaar om opnieuw te proberen.";
+"mapillary.image_error" = "De oorspronkelijke foto of opnamegegevens ontbreken of zijn gewijzigd.";
+"mapillary.response_error" = "Mapillary gaf een onverwacht antwoord.";
+"mapillary.http_error" = "Mapillary-verzoek mislukt";
+"mapillary.already_uploaded" = "Deze foto’s zijn al ingediend bij Mapillary.";

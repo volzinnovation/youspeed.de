@@ -3131,12 +3131,28 @@ private struct PanoramaxGalleryView: View {
 
 private struct PictureGalleryView: View {
     @ObservedObject var viewModel: DriveSessionViewModel
+    @ObservedObject private var mapillary: MapillaryUploadModel
     var tripPhotoIDs: Set<String>? = nil
+    @State private var showingMapillary = false
     @State private var selectedItem: GalleryItem?
     @State private var selectedItemIDs: Set<String> = []
     @State private var showingDeleteConfirmation = false
     @State private var showingAccountRequired = false
     @State private var signsOnly = false
+
+    init(viewModel: DriveSessionViewModel, tripPhotoIDs: Set<String>? = nil) {
+        self.viewModel = viewModel
+        self.tripPhotoIDs = tripPhotoIDs
+        self.mapillary = viewModel.mapillaryUpload
+    }
+
+    private var mapillaryPhotos: [MapillaryPhoto] {
+        selectedEntries.compactMap { entry in
+            viewModel.panoramaxOriginalURL(for: entry.item).map {
+                MapillaryPhoto(itemID: entry.item.itemID, url: $0, metadata: entry.item.metadata)
+            }
+        }
+    }
 
     private struct GalleryItem: Identifiable {
         let id: String
@@ -3238,7 +3254,12 @@ private struct PictureGalleryView: View {
                                 .padding(6)
                             }
                             .overlay(alignment: .bottomLeading) {
-                                Text((entry.item.metadata.captureReason == "recognized_sign" ? SignCollectionText.text("Sign · ", "Zeichen · ") : "") + entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text((entry.item.metadata.captureReason == "recognized_sign" ? SignCollectionText.text("Sign · ", "Zeichen · ") : "") + entry.item.metadata.capturedAt.formatted(date: .omitted, time: .shortened))
+                                    if mapillary.uploadedItemIDs.contains(entry.item.itemID) {
+                                        Label("Mapillary", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                                    }
+                                }
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.white)
                                     .padding(5)
@@ -3276,6 +3297,7 @@ private struct PictureGalleryView: View {
             if !entries.isEmpty
                 || !viewModel.activePanoramaxUploadBatchIDs.isEmpty
                 || !uploadStatuses.isEmpty
+                || !mapillary.pending.isEmpty || mapillary.isUploading
                 || viewModel.panoramaxMaintenanceIssue != nil {
                 VStack(spacing: 6) {
                     if !viewModel.canProcessPanoramaxUploads {
@@ -3350,6 +3372,13 @@ private struct PictureGalleryView: View {
                             )
                         }
                         Spacer(minLength: 0)
+                        RecordingSafeButton { showingMapillary = true } label: {
+                            Text("Mapillary").font(.caption)
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityLabel(mly("upload"))
+                        .accessibilityIdentifier("mapillary.gallery.open")
+                        .disabled(selectedItemIDs.isEmpty && mapillary.pending.isEmpty && !mapillary.isUploading)
                         if viewModel.activePanoramaxUploadBatchIDs.isEmpty, !entries.isEmpty {
                             RecordingSafeButton {
                                 Task { @MainActor in
@@ -3402,6 +3431,12 @@ private struct PictureGalleryView: View {
         .task { viewModel.refreshPanoramaxBatches() }
         .onChange(of: Set(entries.map { $0.item.itemID })) { _, availableIDs in
             selectedItemIDs.formIntersection(availableIDs)
+        }
+        .sheet(isPresented: $showingMapillary) {
+            DismissibleNavigationSheet {
+                MapillaryUploadView(model: mapillary, photos: mapillaryPhotos,
+                    allowed: { viewModel.canProcessMapillaryUploads })
+            }
         }
         .sheet(item: $selectedItem) { selection in
             DismissibleNavigationSheet {
@@ -3790,6 +3825,8 @@ struct SettingsView: View {
                     .disabled(account.isBusy)
                 }
             }
+
+            MapillaryAccountSection(model: viewModel.mapillaryUpload)
 
             Section {
                 NavigationLink("inspector.files.title") {

@@ -1250,6 +1250,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private let bundledTargetsConfig: V3BundleTargetsConfig?
     private let manifestEndpoints: [V3ManifestEndpoint]
     let panoramaxAccount: PanoramaxAccountModel
+    let mapillaryUpload = MapillaryUploadModel()
     private var panoramaxQueueStore: PanoramaxQueueStore?
     private var speedLimitService: V3SpeedLimitService?
     private let speedLimitServicePool = V3SpeedLimitServicePool()
@@ -2682,10 +2683,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     var canProcessPanoramaxUploads: Bool {
-        DriveRecorderPolicy.canProcessPanoramaxUploads(
+        !mapillaryUpload.isUploading && DriveRecorderPolicy.canProcessPanoramaxUploads(
             for: driveCaptureCoordinator?.state ?? driveRecorderState,
             purpose: driveCaptureCoordinator?.sessionPurpose
         )
+    }
+
+    var canProcessMapillaryUploads: Bool {
+        activePanoramaxUploadBatchIDs.isEmpty && !panoramaxQueueMaintenanceInProgress &&
+        DriveRecorderPolicy.canProcessPanoramaxUploads(
+            for: driveCaptureCoordinator?.state ?? driveRecorderState,
+            purpose: driveCaptureCoordinator?.sessionPurpose)
     }
 
     var canToggleDriveRecorderModules: Bool {
@@ -6386,6 +6394,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     }
 
     private func cancelPanoramaxUploadsForRecorderStart() {
+        mapillaryUpload.stop()
         stopPanoramaxUploads(status: "Upload fuer die Fahrtaufnahme pausiert")
     }
 

@@ -566,3 +566,31 @@
 "inspector.track.scope" = "Die GPX-Datei enthält Streckenkoordinaten und Zeitstempel. Sie wird privat in deinem Inspector-Konto gespeichert.";
 "inspector.track.saved" = "Track im Inspector gespeichert.";
 "inspector.track.recording" = "Der Upload zum Inspector ist nach Ende der Aufzeichnung verfügbar.";
+
+/* Mapillary photo contributions. */
+"mapillary.account" = "Mapillary-Konto";
+"mapillary.token" = "Upload-Token des Benutzers";
+"mapillary.token_help" = "Verbinde dein eigenes Konto mit einem Mapillary-Benutzertoken mit Upload-Berechtigung. Es wird auf diesem Gerät sicher gespeichert.";
+"mapillary.token_link" = "Mapillary-Entwicklereinstellungen";
+"mapillary.connect" = "Konto verbinden";
+"mapillary.disconnect" = "Konto trennen";
+"mapillary.connected" = "Verbunden";
+"mapillary.disconnected" = "Getrennt";
+"mapillary.account_required" = "Verbinde dein Mapillary-Konto in den Einstellungen mit einem Benutzertoken mit Upload-Berechtigung.";
+"mapillary.upload" = "Zu Mapillary hochladen";
+"mapillary.selected" = "%d Fotos ausgewählt";
+"mapillary.scope" = "Die ausgewählten Fotos, Aufnahmezeiten und GPS-Positionen werden in dein Konto hochgeladen und auf Mapillary veröffentlicht.";
+"mapillary.stop" = "Upload stoppen";
+"mapillary.close" = "Schließen";
+"mapillary.pending" = "Ausstehende Mapillary-Uploads";
+"mapillary.resume_count" = "%d Fotos fortsetzen";
+"mapillary.preparing" = "Fotos werden vorbereitet";
+"mapillary.uploading" = "Fotos werden hochgeladen";
+"mapillary.submitting" = "Übergabe an Mapillary";
+"mapillary.submitted" = "Zur Verarbeitung an Mapillary übergeben.";
+"mapillary.paused" = "Upload pausiert. Nach Abschluss der Aufnahme und anderer Uploads fortsetzen.";
+"mapillary.failed" = "Mapillary-Upload fehlgeschlagen. Ausstehende Fotos bleiben für einen erneuten Versuch verfügbar.";
+"mapillary.image_error" = "Das Originalfoto oder seine Aufnahmedaten fehlen oder wurden verändert.";
+"mapillary.response_error" = "Mapillary hat eine unerwartete Antwort geliefert.";
+"mapillary.http_error" = "Mapillary-Anfrage fehlgeschlagen";
+"mapillary.already_uploaded" = "Diese Fotos wurden bereits an Mapillary übergeben.";

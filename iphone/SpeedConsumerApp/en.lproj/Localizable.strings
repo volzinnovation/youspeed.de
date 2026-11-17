@@ -566,3 +566,31 @@
 "inspector.track.scope" = "The GPX contains route coordinates and timestamps. It will be saved privately in your Inspector account.";
 "inspector.track.saved" = "Track saved to Inspector.";
 "inspector.track.recording" = "Inspector upload is available after recording ends.";
+
+/* Mapillary photo contributions. */
+"mapillary.account" = "Mapillary account";
+"mapillary.token" = "User upload token";
+"mapillary.token_help" = "Connect your own account with a Mapillary user token that has upload permission. It is stored securely on this device.";
+"mapillary.token_link" = "Mapillary developer settings";
+"mapillary.connect" = "Connect account";
+"mapillary.disconnect" = "Disconnect account";
+"mapillary.connected" = "Connected";
+"mapillary.disconnected" = "Disconnected";
+"mapillary.account_required" = "Connect your Mapillary account in Settings using a user token with upload permission.";
+"mapillary.upload" = "Upload to Mapillary";
+"mapillary.selected" = "%d photos selected";
+"mapillary.scope" = "The selected photos, capture times and GPS positions will be uploaded to your account and published on Mapillary.";
+"mapillary.stop" = "Stop upload";
+"mapillary.close" = "Close";
+"mapillary.pending" = "Pending Mapillary uploads";
+"mapillary.resume_count" = "Resume %d photos";
+"mapillary.preparing" = "Preparing photos";
+"mapillary.uploading" = "Uploading photos";
+"mapillary.submitting" = "Submitting to Mapillary";
+"mapillary.submitted" = "Submitted to Mapillary for processing.";
+"mapillary.paused" = "Upload paused. Resume when recording and other uploads have finished.";
+"mapillary.failed" = "Mapillary upload failed. Pending photos remain available to retry.";
+"mapillary.image_error" = "The original photo or its capture metadata is unavailable or has changed.";
+"mapillary.response_error" = "Mapillary returned an unexpected response.";
+"mapillary.http_error" = "Mapillary request failed";
+"mapillary.already_uploaded" = "These photos have already been submitted to Mapillary.";

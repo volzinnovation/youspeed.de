@@ -566,3 +566,31 @@
 "inspector.track.scope" = "Le fichier GPX contient les coordonnées et les horodatages du trajet. Il sera enregistré en privé dans votre compte Inspector.";
 "inspector.track.saved" = "Tracé enregistré dans Inspector.";
 "inspector.track.recording" = "L’envoi vers Inspector est disponible après la fin de l’enregistrement.";
+
+/* Mapillary photo contributions. */
+"mapillary.account" = "Compte Mapillary";
+"mapillary.token" = "Jeton d’envoi personnel";
+"mapillary.token_help" = "Connectez votre propre compte avec un jeton utilisateur Mapillary autorisant l’envoi. Il est conservé de façon sécurisée sur cet appareil.";
+"mapillary.token_link" = "Paramètres développeur Mapillary";
+"mapillary.connect" = "Connecter le compte";
+"mapillary.disconnect" = "Déconnecter le compte";
+"mapillary.connected" = "Connecté";
+"mapillary.disconnected" = "Déconnecté";
+"mapillary.account_required" = "Connectez votre compte Mapillary dans les paramètres avec un jeton utilisateur autorisant l’envoi.";
+"mapillary.upload" = "Envoyer vers Mapillary";
+"mapillary.selected" = "%d photos sélectionnées";
+"mapillary.scope" = "Les photos sélectionnées, leurs heures de prise de vue et positions GPS seront envoyées à votre compte et publiées sur Mapillary.";
+"mapillary.stop" = "Arrêter l’envoi";
+"mapillary.close" = "Fermer";
+"mapillary.pending" = "Envois Mapillary en attente";
+"mapillary.resume_count" = "Reprendre %d photos";
+"mapillary.preparing" = "Préparation des photos";
+"mapillary.uploading" = "Envoi des photos";
+"mapillary.submitting" = "Transmission à Mapillary";
+"mapillary.submitted" = "Transmis à Mapillary pour traitement.";
+"mapillary.paused" = "Envoi en pause. Reprenez après la fin de l’enregistrement et des autres envois.";
+"mapillary.failed" = "Échec de l’envoi Mapillary. Les photos en attente restent disponibles pour réessayer.";
+"mapillary.image_error" = "La photo originale ou ses métadonnées sont indisponibles ou ont changé.";
+"mapillary.response_error" = "Mapillary a renvoyé une réponse inattendue.";
+"mapillary.http_error" = "Échec de la requête Mapillary";
+"mapillary.already_uploaded" = "Ces photos ont déjà été transmises à Mapillary.";

@@ -593,6 +593,7 @@ class ConsumerSessionController(
     private val trafficSignGeneration = TrafficSignWriteGate()
     private val localObservationStore = LocalObservationStore(appContext, rootDir, preferences, clock)
     private val panoramaxQueueStore = PanoramaxQueueStore(appContext)
+    val mapillaryUpload by lazy { MapillaryUploadModel(appContext, ::canProcessMapillaryUploads) }
     private val panoramaxGalleryLoader = PanoramaxGalleryLoader(
         execute = ::submitPanoramaxStorageTask,
         load = panoramaxQueueStore::listBatches,
@@ -1059,6 +1060,7 @@ class ConsumerSessionController(
         }
         drivingControlPostureMotion.stop()
         panoramaxUploader.close()
+        mapillaryUpload.close()
         stopDriving()
         signCollection.close()
         runCatching { inventorySignRuntime.finish(clock.instant()) }
@@ -1652,7 +1654,11 @@ class ConsumerSessionController(
     }
 
     fun canProcessPanoramaxUploads(): Boolean = !driveRecorderEnabled && DriveRecorderPolicy.canProcessPanoramaxUploads(uiState.driveRecorderState) &&
-        !uiState.panoramaxMaintenanceInProgress
+        !uiState.panoramaxMaintenanceInProgress && !mapillaryUpload.isUploading
+
+    fun canProcessMapillaryUploads(): Boolean = !driveRecorderEnabled &&
+        DriveRecorderPolicy.canProcessPanoramaxUploads(uiState.driveRecorderState) &&
+        !uiState.panoramaxMaintenanceInProgress && uiState.panoramaxActiveUploadBatchIds.isEmpty()
 
     fun setDriveRecorderPreviewSurfaceProvider(provider: Preview.SurfaceProvider?) {
         host?.setDriveRecorderPreviewSurfaceProvider(provider)
@@ -1801,6 +1807,7 @@ class ConsumerSessionController(
         if (panoramaxCaptureEnabled && uiState.panoramaxMaintenanceInProgress) return
         stopPanoramaxUploads()
         latestDashcamEventPath = null
+        mapillaryUpload.stop()
         journalVideoSession=UUID.randomUUID().toString()
         driveRecorderEnabled = true
         clearLanePreview()
