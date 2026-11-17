@@ -1,0 +1,746 @@
+{
+  "schema": "youspeed-mapillary-teacher-feasibility-evidence-v1",
+  "study_date": "2026-11-14",
+  "scope": "Full inventory/metadata/spatial audit, 16-image visual feasibility sample; not exhaustive visual truth",
+  "source_revision": "d2c5cc44716166e2604655d7fd8cad93a8dd9468",
+  "source_cutoff_utc": "2026-11-12T20:07:58.464764+00:00",
+  "coverage": {
+    "metadata_sha256": "ac292f2ee8224f8bdfce6d760836f2db8551ba0ca792f5c7a66784fc60ed10e5",
+    "task_counts": {
+      "detector": 35147,
+      "classificator": 47915
+    },
+    "detector_rows": 35147,
+    "detector_unique_ids": 35147,
+    "detector_unique_sha256": 35147,
+    "source_counts": {
+      "panoramax.woladen.de": 35147
+    },
+    "visibility": {
+      "anyone": 34589,
+      "owner-only": 558
+    },
+    "status": {
+      "active": 35147
+    },
+    "eligible": {
+      "False": 35147
+    },
+    "media_verified": {
+      "True": 35147
+    },
+    "dimensions": {
+      "[4224, 2376]": 13561,
+      "[2376, 4224]": 9386,
+      "[4096, 3072]": 11993,
+      "[2340, 4160]": 207
+    },
+    "orientation": {
+      "landscape": 25554,
+      "portrait": 9593
+    },
+    "capture_min": "2026-09-04T13:06:04.431+00:00",
+    "capture_max": "2026-11-11T10:05:24.472+00:00",
+    "bytes": 93530162342,
+    "old_overlap": 34556,
+    "old_sha_matches": 12264,
+    "old_no_annotations": 22288
+  },
+  "metadata": {
+    "source_plan_sha256": "b214b32faff493e2c00bf28744202a1d659c803c785c87e4414970adf7b2c173",
+    "counts": {
+      "frames": 35147,
+      "sign_annotations": 22339,
+      "frames_with_sign_annotation": 12493,
+      "frames_without_sign_annotation": 22654,
+      "frames_with_raw_annotation": 12497,
+      "frames_without_raw_annotation": 22650,
+      "frames_with_source_history": 12499,
+      "sign_boxes_with_manual_text_tag": 0,
+      "landscape": 25554,
+      "portrait_or_square": 9593,
+      "present_heading": 35147,
+      "present_gps_accuracy_m": 35147,
+      "present_field_of_view": 35147,
+      "present_yaw": 0,
+      "present_pitch": 0,
+      "present_roll": 0,
+      "present_sensor_width": 0,
+      "present_focal_length": 35147,
+      "present_camera_time": 35147,
+      "present_fix_time": 35147,
+      "present_capture_time": 35147,
+      "present_exif_direction": 35107,
+      "present_exif_direction_ref": 35107,
+      "present_gps_h_position_error": 0,
+      "valid_lon_lat": 35147,
+      "heading_matches_true_exif_within_1_5_deg": 33157,
+      "fix_age_over_3_seconds": 1,
+      "warnings_missing_gps_accuracy": 35147,
+      "forward_phone_metadata_hypothesis_eligible": 23372,
+      "all_collection_ranks_present": 35147,
+      "raw_source_has_full_metadata": 35147
+    },
+    "categories": {
+      "status": {
+        "active": 35147
+      },
+      "visibility": {
+        "anyone": 34589,
+        "owner-only": 558
+      },
+      "projection": {
+        "flat": 35147
+      },
+      "make_model": {
+        "Apple iPhone 14 Pro": 16866,
+        "Apple iPhone 17": 2037,
+        "Apple iPhone 14": 928,
+        "Apple iPhone 15 Pro": 1802,
+        "motorola moto g86 5G": 11993,
+        "Apple iPhone 16": 1314,
+        "Apple iPhone 13": 207
+      },
+      "dimensions": {
+        "[4224, 2376]": 13561,
+        "[2376, 4224]": 9386,
+        "[4096, 3072]": 11993,
+        "[2340, 4160]": 207
+      },
+      "heading_computed": {
+        "False": 32934,
+        "True": 2213
+      },
+      "fov": {
+        "72": 18668,
+        "67": 4486,
+        "69": 11993
+      },
+      "gps_accuracy": {
+        "5": 35147
+      },
+      "sign_complete": {
+        "False": 35147
+      },
+      "normalized_class": {
+        "sign": 22339
+      },
+      "normalized_origin": {
+        "model": 22218,
+        "source_annotation": 121
+      },
+      "sign_origin": {
+        "model": 22218,
+        "source_annotation": 121
+      },
+      "sign_min_dimension_bucket": {
+        "32-63": 9596,
+        "16-31": 1889,
+        "64+": 10852,
+        "8-15": 2
+      },
+      "collections_per_frame": {
+        "1": 35147
+      },
+      "capture_month": {
+        "2026-10": 21026,
+        "2026-09": 6820,
+        "2026-11": 7301
+      }
+    },
+    "coordinate_extent": {
+      "min": {
+        "longitude": 5.398636111,
+        "latitude": 43.341961111
+      },
+      "max": {
+        "longitude": 9.1828433,
+        "latitude": 51.092525
+      }
+    },
+    "distinct_sequences": 3000,
+    "detector_unique_picture_ids": 35147,
+    "notes": [
+      "No image pixels are inspected by this metadata audit.",
+      "No annotations does not establish an empty scene. All detector annotations are explicitly incomplete.",
+      "forward_phone_metadata_hypothesis_eligible checks existing source metadata gates only, not measured optical-axis pose or verified mount calibration.",
+      "Manual text tag is a diagnostic string match only; not verified human provenance."
+    ]
+  },
+  "geography": {
+    "counts": {
+      "inside_bw": 29409,
+      "outside_bw": 5738
+    },
+    "inside_by_camera": {
+      "iPhone 14 Pro": 14174,
+      "iPhone 17": 2037,
+      "iPhone 14": 928,
+      "iPhone 15 Pro": 1802,
+      "moto g86 5G": 9466,
+      "iPhone 16": 795,
+      "iPhone 13": 207
+    },
+    "outside_by_camera": {
+      "iPhone 14 Pro": 2692,
+      "moto g86 5G": 2527,
+      "iPhone 16": 519
+    },
+    "source_plan_sha256": "b214b32faff493e2c00bf28744202a1d659c803c785c87e4414970adf7b2c173",
+    "state_boundary_sha256": "71393fd1b9f118d5d4fbd44220b79af897656a3a00696ca58cc6963f92c33efb",
+    "notes": [
+      "Membership is image GPS inside frozen Baden-Wuerttemberg administrative polygon, not sign coverage or visibility.",
+      "An image outside polygon could see a sign inside; near-border distance candidates require independent checks."
+    ],
+    "outside_examples": [
+      {
+        "picture_id": "001d40b6-a03a-4aaf-83f4-ea935787504e",
+        "coordinates": [
+          6.356822222,
+          46.801663889
+        ]
+      },
+      {
+        "picture_id": "00333aaa-834d-4bc7-97d6-c68457f9a944",
+        "coordinates": [
+          6.777415,
+          47.471911667
+        ]
+      },
+      {
+        "picture_id": "00354cea-01ff-43cc-88b3-1d501eae3cfc",
+        "coordinates": [
+          6.337030556,
+          46.900088889
+        ]
+      },
+      {
+        "picture_id": "003ef4c0-8962-44b8-b897-5b871f27c4a2",
+        "coordinates": [
+          6.857833333,
+          49.108365
+        ]
+      },
+      {
+        "picture_id": "00432f69-63d5-411e-a30f-febd6f5642d7",
+        "coordinates": [
+          6.115001667,
+          49.027648333
+        ]
+      },
+      {
+        "picture_id": "004f62cb-95d4-43ca-aec1-033476e3de63",
+        "coordinates": [
+          6.886016667,
+          49.078228333
+        ]
+      },
+      {
+        "picture_id": "006536a2-e707-458d-8ff6-37173ceac69c",
+        "coordinates": [
+          6.338465,
+          47.27348
+        ]
+      },
+      {
+        "picture_id": "0076fdcf-46cd-4123-9763-e0e06cf7a55e",
+        "coordinates": [
+          8.281858333,
+          49.069527778
+        ]
+      }
+    ]
+  },
+  "class_blind_map": {
+    "format": "youspeed.mapillary.class-blind-points.v1",
+    "output": "mapillary-all-sign-points.geojson.gz",
+    "output_sha256": "2c7ada05b05949dbbecad174e2be659536e5f80f747feda550e87612634f735a",
+    "output_bytes": 21278785,
+    "unique_points": 868563,
+    "source": "https://www.mapillary.com/",
+    "cache_directory": "output/mapillary/enzkreis/.tiles",
+    "tile_plan": "output/mapillary/baden-wuerttemberg/tile-plan.json",
+    "tile_plan_sha256": "525d69e352e1bb759989ee5f8a8bdbfd159c632db48a7ac4a4edfadb523dc299",
+    "boundary": "output/mapillary/baden-wuerttemberg/state-boundary.geojson",
+    "boundary_sha256": "71393fd1b9f118d5d4fbd44220b79af897656a3a00696ca58cc6963f92c33efb",
+    "source_cache_aggregate_sha256": "914f79874fdceff0ef373bd5b4361728f81256b076b3f81b9350ddf88195df9d",
+    "source_cache_aggregate_definition": "SHA256 over numeric (x,y) sorted cells, each UTF8 line: filename + TAB + SHA256(file bytes) + LF",
+    "extraction_script_sha256": "de7631313dfb73e7a0641f4349c4a5eac104196ff55eef16374d3e0787506b0e",
+    "counts": {
+      "cached_cells": 14241,
+      "empty_cells": 4168,
+      "source_records": 895664,
+      "outside_boundary_records": 27101,
+      "duplicate_id_records": 0,
+      "duplicate_id_coordinate_variants": 0
+    },
+    "filters": [
+      "valid point and decimal source ID",
+      "point covered by frozen BW boundary",
+      "unique source ID"
+    ],
+    "class_filter_applied": false,
+    "coordinate_policy": "Keep coordinates of first numeric (x,y) cell for each ID; do not merge nearby distinct IDs.",
+    "notes": [
+      "No class, pictogram, source-facing direction, detection box, or visibility is inferred or included.",
+      "The source cached cells are retained unchanged.",
+      "The former app-source export excluded 104085 general-direction-board records; these are retained here.",
+      "Grid completion does not establish complete real-world sign coverage; map features are predictions."
+    ],
+    "elapsed_seconds": 19.86,
+    "peak_rss_bytes_macos": 290799616
+  },
+  "spatial": {
+    "schema": "youspeed-hf-mapillary-teacher-feasibility-v1",
+    "hf_revision": "d2c5cc44716166e2604655d7fd8cad93a8dd9468",
+    "script_sha256": "1b6acf15265e2294739312103ae827cada9136898366b5b87ba6a4bed201c2e1",
+    "inputs": {
+      "hf_tree": {
+        "path": "/private/tmp/youspeed-detector-audit-2026-11-14/hf-tree.json",
+        "sha256": "e7fdf20ff8d8e09912d750b89b94cfe28192fa883bb7611a85c3ba14d7add0e1",
+        "bytes": 11211751
+      },
+      "hf_metadata": {
+        "path": "/private/tmp/youspeed-detector-audit-2026-11-14/hf/data/2026-11/metadata.jsonl.gz",
+        "sha256": "8b1d7cdc89f78fc406e07e6965abed5bb6f5bbcad1b3090b2cf8ea59b057a951",
+        "bytes": 29426981
+      },
+      "hf_source_plan": {
+        "path": "/private/tmp/youspeed-detector-audit-2026-11-14/hf/data/2026-11/source-plan.jsonl.gz",
+        "sha256": "a12531a7f06c5510b1d7899fd043cb5c216e1684d6f52afcb760b6b2022d9ad0",
+        "bytes": 54829112
+      },
+      "mapillary_geojson": {
+        "path": "/Users/raphaelvolz/Github/youspeed.de/output/mapillary-teacher-feasibility-2026-11-14/mapillary-all-sign-points.geojson.gz",
+        "sha256": "2c7ada05b05949dbbecad174e2be659536e5f80f747feda550e87612634f735a",
+        "bytes": 21278785
+      }
+    },
+    "mapillary_points": {
+      "input_features": 868563,
+      "outside_camera_neighbor_cells": 817888,
+      "indexed_points": 50675
+    },
+    "tree_image_count": 35147,
+    "metadata_image_count": 35147,
+    "source_plan_image_count": 35147,
+    "counts": {
+      "images": 35147,
+      "images_with_source_metadata": 35147,
+      "cone_eligible_images": 23372,
+      "images_with_nearby_map_points": 24074,
+      "images_with_retained_candidates": 21694,
+      "images_with_cone_candidates": 12884,
+      "nearby_pairs": 590071,
+      "retained_pairs": 369171,
+      "pairs_outside_hypothetical_cone": 220900
+    },
+    "pose_ineligibility_reasons": {
+      "not_registered_landscape": 9593,
+      "heading_course_disagreement": 1950,
+      "heading_computed_or_provenance_unknown": 2213,
+      "true_course_missing_or_invalid": 40,
+      "capture_fix_age_missing_or_over_3s": 1
+    },
+    "metadata_field_presence": {
+      "coordinates": 35147,
+      "heading_proxy_deg": 35147,
+      "exif_course_deg": 35107,
+      "declared_fov_deg": 35147,
+      "gps_accuracy_m": 35147,
+      "capture_fix_age_s": 35147,
+      "projection": 35147,
+      "camera_make": 35147,
+      "camera_model": 35147,
+      "sequence_ids": 35147
+    },
+    "candidate_statuses": {
+      "inside_hypothetical_forward_phone_cone": 148516,
+      "ungated_camera_pose_unqualified": 220655
+    },
+    "configuration": {
+      "detector_prefix": "data/2026-11/detector/",
+      "radius_m": 150,
+      "cone_margin_deg": 15,
+      "cone_half_angle": "declared_fov_deg / 2 + cone_margin_deg",
+      "earth_radius_m": 6371008.8,
+      "heading_course_max_difference_deg": 1.5,
+      "gps_accuracy_max_m": 25,
+      "capture_fix_max_age_s": 3,
+      "declared_fov_range_deg": [
+        45,
+        100
+      ],
+      "class_blind": true
+    },
+    "limitations": [
+      "No image pixels inspected; every row is a metadata audit, not a visual assessment.",
+      "Location course is a heading proxy; forward mounting, optical yaw and true horizontal FOV are unverified.",
+      "The configurable cone margin is a screening hypothesis, not a calibrated uncertainty bound.",
+      "GPS accuracy is declared source metadata and may be a fallback estimate, not measured position error.",
+      "Range and azimuth do not establish line of sight, sign facing, occlusion, persistence, identity or a box.",
+      "No candidates or an out-of-cone point do not establish a negative image or absent traffic sign.",
+      "Missing or unqualified pose keeps all nearby points ungated; coincident points have undefined bearing.",
+      "Image bytes and sidecar hashes are indexed, not verified by this metadata-only script."
+    ],
+    "output": {
+      "path": "/Users/raphaelvolz/Github/youspeed.de/output/mapillary-teacher-feasibility-2026-11-14/image-candidates.jsonl.gz",
+      "sha256": "7ad39035322d52450e3c27cfac8ff65ca73c1e72b65dbb0e241cd269de9b67a2",
+      "rows": 35147
+    }
+  },
+  "visual": {
+    "dataset_revision": "d2c5cc44716166e2604655d7fd8cad93a8dd9468",
+    "sample_count": 16,
+    "selection": "SHA256(teacher-feasibility-v1:<sample_id>) order within camera/orientation x existing-box strata, 250m separation from prior selected positions; four each iPhone landscape boxed/empty, two each Android boxed/empty and portrait boxed/empty. Deliberately balanced feasibility sample, not a prevalence sample.",
+    "full_corpus_visual_review_complete": false,
+    "reviews": [
+      {
+        "review_index": 1,
+        "picture_id": "540d349f-05db-4c35-9534-b0b9c8cc2d6c",
+        "sample_id": "panoramax-frame-540d349f-05db-4c35-9534-b0b9c8cc2d6c",
+        "path": "data/2026-11/detector/82/panoramax-frame-540d349f-05db-4c35-9534-b0b9c8cc2d6c.jpg",
+        "image_sha256": "c3603f690ae6a46fe1a88cacbd99424eaf80ca7eb7d4cc2acd2c158ebde6a197",
+        "annotation_sha256": "32aff0e1c11116f764d853b7ca7c388ab952a83dd394f649ba9cdc5b08335306",
+        "stratum": "android_boxed",
+        "source_box_count": 2,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Two clearly visible circular sign faces on the right, plus a sign back on the left. Existing two boxes cover the right-hand faces. Individual map identity unresolved."
+      },
+      {
+        "review_index": 2,
+        "picture_id": "bb7282d9-61bd-4d8d-9196-130292704f70",
+        "sample_id": "panoramax-frame-bb7282d9-61bd-4d8d-9196-130292704f70",
+        "path": "data/2026-11/detector/35/panoramax-frame-bb7282d9-61bd-4d8d-9196-130292704f70.jpg",
+        "image_sha256": "8b2967c8dbf9c18a91398661f5abde9ff7ef188d6c6697045b3eb8c74bd3a7cf",
+        "annotation_sha256": "45365747c2a4da71fc452be6aefb826fe422438778c2aff672e93423a1a1882d",
+        "stratum": "android_boxed",
+        "source_box_count": 6,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Six clear sign faces in two three-panel stacks, one on each side. Existing six boxes cover these. Geometric comparison can test two clusters without class labels; co-located panels remain ambiguous."
+      },
+      {
+        "review_index": 3,
+        "picture_id": "89019252-4ee4-4869-b3c3-0643403780ee",
+        "sample_id": "panoramax-frame-89019252-4ee4-4869-b3c3-0643403780ee",
+        "path": "data/2026-11/detector/6b/panoramax-frame-89019252-4ee4-4869-b3c3-0643403780ee.jpg",
+        "image_sha256": "6a6e2a42ea4282b27e614e5a8e4b9acfe776289ebf82e36983b38fd6174fda87",
+        "annotation_sha256": "bc24d009603a5cccc9e4aecb510d891dd9ef31ad3637adf96e0e8d67e0883e5f",
+        "stratum": "android_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Nearly black image. No usable visual sign evidence; do not label as verified negative."
+      },
+      {
+        "review_index": 4,
+        "picture_id": "24df08f9-c2f7-4982-b8c0-c301edd68f47",
+        "sample_id": "panoramax-frame-24df08f9-c2f7-4982-b8c0-c301edd68f47",
+        "path": "data/2026-11/detector/f1/panoramax-frame-24df08f9-c2f7-4982-b8c0-c301edd68f47.jpg",
+        "image_sha256": "4e3c457c899939a6e78cc0c12a625f57e537c7a606e3c974ea28caecbe817657",
+        "annotation_sha256": "76ab05b3311bb4656266a46ebd5b3efa81e3022c20fce24f39a54fb0a85b0303",
+        "stratum": "android_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Dark, motion-blurred road scene. No clear traffic sign face confirmed; right-hand roadside object unresolved. Outside Baden-Wuerttemberg."
+      },
+      {
+        "review_index": 5,
+        "picture_id": "9960c0e9-eb07-4d97-9f33-2c7fda631993",
+        "sample_id": "panoramax-frame-9960c0e9-eb07-4d97-9f33-2c7fda631993",
+        "path": "data/2026-11/detector/75/panoramax-frame-9960c0e9-eb07-4d97-9f33-2c7fda631993.jpg",
+        "image_sha256": "e4f0e5dcb488b59d86a0cc7a7066a4b1b55c3b07d8b045ecaaf7f9651176d50e",
+        "annotation_sha256": "90e65b21f00229ba8104c49a0a464d41ac060bb3cd27940093451f5a3b385356",
+        "stratum": "iphone_landscape_boxed",
+        "source_box_count": 1,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": true,
+        "exhaustive_ground_truth": false,
+        "observation": "Clear no-overtaking face with an unboxed supplementary panel beneath it; farther triangular/stacked assembly also visible at original pixel detail. Existing annotation covers only the nearer main sign. Sign backs also visible."
+      },
+      {
+        "review_index": 6,
+        "picture_id": "f1366679-ca4d-403f-a572-4daefa732d7f",
+        "sample_id": "panoramax-frame-f1366679-ca4d-403f-a572-4daefa732d7f",
+        "path": "data/2026-11/detector/e2/panoramax-frame-f1366679-ca4d-403f-a572-4daefa732d7f.jpg",
+        "image_sha256": "43956138eae941ef8528c3b31e8a9f29907f3699fcce8aa2925ddfad4a25cbb9",
+        "annotation_sha256": "4116b8d1048ceeeb93e51009e51fb4e87743dee6e2ea598a197f7a0d1546577b",
+        "stratum": "iphone_landscape_boxed",
+        "source_box_count": 1,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Clear blue motorway countdown board on right, covered by existing annotation. Other small distant objects unresolved."
+      },
+      {
+        "review_index": 7,
+        "picture_id": "ba84261d-7e3d-48df-99ab-cbd7fc89d501",
+        "sample_id": "panoramax-frame-ba84261d-7e3d-48df-99ab-cbd7fc89d501",
+        "path": "data/2026-11/detector/f2/panoramax-frame-ba84261d-7e3d-48df-99ab-cbd7fc89d501.jpg",
+        "image_sha256": "ff1538bf1a2c27a9bf5de735c5a1b86a4500733ad4e2c3650684bf4eb8bb8709",
+        "annotation_sha256": "8df2a3da206c1a19c3d43555b76d8549976c343bf266c4f56b744bf16b867ab2",
+        "stratum": "iphone_landscape_boxed",
+        "source_box_count": 1,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Clear speed-limit face in a soft/defocused image, covered by existing annotation. Small distant blue object unresolved. Outside Baden-Wuerttemberg."
+      },
+      {
+        "review_index": 8,
+        "picture_id": "e219c480-106e-4691-a636-8191e30a95f0",
+        "sample_id": "panoramax-frame-e219c480-106e-4691-a636-8191e30a95f0",
+        "path": "data/2026-11/detector/3c/panoramax-frame-e219c480-106e-4691-a636-8191e30a95f0.jpg",
+        "image_sha256": "0a456e3a4cb23adc99d9dd5479dbabd49a5ce7061ccbbe638ff2f07c4eac8563",
+        "annotation_sha256": "2ff85de51bb1fd6e478f84cc7bd14d3f1ce5c82c6c43f90df110803fac9a5f25",
+        "stratum": "iphone_landscape_boxed",
+        "source_box_count": 1,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Clear blue mandatory-direction face and further sign/direction panels. Existing annotation covers the foreground round face only; distant panel bounds not reviewed. Outside Baden-Wuerttemberg."
+      },
+      {
+        "review_index": 9,
+        "picture_id": "66980323-cc16-4f02-af0c-826e31818630",
+        "sample_id": "panoramax-frame-66980323-cc16-4f02-af0c-826e31818630",
+        "path": "data/2026-11/detector/13/panoramax-frame-66980323-cc16-4f02-af0c-826e31818630.jpg",
+        "image_sha256": "7af4b1810b23f66e7cba88e3e9ed27554b023db2805e057fd5e26862f1f97c28",
+        "annotation_sha256": "b17effc3f474210fae250711a17e082e87b07ec0922b939772464f2c79d86d09",
+        "stratum": "iphone_landscape_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": true,
+        "exhaustive_ground_truth": false,
+        "observation": "Several sign backs, including cropped backs at left and a large circular back at right. No clear front face confirmed. Do not conflate mapped locations with readable front faces."
+      },
+      {
+        "review_index": 10,
+        "picture_id": "da508393-4aa7-40e1-b20a-17d7ce8590f7",
+        "sample_id": "panoramax-frame-da508393-4aa7-40e1-b20a-17d7ce8590f7",
+        "path": "data/2026-11/detector/85/panoramax-frame-da508393-4aa7-40e1-b20a-17d7ce8590f7.jpg",
+        "image_sha256": "dd68c5ffac878f98a0642d040d497f8cb213f12f2e8e61af3c3a79c76b142c99",
+        "annotation_sha256": "76be9c1d568b68e544f48bcd4c0c96464eddb99f65267d0edbd8b03f1e9c8894",
+        "stratum": "iphone_landscape_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Foggy village scene; no clear sign face confirmed at preview resolution. Nearby map objects require original-resolution/adjacent-frame review; absence or removal not established."
+      },
+      {
+        "review_index": 11,
+        "picture_id": "628e10fd-e824-4d67-95e1-b627c093457f",
+        "sample_id": "panoramax-frame-628e10fd-e824-4d67-95e1-b627c093457f",
+        "path": "data/2026-11/detector/cd/panoramax-frame-628e10fd-e824-4d67-95e1-b627c093457f.jpg",
+        "image_sha256": "7ead6ce350e5c7abf3eb774d5a01f59e4c6749f385954fa860aa5c8098677512",
+        "annotation_sha256": "7e8e67a24bdea4a724c566ae8b8930f5f855d6fd4d671607ffade888a32efb37",
+        "stratum": "iphone_landscape_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Backlit motorway scene. No clear sign face confirmed at preview resolution; cannot certify exhaustive negative status."
+      },
+      {
+        "review_index": 12,
+        "picture_id": "673c6ff6-d847-4bee-a04f-9a95dacf3488",
+        "sample_id": "panoramax-frame-673c6ff6-d847-4bee-a04f-9a95dacf3488",
+        "path": "data/2026-11/detector/ba/panoramax-frame-673c6ff6-d847-4bee-a04f-9a95dacf3488.jpg",
+        "image_sha256": "34fff49b95c22c77a4933c5e02ad5233529623db6b197f96b69e688109f40514",
+        "annotation_sha256": "cfa85b0dc24d4beb532ca1f43cf3034f14b0333b7f1a83fab8014502e42d96a5",
+        "stratum": "iphone_landscape_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 1280,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Motorway scene with foreground truck and broad occlusion. No clear sign face confirmed; visible advertisement is not an official sign. Heading provenance fails conservative gating."
+      },
+      {
+        "review_index": 13,
+        "picture_id": "00aec52b-50cc-47bb-9ecc-e2a4bcd664a0",
+        "sample_id": "panoramax-frame-00aec52b-50cc-47bb-9ecc-e2a4bcd664a0",
+        "path": "data/2026-11/detector/2d/panoramax-frame-00aec52b-50cc-47bb-9ecc-e2a4bcd664a0.jpg",
+        "image_sha256": "0e5f2ce12a5933aabb6b4f17c88615225e3eea60e3e2449be6ee872a9ac9928c",
+        "annotation_sha256": "1273aa11f55ac684d2a3f5c3c8fd9465777cb50b2cee0a1facc6ced194a77ece",
+        "stratum": "portrait_boxed",
+        "source_box_count": 1,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 960,
+        "original_pixel_detail_reviewed": true,
+        "exhaustive_ground_truth": false,
+        "observation": "Clear Frauenalb town sign above a car lacks source box; the car obscures mainly mounting. Existing small annotation is elsewhere in image. Portrait pose not qualified for cone filtering."
+      },
+      {
+        "review_index": 14,
+        "picture_id": "43fca0fe-9daf-478e-9707-3d012ae384f5",
+        "sample_id": "panoramax-frame-43fca0fe-9daf-478e-9707-3d012ae384f5",
+        "path": "data/2026-11/detector/34/panoramax-frame-43fca0fe-9daf-478e-9707-3d012ae384f5.jpg",
+        "image_sha256": "12ea22a0cc70ee20494437a581c57e55bf004ba8a2e646c930cf7550ac6bb90e",
+        "annotation_sha256": "8fa7107b37248297899648d8fb4c727bd453e1a90abcd291a80dfc3567d720e1",
+        "stratum": "portrait_boxed",
+        "source_box_count": 1,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 960,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Urban portrait view; blue keep-right face on left is annotated. Further roadside panels unresolved in soft scene. Portrait pose not qualified for cone filtering."
+      },
+      {
+        "review_index": 15,
+        "picture_id": "d4b0fe28-9813-4827-85d3-e043b1314413",
+        "sample_id": "panoramax-frame-d4b0fe28-9813-4827-85d3-e043b1314413",
+        "path": "data/2026-11/detector/96/panoramax-frame-d4b0fe28-9813-4827-85d3-e043b1314413.jpg",
+        "image_sha256": "a6973a8409e391ddc71d1740734a7ee2466e48ab44c002c4a9da15716b064d1b",
+        "annotation_sha256": "2366f47ad58d4ef801afccdb13348ffcce8050917829247ee5f38c3d7a9e3b92",
+        "stratum": "portrait_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 960,
+        "original_pixel_detail_reviewed": false,
+        "exhaustive_ground_truth": false,
+        "observation": "Portrait road view over crest; no clear sign face confirmed. Map candidates beyond crest are not evidence of visibility."
+      },
+      {
+        "review_index": 16,
+        "picture_id": "9e624fca-24eb-464f-982d-1709a322f947",
+        "sample_id": "panoramax-frame-9e624fca-24eb-464f-982d-1709a322f947",
+        "path": "data/2026-11/detector/78/panoramax-frame-9e624fca-24eb-464f-982d-1709a322f947.jpg",
+        "image_sha256": "b9d9c2e6ad1153a56d71d6d0aca89af4ed4b2a629d5b3cd309685f4ef81f3d39",
+        "annotation_sha256": "281fcd999362664a8075c1f21dab247e0bd46058024b7e516f238412cb9efefd",
+        "stratum": "portrait_empty",
+        "source_box_count": 0,
+        "visual_review": "model_assisted_feasibility_only",
+        "reviewed_long_edge_px": 960,
+        "original_pixel_detail_reviewed": true,
+        "exhaustive_ground_truth": false,
+        "observation": "Clear reflective multi-chevron board in night scene; source annotations empty. Plate is vehicle registration plate and out of sign-detector scope. Portrait pose not qualified for cone filtering."
+      }
+    ]
+  },
+  "independent_proposals": {
+    "method": "Independent visual inspection of full-scene previews and unscaled native detail crops, compared with exported source boxes. Original-raster pixel XYXY coordinates. Proposed bounds are review aids, not exhaustive or adjudicated ground truth.",
+    "source": "output/mapillary-teacher-feasibility-2026-11-14/sample-plan.json",
+    "reviews": [
+      {
+        "review_index": 5,
+        "picture_id": "9960c0e9-eb07-4d97-9f33-2c7fda631993",
+        "original_dimensions": [
+          4224,
+          2376
+        ],
+        "existing_boxes": [
+          [
+            1909,
+            1437,
+            1942,
+            1468
+          ]
+        ],
+        "proposals": [
+          {
+            "kind": "supplementary_panel",
+            "box_xyxy": [
+              1913,
+              1465,
+              1939,
+              1479
+            ],
+            "confidence": "clear sign face; approximate hand-located bounds",
+            "note": "Distinct rectangular panel immediately below the annotated no-overtaking sign; existing box does not cover the panel. Text not transcribed."
+          },
+          {
+            "kind": "farther_sign_assembly_review_roi",
+            "box_xyxy": [
+              1485,
+              1477,
+              1508,
+              1514
+            ],
+            "confidence": "clear sign assembly; individual panel bounds unresolved",
+            "note": "Farther triangular warning face, tiny intermediary plate, and circular lower face are visible. This is a review ROI, not a training box or certified three-panel annotation."
+          }
+        ],
+        "review_note": "Visible sign backs at left are outside these proposed face annotations."
+      },
+      {
+        "review_index": 13,
+        "picture_id": "00aec52b-50cc-47bb-9ecc-e2a4bcd664a0",
+        "original_dimensions": [
+          2376,
+          4224
+        ],
+        "existing_boxes": [
+          [
+            808,
+            2536,
+            845,
+            2578
+          ]
+        ],
+        "proposals": [
+          {
+            "kind": "town_entry_panel",
+            "box_xyxy": [
+              1683,
+              2361,
+              1769,
+              2428
+            ],
+            "confidence": "clear yellow town face; approximate hand-located bounds",
+            "note": "Frauenalb is readable. Existing source bbox is a different small roadside sign at left. Car occludes mounting/pole and may meet lower edge; the town panel face is substantially visible, so do not describe it as heavily occluded."
+          }
+        ]
+      },
+      {
+        "review_index": 16,
+        "picture_id": "9e624fca-24eb-464f-982d-1709a322f947",
+        "original_dimensions": [
+          2376,
+          4224
+        ],
+        "existing_boxes": [],
+        "proposals": [
+          {
+            "kind": "multi_chevron_board",
+            "box_xyxy": [
+              509,
+              2258,
+              747,
+              2325
+            ],
+            "confidence": "clear sign face; approximate hand-located bounds",
+            "note": "Single multi-chevron direction board on left, strongly illuminated/overexposed at night. No source annotations; this frame is not a true negative."
+          }
+        ]
+      }
+    ]
+  },
+  "validation": {
+    "tests_passed": 8,
+    "candidate_rows_independently_counted": 35147,
+    "unique_picture_ids": 35147,
+    "retained_pairs_independently_counted": 369171,
+    "qualified_images_with_candidates_independently_counted": 12884,
+    "scope_note": "Image hashes locally checked for16samples only; all remaining media verification comes from frozen export manifest."
+  }
+}
