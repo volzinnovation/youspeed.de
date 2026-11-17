@@ -518,7 +518,7 @@ struct MainView: View {
             if journalSettingsAfterDismiss { journalSettingsAfterDismiss = false; settingsPresentation.wrappedValue = true }
         }) {
             DismissibleNavigationSheet {
-                TripJournalView(gallery: { photoIDs, videoIDs in
+                TripJournalView(viewModel: viewModel, gallery: { photoIDs, videoIDs in
                     AnyView(PanoramaxGalleryView(viewModel: viewModel, tripPhotoIDs: photoIDs, tripVideoIDs: videoIDs))
                 }, deleteMedia: { photoIDs, videoIDs in
                     await viewModel.deleteTripJournalMedia(photoIDs: photoIDs, videoIDs: videoIDs)
@@ -3547,7 +3547,7 @@ struct SettingsView: View {
             Section(journalText("title")) {
                 TripJournalRecordingSettings()
                 NavigationLink {
-                    TripJournalView(gallery: { photoIDs, videoIDs in
+                    TripJournalView(viewModel: viewModel, gallery: { photoIDs, videoIDs in
                         AnyView(PanoramaxGalleryView(viewModel: viewModel, tripPhotoIDs: photoIDs, tripVideoIDs: videoIDs))
                     }, deleteMedia: { photoIDs, videoIDs in
                         await viewModel.deleteTripJournalMedia(photoIDs: photoIDs, videoIDs: videoIDs)
@@ -3789,6 +3789,13 @@ struct SettingsView: View {
                     }
                     .disabled(account.isBusy)
                 }
+            }
+
+            Section {
+                NavigationLink("inspector.files.title") {
+                    InspectorFilesView(account: account, viewModel: viewModel)
+                }
+                .disabled(viewModel.isDriveRecorderActive)
             }
 
             Section(NSLocalizedString("settings.penalty.section", comment: "")) {

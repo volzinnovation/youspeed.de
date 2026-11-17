@@ -173,6 +173,7 @@ class TripJournalTableUiInstrumentedTest {
             compose.waitUntil(10000) {compose.onAllNodesWithTag("trip-ending-odometer-sheet").fetchSemanticsNodes().isEmpty()}
             assertEquals(12000.5,journal.snapshot().first.single().getDouble("odo_end"),0.0)
             compose.onNodeWithTag("trip-$id-share").performScrollTo().performTouchInput {click(center)}
+            compose.onNodeWithTag("journal-share-archive").performClick()
             compose.waitUntil(10000) {shared.get()!=null}
             assertEquals(Intent.ACTION_CHOOSER,shared.get()!!.action)
             val send=shared.get()!!.getParcelableExtra(Intent.EXTRA_INTENT,Intent::class.java)!!
@@ -180,8 +181,12 @@ class TripJournalTableUiInstrumentedTest {
             compose.onNodeWithTag("trip-ending-odometer-sheet").assertDoesNotExist()
             val archive=File(context.filesDir,"trip-exports/$id").listFiles()!!.single {it.extension=="zip"}
             ZipFile(archive).use {zip ->
-                for(name in listOf("gps.json","tsr.json","track.gpx","track.geojson")) assertNotNull(name,zip.getEntry(name))
-                assertTrue(zip.getInputStream(zip.getEntry("tsr.json")).reader().readText().contains("fixture_tsr"))
+                for(name in listOf("journal.json","track.gpx","track.geojson")) assertNotNull(name,zip.getEntry(name))
+                val events=JSONObject(zip.getInputStream(zip.getEntry("journal.json")).reader().readText()).getJSONArray("events")
+                assertTrue((0 until events.length()).any { index ->
+                    val event=events.getJSONObject(index)
+                    event.getString("kind")=="tsr" && event.getJSONObject("payload").optString("event")=="fixture_tsr"
+                })
                 val trip=JSONObject(zip.getInputStream(zip.getEntry("trip.json")).reader().readText()).getJSONObject("trip")
                 assertFalse(trip.has("odo_end"));assertFalse(zip.entries().asSequence().any {it.name.startsWith("media/")})
             }

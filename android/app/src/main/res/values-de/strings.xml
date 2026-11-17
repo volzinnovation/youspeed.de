@@ -145,4 +145,27 @@
     <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">in %1$d m</string>
     <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">in &lt;10 m</string>
     <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Kommende Geschwindigkeitsbegrenzung, %1$d Kilometer pro Stunde, %2$s</string>
+    <string name="inspector_track_share">Track teilen</string>
+    <string name="inspector_track_save">Track im Inspector speichern</string>
+    <string name="inspector_track_scope">Die GPX-Datei enthält Streckenkoordinaten und Zeitstempel. Sie wird privat in deinem Inspector-Konto gespeichert.</string>
+    <string name="inspector_track_saved">Track im Inspector gespeichert.</string>
+    <string name="inspector_track_recording">Der Upload zum Inspector ist nach Ende der Aufzeichnung verfügbar.</string>
+    <string name="inspector_track_archive">Fahrtarchiv teilen</string>
+    <string name="inspector_files_title">Inspector-Dateien</string>
+    <string name="inspector_files_choose">GPX oder Protokoll auswählen</string>
+    <string name="inspector_files_choose_log">App-Protokoll auswählen</string>
+    <string name="inspector_files_save">Privat speichern</string>
+    <string name="inspector_files_saved">Meine Dateien</string>
+    <string name="inspector_files_empty">Noch keine gespeicherten Dateien.</string>
+    <string name="inspector_files_unavailable">Der Inspector-Dateispeicher ist nicht verfügbar.</string>
+    <string name="inspector_files_examples">Teststrecken</string>
+    <string name="inspector_files_refresh">Aktualisieren</string>
+    <string name="inspector_files_open_web">Dateien im Inspector verwalten</string>
+    <string name="inspector_files_truncated">Vorschau auf die ersten 32 KiB.</string>
+    <string name="inspector_files_account">Verbinde dein YouSpeed-Panoramax-Konto in den Einstellungen.</string>
+    <string name="inspector_files_failed">Der Inspector konnte die Anfrage nicht abschließen.</string>
+    <string name="inspector_files_type">Wähle eine GPX-Strecke oder ein Textprotokoll.</string>
+    <string name="inspector_files_size">Die Datei ist leer oder zu groß.</string>
+    <string name="inspector_files_choose_trip">Aufgezeichnete Fahrt auswählen</string>
+    <string name="inspector_files_save_trip">Fahrt und Protokolle privat speichern</string>
 </resources>

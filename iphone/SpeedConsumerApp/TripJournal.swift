@@ -1334,15 +1334,19 @@ private extension View {
 struct TripJournalView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var journal: TripJournal
+    private let viewModel: DriveSessionViewModel?
     var gallery: ((Set<String>, Set<String>) -> AnyView)? = nil
     var deleteMedia: (@MainActor (Set<String>, Set<String>) async -> TripJournalMediaDeletionResult)? = nil
     var openSettings: (() -> Void)? = nil
-    init(journal: TripJournal = .shared, gallery: ((Set<String>, Set<String>) -> AnyView)? = nil,
+    init(journal: TripJournal = .shared, viewModel: DriveSessionViewModel? = nil,
+         gallery: ((Set<String>, Set<String>) -> AnyView)? = nil,
          deleteMedia: (@MainActor (Set<String>, Set<String>) async -> TripJournalMediaDeletionResult)? = nil,
          openSettings:(() -> Void)? = nil) {
-        self.journal = journal; self.gallery = gallery; self.deleteMedia = deleteMedia; self.openSettings = openSettings
+        self.journal = journal; self.viewModel = viewModel; self.gallery = gallery; self.deleteMedia = deleteMedia; self.openSettings = openSettings
     }
     @State private var selectedTrip: JournalTripSelection?
+    @State private var sharingTrip: JournalTripSelection?
+    @State private var pendingArchive: String?
     @State private var pendingDelete: String?
     @State private var files: [URL] = []
     @State private var share = false
@@ -1414,6 +1418,28 @@ struct TripJournalView: View {
             Button("OK", role: .cancel) { operationError = nil; operationStatus = nil }
         } message: { Text(operationError ?? operationStatus ?? "") }
         .sheet(isPresented: $share) { TripShareSheet(urls: files) }
+        .sheet(item: $sharingTrip, onDismiss: {
+            if let id = pendingArchive {
+                pendingArchive = nil
+                shareArchive(id)
+            }
+        }) { selection in
+            let archive = {
+                pendingArchive = selection.id
+                sharingTrip = nil
+            }
+            DismissibleNavigationSheet {
+                Group {
+                    if let viewModel {
+                        InspectorTrackShareView(id: selection.id, journal: journal, account: viewModel.panoramaxAccount,
+                                                viewModel: viewModel, shareArchive: archive)
+                    } else {
+                        InspectorTrackShareOptions(id: selection.id, journal: journal, shareArchive: archive)
+                    }
+                }
+                .subscreenCloseButton()
+            }
+        }
         .sheet(item: $selectedTrip) { selection in
             DismissibleNavigationSheet {
                 TripEndOdometerSheet(id: selection.id, journal: journal) { revision += 1 }
@@ -1423,6 +1449,10 @@ struct TripJournalView: View {
             .presentationDetents([.height(280)])
         }
     }
+    private func shareArchive(_ id: String) {
+        run { [try journal.archive(id, options: TripExportOptions())] }
+    }
+
     private func run(_ operation: @escaping () throws -> [URL]) {
         busy = true; operationError = nil
         Task {
@@ -1463,10 +1493,10 @@ struct TripJournalView: View {
         let start = Date(timeIntervalSince1970: trip["start"] as? Double ?? 0)
         let end = Date(timeIntervalSince1970: trip["end"] as? Double ?? 0)
         return HStack(alignment: .top, spacing: 0) {
-            Button { run { [try journal.archive(id, options: TripExportOptions())] } } label: {
+            Button { sharingTrip = JournalTripSelection(id: id) } label: {
                 Image(systemName: "square.and.arrow.up").frame(width: actionWidth, height: 44, alignment: .top)
                     .contentShape(Rectangle())
-            }.buttonStyle(.borderless).accessibilityLabel(journalText("share_drive"))
+            }.buttonStyle(.borderless).accessibilityLabel(Text("inspector.track.share"))
                 .accessibilityIdentifier("journal.history.share.\(id)").disabled(busy)
             historyCell(id: id, column: 0) {
                 VStack(alignment: .leading, spacing: 3) {
@@ -1920,7 +1950,6 @@ func journalText(_ key: String) -> String {
         "last_known_location": ["Last known", "Zuletzt bekannt", "Dernier lieu connu", "Laatst bekend"],
         "location_unknown": ["Unknown location", "Ort unbekannt", "Lieu inconnu", "Onbekende locatie"],
         "details": ["Details, map and logs", "Details, Karte und Protokolle", "Détails, carte et journaux", "Details, kaart en logboeken"],
-        "share_drive": ["Share drive with GPS and TSR logs", "Fahrt mit GPS- und TSR-Protokollen teilen", "Partager le trajet et les journaux GPS et TSR", "Rit met GPS- en TSR-logboeken delen"],
         "end_odo_prompt": ["Optionally enter the car’s odometer reading at the end of this drive, in kilometres. This does not change the measured distance or counters.", "Optional den Kilometerstand des Autos am Ende dieser Fahrt eingeben. Gemessene Strecke und Zähler bleiben unverändert.", "Indiquez éventuellement le compteur du véhicule à la fin de ce trajet, en kilomètres. La distance mesurée et les compteurs restent inchangés.", "Vul eventueel de kilometerstand van de auto aan het einde van deze rit in. Gemeten afstand en tellers blijven gelijk."],
         "end_odo_readonly": ["This saved end reading cannot be changed.", "Dieser gespeicherte Endstand kann nicht geändert werden.", "Ce compteur final enregistré ne peut pas être modifié.", "Deze opgeslagen eindstand kan niet worden gewijzigd."],
         "trip_missing": ["This trip no longer exists.", "Diese Fahrt ist nicht mehr vorhanden.", "Ce trajet n’existe plus.", "Deze rit bestaat niet meer."],
@@ -1945,7 +1974,7 @@ struct TripJournalPreviewRoot: View {
         journal.setEnabled(true); journal.start(); _ = journal.snapshot()
         let at = Date()
         for (index, delta) in [-8.0, -4.0, 0.0].enumerated() {
-            journal.location(CLLocation(coordinate: .init(latitude: 49.0069 + Double(index) * 0.00035, longitude: 8.4037 + Double(index) * 0.0001), altitude: 115, horizontalAccuracy: 3, verticalAccuracy: 5, course: 15, speed: 10, timestamp: at.addingTimeInterval(delta)))
+            journal.location(CLLocation(coordinate: .init(latitude: 49.0069 + Double(index) * 0.00055, longitude: 8.4037 + Double(index) * 0.0001), altitude: 115, horizontalAccuracy: 3, verticalAccuracy: 5, course: 15, speed: 10, timestamp: at.addingTimeInterval(delta)))
         }
         journal.signEvent(["source": "camera", "evidence_source": "camera_observation", "class_code": "DE:274-30", "latitude": 49.0073, "longitude": 8.4038, "confidence": 0.97], at: Date())
         journal.signEvent(["source": "government", "evidence_source": "inventory_encounter", "class_code": "DE:101", "latitude": 49.0075, "longitude": 8.4039], at: Date())
@@ -1953,7 +1982,7 @@ struct TripJournalPreviewRoot: View {
         self.id = id
         journal.setVehicle(id, name: "YouSpeed"); journal.odometer(id, start: 12030, end: ProcessInfo.processInfo.arguments.contains("--trip-journal-missing-odometer-preview") ? nil : 12030.08)
         journal.matchedPlace(at: Date(), streetName: "Kaiserstraße", cityName: "Karlsruhe", latitude: 49.0069, longitude: 8.4037, accuracy: 3)
-        journal.matchedPlace(at: at, streetName: "Zirkel", cityName: "Karlsruhe", latitude: 49.0076, longitude: 8.4039, accuracy: 3)
+        journal.matchedPlace(at: at, streetName: "Zirkel", cityName: "Karlsruhe", latitude: 49.0080, longitude: 8.4039, accuracy: 3)
         journal.tsr("camera_observation outcome=observed model=preview")
         journal.stop(); _ = journal.snapshot(); journal.completeFinalizerForTesting()
     }

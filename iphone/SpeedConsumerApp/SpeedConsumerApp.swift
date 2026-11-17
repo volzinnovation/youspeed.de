@@ -74,7 +74,7 @@ private struct SpeedConsumerRootView: View {
             }
         }) {
             DismissibleNavigationSheet {
-                TripJournalView(openSettings:{startupJournalSettingsAfterDismiss = true; showingStartupJournal = false})
+                TripJournalView(viewModel: viewModel, openSettings:{startupJournalSettingsAfterDismiss = true; showingStartupJournal = false})
             }
         }
         .sheet(isPresented:$showingStartupSettings,onDismiss:{viewModel.setSettingsPresented(false)}) {

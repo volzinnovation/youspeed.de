@@ -496,6 +496,13 @@ final class ScreenOrientationUITests: XCTestCase {
         }
         table.swipeRight()
         XCTAssertTrue(share.isHittable); share.tap()
+        let inspector = app.buttons["journal.share.inspector"]
+        XCTAssertTrue(inspector.waitForExistence(timeout: 5))
+        XCTAssertFalse(inspector.isEnabled)
+        let archive = app.buttons["journal.share.archive"]
+        XCTAssertTrue(archive.isEnabled)
+        XCTAssertLessThan(inspector.frame.minY, archive.frame.minY)
+        archive.tap()
         let nativeShare = NSPredicate { _, _ in
             app.otherElements["ActivityListView"].exists || app.staticTexts["AirDrop"].exists || app.buttons["Kopieren"].exists || app.buttons["Copy"].exists
         }

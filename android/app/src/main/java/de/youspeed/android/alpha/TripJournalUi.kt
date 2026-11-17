@@ -36,6 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.semantics.contentDescription
@@ -163,7 +164,7 @@ private fun TripHistoryRow(trip:JSONObject,enabled:Boolean,onClick:()->Unit,onSh
         val compact=maxWidth<600.dp
         Column {
         Row(Modifier.fillMaxWidth().testTag("trip-$id"),verticalAlignment=Alignment.Top) {
-            TripHistoryAction(enabled,onShare,"trip-$id-share",jt("Share drive with GPS and TSR logs","Fahrt mit GPS- und TSR-Protokollen teilen","Partager le trajet et les journaux GPS et TSR","Rit met GPS- en TSR-logboeken delen")) {
+            TripHistoryAction(enabled,onShare,"trip-$id-share",stringResource(R.string.inspector_track_share)) {
                 Icon(Icons.Default.Share,contentDescription=null,modifier=Modifier.size(20.dp))
             }
             listOf(tripDateCell(trip,compact),trip.optString("start_place").ifBlank {unknown},endPlace,TripJournalPresentation.distanceKilometres(trip.optDouble("distance"))).forEachIndexed {index,text->TripHistoryCell(text,index,"trip-$id-cell-$index",compact,onClick=onClick)}
@@ -186,12 +187,13 @@ private fun TripHistoryAction(enabled:Boolean,onClick:()->Unit,tag:String,label:
 }
 
 @Composable
-internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObject>,Boolean)->String)?=null,mapDatabasePath:String?=null,galleryContent:(@Composable (List<JSONObject>,()->Unit)->Unit)?=null,onOpenSettings:()->Unit={},onDismiss:()->Unit) {
+internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObject>,Boolean)->String)?=null,mapDatabasePath:String?=null,galleryContent:(@Composable (List<JSONObject>,()->Unit)->Unit)?=null,onOpenSettings:()->Unit={},inspectorController:ConsumerSessionController?=null,onDismiss:()->Unit) {
     val context=LocalContext.current;val scope=rememberCoroutineScope()
     var trips by remember {mutableStateOf(emptyList<JSONObject>())}
     var recordingEnabled by remember(journal) {mutableStateOf(journal.enabled)}
     var failure by remember {mutableStateOf<String?>(null)};var busy by remember {mutableStateOf(false)}
     var endingTrip by remember {mutableStateOf<String?>(null)};var endingInput by remember {mutableStateOf("")}
+    var sharingTrip by remember { mutableStateOf<String?>(null) }
     var deletion by remember {mutableStateOf<String?>(null)};var deleteMedia by remember {mutableStateOf(false)}
     var deletionMedia by remember {mutableStateOf(emptyList<JSONObject>())};var cleanupPreview by remember {mutableStateOf("")}
     var deletionMediaLoading by remember {mutableStateOf(false)};var deletionMediaReady by remember {mutableStateOf(false)}
@@ -227,7 +229,7 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
             }
             items(trips,key={it.getString("id")}) {trip ->
                 val id=trip.getString("id")
-                TripHistoryRow(trip,!busy,{if(!busy) {endingInput="";endingTrip=id}},{task {val archive=withContext(Dispatchers.IO) {journal.archive(id,TripExportOptions())};share(archive,"application/zip")}},{
+                TripHistoryRow(trip,!busy,{if(!busy) {endingInput="";endingTrip=id}},{sharingTrip=id},{
                     deletionMedia=emptyList();deleteMedia=false;cleanupPreview=""
                     deletionMediaReady=false;deletionMediaLoading=mediaCleanup!=null;deletion=id
                 })
@@ -242,6 +244,15 @@ internal fun TripJournalScreen(journal:TripJournal,mediaCleanup:((List<JSONObjec
             }
         }
         }
+    }
+    sharingTrip?.let { id ->
+        InspectorTrackShareDialog(id, journal, inspectorController, onShareArchive = {
+            sharingTrip = null
+            task {
+                val archive = withContext(Dispatchers.IO) { journal.archive(id, TripExportOptions()) }
+                share(archive, "application/zip")
+            }
+        }, onDismiss = { sharingTrip = null })
     }
     endingTrip?.let {id ->trips.firstOrNull {it.optString("id")==id}?.let {target ->
         val entered=TripJournalPresentation.endingKilometres(endingInput,target.optDouble("odo_start",0.0))

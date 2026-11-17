@@ -147,4 +147,27 @@
     <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">dans %1$d m</string>
     <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">dans &lt;10 m</string>
     <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Limitation à venir, %1$d kilomètres par heure, %2$s</string>
+    <string name="inspector_track_share">Partager le tracé</string>
+    <string name="inspector_track_save">Enregistrer le tracé dans Inspector</string>
+    <string name="inspector_track_scope">Le fichier GPX contient les coordonnées et les horodatages du trajet. Il sera enregistré en privé dans votre compte Inspector.</string>
+    <string name="inspector_track_saved">Tracé enregistré dans Inspector.</string>
+    <string name="inspector_track_recording">L’envoi vers Inspector est disponible après la fin de l’enregistrement.</string>
+    <string name="inspector_track_archive">Partager l’archive du trajet</string>
+    <string name="inspector_files_title">Fichiers Inspector</string>
+    <string name="inspector_files_choose">Choisir un GPX ou un journal</string>
+    <string name="inspector_files_choose_log">Choisir un journal de l’app</string>
+    <string name="inspector_files_save">Enregistrer en privé</string>
+    <string name="inspector_files_saved">Mes fichiers</string>
+    <string name="inspector_files_empty">Aucun fichier enregistré.</string>
+    <string name="inspector_files_unavailable">Le stockage Inspector est indisponible.</string>
+    <string name="inspector_files_examples">Tracés de test</string>
+    <string name="inspector_files_refresh">Actualiser</string>
+    <string name="inspector_files_open_web">Gérer les fichiers dans Inspector</string>
+    <string name="inspector_files_truncated">Affichage des premiers 32 Kio.</string>
+    <string name="inspector_files_account">Connectez votre compte Panoramax YouSpeed dans les réglages.</string>
+    <string name="inspector_files_failed">Inspector n’a pas pu traiter la demande.</string>
+    <string name="inspector_files_type">Choisissez un tracé GPX ou un journal texte.</string>
+    <string name="inspector_files_size">Le fichier est vide ou trop volumineux.</string>
+    <string name="inspector_files_choose_trip">Choisir un trajet enregistré</string>
+    <string name="inspector_files_save_trip">Enregistrer le trajet et ses journaux en privé</string>
 </resources>

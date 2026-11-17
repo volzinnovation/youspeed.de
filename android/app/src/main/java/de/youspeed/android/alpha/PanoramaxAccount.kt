@@ -244,6 +244,11 @@ class PanoramaxAccount(
 
     override fun tokenForUpload(): String? = runCatching { readCredentials()?.token }.getOrNull()
 
+    @Synchronized
+    internal fun tokenForInspector(): String? =
+        if (origin == PanoramaxServiceConfiguration.origin) tokenForUpload() else null
+
+
     private companion object {
         const val KEY_SERVER_ID = "server_id"
     }

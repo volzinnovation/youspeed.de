@@ -148,4 +148,27 @@
     <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">in %1$d m</string>
     <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">in &lt;10 m</string>
     <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Upcoming speed limit, %1$d kilometres per hour, %2$s</string>
+    <string name="inspector_track_share">Share track</string>
+    <string name="inspector_track_save">Save track to Inspector</string>
+    <string name="inspector_track_scope">The GPX contains route coordinates and timestamps. It will be saved privately in your Inspector account.</string>
+    <string name="inspector_track_saved">Track saved to Inspector.</string>
+    <string name="inspector_track_recording">Inspector upload is available after recording ends.</string>
+    <string name="inspector_track_archive">Share trip archive</string>
+    <string name="inspector_files_title">Inspector files</string>
+    <string name="inspector_files_choose">Choose GPX or log</string>
+    <string name="inspector_files_choose_log">Choose an app log</string>
+    <string name="inspector_files_save">Save privately</string>
+    <string name="inspector_files_saved">My files</string>
+    <string name="inspector_files_empty">No saved files yet.</string>
+    <string name="inspector_files_unavailable">Inspector file storage is unavailable.</string>
+    <string name="inspector_files_examples">Test tracks</string>
+    <string name="inspector_files_refresh">Refresh</string>
+    <string name="inspector_files_open_web">Manage files in Inspector</string>
+    <string name="inspector_files_truncated">Showing the first 32 KiB.</string>
+    <string name="inspector_files_account">Connect your YouSpeed Panoramax account in Settings.</string>
+    <string name="inspector_files_failed">Inspector could not complete the request.</string>
+    <string name="inspector_files_type">Choose a GPX track or text log.</string>
+    <string name="inspector_files_size">The file is empty or too large.</string>
+    <string name="inspector_files_choose_trip">Choose a recorded trip</string>
+    <string name="inspector_files_save_trip">Save trip and logs privately</string>
 </resources>

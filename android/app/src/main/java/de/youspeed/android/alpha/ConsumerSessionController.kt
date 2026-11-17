@@ -2196,6 +2196,9 @@ class ConsumerSessionController(
     }
     fun connectPanoramaxAccount() { submitBackgroundTask { panoramaxAccount.connect()?.let { url -> mainHandler.post { host?.openExternalUrl(url) } } } }
     fun validatePanoramaxAccount() { submitBackgroundTask { panoramaxAccount.validateConnection() } }
+
+    internal fun inspectorFilesToken(): String? = panoramaxAccount.tokenForInspector()
+
     fun disconnectPanoramaxAccount() { stopPanoramaxUploads(); submitBackgroundTask { panoramaxAccount.disconnect() } }
     fun uploadPanoramaxSelections(selections: Map<String, Set<String>>) {
         if (!canProcessPanoramaxUploads()) return

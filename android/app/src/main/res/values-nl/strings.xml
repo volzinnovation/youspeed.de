@@ -147,4 +147,27 @@
     <string name="upcoming_limit_distance" tools:ignore="MissingTranslation">over %1$d m</string>
     <string name="upcoming_limit_distance_near" tools:ignore="MissingTranslation">over &lt;10 m</string>
     <string name="upcoming_limit_accessibility" tools:ignore="MissingTranslation">Komende snelheidslimiet, %1$d kilometer per uur, %2$s</string>
+    <string name="inspector_track_share">Route delen</string>
+    <string name="inspector_track_save">Route opslaan in Inspector</string>
+    <string name="inspector_track_scope">Het GPX-bestand bevat routecoördinaten en tijdstippen. Het wordt privé opgeslagen in je Inspector-account.</string>
+    <string name="inspector_track_saved">Route opgeslagen in Inspector.</string>
+    <string name="inspector_track_recording">Uploaden naar Inspector is mogelijk zodra de opname is gestopt.</string>
+    <string name="inspector_track_archive">Ritarchief delen</string>
+    <string name="inspector_files_title">Inspector-bestanden</string>
+    <string name="inspector_files_choose">GPX of logboek kiezen</string>
+    <string name="inspector_files_choose_log">App-logboek kiezen</string>
+    <string name="inspector_files_save">Privé opslaan</string>
+    <string name="inspector_files_saved">Mijn bestanden</string>
+    <string name="inspector_files_empty">Nog geen opgeslagen bestanden.</string>
+    <string name="inspector_files_unavailable">Inspector-opslag is niet beschikbaar.</string>
+    <string name="inspector_files_examples">Testroutes</string>
+    <string name="inspector_files_refresh">Vernieuwen</string>
+    <string name="inspector_files_open_web">Bestanden beheren in Inspector</string>
+    <string name="inspector_files_truncated">De eerste 32 KiB worden getoond.</string>
+    <string name="inspector_files_account">Verbind je YouSpeed Panoramax-account in Instellingen.</string>
+    <string name="inspector_files_failed">Inspector kon het verzoek niet voltooien.</string>
+    <string name="inspector_files_type">Kies een GPX-route of tekstlogboek.</string>
+    <string name="inspector_files_size">Het bestand is leeg of te groot.</string>
+    <string name="inspector_files_choose_trip">Opgenomen rit kiezen</string>
+    <string name="inspector_files_save_trip">Rit en logboeken privé opslaan</string>
 </resources>

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CF25DD42938A46CAA190A149 /* InspectorFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF25DD42938A46CAA190A150 /* InspectorFilesView.swift */; };
 		014EE424EC263574AB5B4CBC /* BundleTargets.top10.json in Resources */ = {isa = PBXBuildFile; fileRef = B4180056200225822BF33821 /* BundleTargets.top10.json */; };
 		021C1A2776097C50D00FC6D0 /* TSRModelPacks in Resources */ = {isa = PBXBuildFile; fileRef = 2811A15F038D37D70FFEA60E /* TSRModelPacks */; };
 		02C8C041AE046D1B34185DF7 /* RoadBoundaryTemporalTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3B28DE5916E71A3F35CFD7 /* RoadBoundaryTemporalTrackerTests.swift */; };
@@ -295,6 +296,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CF25DD42938A46CAA190A150 /* InspectorFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorFilesView.swift; sourceTree = "<group>"; };
 		03C46F5B39F4707AAB46BEE0 /* TrafficSignRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignRuntime.swift; sourceTree = "<group>"; };
 		04C2F0D2C62B67E17CA605B3 /* penalty-documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "penalty-documentation"; path = "../shared/penalty-documentation"; sourceTree = SOURCE_ROOT; };
 		04E3DFEEB128C612F8014906 /* romania.poly */ = {isa = PBXFileReference; path = romania.poly; sourceTree = "<group>"; };
@@ -573,6 +575,7 @@
 				49AA1302CBD06A724146AD4E /* LaneSemanticHint.swift */,
 				D5EFF252BA4CDEC5C67298CB /* LatestPendingLookupWorker.swift */,
 				9C00B7D4BAE2E00537C6B0B6 /* legal.txt */,
+				CF25DD42938A46CAA190A150 /* InspectorFilesView.swift */,
 				5460B7376654275955039717 /* MainView.swift */,
 				13C2765AD23848A07EEB5195 /* MapDataAmendmentStore.swift */,
 				58B71350FBD2ED0C58C43D3F /* MatcherCoreModels.swift */,
@@ -1278,6 +1281,7 @@
 				9877E92DFAFDB8EE699F6987 /* LanePreviewPresentation.swift in Sources */,
 				F182D704EE2DDF591CC20D0C /* LaneSemanticHint.swift in Sources */,
 				E0C47E1887A900EBE4EEFC4B /* LatestPendingLookupWorker.swift in Sources */,
+				CF25DD42938A46CAA190A149 /* InspectorFilesView.swift in Sources */,
 				3189ACFB74E79AE546103ABB /* MainView.swift in Sources */,
 				736ABD1C239F11B0B23EF2FF /* MapDataAmendmentStore.swift in Sources */,
 				53E2BD717B450B13A347F61F /* MatcherCoreModels.swift in Sources */,

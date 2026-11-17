@@ -52,6 +52,8 @@ class TripJournalNativeShareInstrumentedTest {
             scenario.onActivity {activity->activity.setContent {TripJournalScreen(journal) {}}}
             compose.waitUntil(10000) {compose.onAllNodesWithTag("trip-$id-share").fetchSemanticsNodes().isNotEmpty()}
             compose.onNodeWithTag("trip-$id-share").performTouchInput {click(center)}
+            compose.onNodeWithTag("journal-share-inspector").assertIsNotEnabled()
+            compose.onNodeWithTag("journal-share-archive").performClick()
             assertTrue("The actual Android share chooser must open",
                 device.wait(Until.hasObject(By.pkg("com.android.intentresolver")),10000) || device.currentPackageName=="android")
             assertTrue(File(root,"trip-exports/$id").walkTopDown().any {it.extension=="zip"})

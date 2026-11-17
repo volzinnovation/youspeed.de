@@ -408,7 +408,7 @@ internal fun ConsumerApp(controller: ConsumerSessionController, reviewPrompt: Ap
                 LocalRecordingsSheet(controller = controller, onDismiss = { openLocalRecordings = false })
             }
             if (openTrips && ui.drivingControlsAllowed) {
-                TripJournalScreen(controller.tripJournal, mediaCleanup = controller::tripMediaCleanup, mapDatabasePath = controller.uiState.activeDBPath,
+                TripJournalScreen(controller.tripJournal, mediaCleanup = controller::tripMediaCleanup, mapDatabasePath = controller.uiState.activeDBPath, inspectorController = controller,
                     galleryContent = {media, dismiss -> TripJournalLibrary(controller,media,dismiss)},onOpenSettings={
                         controller.performButtonAction {openTrips=false;settingsStartAtJournal=true;controller.setSettingsVisible(true);openSettings=true}
                     }) { openTrips = false }
@@ -1694,13 +1694,15 @@ private fun SettingsSheet(
     initialJournalSection:Boolean=false,
 ) {
     var showTrips by remember {mutableStateOf(false)}
+    var showInspectorFiles by remember { mutableStateOf(false) }
     var journalSettingsRequest by remember {mutableStateOf(0)}
+    if (showInspectorFiles) InspectorFilesSheet(controller) { showInspectorFiles = false }
     val settingsListState=rememberLazyListState()
     LaunchedEffect(initialJournalSection,journalSettingsRequest) {if(initialJournalSection || journalSettingsRequest>0) settingsListState.scrollToItem(2)}
     val journalStationary=controller.uiState.phoneIsFlat || (controller.uiState.currentSpeedKmh==0.0 && controller.uiState.stationarySpeedObservedAt?.let {java.time.Duration.between(it,Instant.now()).seconds in 0..3}==true)
     LaunchedEffect(journalStationary) {if(!journalStationary) showTrips=false}
     if(showTrips && journalStationary) {
-        TripJournalScreen(controller.tripJournal,mediaCleanup=controller::tripMediaCleanup,mapDatabasePath=controller.uiState.activeDBPath,galleryContent={media,dismiss->TripJournalLibrary(controller,media,dismiss)},onOpenSettings={showTrips=false;journalSettingsRequest++}) {showTrips=false}
+        TripJournalScreen(controller.tripJournal,mediaCleanup=controller::tripMediaCleanup,mapDatabasePath=controller.uiState.activeDBPath,galleryContent={media,dismiss->TripJournalLibrary(controller,media,dismiss)},onOpenSettings={showTrips=false;journalSettingsRequest++},inspectorController=controller) {showTrips=false}
         return
     }
     val ui = controller.uiState
@@ -1746,6 +1748,12 @@ private fun SettingsSheet(
             } }
             item { SignCollectionSettings(controller.signCollection) }
             item { RecorderParitySettings(controller) }
+            item {
+                OutlinedButton(
+                    onClick = { showInspectorFiles = true },
+                    enabled = !DriveRecorderPolicy.isActive(ui.driveRecorderState),
+                ) { Text(stringResource(R.string.inspector_files_title)) }
+            }
             item { RoadworksSettingsSection() }
             item {
                 SectionCard(stringResource(R.string.ui_audio_alerts)) {
