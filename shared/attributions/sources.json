@@ -43,6 +43,16 @@
       "category": "data"
     },
     {
+      "id": "mapillary-eval",
+      "title": "Mapillary traffic signs (Baden-Württemberg test bundle)",
+      "attribution": "Mapillary contributors via Mapillary",
+      "license": "Mapillary Terms of Use",
+      "source_url": "https://www.mapillary.com/",
+      "license_url": "https://www.mapillary.com/terms",
+      "changes": "Detected traffic signs were clipped to the test bundle's evaluation area and matched to shared German pictograms for display. These records do not supply speed or settlement rules.",
+      "category": "data"
+    },
+    {
       "id": "sign-plate",
       "title": "German traffic-sign image selection",
       "attribution": "Wikimedia Commons image contributors; Wikipedia editors (reference page)",
@@ -2561,6 +2571,456 @@
       "source_url": "https://commons.wikimedia.org/w/index.php?curid=62668297&oldid=714314630",
       "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
       "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:224",
+      "title": "DE:224 · Zeichen 224.svg",
+      "category": "sign",
+      "attribution": "San Andreas; San Andreas, authentische Farbvorgaben nach dem offiziellen digitalen RAL-Farbfächer durch  Mediatus",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=508281&oldid=777388865",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:274-90",
+      "title": "DE:274-90 · Zeichen 274-90 - Zulässige Höchstgeschwindigkeit, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch:  Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-German road signs)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=110757925&oldid=906770490",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:625-20",
+      "title": "DE:625-20 · Zeichen 625-20 - Richtungstafel in Kurven (Aufstellung links), 500x500; StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Mediatus (vectorized according to official specifications; author recovered from pinned source-page wikitext); Bundesverkehrsministerium",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=65179832&oldid=939023114",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels with transparent exterior, aspect ratio preserved, metadata stripped."
+    },
+    {
+      "id": "sign-DE:220-10",
+      "title": "DE:220-10 · Zeichen 220-10 - Einbahnstraße, linksweisend, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61865592&oldid=882156021",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:220-20",
+      "title": "DE:220-20 · Zeichen 220-20 - Einbahnstraße, rechtsweisend, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61865450&oldid=882156037",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:241-30",
+      "title": "DE:241-30 · Zeichen 241-30 - getrennter Rad- und Fußweg, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "Bundesministerium für Verkehr, Bau- und Wohnungswesen; Image taken from the de:Straßenverkehrs-Ordnung (German Road Regulations) as published by the de:Bundesministerium für Verkehr, Bau- und Wohnungswesen (German Federal Ministry of Traffic, Building and Housing ) at Straßenverkehrs-Ordnung . 2006-07-29T03:03:21 file uploaded by Andreas 06 ( talk · contribs ) 2013-08-17T13:28:23 new version by Mediatus ( talk · contribs )",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=995775&oldid=913532557",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:241-31",
+      "title": "DE:241-31 · Zeichen 241-31 - getrennter Fuß- und Radweg, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "interpretiert und digital umgezeichnet durch Mediatus; Straßenverkehrs-Ordnung 1992, Verkehrsblatt, DIN-Normen",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=47918507&oldid=956042684",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:262-5,5",
+      "title": "DE:262-5,5 · Zeichen 262-5,5 - Verbot für Fahrzeuge über angegebene tatsächliche Masse, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61891439&oldid=875524664",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:263-8",
+      "title": "DE:263-8 · Zeichen 263-8 - Verbot für Fahrzeuge über angegebene tatsächliche Achslast, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61891680&oldid=903915902",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:264-2",
+      "title": "DE:264-2 · Zeichen 264-2 - Verbot für Fahrzeuge über angegebene tatsächliche Breite, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61975707&oldid=1054023445",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:264-2,3",
+      "title": "DE:264-2,3 · Zeichen 264-2,3 - Verbot für Fahrzeuge über angegebene tatsächliche Breite, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62057361&oldid=906770521",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:265-3,8",
+      "title": "DE:265-3,8 · Zeichen 265-3,8 - Verbot für Fahrzeuge über angegebene tatsächliche Höhe, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61994373&oldid=1104141626",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:266-10",
+      "title": "DE:266-10 · Zeichen 266-10 - Verbot für Fahrzeuge über angegebene tatsächliche Länge, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61994011&oldid=1159360396",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:273-70",
+      "title": "DE:273-70 · Zeichen 273-70 - Verbot des Unterschreitens des angegebenen Mindestabstandes, StVO 2017.svg",
+      "category": "sign",
+      "attribution": "Nach den amtlichen Vorgaben digital umgesetzt durch: Mediatus; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=61891816&oldid=966306980",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-50",
+      "title": "DE:315-50 · Zeichen 315-50 - Parken halb auf Gehwegen in Fahrtrichtung links, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=48023898&oldid=937580235",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-51",
+      "title": "DE:315-51 · Zeichen 315-51 - Parken auf Gehwegen halb in Fahrtrichtung links, Anfang, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74248000&oldid=1235230661",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-52",
+      "title": "DE:315-52 · Zeichen 315-52 - Parken auf Gehwegen halb in Fahrtrichtung links, Ende, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74247771&oldid=906770351",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-53",
+      "title": "DE:315-53 · Zeichen 315-53 - Parken halb auf Gehwegen in Fahrtrichtung links (Mitte), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=80923703&oldid=1223328070",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-55",
+      "title": "DE:315-55 · Zeichen 315-55 - Parken halb auf Gehwegen in Fahrtrichtung rechts, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "; Straßenverkehrs-Ordnung and Verkehrszeichenkatalog",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=1005201&oldid=666735236",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-56",
+      "title": "DE:315-56 · Zeichen 315-56 - Parken halb auf Gehwegen in Fahrtrichtung rechts (Anfang), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74260683&oldid=1178284385",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-57",
+      "title": "DE:315-57 · Zeichen 315-57 - Parken halb auf Gehwegen in Fahrtrichtung rechts (Ende), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74260920&oldid=1136129018",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-58",
+      "title": "DE:315-58 · Zeichen 315-58 - Parken halb auf Gehwegen in Fahrtrichtung rechts (Mitte).svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=80924004&oldid=906770002",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-60",
+      "title": "DE:315-60 · Zeichen 315-60 - Parken ganz auf Gehwegen in Fahrtrichtung links, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=48022603&oldid=1173407978",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-61",
+      "title": "DE:315-61 · Zeichen 315-61 - Parken auf Gehwegen ganz in Fahrtrichtung links, Anfang, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74274356&oldid=1253549834",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-62",
+      "title": "DE:315-62 · Zeichen 315-62 - Parken auf Gehwegen ganz in Fahrtrichtung links, Ende, StVO 2013.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74274489&oldid=1253550047",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-63",
+      "title": "DE:315-63 · Zeichen 315-63 - Parken ganz auf Gehwegen in Fahrtrichtung links (Mitte), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=80924108&oldid=906769956",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-65",
+      "title": "DE:315-65 · Zeichen 315-65 - Parken ganz auf Gehwegen in Fahrtrichtung rechts, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=48022927&oldid=906769980",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-66",
+      "title": "DE:315-66 · Zeichen 315-66 - Parken ganz auf Gehwegen in Fahrtrichtung rechts (Anfang), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74373112&oldid=1253550229",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-67",
+      "title": "DE:315-67 · Zeichen 315-67 - Parken ganz auf Gehwegen in Fahrtrichtung rechts (Ende), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=74372991&oldid=1253548500",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-68",
+      "title": "DE:315-68 · Zeichen 315-68 - Parken ganz auf Gehwegen in Fahrtrichtung rechts (Mitte), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=80924201&oldid=1174249289",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-70",
+      "title": "DE:315-70 · Zeichen 315-70 - Parken halb auf Gehwegen quer zur Fahrtrichtung links, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=48022766&oldid=906769971",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-71",
+      "title": "DE:315-71 · Zeichen 315-71 - Parken halb auf Gehwegen quer zur Fahrtrichtung links (Anfang), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79841676&oldid=906769995",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-72",
+      "title": "DE:315-72 · Zeichen 315-72 - Parken halb auf Gehwegen quer zur Fahrtrichtung links (Ende), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79841766&oldid=939271806",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-73",
+      "title": "DE:315-73 · Zeichen 315-73 - Parken halb auf Gehwegen quer zur Fahrtrichtung links (Mitte), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=80924303&oldid=1253027057",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-75",
+      "title": "DE:315-75 · Zeichen 315-75 - Parken halb auf Gehwegen quer zur Fahrtrichtung rechts, StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=48022836&oldid=910958985",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-76",
+      "title": "DE:315-76 · Zeichen 315-76 - Parken halb auf Gehwegen quer zur Fahrtrichtung rechts (Anfang), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79841870&oldid=906769958",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-77",
+      "title": "DE:315-77 · Zeichen 315-77 - Parken halb auf Gehwegen quer zur Fahrtrichtung rechts (Ende), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79841901&oldid=1253549001",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-78",
+      "title": "DE:315-78 · Zeichen 315-78 - Parken halb auf Gehwegen quer zur Fahrtrichtung rechts (Mitte), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=80924387&oldid=978576442",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-81",
+      "title": "DE:315-81 · Zeichen 315-81 - Parken ganz auf Gehwegen quer zur Fahrtrichtung links (Anfang), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79841974&oldid=898621611",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-82",
+      "title": "DE:315-82 · Zeichen 315-82 - Parken ganz auf Gehwegen quer zur Fahrtrichtung links (Ende), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79842040&oldid=906769955",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-86",
+      "title": "DE:315-86 · Zeichen 315-86 - Parken ganz auf Gehwegen quer zur Fahrtrichtung rechts (Anfang), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79814932&oldid=1029126112",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:315-87",
+      "title": "DE:315-87 · Zeichen 315-87 - Parken ganz auf Gehwegen quer zur Fahrtrichtung rechts (Ende), StVO 1992.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, RAL-Farbtafel, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=79826432&oldid=935384561",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:357-50",
+      "title": "DE:357-50 · Zeichen 357-50 - Durchlässige Sackgasse für Fußgänger und Radverkehr, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=16540593&oldid=1185471583",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:357-51",
+      "title": "DE:357-51 · Zeichen 357-51 - Sackgasse; für Fußgänger durchlässige Sackgasse, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "Germany's Federal Ministry of Transport; Images taken from the Straßenverkehrs-Ordnung (StVO) (German Road Regulations)",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=16540743&oldid=906769993",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
+    },
+    {
+      "id": "sign-DE:357-52",
+      "title": "DE:357-52 · Zeichen 357-52 - Sackgasse; für Radverkehr durchlässige Sackgasse, StVO 2009.svg",
+      "category": "sign",
+      "attribution": "vectorized by; Straßenverkehrs-Ordnung, DIN-Normen und Verkehrsblatt",
+      "license": "Public domain · German official-work rendition; § 5(1) UrhG (Commons PD-GermanGov / PD-VzKat)",
+      "source_url": "https://commons.wikimedia.org/w/index.php?curid=62382467&oldid=1201661855",
+      "license_url": "https://www.gesetze-im-internet.de/urhg/__5.html",
+      "changes": "Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, preserving aspect ratio and transparency, metadata stripped."
     }
   ]
 }

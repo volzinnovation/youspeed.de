@@ -1,0 +1,17 @@
+{
+  "name": "Mapillary logo",
+  "owner": "Mapillary / Meta",
+  "source_page": "https://www.mapillary.com/press-kit",
+  "archive_url": "https://github.com/mapillary/mapillary_press/releases/download/v0.0.4/logos.zip",
+  "archive_sha256": "932eb1c5043eec9b3b1278f3f101ef39119aff365916cec6dbeefc59c3dd9ada",
+  "archive_member": "logos/mapillary/mapillary_logo_white@2x.png",
+  "sha256": "427c2cd00164ec5b56ec1dde8fac04d67d406e1ce30643b6ecc638090d8f80df",
+  "retrieved_at": "2026-11-14",
+  "modifications": "None; original PNG bytes retained. Display scaled proportionally.",
+  "usage_basis": "Mapillary Terms of Use section 11 requires a visible logo linking to the Mapillary homepage when integrating extracted data. The logo remains a Mapillary trademark; it is not licensed under the app code or map-data licences.",
+  "terms_url": "https://www.mapillary.com/terms",
+  "homepage_url": "https://www.mapillary.com/",
+  "guidelines_archive_member": "logos/Logo usage.pdf",
+  "guidelines_sha256": "ed309709dabcfe5bfceedf2eeb755a30beff719f22e8cfbb0fbf91cd3348c808",
+  "guidelines": "Use supplied colours. Do not change logo spacing, typeface or proportions."
+}

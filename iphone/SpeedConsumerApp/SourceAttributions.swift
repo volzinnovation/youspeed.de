@@ -106,11 +106,53 @@ struct SourceAttributionsView: View {
     }
 }
 
+struct MapillaryAttributionLink: View {
+    private static let homepage = URL(string: "https://www.mapillary.com/")!
+    private static let logo: UIImage? = {
+        for bundle in [Bundle.main, Bundle(for: SpeedConsumerAppDelegate.self)] {
+            if let url = bundle.url(forResource: "mapillary-logo", withExtension: "png",
+                                    subdirectory: "attributions/brands"),
+               let image = UIImage(contentsOfFile: url.path) {
+                return image
+            }
+        }
+        return nil
+    }()
+
+    var body: some View {
+        Link(destination: Self.homepage) {
+            Group {
+                if let logo = Self.logo {
+                    Image(uiImage: logo)
+                        .renderingMode(.original)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    Text("Mapillary")
+                        .font(.headline)
+                        .foregroundStyle(Color.black)
+                }
+            }
+            .frame(width: 180, height: 60)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Mapillary")
+        .accessibilityIdentifier("mapillary-attribution-link")
+    }
+}
+
 private struct SourceAttributionRow: View {
     let entry: SourceAttribution
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if entry.id == "mapillary-eval" {
+                MapillaryAttributionLink()
+            }
             Text(entry.title)
                 .font(.headline)
                 .lineLimit(nil)

@@ -2394,6 +2394,8 @@ private struct LegalInformationView: View {
                         .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
                 }
 
+                MapillaryAttributionLink()
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text(NSLocalizedString("welcome.legal_heading", comment: ""))
                         .font(.system(size: 16, weight: .bold, design: .default))

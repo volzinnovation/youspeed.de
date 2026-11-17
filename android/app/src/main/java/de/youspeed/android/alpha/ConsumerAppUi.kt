@@ -2138,6 +2138,7 @@ private fun LegalSheet(
             OutlinedButton(onClick = { openAttributions = true }, modifier = Modifier.fillMaxWidth().testTag("attribution-button")) {
                 Text(stringResource(R.string.credits_title))
             }
+            MapillaryAttributionLink()
             SectionCard(stringResource(R.string.ui_legal_notice)) {
                 Text(stringResource(R.string.legal_disclaimer_long), color = Color.Black)
             }

@@ -40,6 +40,16 @@
     "category": "data"
   },
   {
+    "id": "mapillary-eval",
+    "title": "Mapillary traffic signs (Baden-Württemberg test bundle)",
+    "attribution": "Mapillary contributors via Mapillary",
+    "license": "Mapillary Terms of Use",
+    "source_url": "https://www.mapillary.com/",
+    "license_url": "https://www.mapillary.com/terms",
+    "changes": "Detected traffic signs were clipped to the test bundle's evaluation area and matched to shared German pictograms for display. These records do not supply speed or settlement rules.",
+    "category": "data"
+  },
+  {
     "id": "sign-plate",
     "title": "German traffic-sign image selection",
     "attribution": "Wikimedia Commons image contributors; Wikipedia editors (reference page)",

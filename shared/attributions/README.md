@@ -5,6 +5,12 @@ and licence text work offline; opening an original source uses the system
 browser. UI controls are localized. Author names and original licence texts
 retain their published spelling and language.
 
+Both Info pages also show the official Mapillary logo linked to its homepage,
+as does the Mapillary entry in Sources and credits. Both clients load the same
+unchanged PNG from `brands/mapillary-logo.png`; `brands/mapillary-logo.json`
+records its official press-kit source and hash. Keep its colours, proportions
+and built-in spacing intact, including in dark mode.
+
 `THIRD_PARTY_NOTICES.txt` contains the shared image/mapping, font and software
 notices and the app's AGPL text. The existing model-pack notice is additionally
 available from Info on both platforms. Reference-photo credits identify each

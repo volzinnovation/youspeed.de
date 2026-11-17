@@ -1,6 +1,9 @@
 package de.youspeed.android.alpha
 
+import android.app.Activity
+import android.app.Instrumentation
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.SystemClock
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
@@ -11,12 +14,14 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonArray
@@ -47,6 +52,9 @@ class AttributionInstrumentedTest {
         for (path in AttributionCatalog.NOTICE_PATHS) {
             assertTrue(context.assets.open(path).bufferedReader().use { it.readText() }.isNotBlank())
         }
+        context.assets.open("attributions/brands/mapillary-logo.png").use {
+            assertNotNull("The packaged Mapillary logo must decode", BitmapFactory.decodeStream(it))
+        }
         val launch = Intent(Intent.ACTION_MAIN).apply {
             setClassName(context.packageName, "de.youspeed.android.alpha.MainActivity")
             addCategory(Intent.CATEGORY_LAUNCHER)
@@ -58,9 +66,31 @@ class AttributionInstrumentedTest {
         waitFor("legal-button")
         compose.onNode(hasClickAction() and hasAnyAncestor(hasTestTag("legal-button")), useUnmergedTree = true).performClick()
         waitFor("legal-sheet")
-        compose.onNodeWithTag("attribution-button").performClick()
+        compose.onNodeWithTag("mapillary-attribution-link").performScrollTo().assertIsDisplayed().assertHasClickAction()
+        capture("info-mapillary")
+        val openedUrl = AtomicReference<String?>()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val monitor = object : Instrumentation.ActivityMonitor() {
+            override fun onStartActivity(intent: Intent): Instrumentation.ActivityResult? {
+                if (intent.action != Intent.ACTION_VIEW) return null
+                openedUrl.set(intent.dataString)
+                return Instrumentation.ActivityResult(Activity.RESULT_OK, null)
+            }
+        }
+        instrumentation.addMonitor(monitor)
+        try {
+            compose.onNodeWithTag("mapillary-attribution-link").performClick()
+            assertEquals("https://www.mapillary.com/", openedUrl.get())
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
+        compose.onNodeWithTag("attribution-button").performScrollTo().performClick()
         waitFor("attribution-list")
         capture("info-sources")
+        scrollTo("mapillary-attribution-link")
+        compose.onNode(hasTestTag("mapillary-attribution-link") and hasAnyAncestor(hasTestTag("attribution-list")))
+            .assertIsDisplayed().assertHasClickAction()
+        capture("info-mapillary-credit")
         val first = catalog.entries.first { it.category == "data" }
         scrollTo("credit-${first.id}")
         compose.onNodeWithTag("credit-${first.id}").performClick()

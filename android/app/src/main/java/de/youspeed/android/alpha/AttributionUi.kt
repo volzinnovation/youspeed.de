@@ -1,14 +1,21 @@
 package de.youspeed.android.alpha
 
+import android.graphics.BitmapFactory
 import android.widget.Toast
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -21,10 +28,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -93,6 +103,7 @@ private fun AttributionCard(entry: AttributionEntry) {
                 Text(entry.license, color = Color.DarkGray, style = MaterialTheme.typography.bodySmall)
                 Text(stringResource(if (expanded) R.string.credits_hide_details else R.string.credits_show_details), color = Color(0xFF095484))
             }
+            if (entry.id == "mapillary-eval") MapillaryAttributionLink()
             if (expanded) {
                 SelectionContainer {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -103,6 +114,42 @@ private fun AttributionCard(entry: AttributionEntry) {
                 AttributionLink(stringResource(R.string.credits_source_link), entry.sourceUrl, "source-${entry.id}")
                 AttributionLink(stringResource(R.string.credits_license_link), entry.licenseUrl, "license-${entry.id}")
             }
+        }
+    }
+}
+
+@Composable
+internal fun MapillaryAttributionLink() {
+    val context = LocalContext.current
+    val handler = LocalUriHandler.current
+    val error = stringResource(R.string.credits_link_error)
+    val logo = remember(context) {
+        runCatching {
+            context.assets.open("attributions/brands/mapillary-logo.png")
+                .use(BitmapFactory::decodeStream)?.asImageBitmap()
+        }.getOrNull()
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .clickable(role = Role.Button) {
+                runCatching { handler.openUri("https://www.mapillary.com/") }
+                    .onFailure { Toast.makeText(context, error, Toast.LENGTH_LONG).show() }
+            }
+            .testTag("mapillary-attribution-link")
+            .padding(12.dp),
+    ) {
+        if (logo != null) {
+            Image(
+                bitmap = logo,
+                contentDescription = "Mapillary",
+                modifier = Modifier.size(width = 180.dp, height = 60.dp),
+                contentScale = ContentScale.Fit,
+            )
+        } else {
+            Text("Mapillary", color = Color.Black)
         }
     }
 }
