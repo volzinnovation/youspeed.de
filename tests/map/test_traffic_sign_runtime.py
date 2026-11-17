@@ -251,6 +251,27 @@ class RuntimeTests(unittest.TestCase):
         self.assertFalse(report['ready'])
         self.assertEqual(report['failed_rows']['accepted_associations_permitted'],1)
 
+    def test_display_only_mapillary_contract(self):
+        self.db.executescript((ROOT / 'mapdata/spec/traffic_sign_runtime_v1.sql').read_text())
+        self.db.executescript("""
+            DELETE FROM traffic_sign_inventory;
+            INSERT INTO traffic_sign_source VALUES ('mapillary-eval','snapshot');
+            INSERT INTO traffic_sign_inventory VALUES
+                (1,'mapillary-eval','1','DE:205',48,8,90,NULL,NULL);
+            INSERT INTO traffic_sign_runtime VALUES
+                ('mapillary-eval:1','mapillary-eval','1','snapshot','DE:205','DE:205','secondary',
+                 NULL,NULL,'mapillary_inventory_only',8,48,90,10,'DE:205','de-205.png','[]');
+            INSERT INTO traffic_sign_association VALUES
+                ('mapillary-eval:1','inventory_only',NULL,NULL,NULL,NULL,NULL,'{}');
+            INSERT INTO traffic_sign_capability VALUES ('version','1'),('inventory_scope','display_only');
+        """)
+        self.assertTrue(validate(self.db, require=True)['ready'])
+        self.db.execute("UPDATE traffic_sign_association SET way_id=1")
+        self.assertEqual(validate(self.db, require=True)['failed_rows']['display_only_has_no_directed_or_capture_signs'], 1)
+        self.db.execute("UPDATE traffic_sign_association SET way_id=NULL")
+        self.db.execute("DELETE FROM traffic_sign_capability WHERE key='inventory_scope'")
+        self.assertEqual(validate(self.db, require=True)['failed_rows']['directions_cover_admitted_ways'], 1)
+
     def setup_osm_fallback_source(self):
         from traffic_sign_inventory import SCHEMA
         self.db.execute('DROP TABLE traffic_sign_source')

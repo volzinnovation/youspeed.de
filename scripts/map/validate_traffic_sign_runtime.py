@@ -21,6 +21,7 @@ def validate(db,require=False):
     required={'traffic_sign_runtime','traffic_sign_way_rule','traffic_sign_association','traffic_sign_way_direction','traffic_sign_lane','traffic_sign_inventory','traffic_sign_source','traffic_sign_rule_path'}
     for table in sorted(required-tables):report['errors'].append('Missing table: '+table)
     if report['errors']:return report
+    display_only = capability.get('inventory_scope') == 'display_only'
     checks={
         'all_inventory_records_materialized':'''SELECT count(*) FROM traffic_sign_inventory i LEFT JOIN traffic_sign_runtime s ON s.source_id=i.source_id AND s.record_key=i.record_key WHERE s.sign_id IS NULL''',
         'all_runtime_signs_have_current_source':'''SELECT count(*) FROM traffic_sign_runtime s LEFT JOIN traffic_sign_source p USING(source_id) LEFT JOIN traffic_sign_inventory i ON i.source_id=s.source_id AND i.record_key=s.record_key WHERE p.source_id IS NULL OR p.snapshot_sha256!=s.snapshot_sha256 OR (s.source_id!='osm-settlement' AND i.row_id IS NULL)''',
@@ -35,6 +36,21 @@ def validate(db,require=False):
         'lane_conflicts_stay_unresolved':'''SELECT count(*) FROM traffic_sign_way_rule r WHERE r.lane_scope='all' AND (SELECT count(DISTINCT maxspeed) FROM traffic_sign_lane l WHERE l.way_id=r.way_id AND l.direction=r.direction AND l.maxspeed IS NOT NULL AND l.maxspeed!='')>1''',
         'no_overlapping_rule_interiors':'''SELECT count(*) FROM traffic_sign_way_rule a JOIN traffic_sign_way_rule b ON a.way_id=b.way_id AND a.direction=b.direction AND a.rule_id<b.rule_id WHERE a.start_chainage_m<b.end_chainage_m AND b.start_chainage_m<a.end_chainage_m''',
     }
+    if display_only:
+        del checks['directions_cover_admitted_ways']
+        checks.update({
+            'display_only_has_no_directed_tables': '''SELECT
+                (SELECT count(*) FROM traffic_sign_way_direction) +
+                (SELECT count(*) FROM traffic_sign_lane) +
+                (SELECT count(*) FROM traffic_sign_way_rule) +
+                (SELECT count(*) FROM traffic_sign_rule_path)''',
+            'display_only_has_no_directed_or_capture_signs': '''SELECT count(*)
+                FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a USING(sign_id)
+                WHERE s.source_id != 'mapillary-eval' OR s.kind != 'secondary'
+                   OR s.numeric_value IS NOT NULL OR s.unit IS NOT NULL OR s.model_classes_json != '[]'
+                   OR a.status IS NOT 'inventory_only' OR a.way_id IS NOT NULL OR a.direction IS NOT NULL
+                   OR a.station_chainage_m IS NOT NULL OR a.local_heading_deg IS NOT NULL OR a.confidence IS NOT NULL''',
+        })
     if 'settlement_sign' in tables:
         checks['osm_fallback_has_source_station']='''SELECT count(*) FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a USING(sign_id) WHERE s.source_id='osm-settlement' AND NOT EXISTS(SELECT 1 FROM settlement_sign o WHERE o.sign_id=s.record_key AND (o.sign_code=s.sign_code OR (o.sign_code='city_limit:begin' AND s.sign_code='DE:310') OR (o.sign_code='city_limit:end' AND s.sign_code='DE:311')) AND o.way_id=a.way_id AND o.direction=a.direction AND o.direction IN(-1,1) AND o.lon=s.lon AND o.lat=s.lat AND o.inside_city=CASE WHEN s.sign_code='DE:310' THEN 1 ELSE 0 END AND o.association IN('node_membership','collinear_way_split'))'''
         country=db.execute("SELECT value FROM metadata WHERE key='country_code'").fetchone() if 'metadata' in tables else None
