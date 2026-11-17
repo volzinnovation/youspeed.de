@@ -1,0 +1,389 @@
+{
+  "schema": "streetshots-visual-admission-exclusions-v1",
+  "reviewer": "assistant visual audit; not human-certified",
+  "source_audit_index_sha256": "060eef48c2d1a6b9e98ba418637dbcb8cd2ee6568ec1934fc57dea0d833cd902",
+  "excluded_frames": {
+    "04a170c3-5922-4330-b46d-6d404a008c52": [
+      {
+        "audit_index": 0,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "2436a6d9-675a-46bc-8324-099f25a57400": [
+      {
+        "audit_index": 1,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "3612ce9d-fd86-4d1a-8ce9-914e64269d22": [
+      {
+        "audit_index": 2,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "4fa24788-197b-4e21-9eae-6c18d65d7327": [
+      {
+        "audit_index": 3,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "5cd5f662-88ce-4d5d-a1c4-55b240d20d6d": [
+      {
+        "audit_index": 4,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "60852327-6e41-44b2-b5fb-318b151f0e8a": [
+      {
+        "audit_index": 5,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "74824d9d-27b0-4b08-8e1b-fc3198331b17": [
+      {
+        "audit_index": 6,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      },
+      {
+        "audit_index": 7,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "75caee49-1986-4926-9485-b9cc6ba64888": [
+      {
+        "audit_index": 8,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "7e267166-298c-4fbe-be42-cbf56751d7c4": [
+      {
+        "audit_index": 9,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "8019d851-a9f6-40f3-b5a2-afbbdf73b79d": [
+      {
+        "audit_index": 10,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "859f162b-88b2-4822-b84b-abb829d8a557": [
+      {
+        "audit_index": 11,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "88d6a294-8a8c-4962-bcfe-f96f42998613": [
+      {
+        "audit_index": 12,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "8ecc54c0-d7f3-49d7-8a95-6276a2cac357": [
+      {
+        "audit_index": 13,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      },
+      {
+        "audit_index": 14,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "959a77d5-d74c-484d-9f54-9b7bd64bacad": [
+      {
+        "audit_index": 15,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "97b646b5-7b4e-4a56-b6a1-7f6d9b43c512": [
+      {
+        "audit_index": 16,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "ac19e1f2-c1e1-4b13-a41f-c4fc84aa3e27": [
+      {
+        "audit_index": 17,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "ae424716-e0f7-4c99-8bbd-dbfcf75e5d60": [
+      {
+        "audit_index": 18,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "c71e5eef-bd82-45f1-85ce-9a1de34b5771": [
+      {
+        "audit_index": 19,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "d0c70f29-496a-4002-9a53-d948fec55314": [
+      {
+        "audit_index": 20,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "d2056b6b-9d64-4bc8-8b30-0ac735570049": [
+      {
+        "audit_index": 21,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "d39910cb-06c9-49ff-a805-9709a77072f1": [
+      {
+        "audit_index": 22,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "d772ca99-cf35-44f9-8eb9-156911873c8b": [
+      {
+        "audit_index": 23,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "ed6e606e-4a47-4180-bcaf-179cb291ee53": [
+      {
+        "audit_index": 24,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "efcfff1b-ca8b-4acb-ad0e-f84ce27b7c24": [
+      {
+        "audit_index": 25,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "f0889967-e5b4-4288-957e-829cf4d9d34a": [
+      {
+        "audit_index": 26,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "fb4bd89f-50d9-4da3-8f4c-bb0bf95775b1": [
+      {
+        "audit_index": 27,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "fda89f82-e238-4916-ad52-ae80ebded71d": [
+      {
+        "audit_index": 28,
+        "reason": "direction_or_ambiguous_town_exit_board"
+      }
+    ],
+    "07205f99-7ba6-4038-b1e1-184a1ae6649e": [
+      {
+        "audit_index": 29,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "2591a0ea-a10e-4f1a-a4a2-603804e7bdbc": [
+      {
+        "audit_index": 35,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "30a40a2d-97a2-47f8-b882-57c408d9f7ec": [
+      {
+        "audit_index": 39,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "3f4ca6d2-f2ae-4bc4-9edc-5a32cf563184": [
+      {
+        "audit_index": 41,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "4425e50d-c1a2-4786-8109-fb1800c64552": [
+      {
+        "audit_index": 42,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "4d6f9962-c9dc-4d8c-aae7-b506b0e02850": [
+      {
+        "audit_index": 43,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "65db19d3-d3c9-4dbb-8879-02c217007040": [
+      {
+        "audit_index": 46,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "6cfe16c0-5fc6-446c-8eac-9e923f4355c3": [
+      {
+        "audit_index": 47,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "6d3d7de0-fd48-4507-addb-b7edbb2472c1": [
+      {
+        "audit_index": 48,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "6ec9a162-bf6e-46b4-a054-d5ddc173ecca": [
+      {
+        "audit_index": 49,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "9275882a-f9b9-4772-b0d9-5b843665695b": [
+      {
+        "audit_index": 53,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "aca4285b-15ad-4b48-9990-a55ceb6fd9aa": [
+      {
+        "audit_index": 58,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "ae4081ff-8e18-4917-b17f-ad4efff031cd": [
+      {
+        "audit_index": 59,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "b96c0222-409b-4a66-a8c4-77e9f5ab4eb1": [
+      {
+        "audit_index": 61,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "c208b377-9a98-451c-8ad5-b9d6bb3f4658": [
+      {
+        "audit_index": 63,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "cb2e5061-30cb-4f65-b786-cd4966cd7be0": [
+      {
+        "audit_index": 64,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "ccfd0322-8b27-4a56-b821-b43c274f6ef3": [
+      {
+        "audit_index": 65,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "d944fd44-8ea0-4872-956d-4af854eb654a": [
+      {
+        "audit_index": 68,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "e7d4cceb-bbca-48a9-b4fc-b2bb3210659b": [
+      {
+        "audit_index": 74,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "edad8294-fc46-48d4-8203-01f8568098cd": [
+      {
+        "audit_index": 76,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      },
+      {
+        "original_addition_index": 16,
+        "reason": "Partial section of a continuous multi-chevron board"
+      }
+    ],
+    "0ca4c4c9-d36d-4bb9-8df5-8f4c47e0099d": [
+      {
+        "audit_index": 80,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "10dd33dd-ec36-4e1e-ba08-93ce1ffba094": [
+      {
+        "audit_index": 83,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "2543d292-3e6d-4d73-b29a-1ea7cfa8703f": [
+      {
+        "audit_index": 84,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "2d8e7f02-0178-402b-97c6-141692ac0499": [
+      {
+        "audit_index": 85,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "536b95c6-ffc5-4be5-a562-5eae9149db60": [
+      {
+        "audit_index": 87,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "7a3f1680-1f56-49f9-b23b-934ef5fbfbc2": [
+      {
+        "audit_index": 89,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "88c7ae2b-5417-4c44-b99d-05f4e66d652d": [
+      {
+        "audit_index": 90,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "8c0a5eb3-036c-4a7f-80a9-f3d1d25e1239": [
+      {
+        "audit_index": 92,
+        "reason": "excluded_or_uncertain_supplementary_direction_scope"
+      }
+    ],
+    "a605388e-4a37-4b06-a293-b37cbc217c60": [
+      {
+        "audit_index": 93,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "ae54a1a0-39c0-4f1d-b111-3a7dce82648a": [
+      {
+        "audit_index": 94,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "bbd45488-a82b-4125-ade6-ecb85e354c6c": [
+      {
+        "audit_index": 98,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "d9f1b3e0-b272-4852-bbed-a9e4ed95d2ed": [
+      {
+        "audit_index": 100,
+        "reason": "partial_or_compound_sign_box"
+      },
+      {
+        "audit_index": 101,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "21f42811-006d-4c64-8bcb-84755a475a26": [
+      {
+        "audit_index": 105,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ],
+    "daba0938-c910-4db9-b0d1-b75edc6f9685": [
+      {
+        "audit_index": 110,
+        "reason": "partial_or_compound_sign_box"
+      }
+    ]
+  }
+}
