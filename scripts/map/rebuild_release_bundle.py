@@ -11,6 +11,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 
 from traffic_sign_inventory import is_bw_region, download_snapshot
@@ -67,7 +68,12 @@ def main(argv=None):
     parser.add_argument('--source-commit', required=True)
     parser.add_argument('--repo', required=True)
     parser.add_argument('--build-only', action='store_true')
+    parser.add_argument('--approved-sign-groups', type=Path,
+                        default=os.environ.get('YOUSPEED_SIGN_GROUP_APPROVALS') or None,
+                        help='Inspector SQLite sign-group approvals')
     args = parser.parse_args(argv)
+    if args.approved_sign_groups:
+        args.approved_sign_groups = args.approved_sign_groups.resolve(strict=True)
     if not re.fullmatch(r'[0-9A-Za-z][0-9A-Za-z._-]*', args.bundle_version):
         parser.error('Bundle version must be a safe filename component')
     if not re.fullmatch(r'[0-9a-f]{40}', args.source_commit):
@@ -79,7 +85,6 @@ def main(argv=None):
     if head != args.source_commit:
         raise ValueError(f'Checkout {head} differs from pinned source {args.source_commit}')
     # All helper paths and output locations below are relative to the checkout.
-    import os
     os.chdir(root)
     plan = resolve_country_release_plan(
         repo_root=root, bundle_country=args.target,
@@ -118,6 +123,8 @@ def main(argv=None):
         download_snapshot(snapshot)
         build[build.index('--corridor-mode') + 1] = 'paired'
         build += ['--traffic-sign-geojson', snapshot, '--build-traffic-sign-runtime']
+    if args.approved_sign_groups:
+        build += ['--approved-sign-groups', args.approved_sign_groups, '--approved-sign-coverage', poly]
     run(*build)
     package = Path('mapdata/bundles/v3') / region / args.bundle_version
     package.mkdir(parents=True, exist_ok=False)

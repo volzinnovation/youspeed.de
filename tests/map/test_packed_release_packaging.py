@@ -1,10 +1,12 @@
 import copy
+from contextlib import closing
 import gzip
 import hashlib
 import json
 from pathlib import Path
 import shutil
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -71,6 +73,47 @@ class PackedReleasePackagingTests(unittest.TestCase):
             self.assertNotEqual(baseline,builder.cache_identity(*args,{'builder':'old'},'new-encoder'))
             source=copy.deepcopy(fixture['manifest']);source['db']['sha256']='a'*64
             self.assertNotEqual(baseline,builder.cache_identity(fixture['plan'],fixture['entry'],source,False,{'builder':'old'},'1.5.7'))
+
+    def test_baden_wuerttemberg_fetches_fresh_approvals_and_rejects_a_stale_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = self.fixture(root)
+            region = 'baden-wuerttemberg'
+            fixture['entry'].update(region=region, manifest_file=f'{region}_manifest.json')
+            fixture['manifest']['region'] = region
+            poly = b'fixture\n1\n 8 48\n 9 48\n 9 49\n 8 49\n 8 48\nEND\nEND\n'
+            fixture['entry']['extras']['poly'] = {'name': 'fixture.poly', 'size': len(poly)}
+            fixture['contents']['fixture.poly'] = poly
+            group = {'group_id': 'approved-fixture-sign', 'revision': 'a' * 64, 'sign_code': 'DE:222',
+                     'longitude': 8.5, 'latitude': 48.5, 'front_azimuth_deg': 233.0}
+            config = root / 'ssh_config'
+            config.touch()
+            snapshots = [subprocess.CompletedProcess([], 0, json.dumps({
+                'schema_version': 1, 'region': region, 'rows': rows,
+            })) for rows in ([group], [], [])]
+            approved_workspace = fixture['workspace']
+            revoked_workspace = root / 'revoked'
+            with (patch.object(builder.approved_sign_groups, 'LIVE_SSH_CONFIG', config),
+                  patch.object(subprocess, 'run', side_effect=snapshots) as ssh):
+                approved = self.build(fixture, approved_workspace)
+                with self.assertRaisesRegex(ValueError, 'recipe/source plan changed'):
+                    self.build(fixture, approved_workspace)
+                revoked = self.build(fixture, revoked_workspace)
+            self.assertEqual(ssh.call_count, 3)
+            self.assertNotEqual(approved['build_cache_identity'], revoked['build_cache_identity'])
+            for workspace, count in ((approved_workspace, 1), (revoked_workspace, 0)):
+                bundle = workspace / 'fixture' / 'bundle'
+                manifest = json.loads((bundle / f'{region}_manifest.json').read_text())
+                self.assertEqual(manifest['source']['approved_sign_groups']['count'], count)
+                context = workspace / 'context.sqlite'
+                with closing(builder.Reader(bundle / manifest['db']['file'])) as reader:
+                    context.write_bytes(reader.read(0, reader.logical))
+                with closing(sqlite3.connect(context)) as db:
+                    if count:
+                        rows = db.execute('SELECT record_key, sign_code FROM traffic_sign_inventory').fetchall()
+                        self.assertEqual(rows, [(group['group_id'], 'DE:222')])
+                    else:
+                        self.assertFalse(builder.approved_sign_groups.already_imported(db))
 
     def test_explicit_staged_files_are_reused_only_with_full_source_bindings(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -148,9 +191,9 @@ class PackedReleasePackagingTests(unittest.TestCase):
             output.write_text(json.dumps({'schema':'youspeed.generic-sign-nodes.v1','node_count':0,'nodes':[],
                 'source_sqlite_sha256':builder.digest(source),'source_pbf_sha256':builder.digest(pbf)}))
         with patch.object(builder,'download_asset',side_effect=download):
-            if keep_extract:return builder.build_one(fixture['plan'],entry or fixture['entry'],workspace,retain_work=True)
+            if keep_extract:return builder.build_one(fixture['plan'],entry or fixture['entry'],workspace,retain_work=True,prefer_local_bw=False)
             with patch.object(builder,'extract',side_effect=extract):
-                return builder.build_one(fixture['plan'],entry or fixture['entry'],workspace,retain_work=True)
+                return builder.build_one(fixture['plan'],entry or fixture['entry'],workspace,retain_work=True,prefer_local_bw=False)
 
 
 if __name__=='__main__':unittest.main()

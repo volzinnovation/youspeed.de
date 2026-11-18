@@ -3,11 +3,12 @@
 import argparse
 import copy
 from datetime import datetime, timezone
-from contextlib import ExitStack
+from contextlib import ExitStack, closing
 import gzip
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import sqlite3
@@ -20,6 +21,7 @@ from extract_packed_sign_nodes import extract
 from pack_sign_nodes import pack as pack_nodes
 from packed_runtime import Reader, build_context, build_geometry, digest, require, zstd_library
 from plan_packed_releases import download_asset
+import approved_sign_groups
 
 
 class Joined(io.RawIOBase):
@@ -114,12 +116,14 @@ def write_json(path, value):
     Path(path).write_text(json.dumps(value,indent=2,sort_keys=True)+'\n')
 
 
-def cache_identity(plan, entry, source_manifest, source_override, builder_files, encoder_version):
+def cache_identity(plan, entry, source_manifest, source_override, builder_files, encoder_version, approved_revision=None):
     recipe = {'version':1,'repo':plan['repo'],'plan_version':plan.get('version'),
               'entry':entry,'source_manifest':source_manifest,'local_full_bw_upgrade':source_override,
               'context_codec':2,'transport':{'context':'none','roads':'gzip','nodes':'gzip'},
               'zstd_encoder_version':encoder_version,'zlib_encoder_version':zlib.ZLIB_RUNTIME_VERSION,
               'builder_files_sha256':builder_files}
+    if approved_revision is not None:
+        recipe['approved_sign_groups'] = approved_revision
     encoded=json.dumps(recipe,sort_keys=True,separators=(',',':')).encode()
     return hashlib.sha256(encoded).hexdigest()
 
@@ -209,8 +213,14 @@ def verify_logical_tables(original, context_path, geometry_path, generation=None
                 'every_original_geometry_text_exact':True,'geometry_rows':count,'tables':tables}
 
 
-def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False):
+def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False, approval_database=None):
     started=time.monotonic();repo=plan['repo'];tag=entry['release_tag'];region=entry['region']
+    approvals = None
+    if approval_database is not None:
+        approvals = approved_sign_groups.read_approved(approval_database, region)
+    elif region == approved_sign_groups.LIVE_BUNDLE:
+        approvals = approved_sign_groups.read_live_approved()
+        print(f'INSPECTOR APPROVALS {region}: {len(approvals)} approved group(s)', flush=True)
     target=Path(workspace)/entry['source_release_tag'];work=target/'work';output=target/'bundle'
     work.mkdir(parents=True,exist_ok=True);output.mkdir(exist_ok=True)
     final=target/'result.json'
@@ -223,8 +233,12 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     if prefer_local_bw and region=='baden-wuerttemberg' and (local_root/'baden-wuerttemberg_speeds.sqlite.gz').exists():
         source_manifest=json.loads((local_root/'baden-wuerttemberg_manifest.json').read_text())
         source_override=True
+    approval_revision = approved_sign_groups.revision(approvals) if approvals is not None else None
+    if approvals is not None:
+        for name in ('approved_sign_groups.py', 'audit_city_context.py', 'traffic_sign_inventory.py'):
+            builder_files['scripts/map/'+name] = digest(Path(__file__).parent/name)
     identity=cache_identity(plan,entry,source_manifest,source_override,builder_files,
-                            zstd_library().ZSTD_versionString().decode('ascii'))
+                            zstd_library().ZSTD_versionString().decode('ascii'), approval_revision)
     if final.exists():return cached_result(final,output,identity,entry)
     # Incomplete artifacts are not recipe-bound evidence. Refuse their reuse
     # across a changed plan/code recipe rather than combining old/new containers.
@@ -246,6 +260,22 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     else:
         paths=[download_asset(repo,a,work/a['name']) for a in entry['database_assets']]
     source=materialize(paths,source_manifest['db'],work/'source.sqlite')
+    if approvals is not None:
+        with closing(sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True)) as original:
+            has_previous = approved_sign_groups.already_imported(original)
+        if approvals or has_previous:
+            poly = None
+            if approvals:
+                item = entry['extras']['poly']
+                poly = download_asset(repo, item, work/item['name'])
+            approved_source = work/'source-with-approved-sign-groups.sqlite'
+            with tempfile.TemporaryDirectory(prefix='approved-source-', dir=work) as directory:
+                staged = Path(directory)/'source.sqlite'
+                shutil.copyfile(source, staged)
+                with closing(sqlite3.connect(staged)) as db, db:
+                    approved_sign_groups.import_approved(db, approvals, poly)
+                staged.replace(approved_source)
+            source = approved_source
     source_sha=digest(source)
     prefix=f'{region}_{entry["bundle_version"]}'
     geometry=output/(prefix+'.ways.yspg');context=output/(prefix+'.context.yspc');nodes=output/(prefix+'.nodes.yspn')
@@ -300,6 +330,8 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
         else:manifest[name]=artifact(destination,tag,repo)
     manifest['self']={'file':entry['manifest_file'],'url':f'https://github.com/{repo}/releases/download/{tag}/{entry["manifest_file"]}'}
     manifest['source']=dict(source_manifest.get('source',{}))
+    if approvals is not None:
+        manifest['source']['approved_sign_groups'] = {'revision': approval_revision, 'count': len(approvals)}
     manifest['source']['packed_storage']={'version':1,'original_sqlite_sha256':source_sha,
         'original_bundle_version':source_manifest['bundle_version'],'previous_release':entry['source_release_url'],
         'local_full_bw_upgrade':source_override,'query_semantics':'Original SQL tables/indexes preserved; way_geom exact text supplied from immutable geometry pack.',
@@ -355,11 +387,14 @@ def main():
     parser.add_argument('--plan',type=Path,required=True);parser.add_argument('--workspace',type=Path,required=True)
     parser.add_argument('--target',default='all');parser.add_argument('--published-source-only',action='store_true')
     parser.add_argument('--retain-work',action='store_true')
+    parser.add_argument('--approved-sign-groups', type=Path,
+                        default=os.environ.get('YOUSPEED_SIGN_GROUP_APPROVALS') or None,
+                        help='Pinned Inspector SQLite snapshot (Baden-Württemberg defaults to live approvals)')
     args=parser.parse_args();plan=json.loads(args.plan.read_text())
     entries=[x for x in plan['bundles'] if args.target=='all' or x['source_release_tag'] in args.target.split(',')]
     require(entries,'No requested bundles in pinned plan')
     entries.sort(key=lambda x:sum(a['size'] for a in x['database_assets']),reverse=True)
-    for entry in entries:build_one(plan,entry,args.workspace,prefer_local_bw=not args.published_source_only,retain_work=args.retain_work)
+    for entry in entries:build_one(plan,entry,args.workspace,prefer_local_bw=not args.published_source_only,retain_work=args.retain_work,approval_database=args.approved_sign_groups)
 
 
 if __name__=='__main__':main()

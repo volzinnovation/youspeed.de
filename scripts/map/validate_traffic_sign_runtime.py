@@ -23,7 +23,7 @@ def validate(db,require=False):
     if report['errors']:return report
     display_only = capability.get('inventory_scope') == 'display_only'
     checks={
-        'all_inventory_records_materialized':'''SELECT count(*) FROM traffic_sign_inventory i LEFT JOIN traffic_sign_runtime s ON s.source_id=i.source_id AND s.record_key=i.record_key WHERE s.sign_id IS NULL''',
+        'all_inventory_records_materialized':'''SELECT count(*) FROM traffic_sign_inventory i LEFT JOIN traffic_sign_runtime s ON s.source_id=i.source_id AND s.record_key=i.record_key WHERE s.sign_id IS NULL AND i.source_id<>'streetshots-approved' ''',
         'all_runtime_signs_have_current_source':'''SELECT count(*) FROM traffic_sign_runtime s LEFT JOIN traffic_sign_source p USING(source_id) LEFT JOIN traffic_sign_inventory i ON i.source_id=s.source_id AND i.record_key=s.record_key WHERE p.source_id IS NULL OR p.snapshot_sha256!=s.snapshot_sha256 OR (s.source_id!='osm-settlement' AND i.row_id IS NULL)''',
         'directions_cover_admitted_ways':'''SELECT count(*) FROM ways w LEFT JOIN traffic_sign_way_direction d USING(way_id) WHERE d.way_id IS NULL''',
         'accepted_associations_permitted':'''SELECT count(*) FROM traffic_sign_association a LEFT JOIN traffic_sign_way_direction d USING(way_id) WHERE a.status='accepted' AND (d.way_id IS NULL OR a.direction IS NULL OR a.direction NOT IN(-1,1) OR (a.direction=1 AND d.forward_allowed!=1) OR (a.direction=-1 AND d.backward_allowed!=1) OR a.station_chainage_m<0 OR a.station_chainage_m>d.way_length_m+0.5)''',

@@ -1102,6 +1102,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
     parser.add_argument("--input-pbf", help="Optional source PBF to build exact city polygon tables")
     parser.add_argument("--traffic-sign-geojson", type=Path, help="Optional MobiData BW source inventory; directed interpretation requires --build-traffic-sign-runtime")
+    parser.add_argument("--approved-sign-groups", type=Path, help="Inspector SQLite sign-group approvals")
+    parser.add_argument("--approved-sign-coverage", type=Path, help="Coverage .poly of the target bundle")
     parser.add_argument("--build-traffic-sign-runtime", action="store_true", help="Build optional directed traffic-sign runtime overlay; requires --traffic-sign-geojson and its decoder dependencies")
     parser.add_argument("--build-upcoming-path", action="store_true", help="Build conservative source-node lookahead topology; requires --build-traffic-sign-runtime and --input-pbf")
     parser.add_argument("--build-settlement-context", action="store_true", help="Build opt-in directed settlement context from original PBF")
@@ -1134,7 +1136,10 @@ def parse_args() -> argparse.Namespace:
         default="none",
         help="Corridor precompute mode (requires detailed way-links for paired; default: none)",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if bool(args.approved_sign_groups) != bool(args.approved_sign_coverage):
+        parser.error("--approved-sign-groups and --approved-sign-coverage are required together")
+    return args
 
 
 def main() -> int:
@@ -1931,6 +1936,12 @@ def main() -> int:
         from build_traffic_sign_runtime import build_runtime
         runtime = build_runtime(conn, v1_dist / "ways.meta")
         print(f"Traffic-sign runtime: {runtime}", file=sys.stderr)
+    if args.approved_sign_groups:
+        from approved_sign_groups import import_approved, read_approved
+        region = v1_dist.name
+        rows = read_approved(args.approved_sign_groups, region)
+        accepted = import_approved(conn, rows, args.approved_sign_coverage)
+        print(f"Inspector sign groups for {region}: {accepted}", file=sys.stderr)
 
     if args.build_upcoming_path:
         from build_upcoming_path import build as build_upcoming_path

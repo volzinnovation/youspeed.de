@@ -102,7 +102,19 @@ hashes and table counts are in the
 
 `packed_refresh` in the existing country workflow builds 54 pinned sources in
 parallel and stages verified drafts. Full BW is built locally from its newer
-source. The publisher refuses rollout without physical iPhone and Android QA
+source. The regular `scripts/map/build_packed_release.py` invocation for
+`baden-wuerttemberg` fetches a fresh, read-only Inspector approval snapshot.
+It replaces the Inspector inventory with that snapshot, records its revision
+and count in the manifest, and stops if the snapshot cannot be fetched. Use
+a fresh workspace for a new approval revision. For a reproducible build,
+`--approved-sign-groups` accepts a pinned Inspector SQLite snapshot.
+
+The local build runner reads `mapdata/build/baden-wuerttemberg-inspector-approvals/ssh_config`.
+Configure the `streetshots-inspector-approvals` host alias there with the
+Inspector SSH host, user, and existing runner identity. The host key must
+already be trusted by that runner. Keep the SSH configuration and key local.
+
+The publisher refuses rollout without physical iPhone and Android QA
 bound to the exact source commit, runtime source hashes, builder recipe and BW
 artifact hashes. Both phones must preserve lookup results and use zero mapped
 payload bytes. Single readers must stay below 64 MiB observed incremental RSS;
