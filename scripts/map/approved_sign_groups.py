@@ -30,6 +30,11 @@ with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True)) as db:
     rows = [dict(row) for row in db.execute({SELECT_APPROVED!r}, ({LIVE_BUNDLE!r},))]
 print(json.dumps({{'schema_version': 1, 'region': {LIVE_BUNDLE!r}, 'rows': rows}}, allow_nan=False))
 """
+# Keep the code forms aligned with the Streetshots Inspector approval editor.
+SIGN_CODE = re.compile(
+    r"(?:DE:[0-9]{3,4}(?:[.-][0-9]{1,3})*(?:,[0-9]{1,3})?"
+    r"|(?:BE|CH|FR|NL):[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)(?:\[[0-9]{1,4}(?:[.,][0-9]{1,3})?\])?"
+)
 
 
 def read_approved(database, region):
@@ -63,7 +68,7 @@ def validate_rows(rows):
     for row in rows:
         if (not re.fullmatch(r"[a-zA-Z0-9_.:-]{1,100}", row["group_id"])
                 or not re.fullmatch(r"[a-f0-9]{64}", row["revision"])
-                or not re.fullmatch(r"DE:[0-9]{3,4}(?:[.-][0-9]{1,3})*", row["sign_code"])):
+                or not SIGN_CODE.fullmatch(row["sign_code"])):
             raise ValueError("Invalid approved sign group")
         number(row["longitude"], "longitude", -180, 180)
         number(row["latitude"], "latitude", -90, 90)
@@ -100,6 +105,22 @@ def already_imported(db):
     if not db.execute("SELECT 1 FROM sqlite_schema WHERE name='traffic_sign_source'").fetchone():
         return False
     return db.execute("SELECT 1 FROM traffic_sign_source WHERE source_id=?", (SOURCE_ID,)).fetchone() is not None
+
+
+def published_index(db):
+    """Record the exact approval revisions present in the final bundle inventory."""
+    rows = []
+    if already_imported(db):
+        for group, code, lon, lat, raw in db.execute("""
+            SELECT record_key, sign_code, longitude, latitude, raw_properties_json
+            FROM traffic_sign_inventory WHERE source_id=? ORDER BY record_key
+        """, (SOURCE_ID,)):
+            properties = json.loads(raw)
+            rows.append({"group_id": group, "revision": properties["review_revision"], "sign_code": code,
+                         "longitude": lon, "latitude": lat, "front_azimuth_deg": properties["front_azimuth_deg"]})
+    validate_rows(rows)
+    return {"revision": revision(rows), "count": len(rows),
+            "groups": {row["group_id"]: row["revision"] for row in rows}}
 
 
 def import_approved(db, rows, coverage):

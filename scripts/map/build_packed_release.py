@@ -227,7 +227,8 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     old_manifest=entry.get('source_manifest_document') or json.loads(Path(entry['source_manifest']).read_text())
     source_manifest=old_manifest
     builder_files={'scripts/map/'+name:digest(Path(__file__).parent/name) for name in
-                   ['build_packed_release.py','packed_runtime.py','extract_packed_sign_nodes.py','pack_sign_nodes.py']}
+                   ['build_packed_release.py','packed_runtime.py','extract_packed_sign_nodes.py','pack_sign_nodes.py',
+                    'approved_sign_groups.py']}
     source_override=False
     local_root=Path('mapdata/bundles/v3/baden-wuerttemberg/2026-10-23-v1.5-journal-conditional')
     if prefer_local_bw and region=='baden-wuerttemberg' and (local_root/'baden-wuerttemberg_speeds.sqlite.gz').exists():
@@ -235,7 +236,7 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
         source_override=True
     approval_revision = approved_sign_groups.revision(approvals) if approvals is not None else None
     if approvals is not None:
-        for name in ('approved_sign_groups.py', 'audit_city_context.py', 'traffic_sign_inventory.py'):
+        for name in ('audit_city_context.py', 'traffic_sign_inventory.py'):
             builder_files['scripts/map/'+name] = digest(Path(__file__).parent/name)
     identity=cache_identity(plan,entry,source_manifest,source_override,builder_files,
                             zstd_library().ZSTD_versionString().decode('ascii'), approval_revision)
@@ -312,6 +313,7 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     else:pack_nodes(node_json,nodes)
     print('VERIFY',region,flush=True)
     if verification is None:verification=verify_logical_tables(original,context,geometry,entry['bundle_version'])
+    approval_index=approved_sign_groups.published_index(original)
     original.close()
     source_nodes.pop('nodes')
     manifest=copy.deepcopy(source_manifest)
@@ -330,8 +332,7 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
         else:manifest[name]=artifact(destination,tag,repo)
     manifest['self']={'file':entry['manifest_file'],'url':f'https://github.com/{repo}/releases/download/{tag}/{entry["manifest_file"]}'}
     manifest['source']=dict(source_manifest.get('source',{}))
-    if approvals is not None:
-        manifest['source']['approved_sign_groups'] = {'revision': approval_revision, 'count': len(approvals)}
+    manifest['source']['approved_sign_groups']=approval_index
     manifest['source']['packed_storage']={'version':1,'original_sqlite_sha256':source_sha,
         'original_bundle_version':source_manifest['bundle_version'],'previous_release':entry['source_release_url'],
         'local_full_bw_upgrade':source_override,'query_semantics':'Original SQL tables/indexes preserved; way_geom exact text supplied from immutable geometry pack.',

@@ -84,7 +84,7 @@ class PackedReleasePackagingTests(unittest.TestCase):
             poly = b'fixture\n1\n 8 48\n 9 48\n 9 49\n 8 49\n 8 48\nEND\nEND\n'
             fixture['entry']['extras']['poly'] = {'name': 'fixture.poly', 'size': len(poly)}
             fixture['contents']['fixture.poly'] = poly
-            group = {'group_id': 'approved-fixture-sign', 'revision': 'a' * 64, 'sign_code': 'DE:222',
+            group = {'group_id': 'approved-fixture-sign', 'revision': 'a' * 64, 'sign_code': 'DE:265-3,8',
                      'longitude': 8.5, 'latitude': 48.5, 'front_azimuth_deg': 233.0}
             config = root / 'ssh_config'
             config.touch()
@@ -105,13 +105,15 @@ class PackedReleasePackagingTests(unittest.TestCase):
                 bundle = workspace / 'fixture' / 'bundle'
                 manifest = json.loads((bundle / f'{region}_manifest.json').read_text())
                 self.assertEqual(manifest['source']['approved_sign_groups']['count'], count)
+                self.assertEqual(manifest['source']['approved_sign_groups']['groups'],
+                                 {group['group_id']: group['revision']} if count else {})
                 context = workspace / 'context.sqlite'
                 with closing(builder.Reader(bundle / manifest['db']['file'])) as reader:
                     context.write_bytes(reader.read(0, reader.logical))
                 with closing(sqlite3.connect(context)) as db:
                     if count:
                         rows = db.execute('SELECT record_key, sign_code FROM traffic_sign_inventory').fetchall()
-                        self.assertEqual(rows, [(group['group_id'], 'DE:222')])
+                        self.assertEqual(rows, [(group['group_id'], group['sign_code'])])
                     else:
                         self.assertFalse(builder.approved_sign_groups.already_imported(db))
 
