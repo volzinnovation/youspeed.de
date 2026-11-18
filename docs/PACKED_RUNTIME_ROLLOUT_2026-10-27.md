@@ -107,12 +107,14 @@ source. The regular `scripts/map/build_packed_release.py` invocation for
 It replaces the Inspector inventory with that snapshot, records its revision
 and count in the manifest, and stops if the snapshot cannot be fetched. Use
 a fresh workspace for a new approval revision. For a reproducible build,
-`--approved-sign-groups` accepts a pinned Inspector SQLite snapshot.
+`--approved-sign-groups` accepts a pinned Inspector JSON export or a legacy SQLite snapshot.
 
 The local build runner reads `mapdata/build/baden-wuerttemberg-inspector-approvals/ssh_config`.
 Configure the `streetshots-inspector-approvals` host alias there with the
 Inspector SSH host, user, and existing runner identity. The host key must
-already be trusted by that runner. Keep the SSH configuration and key local.
+already be trusted by that runner. The key can be restricted to
+`docker exec youspeed-public-inspector-inspector-1 python -m inspector.export_sign_groups baden-wuerttemberg`.
+Keep the SSH configuration and key local.
 
 The publisher refuses rollout without physical iPhone and Android QA
 bound to the exact source commit, runtime source hashes, builder recipe and BW

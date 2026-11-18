@@ -1102,7 +1102,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-db", required=True, help="Output SQLite database path")
     parser.add_argument("--input-pbf", help="Optional source PBF to build exact city polygon tables")
     parser.add_argument("--traffic-sign-geojson", type=Path, help="Optional MobiData BW source inventory; directed interpretation requires --build-traffic-sign-runtime")
-    parser.add_argument("--approved-sign-groups", type=Path, help="Inspector SQLite sign-group approvals")
+    parser.add_argument("--approved-sign-groups", type=Path, help="Inspector JSON or legacy SQLite sign-group snapshot")
     parser.add_argument("--approved-sign-coverage", type=Path, help="Coverage .poly of the target bundle")
     parser.add_argument("--build-traffic-sign-runtime", action="store_true", help="Build optional directed traffic-sign runtime overlay; requires --traffic-sign-geojson and its decoder dependencies")
     parser.add_argument("--build-upcoming-path", action="store_true", help="Build conservative source-node lookahead topology; requires --build-traffic-sign-runtime and --input-pbf")

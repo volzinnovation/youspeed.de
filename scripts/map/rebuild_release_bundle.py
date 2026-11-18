@@ -70,7 +70,7 @@ def main(argv=None):
     parser.add_argument('--build-only', action='store_true')
     parser.add_argument('--approved-sign-groups', type=Path,
                         default=os.environ.get('YOUSPEED_SIGN_GROUP_APPROVALS') or None,
-                        help='Inspector SQLite sign-group approvals')
+                        help='Inspector JSON or legacy SQLite sign-group snapshot')
     args = parser.parse_args(argv)
     if args.approved_sign_groups:
         args.approved_sign_groups = args.approved_sign_groups.resolve(strict=True)

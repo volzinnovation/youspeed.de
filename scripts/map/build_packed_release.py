@@ -238,6 +238,8 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     if approvals is not None:
         for name in ('audit_city_context.py', 'traffic_sign_inventory.py'):
             builder_files['scripts/map/'+name] = digest(Path(__file__).parent/name)
+        for path in (approved_sign_groups.RUNTIME_SCHEMA, approved_sign_groups.ARTWORK_MANIFEST):
+            builder_files[path.relative_to(approved_sign_groups.ROOT).as_posix()] = digest(path)
     identity=cache_identity(plan,entry,source_manifest,source_override,builder_files,
                             zstd_library().ZSTD_versionString().decode('ascii'), approval_revision)
     if final.exists():return cached_result(final,output,identity,entry)
@@ -390,7 +392,7 @@ def main():
     parser.add_argument('--retain-work',action='store_true')
     parser.add_argument('--approved-sign-groups', type=Path,
                         default=os.environ.get('YOUSPEED_SIGN_GROUP_APPROVALS') or None,
-                        help='Pinned Inspector SQLite snapshot (Baden-Württemberg defaults to live approvals)')
+                        help='Pinned Inspector JSON or legacy SQLite snapshot (Baden-Württemberg defaults to live approvals)')
     args=parser.parse_args();plan=json.loads(args.plan.read_text())
     entries=[x for x in plan['bundles'] if args.target=='all' or x['source_release_tag'] in args.target.split(',')]
     require(entries,'No requested bundles in pinned plan')

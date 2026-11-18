@@ -100,6 +100,7 @@ class PackedReleasePackagingTests(unittest.TestCase):
                     self.build(fixture, approved_workspace)
                 revoked = self.build(fixture, revoked_workspace)
             self.assertEqual(ssh.call_count, 3)
+            self.assertIn('python -m inspector.export_sign_groups baden-wuerttemberg', ssh.call_args.args[0][-1])
             self.assertNotEqual(approved['build_cache_identity'], revoked['build_cache_identity'])
             for workspace, count in ((approved_workspace, 1), (revoked_workspace, 0)):
                 bundle = workspace / 'fixture' / 'bundle'
@@ -114,6 +115,10 @@ class PackedReleasePackagingTests(unittest.TestCase):
                     if count:
                         rows = db.execute('SELECT record_key, sign_code FROM traffic_sign_inventory').fetchall()
                         self.assertEqual(rows, [(group['group_id'], group['sign_code'])])
+                        self.assertEqual(db.execute("""SELECT r.kind, r.orientation_deg, a.status, a.way_id
+                            FROM traffic_sign_runtime r JOIN traffic_sign_association a USING(sign_id)""").fetchall(),
+                                         [('secondary', 53.0, 'inventory_only', None)])
+                        self.assertEqual(db.execute('SELECT count(*) FROM traffic_sign_way_rule').fetchone()[0], 0)
                     else:
                         self.assertFalse(builder.approved_sign_groups.already_imported(db))
 
