@@ -146,7 +146,7 @@ struct InventoryTrafficSign: Codable, Equatable, Sendable {
     var confirmationSemanticsVerified: Bool {
         ["not_applicable","parsed_source_value","missing_value"].contains(parameterStatus)
     }
-    var canTriggerInventoryCapture: Bool { sourceID != "mapillary-eval" }
+    var canTriggerInventoryCapture: Bool { sourceID != "mapillary-eval" && sourceID != "streetshots-approved" }
     var isSpeedEnd: Bool { kind == "speed_limit_end" || code == "DE:282" }
     var requiresDirectedEvidence: Bool { ["speed_limit","speed_limit_end","settlement_boundary"].contains(kind) || code == "DE:282" }
     func secondaryFaceStatus(heading: Double?, headingAccuracy: Double?) -> String {

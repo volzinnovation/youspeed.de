@@ -148,7 +148,7 @@ internal data class InventorySign(
         return if (delta > 90.0) "known_opposite_face" else "face_compatible"
     }
     fun isKnownOppositeFace(fix: InventorySignFix): Boolean = secondaryFaceRelation(fix) == "known_opposite_face"
-    val canTriggerInventoryCapture: Boolean get() = sourceId != "mapillary-eval"
+    val canTriggerInventoryCapture: Boolean get() = sourceId != "mapillary-eval" && sourceId != "streetshots-approved"
     val parameterText: String? get() {
         InventorySpeedEndCode.number(code)?.let { return "$it km/h" }
         if (parameterStatus != "parsed_source_value") return null
