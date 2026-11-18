@@ -186,6 +186,32 @@ extension ConditionalOCRInterpretationTests {
         return .init(event:event,frameContext:context,ocrAttemptAnnotation:annotation,supplementaryOCROnly:true)
     }
     private func iso(_ value:String) -> Date { ISO8601DateFormatter().date(from:value)! }
+    @MainActor func testBundleScheduleOwnsRecognizedNumberWithoutAnyOCRAndRestoresNormalLimit() throws {
+        let at = iso("2026-10-23T10:00:00Z")
+        let model = DriveSessionViewModel(); model.testConfigureLiveConditionalOCR(at:at,context:context)
+        let raw = "30 @ (22:00-06:00)"
+        let rules: [String:Any] = ["version":1,"grammar":"youspeed-osm-speed-1","tags":[[
+            "role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported",
+            "raw":raw,"clauses":[["limit":["kind":"numeric","kmh":30],"source_span":[0,raw.count],
+                "condition":["kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]]]]]]]
+        let rule = ConditionalSpeedRules.Reevaluation(rulesJSON:String(decoding:try JSONSerialization.data(withJSONObject:rules),as:UTF8.self),
+            baseKmh:50,baseUnlimited:false,direction:1,countryCode:"DE")
+        let event = liveEmission(pixelAnnotation(frame:"no-ocr",at:at,raw:nil)).event
+        model.testOfferIndependentCamera(id:"live",speed:30)
+        model.testMaskConditionalOCRParent(.init(event:event,frameContext:context))
+        XCTAssertEqual(model.speedLimitKmh,30,"Without bundle conditions an independently admitted number stays valid")
+        model.testUseConditionalBundleRule(rule)
+        XCTAssertTrue(model.testConditionalOCRParentIsBlocked("live"))
+        XCTAssertEqual(model.speedLimitKmh,50,"A later bundle lookup must also reassess an existing camera claim")
+        model.testReevaluateConditionalBundle(at:iso("2026-10-23T20:00:00Z"))
+        XCTAssertEqual(model.speedLimitKmh,30)
+        model.testReevaluateConditionalBundle(at:iso("2026-10-24T04:00:00Z"))
+        XCTAssertEqual(model.speedLimitKmh,50)
+        model.testOfferIndependentCamera(id:"other-number",speed:60)
+        let other = liveEmission(pixelAnnotation(frame:"other",at:iso("2026-10-24T04:00:00Z"),parent:"other-number",raw:nil),eventSpeed:60).event
+        model.testMaskConditionalOCRParent(.init(event:other,frameContext:context))
+        XCTAssertEqual(model.speedLimitKmh,60,"A different observed number is not this conditional rule")
+    }
     @MainActor func testUnmatchedPlateCompletionCannotBlockOrWithdrawNumericParent() {
         let start=iso("2026-10-23T10:00:00Z")
         let annotation=pixelAnnotation(frame:"source",at:start)

@@ -594,3 +594,5 @@
 "mapillary.response_error" = "Mapillary hat eine unerwartete Antwort geliefert.";
 "mapillary.http_error" = "Mapillary-Anfrage fehlgeschlagen";
 "mapillary.already_uploaded" = "Diese Fotos wurden bereits an Mapillary übergeben.";
+
+"limit.condition.wet" = "Bei Nässe";

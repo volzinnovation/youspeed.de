@@ -20,6 +20,37 @@ import org.junit.Test
 
 /** Real bundled detector/OCR pixels are separate from the synthetic road/clock replay below. */
 class ConditionalCameraLiveInstrumentedTest {
+    @Test fun matchedBundleScheduleReassessesRecognizedNumberWithoutOCR() {
+        Fixture().use { fixture -> fixture.main {
+            val at=Instant.parse("2026-10-23T10:00:00Z");fixture.clock.set(at)
+            val candidate=TrafficSignCandidate("maxspeed:30","30",TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED,30,"km/h"),
+                .99,null,NormalizedTrafficSignBoundingBox(.2,.2,.1,.1),trackId="no-ocr",evidenceFrames=2)
+            val event=TrafficSignRecognitionEvent(1,"fixture","a".repeat(64),"fixture",TrafficSignInputSource.LIVE_FRAME,at,
+                TrafficSignRecognitionState.CONFIRMED,candidate,roadContext=fixture.roadContext,latencyMs=0.0,thermalState="nominal",
+                frameId="no-ocr-frame",driveSessionId=fixture.session)
+            fixture.runtime.camera("no-ocr",SpeedReferenceValue("numeric",30))
+            fixture.controller.onTrafficSignUnverifiedAssembly(event,fixture.generation)
+            assertEquals(30,fixture.runtime.output()?.value?.kmh)
+            val rule=ConditionalSpeedRules.Reevaluation("""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","raw":"30 @ (22:00-06:00)","clauses":[{"limit":{"kind":"numeric","kmh":30},"source_span":[0,18],"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}""",50,false,1,"DE")
+            val type=Class.forName("de.youspeed.android.alpha.ConsumerSessionController\$ConditionalClockContext")
+            val constructor=type.declaredConstructors.single {it.parameterCount==5}.apply {isAccessible=true}
+            val state=fixture.controller.uiState
+            field("conditionalClockContext").set(fixture.controller,constructor.newInstance(rule,"101",state.activeDBPath,fixture.generation,null))
+            fun tick(stamp:String) {
+                fixture.clock.set(Instant.parse(stamp))
+                val result=rule.evaluate(fixture.clock.millis())
+                fixture.bundle("bundle:101",requireNotNull(result.kmh));fixture.reevaluate()
+            }
+            tick("2026-10-23T10:00:00Z")
+            assertEquals("Later bundle context withdraws the unconditional camera number",50,fixture.runtime.output()?.value?.kmh)
+            tick("2026-10-23T20:00:00Z");assertEquals(30,fixture.runtime.output()?.value?.kmh)
+            tick("2026-10-24T04:00:00Z");assertEquals(50,fixture.runtime.output()?.value?.kmh)
+            fixture.runtime.camera("different-number",SpeedReferenceValue("numeric",60))
+            fixture.controller.onTrafficSignUnverifiedAssembly(event.copy(candidate=candidate.copy(rawClassId="maxspeed:60",
+                semantic=TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED,60,"km/h"),trackId="different-number")),fixture.generation)
+            fixture.reevaluate();assertEquals(60,fixture.runtime.output()?.value?.kmh)
+        }}
+    }
     private val instrumentation=InstrumentationRegistry.getInstrumentation()
     private val context=instrumentation.targetContext
     private val positive="fbc95839-71fc-540c-ae6b-041df195e07d"

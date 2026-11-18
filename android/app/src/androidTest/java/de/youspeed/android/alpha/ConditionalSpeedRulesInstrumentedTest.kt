@@ -3,11 +3,44 @@ package de.youspeed.android.alpha
 import androidx.test.platform.app.InstrumentationRegistry
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import java.time.Instant
 
 class ConditionalSpeedRulesInstrumentedTest {
     private fun nightRules()=JSONObject("""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","raw":"30 @ (22:00-06:00)","clauses":[{"limit":{"kind":"numeric","kmh":30},"source_span":[0,18],"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}""")
+    @Test fun drivingWetRuleKeepsNormalReferenceAndTranslatedPreview() {
+        val rules=nightRules()
+        val tag=rules.getJSONArray("tags").getJSONObject(0)
+        tag.put("raw","30 @ (wet)")
+        tag.getJSONArray("clauses").getJSONObject(0).put("source_span",org.json.JSONArray(listOf(0,10)))
+            .put("condition",JSONObject().put("kind","context").put("field","road_surface_wet"))
+        val rule=ConditionalSpeedRules.Reevaluation(rules.toString(),50,false,1,"DE")
+        val result=rule.evaluate(0)
+        assertEquals(50,result.kmh);assertFalse(result.unresolved)
+        assertEquals(ConditionalSpeedPreview(30,"wet"),result.inactivePreview)
+        val original=java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.GERMAN)
+            assertEquals("Bei Nässe",result.inactivePreview?.localizedRestrictionText)
+        } finally {java.util.Locale.setDefault(original)}
+        assertTrue(ConditionalSpeedRules.evaluate(rules,ConditionalSpeedRules.Context(countryCode="DE",direction=1),50,false).unresolved)
+        assertTrue(rule.copy(baseKmh=null).evaluate(0).unresolved)
+    }
+    @Test fun associationRequiresMatchingNumberVehicleDirectionAndValidity() {
+        val rules=nightRules()
+        fun rule(direction:Int?=1)=ConditionalSpeedRules.Reevaluation(rules.toString(),50,false,direction,"DE")
+        assertTrue(rule().containsConditionalLimit(30,0))
+        assertFalse(rule().containsConditionalLimit(60,0))
+        val tag=rules.getJSONArray("tags").getJSONObject(0)
+        tag.put("direction",-1)
+        assertFalse(rule().containsConditionalLimit(30,0));assertFalse(rule(null).containsConditionalLimit(30,0))
+        tag.put("direction",0).put("vehicle","hgv")
+        assertFalse(rule().containsConditionalLimit(30,0))
+        tag.put("vehicle","all")
+        assertFalse(rule().copy(validUntilUTC=0.0).containsConditionalLimit(30,0))
+    }
     @Test fun outsideWindowUsesIndependentBaseAndNeverInventsOne() {
         val context=ConditionalSpeedRules.Context(atMs=Instant.parse("2026-10-23T10:00:00Z").toEpochMilli(),countryCode="DE",direction=1)
         assertEquals(90,ConditionalSpeedRules.evaluate(nightRules(),context,90,false).kmh)

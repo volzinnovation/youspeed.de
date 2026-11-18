@@ -26,6 +26,20 @@ government evidence (MobiData only in BW), evaluated OSM. Conditions do not
 modify the protected reference policy. Source annotations with
 `evaluation_enabled=false` are never executable rules.
 
+On 2026-11-18 the product owner selected normal-road reference plus conditional
+preview while wetness detection is unavailable. Both driving adapters evaluate
+the wet branch as inactive for this presentation choice; this is not evidence
+that the road is dry. The generic evaluator still reports unknown wetness as
+unresolved. Previews translate the raw `wet` token in all four app languages.
+
+A recognized numeric camera sign is linked to supported motorcar conditional
+clauses only on the same stable bundle way and matching travel direction, with
+the same numeric value. In that case the evaluated bundle owns the selection
+(including the independent base outside a schedule), even without OCR. Existing
+camera claims are reassessed when bundle context arrives. No OCR verification
+or new camera observation is fabricated; unrelated camera numbers, own
+corrections and the protected reference-policy priority/expiry remain intact.
+
 `conformance-v1.json` is the shared Swift/Kotlin fixture. The compiler also checks
 all 191 observed BW key/value patterns, preserving unsupported forms verbatim.
 Public packaging raises minimum app compatibility to 1.5 when this capability

@@ -3253,6 +3253,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         return ["status":selected == nil ? "unresolved":"applicable",
             "context_revision":speedReference.machine?.applicabilityRevision ?? 0,
             "conditions":["producer":"osm_bundle_conditional","rule_set":ast,
+                "wetness_handling":"normal_reference_with_conditional_preview",
                 "evaluation_reason":evaluation.reason,"conditional_unresolved":evaluation.unresolved,
                 "evaluated_at":at.timeIntervalSince1970,"selected_limit":selected?.json ?? [:],
                 "independent_base_kmh":rule.baseKmh as Any? ?? NSNull(),"independent_base_unlimited":rule.baseUnlimited]]
@@ -4325,8 +4326,17 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
 #endif
     }
     private func liveConditionalEntryID(_ id: String?) -> String? { id.map { conditionalOCRLiveAliases[$0] ?? $0 } }
+    private func bundleLinksConditionalCamera(_ entry: LiveConditionalCamera, at: Date) -> Bool {
+        guard let bundle = conditionalClockContext, bundle.path == activeDBPath,
+              liveConditionalScopeIsCurrent(entry), let current = latestTrafficSignDetectionContext,
+              bundle.generation == trafficSignContextGeneration, bundle.way == limitWayID,
+              bundle.way == current.wayId, bundle.way == entry.context.wayId else { return false }
+        return bundle.rule.containsConditionalLimit(entry.speed, at: at)
+    }
     private func blocksUnverifiedOCRParent(_ id: String?) -> Bool {
         guard let id else { return false }
+        if let key = liveConditionalEntryID(id), let entry = conditionalOCRLive[key],
+           bundleLinksConditionalCamera(entry, at: conditionalOCRNow) { return true }
         if let key = liveConditionalEntryID(id), let entry = conditionalOCRLive[key], !entry.knownPlate, entry.plain, entry.plainEligible, !entry.superseded,
            liveConditionalScopeIsCurrent(entry), conditionalOCRNow.timeIntervalSince(entry.originAt) < 300,
            speedReference.traveledMeters-entry.originDistance < 5000 { return false }
@@ -4468,6 +4478,22 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let ordered = conditionalOCRLive.keys.sorted { conditionalOCRLive[$0]!.originAt > conditionalOCRLive[$1]!.originAt }
         for key in ordered {
             guard var entry = conditionalOCRLive[key] else { continue }
+            if bundleLinksConditionalCamera(entry, at: now) {
+                // The way rule owns time/wet applicability, including the independent
+                // fallback. A camera number alone must not override that selection.
+                entry.knownPlate = true; entry.plain = false; entry.lastVerdict = .unresolved
+                for id in conditionalOCRLiveAliases.keys where liveConditionalEntryID(id) == key {
+                    if trafficSignOverridePolicy.activeOverride?.trackId == id { trafficSignOverridePolicy.clear(); trafficSignRecognitionActiveOverride = nil }
+                    if trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID == id { _ = trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState()) }
+                    if speedReference.cameraEvidenceIDs.contains(id) {
+                        _ = speedReference.reevaluateObservedCamera(parentID:id,value:nil,
+                            observedElapsedSeconds:entry.originElapsed,observedDistanceMeters:entry.originDistance)
+                    }
+                }
+                entry.reason = "matched_way_bundle_conditional"
+                conditionalOCRLive[key] = entry
+                continue
+            }
             if let ordinary = speedReference.machine?.claims["camera"], liveConditionalEntryID(ordinary.id) != key,
                ordinary.time > entry.originElapsed { entry.superseded = true }
             if conditionalOCRLive.contains(where: { otherKey, other in
@@ -9671,6 +9697,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     }
                     self.speedReference.bundle(id:"\(self.activeBundleVersion):\(result.wayID ?? "none")",
                         value:selectedBundleValue,applicability:evaluatedBundle)
+                    self.reevaluateLiveCameraConditions(at: Date())
                     let effectiveState = self.trafficSignEffectiveLimitResolver.resolve(
                         base: self.currentBaseEffectiveSpeedLimitState(),
                         currentContext: nextTrafficSignContext,
@@ -10426,9 +10453,20 @@ extension DriveSessionViewModel {
     }
 
     func testReevaluateConditionalBundle(at timestamp: Date) {
+        testReferenceClock = timestamp
         conditionalClockMinute = nil
         reevaluateConditionalClock(at: timestamp)
+        reevaluateLiveCameraConditions(at: timestamp)
         publishEffectiveSpeedLimitState(effectiveSpeedLimitState)
+    }
+
+    func testUseConditionalBundleRule(_ rule: ConditionalSpeedRules.Reevaluation) {
+        isDriving = true; trafficSignApplicationIsActive = true
+        conditionalClockContext = (rule, limitWayID ?? "", activeDBPath, trafficSignContextGeneration)
+        conditionalClockMinute = nil
+        reevaluateConditionalClock(at: conditionalOCRNow)
+        reevaluateLiveCameraConditions(at: conditionalOCRNow)
+        publishEffectiveSpeedLimitState(currentBaseEffectiveSpeedLimitState())
     }
 
     func testRefreshBundleInventory() async { await refreshDownloadedBundleInventory() }

@@ -673,6 +673,7 @@ class ConsumerSessionController(
         var voiceBarrierAt:Instant?=null
         var retired=false
         var applied=false
+        var speedKmh:Int?=null
         var lastVerdict:ConditionalOCRInterpretation.Verdict?=null
     }
     private val conditionalCameraTracks=linkedMapOf<String,ConditionalCameraTrack>()
@@ -2368,8 +2369,18 @@ class ConsumerSessionController(
 
     private fun conditionalOCRAuthorityScope() = "${trafficSignGeneration.get()}:${trafficSignDriveSessionId.orEmpty()}"
 
+    private fun bundleLinksConditionalCamera(track: ConditionalCameraTrack): Boolean {
+        val bundle = conditionalClockContext ?: return false
+        if (!conditionalCameraScopeCurrentLocked(track)) return false
+        val current = latestTrafficSignContext ?: return false
+        if (bundle.path != uiState.activeDBPath || bundle.generation != trafficSignGeneration.get() ||
+            bundle.way != current.wayId || bundle.way != track.context?.wayId) return false
+        return track.speedKmh?.let { bundle.rule.containsConditionalLimit(it, clock.millis()) } == true
+    }
+
     private fun blocksUnverifiedOCRParent(id: String?): Boolean =
-        conditionalOCRAuthorityGate.blocks(id, conditionalOCRAuthorityScope())
+        conditionalOCRAuthorityGate.blocks(id, conditionalOCRAuthorityScope()) ||
+            conditionalCameraTracks.values.any { id in it.aliases && bundleLinksConditionalCamera(it) }
 
     private fun conditionalCameraTrackLocked(id:String,event:TrafficSignRecognitionEvent):ConditionalCameraTrack {
         val scope=conditionalOCRAuthorityScope()
@@ -2407,16 +2418,18 @@ class ConsumerSessionController(
         if(generation!=trafficSignGeneration.get() || event.driveSessionId!=trafficSignDriveSessionId || event.source!=TrafficSignInputSource.LIVE_FRAME) return
         val candidate=event.candidate ?: return
         val speed=candidate.numericSupplementarySpeed() ?: return
-        val knownPlate=candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty()
+        var knownPlate=candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty()
         val ids=setOfNotNull(candidate.trackId,event.applicabilityDecision?.trackId)
         if(ids.isEmpty()) return
         synchronized(trafficSignStateLock) {
             val track=conditionalCameraTrackLocked(candidate.trackId ?: ids.first(),event)
+            track.speedKmh=speed
+            knownPlate=knownPlate || bundleLinksConditionalCamera(track)
             track.aliases.addAll(ids);track.knownPlate=track.knownPlate || knownPlate
             if(speedReference.voice()!=null) {track.suppressedByVoice=true;track.voiceBarrierAt=clock.instant()}
             if(conditionalCameraTracks[conditionalCameraLeader]?.originAt?.let {it>track.originAt} != true) conditionalCameraLeader=track.id
             ids.forEach {conditionalOCRAuthorityGate.pending(it,candidate.rawClassId,speed,conditionalOCRAuthorityScope(),
-                candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty())}
+                knownPlate)}
         }
         if(knownPlate) withholdUnverifiedOCRParent(ids,candidate.rawClassId,speed,null,generation,event.driveSessionId,knownPlate=true)
     }
@@ -2441,6 +2454,7 @@ class ConsumerSessionController(
             val existing=conditionalCameraTracks.values.firstOrNull {track -> ids.any {it in track.aliases}}
             if(!knownPlate && existing?.knownPlate != true) return
             val track=conditionalCameraTrackLocked(annotation.physicalSignId,event);track.aliases.addAll(ids)
+            track.speedKmh=speed
             track.knownPlate=track.knownPlate || knownPlate
             if(conditionalCameraTracks[conditionalCameraLeader]?.originAt?.let {it>track.originAt} != true) conditionalCameraLeader=track.id
             if(track.lastFrame==annotation.frameId) return@synchronized
@@ -2504,6 +2518,17 @@ class ConsumerSessionController(
                     track.suppressedByVoice=true;track.voiceBarrierAt=clock.instant();track.record=null;track.tracker.reset();track.plainFirst=null;track.applied=false
                     return@forEach
                 }
+                if(bundleLinksConditionalCamera(track)) {
+                    track.knownPlate=true
+                    if(immediateTrafficSignOverride?.trackId in track.aliases) immediateTrafficSignOverride=null
+                    if(trafficSignResolver.activeAssertion()?.event?.physicalTrackId in track.aliases) trafficSignResolver.clear()
+                    track.aliases.filter {it in speedReference.cameraEvidenceIds()}.forEach { id ->
+                        speedReference.reevaluateCamera(id,null,track.originElapsed,track.originDistance)
+                        changed=true
+                    }
+                    track.applied=false;track.lastVerdict=ConditionalOCRInterpretation.Verdict.UNRESOLVED
+                    return@forEach
+                }
                 if(!track.knownPlate) return@forEach
                 val ordinary=speedReference.ordinaryCameraEvidenceId()
                 val newerCamera=speedReference.ordinaryCameraOrigin()?.first?.let {it>track.originElapsed}==true
@@ -2561,7 +2586,7 @@ class ConsumerSessionController(
             val passageBlocked = blocksUnverifiedOCRParent(passageId)
             val output = speedReference.output()
             val outputId = output?.evidenceId
-            fun liveConditional(id:String?):Boolean = conditionalCameraTracks.values.any {id in it.aliases && conditionalCameraVerdictLocked(it)==ConditionalOCRInterpretation.Verdict.APPLICABLE}
+            fun liveConditional(id:String?):Boolean = conditionalCameraTracks.values.any {id in it.aliases && !bundleLinksConditionalCamera(it) && conditionalCameraVerdictLocked(it)==ConditionalOCRInterpretation.Verdict.APPLICABLE}
             val outputBlocked = !liveConditional(outputId) && (blocksUnverifiedOCRParent(outputId) ||
                 (outputId?.endsWith(":enclosing") == true && blocksUnverifiedOCRParent(outputId.removeSuffix(":enclosing"))))
             val hiddenBlockedId = speedReference.cameraEvidenceIds().firstOrNull {blocksUnverifiedOCRParent(it) && !liveConditional(it)}

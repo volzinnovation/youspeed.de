@@ -594,3 +594,5 @@
 "mapillary.response_error" = "Mapillary gaf een onverwacht antwoord.";
 "mapillary.http_error" = "Mapillary-verzoek mislukt";
 "mapillary.already_uploaded" = "Deze foto’s zijn al ingediend bij Mapillary.";
+
+"limit.condition.wet" = "Bij nat wegdek";

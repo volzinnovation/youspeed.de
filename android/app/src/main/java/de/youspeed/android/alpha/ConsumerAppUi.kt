@@ -1267,10 +1267,10 @@ internal fun UpcomingSpeedLimitPreview(upcoming: UpcomingSpeedLimitCandidate, mo
 @Composable
 private fun InactiveSpeedLimitPreview(preview: ConditionalSpeedPreview, modifier: Modifier) {
     Box(modifier) {
-        PreviewSpeedLimitCircle(preview.speedKmh, Color(0xFF7A8087), "${preview.speedKmh} km/h, ${preview.restrictionText}",
+        PreviewSpeedLimitCircle(preview.speedKmh, Color(0xFF7A8087), "${preview.speedKmh} km/h, ${preview.localizedRestrictionText}",
             "inactive-speed-limit")
         Box(Modifier.matchParentSize(), contentAlignment = Alignment.TopStart) {
-            SupplementaryRestrictionText(preview.restrictionText, fontSize = 12.sp, lineHeight = 13.sp,
+            SupplementaryRestrictionText(preview.localizedRestrictionText, fontSize = 12.sp, lineHeight = 13.sp,
                 modifier = Modifier.offset(y = 62.dp).wrapContentWidth(Alignment.Start, unbounded = true)
                     .widthIn(max = 116.dp).clearAndSetSemantics { })
         }

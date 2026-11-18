@@ -5,6 +5,7 @@ internal fun conditionalBundleApplicability(rule:ConditionalSpeedRules.Reevaluat
     "status" to if(result.unresolved) "unresolved" else "applicable",
     "context_revision" to 0,
     "conditions" to mapOf("source" to "osm_conditional_rule_set","grammar" to "youspeed-osm-speed-1",
+        "wetness_handling" to "normal_reference_with_conditional_preview",
         "rule_set_ast_json" to rule.rulesJSON,"evaluated_at_ms" to atMs,
         "result" to if(result.unresolved) "unresolved" else "effective_value_selected",
         "reason" to result.reason,"effective_value" to when {result.unlimited -> mapOf("kind" to "unlimited");result.kmh!=null -> mapOf("kind" to "numeric","kmh" to result.kmh);else -> null},

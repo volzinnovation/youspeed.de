@@ -4,6 +4,10 @@ import SQLite3
 struct ConditionalSpeedPreview: Equatable, Sendable {
     let speedKmh: Int
     let restrictionText: String
+    var localizedRestrictionText: String {
+        restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "wet"
+            ? NSLocalizedString("limit.condition.wet", comment: "Wet-road conditional limit") : restrictionText
+    }
 }
 
 /// A bundle producer adapter. It does not alter reference-policy priority/expiry.
@@ -33,6 +37,32 @@ enum ConditionalSpeedRules {
         // Keep that producer context rather than freezing its current scalar.
         var baselineReevaluations: [Reevaluation]? = nil
         var fallbackReevaluations: [Reevaluation]? = nil
+        /// Associate the recognized number with this way's rule, without inventing OCR evidence.
+        func containsConditionalLimit(_ speedKmh: Int, at: Date, depth: Int = 0) -> Bool {
+            guard depth < 8 else { return false }
+            let outside = validFromUTC.map { at.timeIntervalSince1970 < $0 } == true
+                || validUntilUTC.map { at.timeIntervalSince1970 >= $0 } == true
+            if outside, let children = fallbackReevaluations {
+                return children.count == 1 && children[0].containsConditionalLimit(speedKmh, at: at, depth: depth + 1)
+            }
+            guard let json = outside ? fallbackRulesJSON : rulesJSON,
+                  let data = json.data(using: .utf8),
+                  let rules = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  rules["version"] as? Int == 1, rules["grammar"] as? String == "youspeed-osm-speed-1",
+                  let tags = rules["tags"] as? [[String: Any]], tags.count <= 128 else { return false }
+            return tags.contains { tag in
+                let scoped = tag["direction"] as? Int ?? 0
+                guard tag["role"] as? String == "speed", tag["conditional"] as? Bool == true,
+                      tag["status"] as? String == "supported",
+                      ["all", "vehicle", "motor_vehicle", "motorcar"].contains(tag["vehicle"] as? String ?? ""),
+                      scoped == 0 || scoped == direction else { return false }
+                return (tag["clauses"] as? [[String: Any]] ?? []).contains { clause in
+                    guard let limit = clause["limit"] as? [String: Any], limit["kind"] as? String == "numeric",
+                          let value = limit["kmh"] as? Double, value.isFinite, value > 0, value <= 400 else { return false }
+                    return Int(value.rounded()) == speedKmh
+                }
+            }
+        }
         func evaluate(at: Date) -> Result {
             evaluate(at: at, depth: 0)
         }
@@ -50,7 +80,7 @@ enum ConditionalSpeedRules {
                         return unknown("corrupt_fallback_rule_set")
                     }
                     return ConditionalSpeedRules.evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID,
-                        countryCode: countryCode, direction: direction), baseKmh: baseKmh, baseUnlimited: baseUnlimited)
+                        countryCode: countryCode, direction: direction, facts: drivingFacts), baseKmh: baseKmh, baseUnlimited: baseUnlimited)
                 }
                 if fallbackUnresolved == true { return unknown(fallbackReason ?? "map_amendment_baseline_unresolved") }
                 return Result(kmh: baseKmh, unlimited: baseUnlimited, unresolved: false, reason: "map_amendment_outside_validity")
@@ -65,7 +95,7 @@ enum ConditionalSpeedRules {
                 effectiveBase = baseline.unresolved ? nil : baseline.kmh
                 effectiveUnlimited = !baseline.unresolved && baseline.unlimited
             }
-            return ConditionalSpeedRules.evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction), baseKmh: effectiveBase, baseUnlimited: effectiveUnlimited)
+            return ConditionalSpeedRules.evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction, facts: drivingFacts), baseKmh: effectiveBase, baseUnlimited: effectiveUnlimited)
         }
     }
 
@@ -79,6 +109,10 @@ enum ConditionalSpeedRules {
         var clockTrusted = true
     }
 
+    // Product choice while wetness detection is unavailable: retain the independent
+    // normal-road reference and expose the wet alternative as a conditional preview.
+    static let drivingFacts = ["road_surface_wet": false]
+
     static func resolve(db: OpaquePointer, wayID: String, direction: Int?, baseKmh: Int?, baseUnlimited: Bool,
                         at: Date = Date(), timeZoneID: String? = nil, countryCode: String? = nil,
                         amendmentStore: MapDataAmendmentStore? = nil, passedNodeIDs: Set<String> = [],
@@ -90,7 +124,7 @@ enum ConditionalSpeedRules {
               let store = amendmentStore ?? MapDataAmendmentStore.applicationStore() else { return baseline }
         do {
             guard var result = try store.resolve(wayID: wayID, bundle: generation, direction: direction,
-                context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction),
+                context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction, facts: drivingFacts),
                 baseKmh: baseKmh, baseUnlimited: baseUnlimited, passedNodeIDs: passedNodeIDs,
                 baselineResult: baseline, sourceWayRulesJSON: baseline?.reevaluation?.rulesJSON) else { return baseline }
             result.reevaluation?.fallbackReevaluations = baseline?.reevaluation.map { [$0] }
@@ -124,7 +158,7 @@ enum ConditionalSpeedRules {
         guard sqlite3_step(statement) == SQLITE_ROW, let raw = sqlite3_column_text(statement, 0) else { return nil }
         guard let data = String(cString: raw).data(using: .utf8), data.count <= 262_144,
               let rules = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return unknown("corrupt_rule_set") }
-        var result = evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction), baseKmh: baseKmh, baseUnlimited: baseUnlimited)
+        var result = evaluate(rules, context: Context(at: at, timeZoneID: timeZoneID, countryCode: countryCode, direction: direction, facts: drivingFacts), baseKmh: baseKmh, baseUnlimited: baseUnlimited)
         result.reevaluation = Reevaluation(rulesJSON: String(data: data, encoding: .utf8)!, baseKmh: baseKmh, baseUnlimited: baseUnlimited, direction: direction, countryCode: countryCode, timeZoneID: timeZoneID)
         return result
     }

@@ -410,9 +410,9 @@ struct MainView: View {
                 .allowsHitTesting(viewModel.drivingControlsAllowed)
                 Group {
                     if let inactive = viewModel.inactiveSpeedLimitPreview {
-                        UpcomingSpeedLimitPreview(speedKmh: inactive.speedKmh, restrictionText: inactive.restrictionText)
+                        UpcomingSpeedLimitPreview(speedKmh: inactive.speedKmh, restrictionText: inactive.localizedRestrictionText)
                             .overlay(alignment: .top) {
-                                supplementaryRestrictionText(inactive.restrictionText, fontSize: 12)
+                                supplementaryRestrictionText(inactive.localizedRestrictionText, fontSize: 12)
                                     .frame(width: 116)
                                     .fixedSize(horizontal: false, vertical: true)
                                     .offset(x: 20, y: 61)

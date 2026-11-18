@@ -594,3 +594,5 @@
 "mapillary.response_error" = "Mapillary returned an unexpected response.";
 "mapillary.http_error" = "Mapillary request failed";
 "mapillary.already_uploaded" = "These photos have already been submitted to Mapillary.";
+
+"limit.condition.wet" = "When wet";

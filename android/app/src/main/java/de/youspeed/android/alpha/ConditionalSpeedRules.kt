@@ -6,16 +6,42 @@ import org.json.JSONObject
 import java.time.Instant
 import java.time.ZoneId
 
-data class ConditionalSpeedPreview(val speedKmh: Int, val restrictionText: String)
+data class ConditionalSpeedPreview(val speedKmh: Int, val restrictionText: String) {
+    val localizedRestrictionText: String get() = if (restrictionText.trim().equals("wet", ignoreCase = true))
+        ConsumerUiStrings.text("When wet", "Bei Nässe", "Par temps de pluie", "Bij nat wegdek") else restrictionText
+}
 
 /** Declarative bundle producer adapter; reference-policy semantics stay separate. */
 object ConditionalSpeedRules {
+    // Until wetness can be detected, use the independent normal-road reference
+    // and retain the wet alternative in the conditional preview.
+    val drivingFacts = mapOf("road_surface_wet" to false)
     data class Result(val kmh: Int?, val unlimited: Boolean, val unresolved: Boolean, val reason: String,
         val reevaluation: Reevaluation? = null, val inactivePreview: ConditionalSpeedPreview? = null)
     data class Reevaluation(val rulesJSON: String, val baseKmh: Int?, val baseUnlimited: Boolean, val direction: Int?, val countryCode: String?, val timeZoneId: String? = null,
         val validFromUTC:Double?=null,val validUntilUTC:Double?=null,val fallbackRulesJSON:String?=null,
         val fallbackUnresolved:Boolean?=null,val fallbackReason:String?=null,
         val baselineReevaluations:List<Reevaluation>?=null,val fallbackReevaluations:List<Reevaluation>?=null) {
+        fun containsConditionalLimit(speedKmh: Int, atMs: Long, depth: Int = 0): Boolean {
+            if (depth >= 8) return false
+            val outside = validFromUTC?.let { atMs / 1000.0 < it } == true || validUntilUTC?.let { atMs / 1000.0 >= it } == true
+            if (outside && fallbackReevaluations != null) return fallbackReevaluations.singleOrNull()?.containsConditionalLimit(speedKmh, atMs, depth + 1) == true
+            return try {
+                val rules = JSONObject((if (outside) fallbackRulesJSON else rulesJSON) ?: return false)
+                val tags = rules.optJSONArray("tags")?.objects() ?: return false
+                if (rules.optInt("version") != 1 || rules.optString("grammar") != "youspeed-osm-speed-1" || tags.size > 128) return false
+                tags.any { tag ->
+                    tag.optString("role") == "speed" && tag.optBoolean("conditional") && tag.optString("status") == "supported" &&
+                        tag.optString("vehicle") in setOf("all", "vehicle", "motor_vehicle", "motorcar") &&
+                        (tag.optInt("direction") == 0 || tag.optInt("direction") == direction) &&
+                        tag.optJSONArray("clauses")?.objects().orEmpty().any { clause ->
+                            val limit = clause.optJSONObject("limit")
+                            val value = limit?.optDouble("kmh", Double.NaN) ?: Double.NaN
+                            limit?.optString("kind") == "numeric" && value > 0 && value <= 400 && kotlin.math.floor(value + 0.5).toInt() == speedKmh
+                        }
+                }
+            } catch (_: Exception) { false }
+        }
         fun evaluate(atMs: Long): Result = evaluateDepth(atMs,0)
         private fun evaluateDepth(atMs:Long,depth:Int):Result {
             if(depth>=8)return unknown("map_amendment_reevaluation_depth")
@@ -23,7 +49,7 @@ object ConditionalSpeedRules {
             if(fallbackReevaluations?.size?.let{it!=1}==true)return unknown("corrupt_map_amendment_fallback")
             return try {
                 val outside=validFromUTC?.let { atMs/1000.0<it }==true||validUntilUTC?.let { atMs/1000.0>=it }==true
-                val context=Context(atMs=atMs,timeZoneId=timeZoneId,countryCode=countryCode,direction=direction)
+                val context=Context(atMs=atMs,timeZoneId=timeZoneId,countryCode=countryCode,direction=direction,facts=drivingFacts)
                 val baseline=baselineReevaluations?.single()?.evaluateDepth(atMs,depth+1)
                 if(baseline?.reason in setOf("map_amendment_reevaluation_depth","corrupt_map_amendment_baseline","corrupt_map_amendment_fallback"))return baseline!!
                 when {
@@ -59,7 +85,7 @@ object ConditionalSpeedRules {
         if(!PackedAmendmentBaseIdentity.isCanonical(generation))return baseline
         val store=amendmentStore?:MapDataAmendmentStore.applicationStore()?:return baseline
         return try {
-            val result=store.resolve(wayId,requireNotNull(generation),direction,Context(atMs,timeZoneId,countryCode,direction),baseKmh,baseUnlimited,
+            val result=store.resolve(wayId,requireNotNull(generation),direction,Context(atMs,timeZoneId,countryCode,direction,facts=drivingFacts),baseKmh,baseUnlimited,
                 baselineResult=baseline,sourceWayRulesJSON=baseline?.reevaluation?.rulesJSON)?:return baseline
             result.copy(reevaluation=result.reevaluation?.copy(fallbackRulesJSON=baseline?.reevaluation?.rulesJSON,
                 fallbackUnresolved=baseline?.unresolved,fallbackReason=baseline?.reason,
@@ -83,7 +109,7 @@ object ConditionalSpeedRules {
         } catch (_: android.database.sqlite.SQLiteException) { return if (hasCapability) unknown("incomplete_conditional_capability") else legacyUnresolved(db, wayId, direction) }
         if (raw == null) return null
         if (raw.length > 262_144) return unknown("oversized_rule_set")
-        return try { evaluate(JSONObject(raw), Context(atMs, timeZoneId, countryCode, direction), baseKmh, baseUnlimited)
+        return try { evaluate(JSONObject(raw), Context(atMs, timeZoneId, countryCode, direction, facts=drivingFacts), baseKmh, baseUnlimited)
             .copy(reevaluation = Reevaluation(raw, baseKmh, baseUnlimited, direction, countryCode, timeZoneId)) }
         catch (_: Exception) { unknown("corrupt_rule_set") }
     }

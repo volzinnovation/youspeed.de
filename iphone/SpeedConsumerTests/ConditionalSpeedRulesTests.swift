@@ -19,6 +19,40 @@ final class ConditionalSpeedRulesTests: XCTestCase {
         XCTAssertTrue(ConditionalSpeedRules.evaluate(nightRules(),context:context,baseKmh:nil,baseUnlimited:true).unlimited)
         XCTAssertTrue(ConditionalSpeedRules.evaluate(nightRules(),context:context,baseKmh:nil,baseUnlimited:false).unresolved)
     }
+    func testDrivingWetRuleKeepsIndependentBaseAndPreviewWithoutClaimingWetness() throws {
+        let raw = "30 @ (wet)"
+        let rules: [String: Any] = ["version":1,"grammar":"youspeed-osm-speed-1","tags":[[
+            "role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported",
+            "raw":raw,"clauses":[["limit":["kind":"numeric","kmh":30],"source_span":[0,raw.count],
+                "condition":["kind":"context","field":"road_surface_wet"]]]]]]
+        let json = String(decoding: try JSONSerialization.data(withJSONObject: rules), as: UTF8.self)
+        let rule = ConditionalSpeedRules.Reevaluation(rulesJSON:json,baseKmh:50,baseUnlimited:false,direction:1,countryCode:"DE")
+        let result = rule.evaluate(at:Date())
+        XCTAssertEqual(result.kmh,50)
+        XCTAssertFalse(result.unresolved)
+        XCTAssertEqual(result.inactivePreview,.init(speedKmh:30,restrictionText:"wet"))
+        XCTAssertNotEqual(result.inactivePreview?.localizedRestrictionText,"wet")
+        XCTAssertTrue(ConditionalSpeedRules.evaluate(rules,context:.init(countryCode:"DE",direction:1),baseKmh:50,baseUnlimited:false).unresolved)
+        XCTAssertTrue(ConditionalSpeedRules.Reevaluation(rulesJSON:json,baseKmh:nil,baseUnlimited:false,direction:1,countryCode:"DE").evaluate(at:Date()).unresolved)
+    }
+    func testCameraAssociationRequiresMatchingNumberVehicleDirectionAndValidAmendment() throws {
+        var rules = nightRules()
+        func rule(_ direction:Int? = 1) throws -> ConditionalSpeedRules.Reevaluation {
+            .init(rulesJSON:String(decoding:try JSONSerialization.data(withJSONObject:rules),as:UTF8.self),
+                baseKmh:50,baseUnlimited:false,direction:direction,countryCode:"DE")
+        }
+        let at = Date()
+        XCTAssertTrue(try rule().containsConditionalLimit(30,at:at))
+        XCTAssertFalse(try rule().containsConditionalLimit(60,at:at))
+        var tags = try XCTUnwrap(rules["tags"] as? [[String:Any]])
+        tags[0]["direction"] = -1; rules["tags"] = tags
+        XCTAssertFalse(try rule().containsConditionalLimit(30,at:at))
+        XCTAssertFalse(try rule(nil).containsConditionalLimit(30,at:at))
+        tags[0]["direction"] = 0; tags[0]["vehicle"] = "hgv"; rules["tags"] = tags
+        XCTAssertFalse(try rule().containsConditionalLimit(30,at:at))
+        var expired = try rule(); expired.validUntilUTC = at.timeIntervalSince1970
+        XCTAssertFalse(expired.containsConditionalLimit(30,at:at))
+    }
     func testCachedReevaluationKeepsExplicitTimezoneAndHalfOpenBoundary() throws {
         var database: OpaquePointer?
         XCTAssertEqual(sqlite3_open(":memory:",&database),SQLITE_OK)
