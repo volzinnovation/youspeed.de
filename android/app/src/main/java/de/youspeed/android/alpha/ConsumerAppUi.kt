@@ -806,10 +806,11 @@ internal fun MainScreen(
                             onDoubleTap = { if (UserCorrectionAvailability.enabled) onCapture() },
                         )
                         if (!ui.isTrafficSignEndOverlayVisible && !ConsumerMainScreenLogic.isInSpeedCaptureMode(ui)) {
-                            ui.retainedTrafficSignSupplementaryText?.takeIf {
+                            val restrictionText = ui.activeConditionalRestrictionText ?: ui.retainedTrafficSignSupplementaryText?.takeIf {
                                 it.matchesNumeric(ui.speedLimitKmh, cameraEvidence = true)
-                            }?.let { restriction ->
-                                SupplementaryRestrictionText(restriction.text, fontSize = 20.sp, lineHeight = 20.sp,
+                            }?.text
+                            restrictionText?.let { text ->
+                                SupplementaryRestrictionText(text, fontSize = 20.sp, lineHeight = 20.sp,
                                     modifier = Modifier.align(Alignment.BottomCenter).offset(y = 52.dp).height(48.dp).widthIn(max = signSize)
                                         .testTag("traffic-sign-supplementary-time"))
                             }

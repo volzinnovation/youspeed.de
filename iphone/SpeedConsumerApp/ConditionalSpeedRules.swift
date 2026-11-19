@@ -5,13 +5,16 @@ struct ConditionalSpeedPreview: Equatable, Sendable {
     let speedKmh: Int
     let restrictionText: String
     var localizedRestrictionText: String {
-        restrictionText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "wet"
-            ? NSLocalizedString("limit.condition.wet", comment: "Wet-road conditional limit") : restrictionText
+        ConditionalSpeedRules.localizedRestrictionText(restrictionText)
     }
 }
 
 /// A bundle producer adapter. It does not alter reference-policy priority/expiry.
 enum ConditionalSpeedRules {
+    static func localizedRestrictionText(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "wet"
+            ? NSLocalizedString("limit.condition.wet", comment: "Wet-road conditional limit") : text
+    }
     struct Result: Equatable {
         let kmh: Int?
         let unlimited: Bool
@@ -19,6 +22,7 @@ enum ConditionalSpeedRules {
         let reason: String
         var reevaluation: Reevaluation? = nil
         var inactivePreview: ConditionalSpeedPreview? = nil
+        var activeRestrictionText: String? = nil
     }
 
     struct Reevaluation: Codable, Equatable, Sendable {
@@ -275,8 +279,9 @@ enum ConditionalSpeedRules {
             default: return fact("unsupported_condition", assignments)
             }
         }
-        func outcome(_ assignments: [String: Bool]) -> String {
+        func outcome(_ assignments: [String: Bool]) -> (value: String, restriction: String?) {
             var selected = baseUnlimited ? "unlimited" : baseKmh.map { "numeric:\($0)" } ?? "unknown"
+            var restriction: String?
             for tag in tags {
                 let direction = tag["direction"] as? Int ?? 0
                 if direction != 0 {
@@ -284,17 +289,20 @@ enum ConditionalSpeedRules {
                     else if fact("direction_forward", assignments) != (direction == 1) { continue }
                 }
                 if tag["vehicle"] as? String == "hazmat", !fact("vehicle_hazmat", assignments) { continue }
-                if tag["status"] as? String != "supported" { selected = "unsupported"; continue }
+                if tag["status"] as? String != "supported" { selected = "unsupported"; restriction = nil; continue }
                 for clause in tag["clauses"] as? [[String: Any]] ?? [] {
                     if truth(clause["condition"] as? [String: Any] ?? [:], assignments) {
                         let limit = clause["limit"] as? [String: Any] ?? [:]
                         if limit["kind"] as? String == "unlimited" { selected = "unlimited" }
                         else if let number = limit["kmh"] as? NSNumber, number.doubleValue.isFinite, number.doubleValue > 0, number.doubleValue <= 400 { selected = "numeric:\(Int(number.doubleValue.rounded()))" }
                         else { selected = "unsupported" }
+                        // Follow the winning clause, including later unconditional
+                        // overrides. Never attach a condition from a losing rule.
+                        restriction = tag["conditional"] as? Bool == true ? restrictionText(tag: tag, clause: clause) : nil
                     }
                 }
             }
-            return selected
+            return (selected, restriction)
         }
         _ = outcome([:])
         // Enumerate correlated unknowns: one wetness/calendar fact has one value
@@ -308,10 +316,13 @@ enum ConditionalSpeedRules {
         let orderedKeys = keys.sorted()
         var outcomes = Set<String>()
         var assignments: [[String: Bool]] = []
+        var restrictions: [String?] = []
         for mask in 0..<(1 << orderedKeys.count) {
             var assignment: [String: Bool] = [:]
             for (index, key) in orderedKeys.enumerated() { assignment[key] = (mask & (1 << index)) != 0 }
-            outcomes.insert(outcome(assignment))
+            let selection = outcome(assignment)
+            outcomes.insert(selection.value)
+            restrictions.append(selection.restriction)
             assignments.append(assignment)
         }
         let preview = inactivePreview(tags: tags.reversed(), direction: context.direction,
@@ -323,8 +334,23 @@ enum ConditionalSpeedRules {
             result.inactivePreview = preview
             return result
         }
+        let activeRestriction = restrictions.first ?? nil
         return Result(kmh: selected == "unlimited" ? nil : Int(selected.dropFirst(8)),
-            unlimited: selected == "unlimited", unresolved: false, reason: "conditional_rules_evaluated", inactivePreview: preview)
+            unlimited: selected == "unlimited", unresolved: false, reason: "conditional_rules_evaluated", inactivePreview: preview,
+            activeRestrictionText: restrictions.allSatisfy { $0 == activeRestriction } ? activeRestriction : nil)
+    }
+
+    private static func restrictionText(tag: [String: Any], clause: [String: Any]) -> String? {
+        guard let raw = tag["raw"] as? String, let span = clause["source_span"] as? [Int], span.count == 2 else { return nil }
+        let source = raw.unicodeScalars
+        guard span[0] >= 0, span[0] < span[1], span[1] <= source.count else { return nil }
+        let text = String(source[source.index(source.startIndex, offsetBy: span[0])..<source.index(source.startIndex, offsetBy: span[1])])
+        guard let separator = text.firstIndex(of: "@") else { return nil }
+        var condition = text[text.index(after: separator)...].trimmingCharacters(in: .whitespacesAndNewlines)
+        if condition.hasPrefix("("), condition.hasSuffix(")") {
+            condition = condition.dropFirst().dropLast().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return condition.isEmpty ? nil : condition
     }
 
     private static func inactivePreview(tags: ReversedCollection<[[String: Any]]>, direction: Int?,

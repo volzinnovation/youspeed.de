@@ -57,14 +57,34 @@ class ConditionalSpeedRulesInstrumentedTest {
                 Instant.parse("2026-10-23T19:59:00Z").toEpochMilli(),"Europe/Paris","FR"))
             assertEquals(90,initial.kmh)
             assertEquals(ConditionalSpeedPreview(30, "22:00-06:00"),initial.inactivePreview)
+            assertEquals(null,initial.activeRestrictionText)
             val cached=requireNotNull(initial.reevaluation)
             val active = cached.evaluate(Instant.parse("2026-10-23T20:00:00Z").toEpochMilli())
             assertEquals(30,active.kmh)
             assertEquals(null,active.inactivePreview)
+            assertEquals("22:00-06:00",active.activeRestrictionText)
             val expired = cached.evaluate(Instant.parse("2026-10-24T04:00:00Z").toEpochMilli())
             assertEquals(90,expired.kmh)
             assertEquals(initial.inactivePreview,expired.inactivePreview)
+            assertEquals(null,expired.activeRestrictionText)
         }
+    }
+    @Test fun activeRestrictionFollowsWinningClauseAndNeedsCertainApplicability() {
+        val rules=nightRules()
+        val at=Instant.parse("2026-11-18T23:36:03Z").toEpochMilli()
+        val context=ConditionalSpeedRules.Context(atMs=at,countryCode="DE",direction=1)
+        assertEquals("22:00-06:00",ConditionalSpeedRules.evaluate(rules,context,30,false).activeRestrictionText)
+        val uncertain=ConditionalSpeedRules.evaluate(rules,context.copy(clockTrusted=false),30,false)
+        assertEquals(30,uncertain.kmh);assertEquals(null,uncertain.activeRestrictionText)
+        val tags=rules.getJSONArray("tags")
+        tags.put(JSONObject("""{"role":"speed","vehicle":"motorcar","direction":0,"conditional":false,"priority":1,"status":"supported","raw":"30","clauses":[{"limit":{"kind":"numeric","kmh":30},"condition":{"kind":"true"}}]}"""))
+        assertEquals(null,ConditionalSpeedRules.evaluate(rules,context,50,false).activeRestrictionText)
+        tags.remove(1)
+        val tag=tags.getJSONObject(0).put("raw","none @ (22:00-06:00)")
+        tag.getJSONArray("clauses").getJSONObject(0).put("limit",JSONObject().put("kind","unlimited"))
+            .put("source_span",org.json.JSONArray(listOf(0,20)))
+        val unlimited=ConditionalSpeedRules.evaluate(rules,context,50,false)
+        assertTrue(unlimited.unlimited);assertEquals("22:00-06:00",unlimited.activeRestrictionText)
     }
     @Test fun partialCapabilityCannotExecuteRulesOrRestoreScalarFallback() {
         for (schema in listOf("CREATE TABLE road_speed_capability(other TEXT)","CREATE TABLE road_speed_rule_set(way_id INTEGER,rules_json TEXT)")) {

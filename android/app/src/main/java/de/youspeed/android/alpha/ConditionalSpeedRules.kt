@@ -7,17 +7,19 @@ import java.time.Instant
 import java.time.ZoneId
 
 data class ConditionalSpeedPreview(val speedKmh: Int, val restrictionText: String) {
-    val localizedRestrictionText: String get() = if (restrictionText.trim().equals("wet", ignoreCase = true))
-        ConsumerUiStrings.text("When wet", "Bei Nässe", "Par temps de pluie", "Bij nat wegdek") else restrictionText
+    val localizedRestrictionText: String get() = ConditionalSpeedRules.localizedRestrictionText(restrictionText)
 }
 
 /** Declarative bundle producer adapter; reference-policy semantics stay separate. */
 object ConditionalSpeedRules {
+    fun localizedRestrictionText(text: String): String = if (text.trim().equals("wet", ignoreCase = true))
+        ConsumerUiStrings.text("When wet", "Bei Nässe", "Par temps de pluie", "Bij nat wegdek") else text
     // Until wetness can be detected, use the independent normal-road reference
     // and retain the wet alternative in the conditional preview.
     val drivingFacts = mapOf("road_surface_wet" to false)
     data class Result(val kmh: Int?, val unlimited: Boolean, val unresolved: Boolean, val reason: String,
-        val reevaluation: Reevaluation? = null, val inactivePreview: ConditionalSpeedPreview? = null)
+        val reevaluation: Reevaluation? = null, val inactivePreview: ConditionalSpeedPreview? = null,
+        val activeRestrictionText: String? = null)
     data class Reevaluation(val rulesJSON: String, val baseKmh: Int?, val baseUnlimited: Boolean, val direction: Int?, val countryCode: String?, val timeZoneId: String? = null,
         val validFromUTC:Double?=null,val validUntilUTC:Double?=null,val fallbackRulesJSON:String?=null,
         val fallbackUnresolved:Boolean?=null,val fallbackReason:String?=null,
@@ -201,8 +203,9 @@ object ConditionalSpeedRules {
                 else -> fact("unsupported_condition", assignment)
             }
         }
-        fun outcome(assignment: Map<String, Boolean>): String {
+        fun outcome(assignment: Map<String, Boolean>): Pair<String, String?> {
             var selected = if (baseUnlimited) "unlimited" else baseKmh?.let { "numeric:$it" } ?: "unknown"
+            var restriction: String? = null
             for (tag in tags) {
                 val direction = tag.optInt("direction")
                 if (direction != 0) {
@@ -210,7 +213,7 @@ object ConditionalSpeedRules {
                     else if (fact("direction_forward", assignment) != (direction == 1)) continue
                 }
                 if (tag.optString("vehicle") == "hazmat" && !fact("vehicle_hazmat", assignment)) continue
-                if (tag.optString("status") != "supported") { selected = "unsupported"; continue }
+                if (tag.optString("status") != "supported") { selected = "unsupported"; restriction = null; continue }
                 for (clause in tag.optJSONArray("clauses")?.objects() ?: emptyList()) {
                     if (truth(clause.optJSONObject("condition") ?: JSONObject(), assignment)) {
                         val limit = clause.optJSONObject("limit") ?: JSONObject()
@@ -220,10 +223,11 @@ object ConditionalSpeedRules {
                             kmh.isFinite() && kmh > 0 && kmh <= 400 -> "numeric:${kotlin.math.floor(kmh + 0.5).toInt()}"
                             else -> "unsupported"
                         }
+                        restriction = if (tag.optBoolean("conditional")) restrictionText(tag, clause) else null
                     }
                 }
             }
-            return selected
+            return selected to restriction
         }
         outcome(emptyMap())
         for (tag in tags) {
@@ -236,7 +240,8 @@ object ConditionalSpeedRules {
         val assignments = (0 until (1 shl ordered.size)).asSequence().map { mask ->
             ordered.mapIndexed { index, key -> key to (mask and (1 shl index) != 0) }.toMap()
         }
-        val outcomes = assignments.map(::outcome).toSet()
+        val selections = assignments.map(::outcome).toList()
+        val outcomes = selections.map { it.first }.toSet()
         val selected = outcomes.singleOrNull()
         val preview = inactivePreview(tags.asReversed(), context.direction, selected) { condition ->
             assignments.all { truth(condition, it) }
@@ -245,7 +250,16 @@ object ConditionalSpeedRules {
             return unknown("conditional_applicability_unresolved").copy(inactivePreview = preview)
         }
         return Result(selected.removePrefix("numeric:").toIntOrNull(), selected == "unlimited", false,
-            "conditional_rules_evaluated", inactivePreview = preview)
+            "conditional_rules_evaluated", inactivePreview = preview,
+            activeRestrictionText = selections.map { it.second }.distinct().singleOrNull())
+    }
+
+    private fun restrictionText(tag: JSONObject, clause: JSONObject): String? {
+        val raw = tag.optString("raw")
+        val span = clause.optJSONArray("source_span")?.ints() ?: return null
+        if (span.size != 2 || span[0] < 0 || span[0] >= span[1] || span[1] > raw.codePointCount(0, raw.length)) return null
+        val source = raw.substring(raw.offsetByCodePoints(0, span[0]), raw.offsetByCodePoints(0, span[1]))
+        return source.substringAfter('@', "").trim().removeSurrounding("(", ")").trim().takeIf { it.isNotEmpty() }
     }
 
     private fun inactivePreview(tags: List<JSONObject>, direction: Int?, selected: String?,

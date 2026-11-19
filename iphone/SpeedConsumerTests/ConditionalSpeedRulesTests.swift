@@ -65,13 +65,41 @@ final class ConditionalSpeedRulesTests: XCTestCase {
             at:instant("2026-10-23T19:59:00Z"),timeZoneID:"Europe/Paris",countryCode:"FR"))
         XCTAssertEqual(initial.kmh,90)
         XCTAssertEqual(initial.inactivePreview, .init(speedKmh: 30, restrictionText: "22:00-06:00"))
+        XCTAssertNil(initial.activeRestrictionText)
         let cached = try JSONDecoder().decode(ConditionalSpeedRules.Reevaluation.self,from:JSONEncoder().encode(XCTUnwrap(initial.reevaluation)))
         let active = cached.evaluate(at:try instant("2026-10-23T20:00:00Z"))
         XCTAssertEqual(active.kmh,30)
         XCTAssertNil(active.inactivePreview)
+        XCTAssertEqual(active.activeRestrictionText,"22:00-06:00")
         let expired = cached.evaluate(at:try instant("2026-10-24T04:00:00Z"))
         XCTAssertEqual(expired.kmh,90)
         XCTAssertEqual(expired.inactivePreview, initial.inactivePreview)
+        XCTAssertNil(expired.activeRestrictionText)
+    }
+    func testActiveRestrictionFollowsWinningClauseAndNeedsCertainApplicability() throws {
+        var rules = nightRules()
+        let at = try XCTUnwrap(ISO8601DateFormatter().date(from:"2026-11-18T23:36:03Z"))
+        var context = ConditionalSpeedRules.Context(at:at,countryCode:"DE",direction:1)
+        XCTAssertEqual(ConditionalSpeedRules.evaluate(rules,context:context,baseKmh:30,baseUnlimited:false).activeRestrictionText,"22:00-06:00")
+        context.clockTrusted = false
+        let uncertain = ConditionalSpeedRules.evaluate(rules,context:context,baseKmh:30,baseUnlimited:false)
+        XCTAssertEqual(uncertain.kmh,30)
+        XCTAssertNil(uncertain.activeRestrictionText,"A shared number does not prove its schedule is active")
+        context.clockTrusted = true
+        var tags = try XCTUnwrap(rules["tags"] as? [[String:Any]])
+        tags.append(["role":"speed","vehicle":"motorcar","direction":0,"conditional":false,"priority":1,"status":"supported",
+            "raw":"30","clauses":[["limit":["kind":"numeric","kmh":30],"condition":["kind":"true"]]]])
+        rules["tags"] = tags
+        XCTAssertNil(ConditionalSpeedRules.evaluate(rules,context:context,baseKmh:50,baseUnlimited:false).activeRestrictionText,
+            "An unconditional winner must not inherit an earlier schedule")
+        tags.removeLast()
+        tags[0]["raw"] = "none @ (22:00-06:00)"
+        var clauses = try XCTUnwrap(tags[0]["clauses"] as? [[String:Any]])
+        clauses[0]["source_span"] = [0,20]; clauses[0]["limit"] = ["kind":"unlimited"]
+        tags[0]["clauses"] = clauses; rules["tags"] = tags
+        let unlimited = ConditionalSpeedRules.evaluate(rules,context:context,baseKmh:50,baseUnlimited:false)
+        XCTAssertTrue(unlimited.unlimited)
+        XCTAssertEqual(unlimited.activeRestrictionText,"22:00-06:00")
     }
     func testPartialCapabilityCannotExecuteRulesOrRestoreScalarFallback() throws {
         for schema in ["CREATE TABLE road_speed_capability(other TEXT);", "CREATE TABLE road_speed_rule_set(way_id INTEGER,rules_json TEXT);"] {

@@ -34,17 +34,34 @@ class ConditionalCameraLiveInstrumentedTest {
             val rule=ConditionalSpeedRules.Reevaluation("""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","raw":"30 @ (22:00-06:00)","clauses":[{"limit":{"kind":"numeric","kmh":30},"source_span":[0,18],"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}""",50,false,1,"DE")
             val type=Class.forName("de.youspeed.android.alpha.ConsumerSessionController\$ConditionalClockContext")
             val constructor=type.declaredConstructors.single {it.parameterCount==5}.apply {isAccessible=true}
-            val state=fixture.controller.uiState
-            field("conditionalClockContext").set(fixture.controller,constructor.newInstance(rule,"101",state.activeDBPath,fixture.generation,null))
+            @Suppress("UNCHECKED_CAST") val state=field("uiState\$delegate").get(fixture.controller) as MutableState<ConsumerUiState>
+            state.value=state.value.copy(limitWayId="101")
+            field("conditionalClockContext").set(fixture.controller,constructor.newInstance(rule,"101",state.value.activeDBPath,fixture.generation,null))
             fun tick(stamp:String) {
                 fixture.clock.set(Instant.parse(stamp))
-                val result=rule.evaluate(fixture.clock.millis())
-                fixture.bundle("bundle:101",requireNotNull(result.kmh));fixture.reevaluate()
+                field("conditionalClockMinute").set(fixture.controller,null)
+                ConsumerSessionController::class.java.getDeclaredMethod("reevaluateConditionalClock").apply {isAccessible=true}.invoke(fixture.controller)
+                fixture.reevaluate()
+                state.value=ConsumerSessionController::class.java.getDeclaredMethod("preserveLastKnownLimit",ConsumerUiState::class.java)
+                    .apply {isAccessible=true}.invoke(fixture.controller,state.value) as ConsumerUiState
             }
             tick("2026-10-23T10:00:00Z")
             assertEquals("Later bundle context withdraws the unconditional camera number",50,fixture.runtime.output()?.value?.kmh)
+            assertNull(state.value.activeConditionalRestrictionText)
             tick("2026-10-23T20:00:00Z");assertEquals(30,fixture.runtime.output()?.value?.kmh)
+            assertEquals("The active bundle schedule is displayed without OCR","22:00-06:00",state.value.activeConditionalRestrictionText)
+            for(status in listOf(TrafficSignSupplementaryOCRStatus.NO_TEXT,TrafficSignSupplementaryOCRStatus.FAILED)) {
+                val observedAt=fixture.clock.instant()
+                val frame="bundle-$status"
+                val unread=TrafficSignSupplementaryTextAnnotation("maxspeed:30",30,"no-ocr",frame,observedAt,observedAt,
+                    null,null,status,candidate.boundingBox,generation=fixture.generation,driveSessionId=fixture.session)
+                fixture.controller.onTrafficSignSupplementaryAuthority(event.copy(frameId=frame,frameTimestampUtc=observedAt),unread)
+                tick("2026-10-23T20:00:00Z")
+                assertEquals(30,fixture.runtime.output()?.value?.kmh)
+                assertEquals("Empty/failed OCR cannot hide the bundle schedule","22:00-06:00",state.value.activeConditionalRestrictionText)
+            }
             tick("2026-10-24T04:00:00Z");assertEquals(50,fixture.runtime.output()?.value?.kmh)
+            assertNull(state.value.activeConditionalRestrictionText)
             fixture.runtime.camera("different-number",SpeedReferenceValue("numeric",60))
             fixture.controller.onTrafficSignUnverifiedAssembly(event.copy(candidate=candidate.copy(rawClassId="maxspeed:60",
                 semantic=TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED,60,"km/h"),trackId="different-number")),fixture.generation)

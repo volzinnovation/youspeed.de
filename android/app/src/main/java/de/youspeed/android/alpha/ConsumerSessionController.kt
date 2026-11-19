@@ -227,6 +227,7 @@ data class ConsumerUiState(
     val isUnlimitedSpeedLimitActive: Boolean = false,
     val upcomingSpeedLimit: UpcomingSpeedLimitCandidate? = null,
     val inactiveSpeedLimitPreview: ConditionalSpeedPreview? = null,
+    val activeConditionalRestrictionText: String? = null,
     val limitWayId: String? = null,
     val limitStreetName: String? = null,
     val limitStreetBaseName: String? = null,
@@ -654,7 +655,7 @@ class ConsumerSessionController(
     @Volatile private var latestBundleReference: Pair<String, SpeedReferenceValue?> = "none" to null
     private var speedReferenceLastLocation: Location? = null
     private data class ConditionalClockContext(val rule: ConditionalSpeedRules.Reevaluation, val way: String,
-        val path: String, val generation: Long, val preview: ConditionalSpeedPreview?)
+        val path: String, val generation: Long, val evaluation: ConditionalSpeedRules.Result?)
     @Volatile private var conditionalCameraPreview: Pair<String, ConditionalSpeedPreview>? = null
     @Volatile private var conditionalClockContext: ConditionalClockContext? = null
     private var conditionalClockMinute: Long? = null
@@ -674,6 +675,8 @@ class ConsumerSessionController(
         var retired=false
         var applied=false
         var speedKmh:Int?=null
+        var lastOCRStatus="not_returned"
+        var bundleLinkDiagnostic:String?=null
         var lastVerdict:ConditionalOCRInterpretation.Verdict?=null
     }
     private val conditionalCameraTracks=linkedMapOf<String,ConditionalCameraTrack>()
@@ -1416,7 +1419,7 @@ class ConsumerSessionController(
                 return
             }
             val result = context.rule.evaluate(clock.millis())
-            conditionalClockContext = context.copy(preview = result.inactivePreview)
+            conditionalClockContext = context.copy(evaluation = result)
             val value = if (result.unlimited) SpeedReferenceValue("unlimited") else result.kmh?.let { SpeedReferenceValue("numeric", it) }
             updateBundledSpeedReference("${uiState.activeBundleVersion}:${context.way}", value,context.rule,result)
             appendRuntimeDiagnosticEvent("conditional_speed_clock", mapOf("way" to context.way, "unresolved" to result.unresolved, "reason" to result.reason))
@@ -2455,6 +2458,7 @@ class ConsumerSessionController(
             if(!knownPlate && existing?.knownPlate != true) return
             val track=conditionalCameraTrackLocked(annotation.physicalSignId,event);track.aliases.addAll(ids)
             track.speedKmh=speed
+            track.lastOCRStatus=annotation.status.name.lowercase(java.util.Locale.ROOT)
             track.knownPlate=track.knownPlate || knownPlate
             if(conditionalCameraTracks[conditionalCameraLeader]?.originAt?.let {it>track.originAt} != true) conditionalCameraLeader=track.id
             if(track.lastFrame==annotation.frameId) return@synchronized
@@ -2520,6 +2524,16 @@ class ConsumerSessionController(
                 }
                 if(bundleLinksConditionalCamera(track)) {
                     track.knownPlate=true
+                    val fields=mapOf("schemaVersion" to 1,"track" to track.id,"way" to conditionalClockContext?.way,
+                        "recognizedKmh" to track.speedKmh,"selectedKmh" to conditionalClockContext?.evaluation?.kmh,
+                        "selectedUnlimited" to conditionalClockContext?.evaluation?.unlimited,
+                        "activeText" to conditionalClockContext?.evaluation?.activeRestrictionText,
+                        "ocrStatus" to track.lastOCRStatus,"ocrVerification" to track.record?.verification?.name)
+                    val diagnostic=fields.toString()
+                    if(track.bundleLinkDiagnostic!=diagnostic) {
+                        appendRuntimeDiagnosticEvent("conditional_camera_bundle_link_v1",fields)
+                        track.bundleLinkDiagnostic=diagnostic
+                    }
                     if(immediateTrafficSignOverride?.trackId in track.aliases) immediateTrafficSignOverride=null
                     if(trafficSignResolver.activeAssertion()?.event?.physicalTrackId in track.aliases) trafficSignResolver.clear()
                     track.aliases.filter {it in speedReference.cameraEvidenceIds()}.forEach { id ->
@@ -7395,7 +7409,7 @@ class ConsumerSessionController(
             if (result.wayId == null) null else bundleOnly.resolution?.referenceValue(), evaluatedRule, evaluation)
         conditionalClockContext = evaluatedRule?.let { rule ->
             result.wayId?.let { way -> ConditionalClockContext(rule, way, bundleDbPath, evaluationGeneration,
-                evaluation?.inactivePreview) }
+                evaluation) }
         }
         conditionalClockMinute = Math.floorDiv(clock.millis(), 60_000L)
         val effective = if (tsrEnabledForEvaluation || trafficSignResolver.activeAssertion() != null) {
@@ -8062,11 +8076,22 @@ class ConsumerSessionController(
             !state.isTrafficSignEndOverlayVisible && !speedReference.contextPending() &&
             !ConsumerMainScreenLogic.isInSpeedCaptureMode(state)
         val camera = conditionalCameraPreview?.takeIf { it.first == conditionalOCRAuthorityScope() }?.second
-        val bundle = conditionalClockContext?.takeIf {
+        val evaluation = conditionalClockContext?.takeIf {
             it.path == state.activeDBPath && it.way == state.limitWayId && it.generation == trafficSignGeneration.get() &&
                 latestTrafficSignContext?.matchedWayStable == true
-        }?.preview
+        }?.evaluation
+        val bundle = evaluation?.inactivePreview
+        val active = evaluation?.takeIf {
+            previewAllowed && state.effectiveSpeedLimitSource == EffectiveSpeedLimitSource.BUNDLE && !it.unresolved &&
+                it.kmh == state.speedLimitKmh && it.unlimited == state.isUnlimitedSpeedLimitActive
+        }?.activeRestrictionText?.let(ConditionalSpeedRules::localizedRestrictionText)
+        if (state.activeConditionalRestrictionText != active) {
+            appendRuntimeDiagnosticEvent("conditional_speed_presentation_v1", mapOf("schemaVersion" to 1,
+                "way" to state.limitWayId, "source" to state.effectiveSpeedLimitSource.wireValue,
+                "selectedKmh" to state.speedLimitKmh, "activeText" to active, "obscured" to !previewAllowed))
+        }
         return state.copy(
+            activeConditionalRestrictionText = active,
             inactiveSpeedLimitPreview = if (previewAllowed) listOfNotNull(camera, bundle)
                 .firstOrNull { it.speedKmh != state.speedLimitKmh } else null,
             upcomingSpeedLimit = upcomingSpeedLimitTracker.presentation(state.speedLimitKmh, state.isUnlimitedSpeedLimitActive,

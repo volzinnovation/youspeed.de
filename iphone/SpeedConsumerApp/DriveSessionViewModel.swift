@@ -744,6 +744,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     @Published private(set) var isVisionDismissalListening = false
     @Published private(set) var upcomingSpeedLimit: UpcomingSpeedLimitCandidate?
     @Published private(set) var inactiveSpeedLimitPreview: ConditionalSpeedPreview?
+    @Published private(set) var activeConditionalRestrictionText: String?
     var upcomingSpeedLimitForDisplay: UpcomingSpeedLimitCandidate? {
         guard !isInSpeedCaptureMode, trafficSignPendingSpeedKmh == nil, !trafficSignEndOverlayVisible else { return nil }
 #if DEBUG
@@ -1006,6 +1007,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
            let text = ProcessInfo.processInfo.environment["YOUSPEED_SCREENSHOT_SUPPLEMENTARY_TEXT"] {
             return TrafficSignOCRTextFormatting.display(text).split(whereSeparator: \.isWhitespace).joined(separator: " ")
         }
+        if !isInSpeedCaptureMode, let activeConditionalRestrictionText { return activeConditionalRestrictionText }
         guard !isInSpeedCaptureMode, let observation = retainedTrafficSignSupplementaryText,
               let speed = observation.primarySpeedKmh, speed > 0, speed == speedLimitKmh else { return nil }
         return observation.text
@@ -1363,7 +1365,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
     private var speedReferenceTickTask: Task<Void, Never>?
     private var speedReferenceLastLocation: CLLocation?
     private var conditionalClockContext: (rule: ConditionalSpeedRules.Reevaluation, way: String, path: String, generation: UInt64)?
-    private var conditionalBundlePreview: ConditionalSpeedPreview?
+    private var conditionalBundleEvaluation: ConditionalSpeedRules.Result?
     private var conditionalCameraPreview: (scope: String, value: ConditionalSpeedPreview)?
     private var conditionalClockMinute: Int?
     private var conditionalOCRAuthorityGate = ConditionalOCRInterpretation.AuthorityGate()
@@ -1384,6 +1386,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         var frames = Set<String>()
         var lastVerdict: ConditionalOCRInterpretation.Verdict?
         var reason = "pixel_verification_pending"
+        var lastOCRStatus = "not_returned"
+        var bundleLinkDiagnostic: String?
         var offered = false
         var superseded = false
         var freshAfterVoice: Date?
@@ -3105,20 +3109,38 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         else { upcomingSpeedLimitTracker.invalidate(reason: reason) }
         upcomingSpeedLimit = nil
         inactiveSpeedLimitPreview = nil
+        activeConditionalRestrictionText = nil
     }
 
     private func refreshUpcomingSpeedLimit(now: Date = Date()) {
         let obscured = !isDriving || !trafficSignApplicationIsActive || mapLookupWorker.isPaused || isInSpeedCaptureMode
             || trafficSignPendingSpeedKmh != nil || trafficSignEndOverlayVisible || speedReference.machine?.pendingContext == true
         let camera = conditionalCameraPreview.flatMap { $0.scope == conditionalOCRAuthorityScope ? $0.value : nil }
-        let bundle = conditionalClockContext.flatMap { context in
+        let evaluation = conditionalClockContext.flatMap { context in
             context.path == activeDBPath && context.way == limitWayID && context.generation == trafficSignContextGeneration
-                && latestTrafficSignDetectionContext?.matchedWayStable == true ? conditionalBundlePreview : nil
+                && latestTrafficSignDetectionContext?.matchedWayStable == true ? conditionalBundleEvaluation : nil
         }
+        let bundle = evaluation?.inactivePreview
+        let active = !obscured && effectiveSpeedLimitState.source == .bundle
+            && evaluation?.unresolved == false && evaluation?.kmh == effectiveSpeedLimitState.value.speedKmh
+            && evaluation?.unlimited == (effectiveSpeedLimitState.value == .unlimited)
+            ? evaluation?.activeRestrictionText.map(ConditionalSpeedRules.localizedRestrictionText) : nil
         let inactive = !obscured && !effectiveSpeedLimitState.source.isStale
             ? [camera, bundle].compactMap { $0 }.first { $0.speedKmh != effectiveSpeedLimitState.value.speedKmh }
             : nil
-        if inactiveSpeedLimitPreview != inactive { inactiveSpeedLimitPreview = inactive }
+        if inactiveSpeedLimitPreview != inactive || activeConditionalRestrictionText != active {
+            inactiveSpeedLimitPreview = inactive
+            activeConditionalRestrictionText = active
+            let fields: [String: Any] = ["schemaVersion": 1, "way": limitWayID ?? "none",
+                "source": effectiveSpeedLimitState.source.rawValue,
+                "selectedKmh": effectiveSpeedLimitState.value.speedKmh as Any? ?? NSNull(),
+                "activeText": active as Any? ?? NSNull(),
+                "inactiveText": inactive?.localizedRestrictionText as Any? ?? NSNull(), "obscured": obscured]
+            if let data = try? JSONSerialization.data(withJSONObject: fields, options: .sortedKeys),
+               let json = String(data: data, encoding: .utf8) {
+                appendTSRLog("conditional_speed_presentation_v1=\(json)", timestamp: now)
+            }
+        }
         let selected = upcomingSpeedLimitTracker.selection(currentKmh: effectiveSpeedLimitState.value.speedKmh,
             unlimited: effectiveSpeedLimitState.value == .unlimited,
             currentIsStale: effectiveSpeedLimitState.source.isStale,
@@ -3266,11 +3288,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
               context.path == activeDBPath, context.way == limitWayID,
               context.generation == trafficSignContextGeneration else {
             conditionalClockContext = nil
-            conditionalBundlePreview = nil
+            conditionalBundleEvaluation = nil
             return
         }
         let result = context.rule.evaluate(at: now)
-        conditionalBundlePreview = result.inactivePreview
+        conditionalBundleEvaluation = result
         currentBundledSpeedLimitKmh = result.kmh
         currentBundledUnlimitedSpeedLimitActive = result.unlimited
         // Re-publish only the bundle producer. Camera/driver observation origins,
@@ -4399,6 +4421,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             speedReference.preserveObservedCameraOrigin(id:key,elapsed:conditionalOCRLive[key]!.originElapsed,distance:conditionalOCRLive[key]!.originDistance)
         }
         if var entry = conditionalOCRLive[key], entry.speed == speed {
+            entry.lastOCRStatus = actual?.readStatus.rawValue ?? emission.ocrPhase.rawValue
             entry.plainEligible = event.state == .confirmed && (event.candidate?.evidenceFrames ?? 0) >= 2
                 && event.permitsApplicability("immediate")
                 && (TSRApplicabilityConfiguration.defaultMode == "shadow" || event.applicabilityDecision.map {
@@ -4482,6 +4505,16 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                 // The way rule owns time/wet applicability, including the independent
                 // fallback. A camera number alone must not override that selection.
                 entry.knownPlate = true; entry.plain = false; entry.lastVerdict = .unresolved
+                let fields: [String: Any] = ["schemaVersion": 1, "track": key, "way": limitWayID ?? "none",
+                    "recognizedKmh": entry.speed, "selectedKmh": conditionalBundleEvaluation?.kmh as Any? ?? NSNull(),
+                    "selectedUnlimited": conditionalBundleEvaluation?.unlimited ?? false,
+                    "activeText": conditionalBundleEvaluation?.activeRestrictionText as Any? ?? NSNull(),
+                    "ocrStatus": entry.lastOCRStatus, "ocrVerification": entry.record?.verification.rawValue ?? "none"]
+                if let data = try? JSONSerialization.data(withJSONObject: fields, options: .sortedKeys),
+                   let json = String(data: data, encoding: .utf8), entry.bundleLinkDiagnostic != json {
+                    appendTSRLog("conditional_camera_bundle_link_v1=\(json)", timestamp: now)
+                    entry.bundleLinkDiagnostic = json
+                }
                 for id in conditionalOCRLiveAliases.keys where liveConditionalEntryID(id) == key {
                     if trafficSignOverridePolicy.activeOverride?.trackId == id { trafficSignOverridePolicy.clear(); trafficSignRecognitionActiveOverride = nil }
                     if trafficSignEffectiveLimitResolver.activePassage?.physicalTrackID == id { _ = trafficSignEffectiveLimitResolver.clear(base: currentBaseEffectiveSpeedLimitState()) }
@@ -9687,11 +9720,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
                     let bundleValue = EffectiveSpeedLimitState.base(localValue: nil,
                         bundledSpeedKmh: result.speedLimitKmh, bundledUnlimited: bundledUnlimitedMatch).value
                     let selectedBundleValue = result.wayID == nil ? nil : SpeedReferenceValue(bundleValue)
-                    self.conditionalBundlePreview = nil
+                    self.conditionalBundleEvaluation = nil
                     let evaluatedBundle = self.conditionalClockContext.map { context in
                         let now = Date()
                         let evaluation = context.rule.evaluate(at: now)
-                        self.conditionalBundlePreview = evaluation.inactivePreview
+                        self.conditionalBundleEvaluation = evaluation
                         return self.conditionalBundleApplicability(context.rule, selected: selectedBundleValue, at: now,
                             evaluation: evaluation)
                     }

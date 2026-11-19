@@ -56,7 +56,7 @@ class ConditionalSpeedControllerInstrumentedTest {
                 val nested=ConsumerSessionController::class.java.declaredClasses.single {it.simpleName=="ConditionalClockContext"}
                 val constructor=nested.declaredConstructors.single().apply {isAccessible=true}
                 val generation=(field("trafficSignGeneration").get(controller) as TrafficSignWriteGate).get()
-                field("conditionalClockContext").set(controller,constructor.newInstance(rule,"1","/fixture/conditional.sqlite",generation))
+                field("conditionalClockContext").set(controller,constructor.newInstance(rule,"1","/fixture/conditional.sqlite",generation,null))
                 field("conditionalClockMinute").set(controller,null)
                 val tick=ConsumerSessionController::class.java.getDeclaredMethod("reevaluateConditionalClock").apply {isAccessible=true}
                 tick.invoke(controller)

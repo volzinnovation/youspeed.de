@@ -151,7 +151,8 @@ extension ConditionalOCRInterpretationTests {
             matchedWayStable:true)
     }
     private func pixelAnnotation(frame:String, at:Date, parent:String="live", raw:String?="12-13h", plain:Bool=false,
-                                 wrongFrame:Bool=false, componentCount:Int=1) -> TrafficSignSupplementaryOCRAnnotation {
+                                 wrongFrame:Bool=false, componentCount:Int=1,
+                                 readStatus:TrafficSignSupplementaryOCRReadStatus?=nil) -> TrafficSignSupplementaryOCRAnnotation {
         let box=TrafficSignNormalizedRect(x:0.25,y:0.1,width:0.4,height:0.3)
         let sourceText=plain ? nil:raw
         let scan=TrafficSignPlateScan(status:plain ? .plain : .complete,
@@ -160,7 +161,7 @@ extension ConditionalOCRInterpretationTests {
             decision:plain ? "quiet_lower_context" : "bounded_complete_panels",lowerMinimum:plain ? 180:nil,lowerMaximum:plain ? 180:nil)
         let passes=sourceText.map { [TrafficSignOCRPass(text:$0,confidence:0.99,scale:1),.init(text:$0,confidence:0.99,scale:2)] } ?? []
         return .init(primaryClassID:"maxspeed:30",primarySpeedKmh:30,physicalSignID:parent,frameID:frame,
-            sourceObservedAt:at,observedAt:at,firstSeenAt:at,rawText:sourceText,window:nil,readStatus:sourceText == nil ? .noText:.read,
+            sourceObservedAt:at,observedAt:at,firstSeenAt:at,rawText:sourceText,window:nil,readStatus:readStatus ?? (sourceText == nil ? .noText:.read),
             primaryBoundingBox:box,ocrBoundingBox:nil,engine:"fixture",modelVersion:"fixture",
             assemblyEvidence:.init(sourceWidth:400,sourceHeight:400,sourceFrameID:wrongFrame ? "other":frame,capturedAt:at,
                 physicalSignID:parent,primaryBox:box,contextRect:.init(x:100,y:40,width:160,height:240),otherPrimaryBoxes:[],
@@ -203,14 +204,31 @@ extension ConditionalOCRInterpretationTests {
         model.testUseConditionalBundleRule(rule)
         XCTAssertTrue(model.testConditionalOCRParentIsBlocked("live"))
         XCTAssertEqual(model.speedLimitKmh,50,"A later bundle lookup must also reassess an existing camera claim")
+        XCTAssertNil(model.trafficSignNumericSupplementaryText)
         model.testReevaluateConditionalBundle(at:iso("2026-10-23T20:00:00Z"))
         XCTAssertEqual(model.speedLimitKmh,30)
+        XCTAssertEqual(model.trafficSignNumericSupplementaryText,"22:00-06:00","The active bundle schedule must be visible without OCR")
+        for status in [TrafficSignSupplementaryOCRReadStatus.noText, .failed] {
+            let unread = pixelAnnotation(frame:"bundle-\(status.rawValue)",at:iso("2026-10-23T20:00:00Z"),raw:nil,readStatus:status)
+            model.testMaskConditionalOCRParent(liveEmission(unread))
+            XCTAssertEqual(model.speedLimitKmh,30)
+            XCTAssertEqual(model.trafficSignNumericSupplementaryText,"22:00-06:00","An empty/failed OCR result cannot hide the bundle schedule")
+        }
         model.testReevaluateConditionalBundle(at:iso("2026-10-24T04:00:00Z"))
         XCTAssertEqual(model.speedLimitKmh,50)
+        XCTAssertNil(model.trafficSignNumericSupplementaryText)
         model.testOfferIndependentCamera(id:"other-number",speed:60)
         let other = liveEmission(pixelAnnotation(frame:"other",at:iso("2026-10-24T04:00:00Z"),parent:"other-number",raw:nil),eventSpeed:60).event
         model.testMaskConditionalOCRParent(.init(event:other,frameContext:context))
         XCTAssertEqual(model.speedLimitKmh,60,"A different observed number is not this conditional rule")
+        let independent = DriveSessionViewModel()
+        independent.testConfigureLiveConditionalOCR(at:iso("2026-10-23T20:00:00Z"),context:context)
+        independent.testUseConditionalBundleRule(rule)
+        XCTAssertEqual(independent.trafficSignNumericSupplementaryText,"22:00-06:00")
+        independent.testOfferIndependentCamera(id:"independent-active-number",speed:30)
+        XCTAssertNil(independent.trafficSignNumericSupplementaryText,"A camera claim must not inherit a bundle-only schedule")
+        independent.testOfferConditionalVoice(speed:30)
+        XCTAssertNil(independent.trafficSignNumericSupplementaryText,"An own correction must not inherit a bundle-only schedule")
     }
     @MainActor func testUnmatchedPlateCompletionCannotBlockOrWithdrawNumericParent() {
         let start=iso("2026-10-23T10:00:00Z")

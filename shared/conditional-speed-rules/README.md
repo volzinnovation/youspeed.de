@@ -40,6 +40,14 @@ camera claims are reassessed when bundle context arrives. No OCR verification
 or new camera observation is fabricated; unrelated camera numbers, own
 corrections and the protected reference-policy priority/expiry remain intact.
 
+Active bundle conditions also supply the caption beneath the main speed sign;
+they do not require an OCR annotation. The caption follows the winning clause
+and is removed outside its window or when camera/driver/stale evidence owns the
+display. Equal numeric outcomes alone do not prove a condition is active.
+`conditional_speed_presentation_v1` records caption changes, and
+`conditional_camera_bundle_link_v1` records recognized-number associations with
+their OCR status, so future drive logs can distinguish these paths.
+
 `conformance-v1.json` is the shared Swift/Kotlin fixture. The compiler also checks
 all 191 observed BW key/value patterns, preserving unsupported forms verbatim.
 Public packaging raises minimum app compatibility to 1.5 when this capability
