@@ -29,6 +29,10 @@ Image metadata was stripped. Original and rendition hashes are in manifest.json.
 The licenses of the models, datasets, software and Wikipedia article text are
 separate from the image status stated here. No endorsement is implied.
 
+The Inspector reference schematic de-262.png represents an unknown weight
+limit. Its editable artwork is sources/de-262.svg. It is outside the
+official mobile sign-artwork catalog.
+
 ================================================================================
 
 FOREIGN COMMONS SIGN RENDITIONS

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <title>Gewichtsbeschränkung, Tonnage unbekannt</title>
+  <circle cx="128" cy="128" r="127" fill="#202020"/>
+  <circle cx="128" cy="128" r="125" fill="#fff"/>
+  <circle cx="128" cy="128" r="123" fill="#c1121c"/>
+  <circle cx="128" cy="128" r="89" fill="#fff"/>
+  <g fill="#161616">
+    <!-- Question mark and unit in tonnes. No numeric value is present in the source class. -->
+    <path d="M67 109c0-21 14-34 35-34 20 0 33 12 33 30 0 16-8 23-17 31-7 6-10 10-10 19H91c0-14 4-22 14-31 8-7 13-12 13-19 0-8-6-14-16-14-11 0-18 7-18 18z"/>
+    <circle cx="100" cy="173" r="10"/>
+    <path d="M154 91h16v17h16v15h-16v35c0 7 3 10 10 10h6v14h-9c-16 0-23-8-23-23v-36h-10v-15h10z"/>
+  </g>
+</svg>

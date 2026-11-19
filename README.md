@@ -202,6 +202,22 @@ YouSpeed keeps dashcam videos and full street photos on the device until the use
 
 The software is provided without warranty and does not replace attentive driving, posted signs, or applicable law. See [`LICENSE`](LICENSE), [`SECURITY.md`](SECURITY.md), and the in-app legal and privacy information.
 
+## Shared sign catalogs and pictograms
+
+[OpenSign Core](https://github.com/volzinnovation/opensign-core) owns the
+country catalogs, sign artwork, and JSON source crosswalk used by YouSpeed,
+[Streetshots Inspector](https://github.com/volzinnovation/streetshots-inspector)
+and [Street Shots Survey](https://github.com/volzinnovation/streetshots-survey).
+Both YouSpeed app builds verify the offline snapshot in `shared/tsr` against
+[`sign-assets.lock.json`](shared/tsr/sign-assets.lock.json).
+
+To update the pin, check out the reviewed Core revision and run this command
+from the YouSpeed root:
+
+```sh
+python3 -B ../opensign-core/core/src/main/assets/tsr/sync_sign_crosswalk.py --profile youspeed .
+```
+
 ## Traffic-sign model attribution
 
 The current two-stage traffic-sign recognition field-test pack uses these

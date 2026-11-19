@@ -13,6 +13,10 @@ targets:
   SpeedConsumer:
     type: application
     platform: iOS
+    preBuildScripts:
+      - name: Verify OpenSign Core sign assets
+        script: python3 -B "$SRCROOT/../shared/tsr/sync_sign_crosswalk.py" --verify-local "$SRCROOT/.."
+        basedOnDependencyAnalysis: false
     sources:
       - path: ../shared/runtime-storage-prototype/packed_runtime.cpp
       - path: ../shared/runtime-storage-prototype/packed_sqlite_vfs.cpp

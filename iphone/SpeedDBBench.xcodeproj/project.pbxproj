@@ -1038,6 +1038,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3A7AC18D607C4D044195A90A /* Build configuration list for PBXNativeTarget "SpeedConsumer" */;
 			buildPhases = (
+				C8A61CE80F9946E01C31A080 /* Verify OpenSign Core sign assets */,
 				9CDD076D821987C8D704F332 /* Sources */,
 				BCB93BC405FA3D80B8DC3303 /* Resources */,
 			);
@@ -1237,6 +1238,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		C8A61CE80F9946E01C31A080 /* Verify OpenSign Core sign assets */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Verify OpenSign Core sign assets";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "python3 -B \"$SRCROOT/../shared/tsr/sync_sign_crosswalk.py\" --verify-local \"$SRCROOT/..\"";
+		};
 		8AC373EC354E3169152869D6 /* Stage road advisory acceptance fixtures */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;

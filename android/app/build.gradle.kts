@@ -127,6 +127,12 @@ android {
     }
 }
 
+val verifyOpenSignAssets by tasks.registering(Exec::class) {
+    workingDir(rootProject.projectDir.parentFile)
+    commandLine("python3", "-B", "shared/tsr/sync_sign_crosswalk.py", "--verify-local", ".")
+}
+tasks.named("preBuild") { dependsOn(verifyOpenSignAssets) }
+
 dependencies {
     constraints {
         implementation("androidx.fragment:fragment:1.8.2") {

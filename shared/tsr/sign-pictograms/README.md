@@ -89,7 +89,7 @@ Reference catalogs and pictogram aliases do not define additional model outputs.
 Verify all bytes and image dimensions offline:
 
 ```sh
-python3 shared/tsr/sign-pictograms/fetch.py
+python3 core/src/main/assets/tsr/sign-pictograms/fetch.py
 
 # Recreate one foreign core set (network + ImageMagick required)
 python3 shared/tsr/sign-pictograms/fetch_national.py FR --fetch
@@ -112,6 +112,35 @@ exact version before rendering a missing PNG. Another platform may
 render different bytes and correctly fail that reproducibility check.
 
 ## Display contract
+
+[Source crosswalk v1](source-crosswalk-v1.json) defines reviewed Mapillary
+class mappings, MobiData aliases, and country-specific display fallbacks. It
+also maps supported [OpenStreetMap `traffic_sign` values](https://wiki.openstreetmap.org/wiki/Key:traffic_sign)
+such as `stop` and `give_way` to national signs with catalog artwork.
+[`sign_crosswalk.py`](../sign_crosswalk.py) joins these with the existing
+national catalogs for Panoramax class IDs and OpenStreetMap `traffic_sign`
+codes. It retains the original label and exposes the sign code and image
+path separately. A representative image supplies no additional evidence
+about the sign's printed value, variant, or direction.
+
+OpenSign Core owns this data, including the reviewed German catalog and its
+reference examples. Edit the catalog and artwork here before updating the
+consumer pins. The examples illustrate sign families with unknown printed
+values or variants. Keep `display_eligible` and `sign_code` independent of
+those examples.
+
+Survey uses the files directly from its pinned Core checkout. Inspector and
+YouSpeed preserve their existing offline build paths using generated snapshots.
+From a committed Core checkout, regenerate them with:
+
+```
+python3 core/src/main/assets/tsr/sync_sign_crosswalk.py --profile inspector ../streetshots-inspector
+python3 core/src/main/assets/tsr/sync_sign_crosswalk.py --profile youspeed ../youspeed.de
+```
+
+Each snapshot records the Core revision and SHA-256 hashes. Consumers can
+verify their checked-in copy offline with
+`python3 shared/tsr/sync_sign_crosswalk.py --verify-local .`.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.

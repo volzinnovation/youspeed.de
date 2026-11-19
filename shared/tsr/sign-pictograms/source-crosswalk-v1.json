@@ -1,0 +1,516 @@
+{
+  "schema_version": 1,
+  "display": {
+    "DE": {
+      "DE:278": {
+        "image_path": "tsr/sign-pictograms/png/de-282.png",
+        "note": "Unnumbered end-of-maximum-speed-limit family. The observed code is retained and no printed speed is inferred."
+      },
+      "maxspeed:end": {
+        "image_path": "tsr/sign-pictograms/png/de-282.png",
+        "note": "The model class identifies an end-of-speed-limit sign without a printed speed."
+      },
+      "DE:101-x1": {
+        "image_path": "tsr/sign-pictograms/png/de-101-11.png",
+        "label": "Fußgängerüberweg voraus",
+        "note": "Representative warning sign for the wildcard family. Placement side is undetermined."
+      },
+      "hazard:pedestrian_crossing": {
+        "image_path": "tsr/sign-pictograms/png/de-101-11.png",
+        "label": "Fußgängerüberweg voraus",
+        "note": "Representative warning sign for the model class. Placement side is undetermined."
+      },
+      "DE:350-10": {
+        "image_path": "tsr/sign-pictograms/png/de-350.png",
+        "label": "Fußgängerüberweg",
+        "comparison_class": "DE:350",
+        "note": "Shared crossing-location artwork for the right-side variant."
+      },
+      "DE:350-20": {
+        "image_path": "tsr/sign-pictograms/png/de-350.png",
+        "label": "Fußgängerüberweg",
+        "comparison_class": "DE:350",
+        "note": "Shared crossing-location artwork for the left-side variant."
+      },
+      "DE:101-11": {
+        "image_path": "tsr/sign-pictograms/png/de-101-11.png",
+        "label": "Fußgängerüberweg voraus",
+        "note": "Exact artwork for the explicitly reported right-side warning sign."
+      }
+    },
+    "FR": {
+      "hazard:pedestrian_crossing": {
+        "image_path": "tsr/sign-pictograms/national/FR/png/fr-a13b.png",
+        "label": "Fußgängerüberweg voraus",
+        "note": "French catalogue A13b, also known by the Panoramax model class."
+      }
+    }
+  },
+  "openstreetmap": {
+    "BE": {
+      "give_way": {"sign_code": "BE:B1"},
+      "stop": {"sign_code": "BE:B5"}
+    },
+    "CH": {
+      "give_way": {"sign_code": "CH:3.02"},
+      "stop": {"sign_code": "CH:3.01"}
+    },
+    "DE": {
+      "give_way": {"sign_code": "DE:205"},
+      "stop": {"sign_code": "DE:206"},
+      "hazard:pedestrian_crossing": {
+        "image_path": "tsr/sign-pictograms/png/de-101-11.png",
+        "note": "Pedestrian-crossing hazard. The tag does not identify the warning sign variant."
+      }
+    },
+    "FR": {
+      "stop": {"sign_code": "FR:AB4"}
+    },
+    "NL": {
+      "give_way": {"sign_code": "NL:B06"},
+      "stop": {"sign_code": "NL:B07"}
+    }
+  },
+  "mapillary_speed_templates": {
+    "BE": {
+      "regulatory--maximum-speed-limit-{speed}--g1": "BE:C43[{speed}]"
+    },
+    "DE": {
+      "regulatory--maximum-speed-limit-{speed}--g1": "DE:274-{speed}",
+      "regulatory--end-of-maximum-speed-limit-{speed}--g1": "DE:278-{speed}"
+    },
+    "NL": {
+      "regulatory--maximum-speed-limit-{speed}--g1": "NL:A01-{speed}"
+    }
+  },
+  "mapillary": {
+    "DE": {
+      "information--dead-end-except-bicycles-and-pedestrians--g1": {
+        "sign_code": "DE:357-50",
+        "pictogram": "de-357-50"
+      },
+      "information--end-of-limited-access-road--g1": {
+        "sign_code": "DE:331.2",
+        "pictogram": "de-331.2"
+      },
+      "information--end-of-motorway--g1": {
+        "sign_code": "DE:330.2",
+        "pictogram": "de-330.2"
+      },
+      "information--limited-access-road--g1": {
+        "sign_code": "DE:331.1"
+      },
+      "information--motorway--g1": {
+        "sign_code": "DE:330.1"
+      },
+      "information--parking--g2": {
+        "pictogram": "de-314-50"
+      },
+      "information--pedestrians-crossing--g1": {
+        "sign_code": "DE:350",
+        "pictogram": "de-350"
+      },
+      "information--roundabout--g1": {
+        "sign_code": "DE:215"
+      },
+      "regulatory--dual-path-bicycles-and-pedestrians--g1": {
+        "sign_code": "DE:241-30",
+        "pictogram": "de-241-30"
+      },
+      "regulatory--dual-path-pedestrians-and-bicycles--g1": {
+        "sign_code": "DE:241-31",
+        "pictogram": "de-241-31"
+      },
+      "regulatory--end-of-no-overtaking--g1": {
+        "sign_code": "DE:280"
+      },
+      "regulatory--end-of-no-overtaking-by-heavy-goods-vehicles--g1": {
+        "sign_code": "DE:281",
+        "pictogram": "de-281"
+      },
+      "regulatory--give-way-to-oncoming-traffic--g1": {
+        "sign_code": "DE:208",
+        "pictogram": "de-208"
+      },
+      "regulatory--keep-left--g1": {
+        "sign_code": "DE:222-10",
+        "pictogram": "de-222-10"
+      },
+      "regulatory--no-bicycles--g1": {
+        "sign_code": "DE:254",
+        "pictogram": "de-254"
+      },
+      "regulatory--no-entry--g1": {
+        "sign_code": "DE:267"
+      },
+      "regulatory--no-equestrians--g1": {
+        "sign_code": "DE:257-51",
+        "pictogram": "de-257-51"
+      },
+      "regulatory--no-motor-vehicles-except-motorcycles--g1": {
+        "sign_code": "DE:251",
+        "pictogram": "de-251"
+      },
+      "regulatory--no-overtaking--g1": {
+        "sign_code": "DE:276"
+      },
+      "regulatory--no-overtaking-by-heavy-goods-vehicles--g1": {
+        "sign_code": "DE:277",
+        "pictogram": "de-277"
+      },
+      "regulatory--no-u-turn--g1": {
+        "sign_code": "DE:272",
+        "pictogram": "de-272"
+      },
+      "regulatory--no-vehicles-carrying-dangerous-water-pollutants--g1": {
+        "sign_code": "DE:269",
+        "pictogram": "de-269"
+      },
+      "regulatory--priority-over-oncoming-vehicles--g1": {
+        "sign_code": "DE:308",
+        "pictogram": "de-308"
+      },
+      "regulatory--road-closed-to-vehicles--g3": {
+        "sign_code": "DE:250",
+        "pictogram": "de-250"
+      },
+      "regulatory--stop--g1": {
+        "sign_code": "DE:206"
+      },
+      "regulatory--weight-limit--g1": {
+        "sign_code": "DE:262",
+        "pictogram": "de-262",
+        "note": "Inspector reference schematic for unknown tonnage. It carries no printed value and is outside the official mobile artwork catalog."
+      },
+      "regulatory--yield--g1": {
+        "sign_code": "DE:205"
+      },
+      "warning--bicycles-crossing--g1": {
+        "sign_code": "DE:138-10",
+        "pictogram": "de-138-10"
+      },
+      "warning--children--g1": {
+        "sign_code": "DE:136-10",
+        "pictogram": "de-136-10"
+      },
+      "warning--dangerous-crosswinds-right--g1": {
+        "sign_code": "DE:117-10",
+        "pictogram": "de-117-10"
+      },
+      "warning--double-curve-first-left--g1": {
+        "sign_code": "DE:105-10",
+        "pictogram": "de-105-10"
+      },
+      "warning--double-curve-first-right--g1": {
+        "sign_code": "DE:105-20",
+        "pictogram": "de-105-20"
+      },
+      "warning--road-bump--g1": {
+        "sign_code": "DE:112",
+        "pictogram": "de-112"
+      },
+      "warning--road-narrows-right--g1": {
+        "sign_code": "DE:121-10",
+        "pictogram": "de-121-10"
+      },
+      "warning--roadworks--g1": {
+        "sign_code": "DE:123"
+      },
+      "warning--wild-animals--g1": {
+        "sign_code": "DE:142-10",
+        "pictogram": "de-142-10"
+      },
+      "warning--pedestrians-crossing--g1": {
+        "pictogram": "de-101-11"
+      }
+    },
+    "BE": {
+      "information--dead-end--g1": {
+        "sign_code": "BE:F45"
+      },
+      "information--end-of-limited-access-road--g1": {
+        "sign_code": "BE:F11"
+      },
+      "information--end-of-motorway--g1": {
+        "sign_code": "BE:F7"
+      },
+      "information--limited-access-road--g1": {
+        "sign_code": "BE:F9"
+      },
+      "information--motorway--g1": {
+        "sign_code": "BE:F5"
+      },
+      "information--parking--g1": {
+        "sign_code": "BE:E9A"
+      },
+      "information--pedestrians-crossing--g1": {
+        "sign_code": "BE:F49"
+      },
+      "regulatory--bicycles-only--g1": {
+        "sign_code": "BE:D7"
+      },
+      "regulatory--end-of-no-overtaking--g1": {
+        "sign_code": "BE:C37"
+      },
+      "regulatory--end-of-priority-road--g1": {
+        "sign_code": "BE:B11"
+      },
+      "regulatory--give-way-to-oncoming-traffic--g1": {
+        "sign_code": "BE:B19"
+      },
+      "regulatory--go-straight--g1": {
+        "sign_code": "BE:D1A"
+      },
+      "regulatory--keep-left--g1": {
+        "sign_code": "BE:D1C"
+      },
+      "regulatory--keep-right--g1": {
+        "sign_code": "BE:D1D"
+      },
+      "regulatory--no-bicycles--g1": {
+        "sign_code": "BE:C11"
+      },
+      "regulatory--no-entry--g1": {
+        "sign_code": "BE:C1"
+      },
+      "regulatory--no-heavy-goods-vehicles--g1": {
+        "sign_code": "BE:C23"
+      },
+      "regulatory--no-overtaking--g1": {
+        "sign_code": "BE:C35"
+      },
+      "regulatory--no-overtaking-by-heavy-goods-vehicles--g1": {
+        "sign_code": "BE:C39"
+      },
+      "regulatory--no-parking--g1": {
+        "sign_code": "BE:E1"
+      },
+      "regulatory--no-pedestrians--g1": {
+        "sign_code": "BE:C19"
+      },
+      "regulatory--no-stopping--g1": {
+        "sign_code": "BE:E3"
+      },
+      "regulatory--one-way-straight--g1": {
+        "sign_code": "BE:F19"
+      },
+      "regulatory--pedestrians-only--g1": {
+        "sign_code": "BE:D11"
+      },
+      "regulatory--priority-over-oncoming-vehicles--g1": {
+        "sign_code": "BE:B21"
+      },
+      "regulatory--priority-road--g1": {
+        "sign_code": "BE:B9"
+      },
+      "regulatory--road-closed-to-vehicles--g3": {
+        "sign_code": "BE:C3"
+      },
+      "regulatory--roundabout--g1": {
+        "sign_code": "BE:D5"
+      },
+      "regulatory--stop--g1": {
+        "sign_code": "BE:B5"
+      },
+      "regulatory--yield--g1": {
+        "sign_code": "BE:B1"
+      },
+      "warning--children--g1": {
+        "sign_code": "BE:A23"
+      },
+      "warning--curve-left--g1": {
+        "sign_code": "BE:A1A"
+      },
+      "warning--curve-right--g1": {
+        "sign_code": "BE:A1B"
+      },
+      "warning--other-danger--g1": {
+        "sign_code": "BE:A51"
+      },
+      "warning--pedestrians-crossing--g1": {
+        "sign_code": "BE:A21"
+      },
+      "warning--road-bump--g1": {
+        "sign_code": "BE:A14"
+      },
+      "warning--road-narrows--g1": {
+        "sign_code": "BE:A7A"
+      },
+      "warning--road-narrows-left--g1": {
+        "sign_code": "BE:A7B"
+      },
+      "warning--road-narrows-right--g1": {
+        "sign_code": "BE:A7C"
+      },
+      "warning--roadworks--g1": {
+        "sign_code": "BE:A31"
+      },
+      "warning--slippery-road-surface--g1": {
+        "sign_code": "BE:A15"
+      },
+      "warning--traffic-signals--g1": {
+        "sign_code": "BE:A33"
+      },
+      "warning--two-way-traffic--g1": {
+        "sign_code": "BE:A39"
+      },
+      "warning--wild-animals--g1": {
+        "sign_code": "BE:A27"
+      }
+    },
+    "NL": {
+      "information--dead-end--g1": {
+        "sign_code": "NL:L08"
+      },
+      "information--end-of-limited-access-road--g1": {
+        "sign_code": "NL:G04"
+      },
+      "information--end-of-motorway--g1": {
+        "sign_code": "NL:G02"
+      },
+      "information--limited-access-road--g1": {
+        "sign_code": "NL:G03"
+      },
+      "information--motorway--g1": {
+        "sign_code": "NL:G01"
+      },
+      "information--parking--g1": {
+        "sign_code": "NL:E04"
+      },
+      "information--pedestrians-crossing--g1": {
+        "sign_code": "NL:L02"
+      },
+      "regulatory--bicycles-only--g1": {
+        "sign_code": "NL:G11"
+      },
+      "regulatory--end-of-no-overtaking--g1": {
+        "sign_code": "NL:F02"
+      },
+      "regulatory--end-of-priority-road--g1": {
+        "sign_code": "NL:B02"
+      },
+      "regulatory--give-way-to-oncoming-traffic--g1": {
+        "sign_code": "NL:F05"
+      },
+      "regulatory--go-straight--g1": {
+        "sign_code": "NL:D04"
+      },
+      "regulatory--keep-left--g1": {
+        "sign_code": "NL:D02-LO"
+      },
+      "regulatory--keep-right--g1": {
+        "sign_code": "NL:D02-RO"
+      },
+      "regulatory--mopeds-and-bicycles-only--g1": {
+        "sign_code": "NL:G12-A",
+        "pictogram": "nl-g12-a"
+      },
+      "regulatory--no-bicycles--g1": {
+        "sign_code": "NL:C14"
+      },
+      "regulatory--no-entry--g1": {
+        "sign_code": "NL:C02"
+      },
+      "regulatory--no-heavy-goods-vehicles--g1": {
+        "sign_code": "NL:C07"
+      },
+      "regulatory--no-overtaking--g1": {
+        "sign_code": "NL:F01"
+      },
+      "regulatory--no-overtaking-by-heavy-goods-vehicles--g1": {
+        "sign_code": "NL:F03"
+      },
+      "regulatory--no-parking--g1": {
+        "sign_code": "NL:E01"
+      },
+      "regulatory--no-pedestrians--g1": {
+        "sign_code": "NL:C16"
+      },
+      "regulatory--no-stopping--g1": {
+        "sign_code": "NL:E02"
+      },
+      "regulatory--one-way-straight--g1": {
+        "sign_code": "NL:C03"
+      },
+      "regulatory--pedestrians-only--g1": {
+        "sign_code": "NL:G07"
+      },
+      "regulatory--priority-over-oncoming-vehicles--g1": {
+        "sign_code": "NL:F06"
+      },
+      "regulatory--priority-road--g1": {
+        "sign_code": "NL:B01"
+      },
+      "regulatory--road-closed-to-vehicles--g3": {
+        "sign_code": "NL:C01"
+      },
+      "regulatory--roundabout--g1": {
+        "sign_code": "NL:D01"
+      },
+      "regulatory--stop--g1": {
+        "sign_code": "NL:B07"
+      },
+      "regulatory--yield--g1": {
+        "sign_code": "NL:B06"
+      },
+      "warning--children--g1": {
+        "sign_code": "NL:J21"
+      },
+      "warning--curve-left--g1": {
+        "sign_code": "NL:J03"
+      },
+      "warning--curve-right--g1": {
+        "sign_code": "NL:J02"
+      },
+      "warning--other-danger--g1": {
+        "sign_code": "NL:J37"
+      },
+      "warning--pedestrians-crossing--g1": {
+        "sign_code": "NL:J22"
+      },
+      "warning--road-bump--g1": {
+        "sign_code": "NL:J38"
+      },
+      "warning--road-narrows--g1": {
+        "sign_code": "NL:J17"
+      },
+      "warning--road-narrows-left--g1": {
+        "sign_code": "NL:J19"
+      },
+      "warning--road-narrows-right--g1": {
+        "sign_code": "NL:J18"
+      },
+      "warning--roadworks--g1": {
+        "sign_code": "NL:J16"
+      },
+      "warning--roundabout--g1": {
+        "sign_code": "NL:J09"
+      },
+      "warning--slippery-road-surface--g1": {
+        "sign_code": "NL:J20"
+      },
+      "warning--traffic-signals--g1": {
+        "sign_code": "NL:J32"
+      },
+      "warning--two-way-traffic--g1": {
+        "sign_code": "NL:J29"
+      },
+      "warning--wild-animals--g1": {
+        "sign_code": "NL:J27"
+      }
+    }
+  },
+  "mobidata": {
+    "DE": {
+      "DE:331.2[]": {
+        "image_path": "tsr/sign-pictograms/png/de-331.2.png",
+        "note": "MobiData empty qualifier on the end-of-limited-access-road sign.",
+        "sign_code": "DE:331.2"
+      },
+      "DE:274-50[WVZ Rombachtunnel]": {
+        "image_path": "tsr/sign-pictograms/png/de-274-50.png",
+        "note": "MobiData variable-message sign with a known displayed speed of 50."
+      }
+    }
+  }
+}
