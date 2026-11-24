@@ -1442,7 +1442,7 @@
     "sign-pictograms/png/synset-89.png": "bdf772d944ca64958f2d33e8bfbf2a4c41b1d002e072733b5c5df1eb5b0fc8a4",
     "sign-pictograms/png/synset-92.png": "abc95d12028e0d4eab9b8ab244622ac718fad290a92683d8a36e4f23cfb310e0",
     "sign-pictograms/selection.json": "757b830606bf2d21100d74b697c41f18df1806f1f256af78c22bf3cba78e7530",
-    "sign-pictograms/source-crosswalk-v1.json": "f30243ce7f2684126ecad134981a1f402396705d8bca5f25231dc3d9506e874e",
+    "sign-pictograms/source-crosswalk-v1.json": "723e01e0c8965aeda70aaf6b514eb08dbe15b1bf0846a6ef5259451a8dde5088",
     "sign-pictograms/sources/PROLIX_LICENSE.txt": "98ea23f579b1eac24de643154c4ab788788071f39c40948b96f2abec9df0cdf6",
     "sign-pictograms/sources/de-262.svg": "55f78b3ac5f88d774b9642b76f2c4ebe5478142ed1161f796edcf4c8d80d4feb",
     "sign-pictograms/sources/panoramax-country-code-mapping-v1.json": "b75ece7089a3b3cbc91b45b8172e6fde098912fdeae52289d662ba7f45619754",
@@ -1453,5 +1453,5 @@
   },
   "profile": "youspeed",
   "repository": "https://github.com/volzinnovation/opensign-core",
-  "revision": "1131e1011acba505e25ad1f6732a4abebd0a7a7c"
+  "revision": "49d7b4e83c4db9c42604cb1cc2529841d4b667d4"
 }

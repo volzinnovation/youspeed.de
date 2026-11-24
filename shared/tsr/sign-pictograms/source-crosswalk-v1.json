@@ -210,6 +210,11 @@
         "sign_code": "DE:108-10",
         "target_label": "hazard:incline",
         "mapping_basis": "Retains the existing German classifier mapping for the downhill national code. The deployed class groups uphill and downhill signs."
+      },
+      "DE:211-10": {
+        "sign_code": "DE:211-10",
+        "target_label": null,
+        "mapping_basis": "The one-way assignment is specific to the reviewed Synset image. This OpenStreetMap ID remains unresolved."
       }
     },
     "FR": {
@@ -3164,9 +3169,9 @@
         "class_name": "VorgeschriebeneFahrtrichtungHierLinks",
         "sign_code": "DE:211-10",
         "sign_code_scope": "sign",
-        "target_label": "arrow_left",
-        "mapping_status": "reference_only",
-        "mapping_basis": "The face shows a horizontal left arrow. Approved under the arrow_left reference label. The DE:211-10 national code is retained.",
+        "target_label": "oneway",
+        "mapping_status": "approved",
+        "mapping_basis": "Reviewer assigned this left-arrow face to the oneway training class. The original Synset caption and national sign code are retained.",
         "source_artwork": "https://synset.de/wp-content/uploads/2024/08/80.png"
       },
       "81": {
