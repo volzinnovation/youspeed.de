@@ -36,6 +36,71 @@
         "image_path": "tsr/sign-pictograms/png/de-101-11.png",
         "label": "Fußgängerüberweg voraus",
         "note": "Exact artwork for the explicitly reported right-side warning sign."
+      },
+      "arrow:red": {
+        "image_path": "tsr/sign-pictograms/png/synset-170.png",
+        "synset_id": "170",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:airport": {
+        "image_path": "tsr/sign-pictograms/png/synset-56.png",
+        "synset_id": "56",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:animals": {
+        "image_path": "tsr/sign-pictograms/png/synset-60.png",
+        "synset_id": "60",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:horse": {
+        "image_path": "tsr/sign-pictograms/png/synset-62.png",
+        "synset_id": "62",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:incline": {
+        "image_path": "tsr/sign-pictograms/png/synset-199.png",
+        "synset_id": "199",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:other": {
+        "image_path": "tsr/sign-pictograms/png/synset-64.png",
+        "synset_id": "64",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:rocks": {
+        "image_path": "tsr/sign-pictograms/png/synset-66.png",
+        "synset_id": "66",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "no_exit:car": {
+        "image_path": "tsr/sign-pictograms/png/synset-157.png",
+        "synset_id": "157",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "other:charging": {
+        "image_path": "tsr/sign-pictograms/png/synset-209.png",
+        "synset_id": "209",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "pedestrian_bicycle:designated": {
+        "image_path": "tsr/sign-pictograms/png/synset-89.png",
+        "synset_id": "89",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "supplementary:plate": {
+        "image_path": "tsr/sign-pictograms/png/synset-180.png",
+        "synset_id": "180",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "zone:end": {
+        "image_path": "tsr/sign-pictograms/png/synset-92.png",
+        "synset_id": "92",
+        "note": "Representative Synset artwork for the classifier label. The face illustrates one example within the class."
+      },
+      "hazard:decline": {
+        "image_path": "tsr/sign-pictograms/png/synset-198.png",
+        "synset_id": "198",
+        "note": "Synset 198 illustrates the downhill reference label."
       }
     },
     "FR": {
@@ -48,27 +113,117 @@
   },
   "openstreetmap": {
     "BE": {
-      "give_way": {"sign_code": "BE:B1"},
-      "stop": {"sign_code": "BE:B5"}
+      "give_way": {
+        "sign_code": "BE:B1"
+      },
+      "stop": {
+        "sign_code": "BE:B5"
+      }
     },
     "CH": {
-      "give_way": {"sign_code": "CH:3.02"},
-      "stop": {"sign_code": "CH:3.01"}
+      "give_way": {
+        "sign_code": "CH:3.02"
+      },
+      "stop": {
+        "sign_code": "CH:3.01"
+      }
     },
     "DE": {
-      "give_way": {"sign_code": "DE:205"},
-      "stop": {"sign_code": "DE:206"},
+      "give_way": {
+        "sign_code": "DE:205"
+      },
+      "stop": {
+        "sign_code": "DE:206"
+      },
       "hazard:pedestrian_crossing": {
         "image_path": "tsr/sign-pictograms/png/de-101-11.png",
-        "note": "Pedestrian-crossing hazard. The tag does not identify the warning sign variant."
+        "note": "Pedestrian-crossing hazard. The tag does not identify the warning sign variant.",
+        "target_label": "hazard:pedestrian_crossing",
+        "mapping_basis": "The existing OpenStreetMap alias identifies the pedestrian-crossing warning family. The literal leaves its national variant unspecified."
+      },
+      "DE:131": {
+        "sign_code": "DE:131",
+        "target_label": "hazard:traffic_signal",
+        "mapping_basis": "The traffic_sign code identifies the warning triangle depicting a signal (Synset 26). The traffic_signal class contains actual traffic lights."
+      },
+      "DE:223.1-50": {
+        "sign_code": "DE:223.1-50",
+        "target_label": "lanes",
+        "mapping_basis": "The train-crop review places this lane-control variant in the deployed lanes family."
+      },
+      "DE:460-20": {
+        "sign_code": "DE:460-20",
+        "target_label": "exit",
+        "mapping_basis": "The train-crop review places this numbered motorway diversion in the deployed exit family."
+      },
+      "DE:151": {
+        "sign_code": "DE:151",
+        "target_label": null,
+        "mapping_basis": "Three deployed outputs distinguish railway-crossing designs. The OSM code supplies no design variant."
+      },
+      "DE:315": {
+        "sign_code": "DE:315",
+        "target_label": null,
+        "mapping_basis": "The two deployed pavement-parking classes distinguish layouts. The OSM code supplies no layout."
+      },
+      "DE:274.2": {
+        "sign_code": "DE:274.2",
+        "target_label": null,
+        "mapping_basis": "The bare zone-end code supplies no speed to distinguish the 30-zone end from the broader zone-end output."
+      },
+      "DE:244.1": {
+        "sign_code": "DE:244.1",
+        "target_label": null,
+        "mapping_basis": "The real bicycle:priority training crops show a RESPEKT campaign sign. The national code identifies a cycle street."
+      },
+      "DE:220": {
+        "sign_code": "DE:220",
+        "target_label": null,
+        "mapping_basis": "The reviewed oneway training crops show upward arrows. The OSM code identifies a national sign family with different arrow layouts."
+      },
+      "DE:625": {
+        "sign_code": "DE:625",
+        "target_label": "arrow:red",
+        "mapping_basis": "The training-crop audit of arrow:red includes both chevron directions and guide-board variants. This code belongs to that broad deployed family."
+      },
+      "DE:625-20": {
+        "sign_code": "DE:625-20",
+        "target_label": "arrow:red",
+        "mapping_basis": "The training-crop audit of arrow:red includes both chevron directions and guide-board variants. This code belongs to that broad deployed family."
+      },
+      "DE:242.2": {
+        "sign_code": "DE:242.2",
+        "target_label": "zone:end",
+        "mapping_basis": "The German OSM-Verkehrswende catalogue shows the crossed-out pedestrian-zone panel found in reviewed zone:end training crops."
+      },
+      "DE:244.2": {
+        "sign_code": "DE:244.2",
+        "target_label": null,
+        "mapping_basis": "The corresponding Synset face was reviewed. This OpenStreetMap ID is still unresolved."
+      },
+      "DE:257-55": {
+        "sign_code": "DE:257-55",
+        "target_label": null,
+        "mapping_basis": "The corresponding Synset face was reviewed. This OpenStreetMap ID is still unresolved."
+      },
+      "DE:108-10": {
+        "sign_code": "DE:108-10",
+        "target_label": "hazard:incline",
+        "mapping_basis": "Retains the existing German classifier mapping for the downhill national code. The deployed class groups uphill and downhill signs."
       }
     },
     "FR": {
-      "stop": {"sign_code": "FR:AB4"}
+      "stop": {
+        "sign_code": "FR:AB4"
+      }
     },
     "NL": {
-      "give_way": {"sign_code": "NL:B06"},
-      "stop": {"sign_code": "NL:B07"}
+      "give_way": {
+        "sign_code": "NL:B06"
+      },
+      "stop": {
+        "sign_code": "NL:B07"
+      }
     }
   },
   "mapillary_speed_templates": {
@@ -87,141 +242,571 @@
     "DE": {
       "information--dead-end-except-bicycles-and-pedestrians--g1": {
         "sign_code": "DE:357-50",
-        "pictogram": "de-357-50"
+        "pictogram": "de-357-50",
+        "target_label": "no_exit:car",
+        "mapping_basis": "A pedestrian and a bicycle sit above the red-capped dead end."
       },
       "information--end-of-limited-access-road--g1": {
         "sign_code": "DE:331.2",
-        "pictogram": "de-331.2"
+        "pictogram": "de-331.2",
+        "target_label": "trunk:end",
+        "mapping_basis": "A diagonal bar crosses a white frontal car on a blue square."
       },
       "information--end-of-motorway--g1": {
         "sign_code": "DE:330.2",
-        "pictogram": "de-330.2"
+        "pictogram": "de-330.2",
+        "target_label": "motorway:end",
+        "mapping_basis": "A red diagonal bar crosses the motorway symbol."
       },
       "information--limited-access-road--g1": {
-        "sign_code": "DE:331.1"
+        "sign_code": "DE:331.1",
+        "target_label": "trunk:start",
+        "mapping_basis": "A white frontal car appears on a blue square."
       },
       "information--motorway--g1": {
-        "sign_code": "DE:330.1"
+        "sign_code": "DE:330.1",
+        "target_label": "motorway:start",
+        "mapping_basis": "Two parallel carriageways run beneath a bridge."
       },
       "information--parking--g2": {
-        "pictogram": "de-314-50"
+        "pictogram": "de-314-50",
+        "target_label": "parking:covered",
+        "mapping_basis": "A white pitched roof covers the P. The German reference is DE:314-50, also represented by Synset 181 (Parkhaus)."
       },
       "information--pedestrians-crossing--g1": {
         "sign_code": "DE:350",
-        "pictogram": "de-350"
+        "pictogram": "de-350",
+        "target_label": "pedestrian_crossing",
+        "mapping_basis": "The walker and zebra crossing sit in a white triangle on a blue square."
       },
       "information--roundabout--g1": {
-        "sign_code": "DE:215"
+        "sign_code": "DE:215",
+        "target_label": "roundabout",
+        "mapping_basis": "Historical alias for DE:215. The pinned archive has artwork for regulatory--roundabout--g1 only.",
+        "sprite_available": false
       },
       "regulatory--dual-path-bicycles-and-pedestrians--g1": {
         "sign_code": "DE:241-30",
-        "pictogram": "de-241-30"
+        "pictogram": "de-241-30",
+        "target_label": "pedestrian_bicycle:designated",
+        "mapping_basis": "A vertical line separates the bicycle on the left from the pedestrians on the right."
       },
       "regulatory--dual-path-pedestrians-and-bicycles--g1": {
         "sign_code": "DE:241-31",
-        "pictogram": "de-241-31"
+        "pictogram": "de-241-31",
+        "target_label": "pedestrian_bicycle:designated",
+        "mapping_basis": "A vertical line separates the pedestrians on the left from the bicycle on the right."
       },
       "regulatory--end-of-no-overtaking--g1": {
-        "sign_code": "DE:280"
+        "sign_code": "DE:280",
+        "target_label": "no_overtaking:end",
+        "mapping_basis": "Diagonal bands cross a pair of cars."
       },
       "regulatory--end-of-no-overtaking-by-heavy-goods-vehicles--g1": {
         "sign_code": "DE:281",
-        "pictogram": "de-281"
+        "pictogram": "de-281",
+        "target_label": "no_overtaking:end",
+        "mapping_basis": "Diagonal bands cross a lorry and car. The reviewed real class includes both lorry/car and car/car variants (Synset 42)."
       },
       "regulatory--give-way-to-oncoming-traffic--g1": {
         "sign_code": "DE:208",
-        "pictogram": "de-208"
+        "pictogram": "de-208",
+        "target_label": "priority:backward",
+        "mapping_basis": "The red-rimmed circle contains a red up arrow and a dark down arrow."
       },
       "regulatory--keep-left--g1": {
         "sign_code": "DE:222-10",
-        "pictogram": "de-222-10"
+        "pictogram": "de-222-10",
+        "target_label": "arrow_left_down",
+        "mapping_basis": "A diagonal white arrow points down and left on a blue disk."
       },
       "regulatory--no-bicycles--g1": {
         "sign_code": "DE:254",
-        "pictogram": "de-254"
+        "pictogram": "de-254",
+        "target_label": "no_bicycle",
+        "mapping_basis": "A red ring surrounds a bicycle."
       },
       "regulatory--no-entry--g1": {
-        "sign_code": "DE:267"
+        "sign_code": "DE:267",
+        "target_label": "no_entry",
+        "mapping_basis": "A horizontal white bar crosses a red disk."
       },
       "regulatory--no-equestrians--g1": {
         "sign_code": "DE:257-51",
-        "pictogram": "de-257-51"
+        "pictogram": "de-257-51",
+        "target_label": "no_horse",
+        "mapping_basis": "A red ring surrounds a mounted rider."
       },
       "regulatory--no-motor-vehicles-except-motorcycles--g1": {
         "sign_code": "DE:251",
-        "pictogram": "de-251"
+        "pictogram": "de-251",
+        "target_label": "no_car",
+        "mapping_basis": "A red ring surrounds the front of a car."
       },
       "regulatory--no-overtaking--g1": {
-        "sign_code": "DE:276"
+        "sign_code": "DE:276",
+        "target_label": "no_overtaking",
+        "mapping_basis": "A red car and a dark car sit side by side in a red ring."
       },
       "regulatory--no-overtaking-by-heavy-goods-vehicles--g1": {
         "sign_code": "DE:277",
-        "pictogram": "de-277"
+        "pictogram": "de-277",
+        "target_label": "no_overtaking:hgv",
+        "mapping_basis": "A red lorry sits beside a dark car in a red ring."
       },
       "regulatory--no-u-turn--g1": {
         "sign_code": "DE:272",
-        "pictogram": "de-272"
+        "pictogram": "de-272",
+        "target_label": "no_u_turn",
+        "mapping_basis": "A red diagonal crosses the U-turn arrow."
       },
       "regulatory--no-vehicles-carrying-dangerous-water-pollutants--g1": {
         "sign_code": "DE:269",
-        "pictogram": "de-269"
+        "pictogram": "de-269",
+        "target_label": "no_dangerous_liquid",
+        "mapping_basis": "A red ring surrounds a tanker above wavy water lines."
       },
       "regulatory--priority-over-oncoming-vehicles--g1": {
         "sign_code": "DE:308",
-        "pictogram": "de-308"
+        "pictogram": "de-308",
+        "target_label": "priority:forward",
+        "mapping_basis": "The blue square contains a white up arrow and red down arrow."
       },
       "regulatory--road-closed-to-vehicles--g3": {
         "sign_code": "DE:250",
-        "pictogram": "de-250"
+        "pictogram": "de-250",
+        "target_label": "no_way",
+        "mapping_basis": "The white disk inside the red ring is empty."
       },
       "regulatory--stop--g1": {
-        "sign_code": "DE:206"
+        "sign_code": "DE:206",
+        "target_label": "stop",
+        "mapping_basis": "The red octagon carries the white word STOP."
       },
       "regulatory--weight-limit--g1": {
         "sign_code": "DE:262",
         "pictogram": "de-262",
-        "note": "Inspector reference schematic for unknown tonnage. It carries no printed value and is outside the official mobile artwork catalog."
+        "note": "Inspector reference schematic for unknown tonnage. It carries no printed value and is outside the official mobile artwork catalog.",
+        "target_label": "maxweight",
+        "mapping_basis": "The red ring contains a mass in tonnes. The sprite illustrates 55 t. The source ID supplies no tonnage."
+      },
+      "regulatory--turn-left-ahead--g1": {
+        "display_scope": "survey",
+        "pictogram": "de-209-10",
+        "note": "Retained Survey display reference; a national sign code has not been reviewed for this source label.",
+        "target_label": "arrow_turn_left",
+        "mapping_basis": "The white arrow bends left on a blue disk."
+      },
+      "regulatory--turn-right-ahead--g1": {
+        "display_scope": "survey",
+        "pictogram": "de-209",
+        "note": "Retained Survey display reference; a national sign code has not been reviewed for this source label.",
+        "target_label": "arrow_turn_right",
+        "mapping_basis": "The white arrow bends right on a blue disk."
+      },
+      "warning--crossroads--g1": {
+        "display_scope": "survey",
+        "pictogram": "de-301",
+        "note": "Retained Survey display reference; a national sign code has not been reviewed for this source label.",
+        "target_label": "hazard:intersection",
+        "mapping_basis": "A thick priority arrow crosses a thin horizontal bar. The X-shaped junction warning has a separate source ID."
+      },
+      "warning--falling-rocks-or-debris-right--g1": {
+        "display_scope": "survey",
+        "pictogram": "de-101-15",
+        "note": "Retained Survey display reference; a national sign code has not been reviewed for this source label.",
+        "target_label": "hazard:rocks",
+        "mapping_basis": "Rocks fall from a cliff on the right inside a warning triangle."
       },
       "regulatory--yield--g1": {
-        "sign_code": "DE:205"
+        "sign_code": "DE:205",
+        "target_label": "give_way",
+        "mapping_basis": "A red border outlines a downward-pointing triangle."
       },
       "warning--bicycles-crossing--g1": {
         "sign_code": "DE:138-10",
-        "pictogram": "de-138-10"
+        "pictogram": "de-138-10",
+        "target_label": "hazard:bicycle",
+        "mapping_basis": "A warning triangle encloses a bicycle."
       },
       "warning--children--g1": {
         "sign_code": "DE:136-10",
-        "pictogram": "de-136-10"
+        "pictogram": "de-136-10",
+        "target_label": "hazard:school",
+        "mapping_basis": "Two children run inside a warning triangle."
       },
       "warning--dangerous-crosswinds-right--g1": {
         "sign_code": "DE:117-10",
-        "pictogram": "de-117-10"
+        "pictogram": "de-117-10",
+        "target_label": "hazard:wind",
+        "mapping_basis": "The warning triangle contains a windsock."
       },
       "warning--double-curve-first-left--g1": {
         "sign_code": "DE:105-10",
-        "pictogram": "de-105-10"
+        "pictogram": "de-105-10",
+        "target_label": "hazard:zigzag:left",
+        "mapping_basis": "The warning symbol shows two bends, the first to the left."
       },
       "warning--double-curve-first-right--g1": {
         "sign_code": "DE:105-20",
-        "pictogram": "de-105-20"
+        "pictogram": "de-105-20",
+        "target_label": "hazard:zigzag",
+        "mapping_basis": "The warning symbol shows two bends, the first to the right."
       },
       "warning--road-bump--g1": {
         "sign_code": "DE:112",
-        "pictogram": "de-112"
+        "pictogram": "de-112",
+        "target_label": "hazard:bumps",
+        "mapping_basis": "A warning triangle contains a raised road hump."
       },
       "warning--road-narrows-right--g1": {
         "sign_code": "DE:121-10",
-        "pictogram": "de-121-10"
+        "pictogram": "de-121-10",
+        "target_label": "hazard:narrow_right",
+        "mapping_basis": "The right road edge angles inward and the left edge stays straight."
       },
       "warning--roadworks--g1": {
-        "sign_code": "DE:123"
+        "sign_code": "DE:123",
+        "target_label": "hazard:road_works",
+        "mapping_basis": "A worker uses a shovel inside a warning triangle."
       },
       "warning--wild-animals--g1": {
         "sign_code": "DE:142-10",
-        "pictogram": "de-142-10"
+        "pictogram": "de-142-10",
+        "target_label": "hazard:wild_animals",
+        "mapping_basis": "A leaping deer appears in a warning triangle."
       },
       "warning--pedestrians-crossing--g1": {
-        "pictogram": "de-101-11"
+        "pictogram": "de-101-11",
+        "target_label": "hazard:pedestrian_crossing",
+        "mapping_basis": "A pedestrian on a zebra crossing appears inside a red warning triangle."
+      },
+      "information--dead-end--g1": {
+        "target_label": "no_exit",
+        "mapping_basis": "A red cap closes the white vertical road on blue."
+      },
+      "information--parking--g1": {
+        "target_label": "parking",
+        "mapping_basis": "A plain white P stands alone on blue."
+      },
+      "information--bus-stop--g1": {
+        "target_label": "bus:stop",
+        "mapping_basis": "A green H on a yellow disk marks a German bus stop."
+      },
+      "information--living-street--g1": {
+        "target_label": "DE:325.1",
+        "mapping_basis": "A child, ball, adult, car and house appear together on blue."
+      },
+      "information--end-of-living-street--g1": {
+        "target_label": "DE:325.2",
+        "mapping_basis": "A red diagonal bar crosses the living-street scene."
+      },
+      "regulatory--priority-road--g1": {
+        "target_label": "priority:start",
+        "mapping_basis": "A yellow diamond marks the priority road."
+      },
+      "regulatory--no-stopping--g1": {
+        "target_label": "no_stop",
+        "mapping_basis": "Two red diagonal strokes form an X on blue."
+      },
+      "regulatory--keep-right--g1": {
+        "target_label": "arrow_right_down",
+        "mapping_basis": "The white arrow points diagonally down and right."
+      },
+      "regulatory--no-parking--g1": {
+        "target_label": "no_parking",
+        "mapping_basis": "A single red diagonal crosses the blue disk."
+      },
+      "regulatory--shared-path-pedestrians-and-bicycles--g1": {
+        "target_label": "pedestrian_bicycle:start",
+        "mapping_basis": "Pedestrians appear above the bicycle with a horizontal dividing line."
+      },
+      "regulatory--no-motor-vehicles--g1": {
+        "target_label": "no_car_motorcycle",
+        "mapping_basis": "The red ring contains both a motorcycle and a car."
+      },
+      "regulatory--pedestrians-only--g1": {
+        "target_label": "pedestrian:start",
+        "mapping_basis": "An adult and child walk on a blue disk."
+      },
+      "regulatory--go-straight--g1": {
+        "target_label": "arrow_through",
+        "mapping_basis": "A white arrow points straight up on a blue disk."
+      },
+      "regulatory--no-heavy-goods-vehicles--g1": {
+        "target_label": "no_hgv",
+        "mapping_basis": "A red ring surrounds a lorry in side view."
+      },
+      "regulatory--roundabout--g1": {
+        "target_label": "roundabout",
+        "mapping_basis": "Three circulating arrows appear on a blue disk."
+      },
+      "regulatory--bicycles-only--g1": {
+        "target_label": "bicycle:start",
+        "mapping_basis": "A white bicycle appears on a blue disk."
+      },
+      "regulatory--one-way-right--g1": {
+        "target_label": "arrow_through",
+        "mapping_basis": "The reviewer assigned this right-pointing arrow on a rectangular panel to the arrow_through classifier target.",
+        "review_pictogram": "de-220-20"
+      },
+      "regulatory--no-pedestrians--g1": {
+        "target_label": "no_pedestrian",
+        "mapping_basis": "A red ring surrounds a walking figure."
+      },
+      "regulatory--one-way-left--g1": {
+        "target_label": "arrow_left",
+        "mapping_basis": "The German crosswalk assigns arrow_left by reviewer decision. This target has no output index in DE142.",
+        "review_pictogram": "de-220-10",
+        "mapping_status": "reference_only"
+      },
+      "regulatory--go-straight-or-turn-right--g1": {
+        "target_label": "arrow_turn_right_through",
+        "mapping_basis": "A straight arrow branches to the right."
+      },
+      "regulatory--turn-right--g1": {
+        "target_label": "arrow_right",
+        "mapping_basis": "The shaft runs horizontally to the right."
+      },
+      "regulatory--go-straight-or-turn-left--g1": {
+        "target_label": "arrow_turn_left_through",
+        "mapping_basis": "A straight arrow branches to the left."
+      },
+      "regulatory--turn-left--g1": {
+        "target_label": "arrow_turn_left",
+        "mapping_basis": "The reviewed mandatory left turn maps to arrow_turn_left. The Mapillary arrow points horizontally left and the classifier reference shows a bent left arrow.",
+        "review_pictogram": "de-209-10"
+      },
+      "regulatory--buses-only--g1": {
+        "target_label": "bus:start",
+        "mapping_basis": "The reviewed bus-only sign maps to bus:start. The Mapillary panel is rectangular and the German classifier reference is circular.",
+        "review_pictogram": "de-245"
+      },
+      "regulatory--no-buses--g1": {
+        "target_label": "no_bus",
+        "mapping_basis": "A red ring surrounds a bus in side view."
+      },
+      "regulatory--no-vehicles-carrying-dangerous-goods--g1": {
+        "target_label": "no_dangerous",
+        "mapping_basis": "An orange placard appears on the rear of the vehicle inside the red ring."
+      },
+      "regulatory--end-of-priority-road--g1": {
+        "target_label": "priority:end",
+        "mapping_basis": "A diagonal band crosses the yellow priority diamond."
+      },
+      "regulatory--no-motorcycles--g1": {
+        "target_label": "no_motorcycle",
+        "mapping_basis": "A red ring surrounds a motorcycle."
+      },
+      "regulatory--speed-limit-zone--g1": {
+        "target_label": "zone:20",
+        "mapping_basis": "The published sprite shows a 20 zone. The source ID omits the speed. For a photographed sign, use zone:20 if the sign reads 20 and zone:30 if it reads 30.",
+        "review_pictogram": "de-274.1-20"
+      },
+      "regulatory--end-of-speed-limit-zone--g1": {
+        "target_label": "zone:end",
+        "mapping_basis": "Diagonal bands cross a ZONE panel. The broad zone-end class accepts differing limits. The sprite illustrates 40."
+      },
+      "warning--other-danger--g1": {
+        "target_label": "hazard",
+        "mapping_basis": "A black exclamation mark appears in a warning triangle."
+      },
+      "warning--traffic-signals--g1": {
+        "target_label": "hazard:traffic_signal",
+        "mapping_basis": "A three-light signal appears inside a warning triangle."
+      },
+      "warning--uneven-road--g1": {
+        "target_label": "hazard:bumps",
+        "mapping_basis": "Two humps appear inside a warning triangle."
+      },
+      "warning--icy-road--g1": {
+        "target_label": "hazard:ice",
+        "mapping_basis": "A snowflake appears inside a warning triangle."
+      },
+      "warning--slippery-road-surface--g1": {
+        "target_label": "hazard:slippery",
+        "mapping_basis": "A car has wavy skid tracks inside a warning triangle."
+      },
+      "warning--curve-right--g1": {
+        "target_label": "hazard:right_turn",
+        "mapping_basis": "The single bend curves to the right."
+      },
+      "warning--road-narrows--g1": {
+        "target_label": "hazard:narrow_both",
+        "mapping_basis": "Both road edges angle inward."
+      },
+      "warning--traffic-queues-likely--g1": {
+        "target_label": "hazard:traffic_jam",
+        "mapping_basis": "A line of cars fills the warning triangle."
+      },
+      "warning--two-way-traffic--g1": {
+        "target_label": "hazard:bothways",
+        "mapping_basis": "Two vertical arrows point in opposite directions inside a warning triangle."
+      },
+      "warning--crossroads-with-priority-to-the-right--g1": {
+        "target_label": "hazard:crossing",
+        "mapping_basis": "Two equally thick diagonal strokes form an X."
+      },
+      "warning--curve-left--g1": {
+        "target_label": "hazard:left_turn",
+        "mapping_basis": "The single bend curves to the left."
+      },
+      "warning--road-narrows-left--g1": {
+        "target_label": "hazard:narrow_left",
+        "mapping_basis": "The left road edge angles inward and the right edge stays straight."
+      },
+      "warning--loose-road-surface--g1": {
+        "target_label": "hazard:gravel",
+        "mapping_basis": "A wheel throws stones inside the warning triangle."
+      },
+      "regulatory--end-of-maximum-speed-limit-10--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 10. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-100--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 100. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-110--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 110. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-120--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 120. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-130--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 130. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-20--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 20. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-25--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 25. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-30--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 30. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-35--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 35. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-40--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 40. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-50--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 50. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-60--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 60. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-65--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 65. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-70--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 70. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-75--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 75. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-80--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 80. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--end-of-maximum-speed-limit-90--g1": {
+        "target_label": "maxspeed:end",
+        "mapping_basis": "Diagonal bands cross the printed 90. The classifier groups numbered end signs under maxspeed:end."
+      },
+      "regulatory--maximum-speed-limit-10--g1": {
+        "target_label": "maxspeed:10",
+        "mapping_basis": "The round limit sign and its source ID both specify 10."
+      },
+      "regulatory--maximum-speed-limit-100--g1": {
+        "target_label": "maxspeed:100",
+        "mapping_basis": "The round limit sign and its source ID both specify 100."
+      },
+      "regulatory--maximum-speed-limit-110--g1": {
+        "target_label": "maxspeed:110",
+        "mapping_basis": "The German crosswalk assigns maxspeed:110 by reviewer decision. This target has no output index in DE142.",
+        "mapping_status": "reference_only"
+      },
+      "regulatory--maximum-speed-limit-120--g1": {
+        "target_label": "maxspeed:120",
+        "mapping_basis": "The round limit sign and its source ID both specify 120."
+      },
+      "regulatory--maximum-speed-limit-130--g1": {
+        "target_label": "maxspeed:130",
+        "mapping_basis": "The round limit sign and its source ID both specify 130."
+      },
+      "regulatory--maximum-speed-limit-15--g1": {
+        "target_label": null,
+        "mapping_basis": "The reviewer excluded the 15 km/h maximum-speed sign from the German crosswalk.",
+        "mapping_status": "excluded_de"
+      },
+      "regulatory--maximum-speed-limit-20--g1": {
+        "target_label": "maxspeed:20",
+        "mapping_basis": "The round limit sign and its source ID both specify 20."
+      },
+      "regulatory--maximum-speed-limit-25--g1": {
+        "target_label": "maxspeed:25",
+        "mapping_basis": "The round limit sign and its source ID both specify 25."
+      },
+      "regulatory--maximum-speed-limit-30--g1": {
+        "target_label": "maxspeed:30",
+        "mapping_basis": "The round limit sign and its source ID both specify 30."
+      },
+      "regulatory--maximum-speed-limit-35--g1": {
+        "target_label": null,
+        "mapping_basis": "The reviewer excluded the 35 km/h maximum-speed sign from the German crosswalk.",
+        "mapping_status": "excluded_de"
+      },
+      "regulatory--maximum-speed-limit-40--g1": {
+        "target_label": "maxspeed:40",
+        "mapping_basis": "The round limit sign and its source ID both specify 40."
+      },
+      "regulatory--maximum-speed-limit-45--g1": {
+        "target_label": null,
+        "mapping_basis": "The reviewer excluded the 45 km/h maximum-speed sign from the German crosswalk.",
+        "mapping_status": "excluded_de"
+      },
+      "regulatory--maximum-speed-limit-5--g1": {
+        "target_label": "maxspeed:5",
+        "mapping_basis": "The round limit sign and its source ID both specify 5."
+      },
+      "regulatory--maximum-speed-limit-50--g1": {
+        "target_label": "maxspeed:50",
+        "mapping_basis": "The round limit sign and its source ID both specify 50."
+      },
+      "regulatory--maximum-speed-limit-60--g1": {
+        "target_label": "maxspeed:60",
+        "mapping_basis": "The round limit sign and its source ID both specify 60."
+      },
+      "regulatory--maximum-speed-limit-65--g1": {
+        "target_label": null,
+        "mapping_basis": "The reviewer excluded the 65 km/h maximum-speed sign from the German crosswalk.",
+        "mapping_status": "excluded_de"
+      },
+      "regulatory--maximum-speed-limit-70--g1": {
+        "target_label": "maxspeed:70",
+        "mapping_basis": "The round limit sign and its source ID both specify 70."
+      },
+      "regulatory--maximum-speed-limit-80--g1": {
+        "target_label": "maxspeed:80",
+        "mapping_basis": "The round limit sign and its source ID both specify 80."
+      },
+      "regulatory--maximum-speed-limit-90--g1": {
+        "target_label": "maxspeed:90",
+        "mapping_basis": "The round limit sign and its source ID both specify 90."
       }
     },
     "BE": {
@@ -500,16 +1085,3393 @@
       }
     }
   },
+  "source_metadata": {
+    "synset": {
+      "title": "Synset Signset Germany",
+      "publisher": "Fraunhofer IOSB / Fraunhofer IPA / KIT",
+      "authors": [
+        "Anne Sielemann",
+        "Lena Loercher",
+        "Max-Lion Schumacher",
+        "Stefan Wolf",
+        "Masoud Roschani",
+        "Jens Ziehn",
+        "Juergen Beyerer"
+      ],
+      "source_url": "https://synset.de/datasets/synset-signset-ger/",
+      "dataset": "FraunhoferIOSB/Synset-Signset-Germany",
+      "revision": "c5eb4d45d612c299a823f0bdf2ec1679eda9baa3",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "© 2024 Fraunhofer IOSB. Publisher names and reference links are retained. The national-code and classifier correspondences are local adaptations.",
+      "label_field": "label",
+      "name_field": "class_name",
+      "central_class_ids": [
+        0,
+        210
+      ],
+      "sign_code_reference": "https://www.verwaltungsvorschriften-im-internet.de/BMVBW-S32-0001-KF10-BS-A008.htm",
+      "sign_code_reference_sha256": "8993caca6a47ddc15195f74503b1fe8842b897184a41ab701d00887a677dcad2",
+      "review": "National codes match the federal designation, face and printed values. Classifier targets follow reviewed training-crop semantics. A null target preserves a source sign without a verified classifier match."
+    },
+    "panoramax": {
+      "DE": {
+        "model": "Panoramax/classify_de_road_signs",
+        "revision": "5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790",
+        "catalog": "../prolix-de-class-catalog-v1.json",
+        "original_label_count": 134,
+        "deployed_label_count": 142,
+        "added_label_source": "Streetshots"
+      }
+    },
+    "mobidata": {
+      "title": "MobiData BW Verkehrszeichenkataster",
+      "source_id": "mobidata-bw-vzk",
+      "source_url": "https://mobidata-bw.de/daten/portal/VZ-Daten/signs.geojson",
+      "field": "Verkehrszeichennummer",
+      "source_revision": "cb4c89d3d2b18a06a1d5956b94865310929ff455d7a33005053bccaac66b79c3",
+      "source_timestamp": "2026-10-17T22:00:00.013Z",
+      "source_record_count": 163504,
+      "reviewed_source_literals": 53,
+      "reviewed_classifier": {
+        "catalog": "shared/tsr/prolix-de-class-catalog-v1.json",
+        "checkpoint_sha256": "f8277a3790fd3357b3ca31a086c7dc9f365785c7fa44bfd3b5c68834555699c7",
+        "label_count": 134,
+        "scope": "Pinned classifier vocabulary only; class availability does not establish calibrated detection, end-to-end recognition, legal applicability, or runtime action approval."
+      },
+      "reviewed_dataset_sha256": "711934b981d273077cd04ef9c531f0adf89ec9e512148e391bcf22e9435e9adb",
+      "audit_url": "https://github.com/volzinnovation/youspeed.de/blob/6302c06d5e47e924ab7addba23314f973b0f4b84/docs/MOBIDATA_BW_PICTOGRAM_AUDIT_V1_5.json"
+    },
+    "mapillary": {
+      "source": "Mapillary traffic-sign taxonomy",
+      "label_fields": [
+        "value",
+        "object_value"
+      ],
+      "review": "German literal source IDs cover the existing aliases, the Baden-Württemberg inventory and published numeric g1 speed variants. target_label records classifier membership. A null target with excluded_de records an out-of-scope German source ID. Other null targets await a match. The reference_only status identifies approved targets outside the deployed vocabulary. mapping_basis describes the visual evidence. National sign identity is reviewed independently.",
+      "sprite_repository": "https://github.com/mapillary/mapillary_sprite_source",
+      "sprite_revision": "1465defa53e47e24b4cfb49e03288cc38652407b",
+      "review_inventory": {
+        "file": "streetshots-inspector/20261120-mapillary-bw.csv",
+        "sha256": "dc6f012e745a736b58c91a71e0e379973420d84b15d3fda68b2d1db5c65cd25f",
+        "distinct_labels": 60
+      }
+    }
+  },
   "mobidata": {
     "DE": {
-      "DE:331.2[]": {
-        "image_path": "tsr/sign-pictograms/png/de-331.2.png",
-        "note": "MobiData empty qualifier on the end-of-limited-access-road sign.",
-        "sign_code": "DE:331.2"
+      "DE:101": {
+        "sign_code": "DE:101",
+        "normalized_code": "DE:101",
+        "source_annotation": null,
+        "pictogram_key": "DE:101",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:101-15": {
+        "sign_code": "DE:101-15",
+        "normalized_code": "DE:101-15",
+        "source_annotation": null,
+        "pictogram_key": "DE:101-15",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101-15.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101-15.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:rocks"
+        ],
+        "classifier_capability": "family_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "hazard:rocks is a wildcard family label, currently display-blocked; it is not an exact DE:101-15 prediction.",
+          "Official SVG/PNG acquired and pinned for the v1.5 implementation; classifier capability remains unchanged."
+        ],
+        "target_label": "hazard:rocks",
+        "mapping_basis": "The audited sign variant belongs to this broader classifier family."
+      },
+      "DE:101-51": {
+        "sign_code": "DE:101-51",
+        "normalized_code": "DE:101-51",
+        "source_annotation": null,
+        "pictogram_key": "DE:101-51",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101-51.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101-51.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:ice"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:ice",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:101-52": {
+        "sign_code": "DE:101-52",
+        "normalized_code": "DE:101-52",
+        "source_annotation": null,
+        "pictogram_key": "DE:101-52",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-101-52.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-101-52.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:gravel"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:gravel",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:103-10": {
+        "sign_code": "DE:103-10",
+        "normalized_code": "DE:103-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:103-10",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-103-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-103-10.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:left_turn"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:left_turn",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:103-20": {
+        "sign_code": "DE:103-20",
+        "normalized_code": "DE:103-20",
+        "source_annotation": null,
+        "pictogram_key": "DE:103-20",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-103-20.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-103-20.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:right_turn"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:right_turn",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:105-10": {
+        "sign_code": "DE:105-10",
+        "normalized_code": "DE:105-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:105-10",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-105-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-105-10.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:zigzag:left"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:zigzag:left",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:105-20": {
+        "sign_code": "DE:105-20",
+        "normalized_code": "DE:105-20",
+        "source_annotation": null,
+        "pictogram_key": "DE:105-20",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-105-20.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-105-20.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:zigzag"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:zigzag",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:112": {
+        "sign_code": "DE:112",
+        "normalized_code": "DE:112",
+        "source_annotation": null,
+        "pictogram_key": "DE:112",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-112.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-112.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:bumps"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:bumps",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:114": {
+        "sign_code": "DE:114",
+        "normalized_code": "DE:114",
+        "source_annotation": null,
+        "pictogram_key": "DE:114",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-114.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-114.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:slippery"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:slippery",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:117-10": {
+        "sign_code": "DE:117-10",
+        "normalized_code": "DE:117-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:117",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-117-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-117-10.png",
+        "pictogram_status": "existing_reviewed_alias",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:wind"
+        ],
+        "classifier_capability": "family_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Classifier emits sign family; direction subtype comes only from inventory and is not visually confirmed by that label."
+        ],
+        "target_label": "hazard:wind",
+        "mapping_basis": "The audited sign variant belongs to this broader classifier family."
+      },
+      "DE:124": {
+        "sign_code": "DE:124",
+        "normalized_code": "DE:124",
+        "source_annotation": null,
+        "pictogram_key": "DE:124",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-124.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-124.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:traffic_jam"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:traffic_jam",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:125": {
+        "sign_code": "DE:125",
+        "normalized_code": "DE:125",
+        "source_annotation": null,
+        "pictogram_key": "DE:125",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-125.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-125.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:bothways"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:bothways",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:142-10": {
+        "sign_code": "DE:142-10",
+        "normalized_code": "DE:142-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:142",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-142-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-142-10.png",
+        "pictogram_status": "existing_reviewed_alias",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:wild_animals"
+        ],
+        "classifier_capability": "family_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Classifier emits sign family; direction subtype comes only from inventory and is not visually confirmed by that label."
+        ],
+        "target_label": "hazard:wild_animals",
+        "mapping_basis": "The audited sign variant belongs to this broader classifier family."
+      },
+      "DE:151": {
+        "sign_code": "DE:151",
+        "normalized_code": "DE:151",
+        "source_annotation": null,
+        "pictogram_key": "DE:151",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-151.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-151.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "hazard:level_crossing",
+          "hazard:train",
+          "hazard:train2"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "hazard:train",
+        "mapping_basis": "The MobiData inventory pictogram depicts an electric train, matching the reviewed hazard:train training crops."
+      },
+      "DE:156-10": {
+        "sign_code": "DE:156-10",
+        "normalized_code": "DE:156-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:156-10",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-156-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-156-10.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "absent",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Official SVG/PNG acquired and pinned for the v1.5 implementation; classifier capability remains unchanged."
+        ],
+        "target_label": "DE:156-10",
+        "mapping_basis": "The deployed 142-output catalog adds the class for this inventory sign."
+      },
+      "DE:205": {
+        "sign_code": "DE:205",
+        "normalized_code": "DE:205",
+        "source_annotation": null,
+        "pictogram_key": "DE:205",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-205.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-205.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "give_way"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "give_way",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:206": {
+        "sign_code": "DE:206",
+        "normalized_code": "DE:206",
+        "source_annotation": null,
+        "pictogram_key": "DE:206",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-206.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-206.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "stop"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "stop",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:209": {
+        "sign_code": "DE:209",
+        "normalized_code": "DE:209",
+        "source_annotation": null,
+        "pictogram_key": "DE:209",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-209.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-209.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "arrow_turn_right"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "arrow_turn_right",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:215": {
+        "sign_code": "DE:215",
+        "normalized_code": "DE:215",
+        "source_annotation": null,
+        "pictogram_key": "DE:215",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-215.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-215.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "roundabout"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "roundabout",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:222": {
+        "sign_code": "DE:222",
+        "normalized_code": "DE:222",
+        "source_annotation": null,
+        "pictogram_key": "DE:222",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-222.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-222.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "arrow_right_down"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "arrow_right_down",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:222-10": {
+        "sign_code": "DE:222-10",
+        "normalized_code": "DE:222-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:222-10",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-222-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-222-10.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "arrow_left_down"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "arrow_left_down",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:223.1-50": {
+        "sign_code": "DE:223.1-50",
+        "normalized_code": "DE:223.1-50",
+        "source_annotation": null,
+        "pictogram_key": "DE:223.1-50",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-223.1-50.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-223.1-50.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "absent",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Official SVG/PNG acquired and pinned for the v1.5 implementation; classifier capability remains unchanged."
+        ],
+        "target_label": "lanes",
+        "mapping_basis": "The train-crop review places this lane-control variant in the deployed lanes family."
+      },
+      "DE:267": {
+        "sign_code": "DE:267",
+        "normalized_code": "DE:267",
+        "source_annotation": null,
+        "pictogram_key": "DE:267",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-267.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-267.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "no_entry"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "no_entry",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-10": {
+        "sign_code": "DE:274-10",
+        "normalized_code": "DE:274-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-10",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-10.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-10.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:10"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 10,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:10",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-100": {
+        "sign_code": "DE:274-100",
+        "normalized_code": "DE:274-100",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-100",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-100.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-100.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:100"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 100,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:100",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-120": {
+        "sign_code": "DE:274-120",
+        "normalized_code": "DE:274-120",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-120",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-120.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-120.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:120"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 120,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:120",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-130": {
+        "sign_code": "DE:274-130",
+        "normalized_code": "DE:274-130",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-130",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-130.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-130.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:130"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 130,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:130",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-20": {
+        "sign_code": "DE:274-20",
+        "normalized_code": "DE:274-20",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-20",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-20.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-20.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:20"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 20,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:20",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-30": {
+        "sign_code": "DE:274-30",
+        "normalized_code": "DE:274-30",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-30",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-30.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-30.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:30"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 30,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:30",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-40": {
+        "sign_code": "DE:274-40",
+        "normalized_code": "DE:274-40",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-40",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-40.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-40.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:40"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 40,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:40",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-50": {
+        "sign_code": "DE:274-50",
+        "normalized_code": "DE:274-50",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-50",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-50.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-50.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:50"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 50,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:50",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
       },
       "DE:274-50[WVZ Rombachtunnel]": {
         "image_path": "tsr/sign-pictograms/png/de-274-50.png",
-        "note": "MobiData variable-message sign with a known displayed speed of 50."
+        "note": "MobiData variable-message sign with a known displayed speed of 50.",
+        "normalized_code": "DE:274-50",
+        "source_annotation": "WVZ Rombachtunnel",
+        "pictogram_key": "DE:274-50",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-50.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-50.png",
+        "pictogram_status": "source_annotation_requires_review",
+        "display_eligible": false,
+        "classifier_labels": [
+          "maxspeed:50"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 50,
+        "parameter_unit": "km/h",
+        "notes": [
+          "Preserve complete literal source code; normalized_code is an inspection aid only. Empty brackets are not a value. WVZ text does not prove the current variable-message state."
+        ],
+        "target_label": "maxspeed:50",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-60": {
+        "sign_code": "DE:274-60",
+        "normalized_code": "DE:274-60",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-60",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-60.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-60.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:60"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 60,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:60",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-70": {
+        "sign_code": "DE:274-70",
+        "normalized_code": "DE:274-70",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-70",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-70.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-70.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:70"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 70,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:70",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-80": {
+        "sign_code": "DE:274-80",
+        "normalized_code": "DE:274-80",
+        "source_annotation": null,
+        "pictogram_key": "DE:274-80",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-274-80.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-274-80.png",
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [
+          "maxspeed:80"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 80,
+        "parameter_unit": "km/h",
+        "notes": [],
+        "target_label": "maxspeed:80",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:274-90": {
+        "sign_code": "DE:274-90",
+        "normalized_code": "DE:274-90",
+        "source_annotation": null,
+        "pictogram_key": null,
+        "pictogram_original_path": null,
+        "pictogram_png_path": null,
+        "pictogram_status": "numeric_speed_schematic_exception",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "absent",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": "maxspeed",
+        "parameter_value": 90,
+        "parameter_unit": "km/h",
+        "notes": [
+          "The schematic numeric UI can represent 90; the pinned classifier has no maxspeed:90 output."
+        ],
+        "target_label": "maxspeed:90",
+        "mapping_basis": "The deployed 142-output catalog adds the class for this inventory sign."
+      },
+      "DE:276": {
+        "sign_code": "DE:276",
+        "normalized_code": "DE:276",
+        "source_annotation": null,
+        "pictogram_key": "DE:276",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-276.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-276.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "no_overtaking"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "no_overtaking",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:277": {
+        "sign_code": "DE:277",
+        "normalized_code": "DE:277",
+        "source_annotation": null,
+        "pictogram_key": "DE:277",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-277.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-277.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "no_overtaking:hgv"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "no_overtaking:hgv",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:278": {
+        "sign_code": "DE:278",
+        "normalized_code": "DE:278",
+        "source_annotation": null,
+        "pictogram_key": null,
+        "pictogram_original_path": null,
+        "pictogram_png_path": null,
+        "pictogram_status": "missing_printed_speed",
+        "display_eligible": false,
+        "classifier_labels": [
+          "maxspeed:end"
+        ],
+        "classifier_capability": "family_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Source omits the ended numeric speed. Store null; do not display fabricated crossed-out speed or substitute DE:282."
+        ],
+        "target_label": "maxspeed:end",
+        "mapping_basis": "The audited sign variant belongs to this broader classifier family."
+      },
+      "DE:280": {
+        "sign_code": "DE:280",
+        "normalized_code": "DE:280",
+        "source_annotation": null,
+        "pictogram_key": "DE:280",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-280.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-280.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "no_overtaking:end"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "no_overtaking:end",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:282": {
+        "sign_code": "DE:282",
+        "normalized_code": "DE:282",
+        "source_annotation": null,
+        "pictogram_key": "DE:282",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-282.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-282.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "no:end"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [
+          "DE:282"
+        ],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "no:end",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:310": {
+        "sign_code": "DE:310",
+        "normalized_code": "DE:310",
+        "source_annotation": null,
+        "pictogram_key": "DE:310",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-310.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-310.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "reference_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [
+          "DE:310",
+          "city:start"
+        ],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Existing reference-only town art and aliases do not add town-entry/exit outputs to the pinned 134-label classifier."
+        ],
+        "target_label": "city:start",
+        "mapping_basis": "The deployed 142-output catalog adds the class for this inventory sign."
+      },
+      "DE:311": {
+        "sign_code": "DE:311",
+        "normalized_code": "DE:311",
+        "source_annotation": null,
+        "pictogram_key": "DE:311",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-311.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-311.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "reference_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [
+          "DE:311",
+          "city:end"
+        ],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Existing reference-only town art and aliases do not add town-entry/exit outputs to the pinned 134-label classifier."
+        ],
+        "target_label": "city:end",
+        "mapping_basis": "The deployed 142-output catalog adds the class for this inventory sign."
+      },
+      "DE:325.1": {
+        "sign_code": "DE:325.1",
+        "normalized_code": "DE:325.1",
+        "source_annotation": null,
+        "pictogram_key": "DE:325.1",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-325.1.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-325.1.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "absent",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Official SVG/PNG acquired and pinned for the v1.5 implementation; classifier capability remains unchanged."
+        ],
+        "target_label": "DE:325.1",
+        "mapping_basis": "The deployed 142-output catalog adds the class for this inventory sign."
+      },
+      "DE:325.2": {
+        "sign_code": "DE:325.2",
+        "normalized_code": "DE:325.2",
+        "source_annotation": null,
+        "pictogram_key": "DE:325.2",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-325.2.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-325.2.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "absent",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Official SVG/PNG acquired and pinned for the v1.5 implementation; classifier capability remains unchanged."
+        ],
+        "target_label": "DE:325.2",
+        "mapping_basis": "The deployed 142-output catalog adds the class for this inventory sign."
+      },
+      "DE:330.1": {
+        "sign_code": "DE:330.1",
+        "normalized_code": "DE:330.1",
+        "source_annotation": null,
+        "pictogram_key": "DE:330.1",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-330.1.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-330.1.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "motorway:start"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "motorway:start",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:330.2": {
+        "sign_code": "DE:330.2",
+        "normalized_code": "DE:330.2",
+        "source_annotation": null,
+        "pictogram_key": "DE:330.2",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-330.2.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-330.2.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "motorway:end"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "motorway:end",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:331.1": {
+        "sign_code": "DE:331.1",
+        "normalized_code": "DE:331.1",
+        "source_annotation": null,
+        "pictogram_key": "DE:331.1",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-331.1.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-331.1.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "trunk:start"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "trunk:start",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:331.2": {
+        "sign_code": "DE:331.2",
+        "normalized_code": "DE:331.2",
+        "source_annotation": null,
+        "pictogram_key": "DE:331.2",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-331.2.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-331.2.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [
+          "trunk:end"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [],
+        "target_label": "trunk:end",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:331.2[]": {
+        "image_path": "tsr/sign-pictograms/png/de-331.2.png",
+        "note": "MobiData empty qualifier on the end-of-limited-access-road sign.",
+        "sign_code": "DE:331.2",
+        "normalized_code": "DE:331.2",
+        "source_annotation": "",
+        "pictogram_key": "DE:331.2",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-331.2.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-331.2.png",
+        "pictogram_status": "source_annotation_requires_review",
+        "display_eligible": false,
+        "classifier_labels": [
+          "trunk:end"
+        ],
+        "classifier_capability": "exact_label",
+        "classifier_exact_variant_supported": true,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Preserve complete literal source code; normalized_code is an inspection aid only. Empty brackets are not a value. WVZ text does not prove the current variable-message state."
+        ],
+        "target_label": "trunk:end",
+        "mapping_basis": "The MobiData audit identifies a single exact classifier target for this source literal."
+      },
+      "DE:350-10": {
+        "sign_code": "DE:350-10",
+        "normalized_code": "DE:350-10",
+        "source_annotation": null,
+        "pictogram_key": "DE:350",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-350.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-350.png",
+        "pictogram_status": "existing_reviewed_alias",
+        "display_eligible": true,
+        "classifier_labels": [
+          "pedestrian_crossing"
+        ],
+        "classifier_capability": "family_only",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Existing DE:350 official-work illustration is family artwork; classifier does not identify right/left installation subtype."
+        ],
+        "target_label": "pedestrian_crossing",
+        "mapping_basis": "The audited sign variant belongs to this broader classifier family."
+      },
+      "DE:460-20": {
+        "sign_code": "DE:460-20",
+        "normalized_code": "DE:460-20",
+        "source_annotation": null,
+        "pictogram_key": "DE:460-20",
+        "pictogram_original_path": "shared/tsr/sign-pictograms/originals/de-460-20.svg",
+        "pictogram_png_path": "shared/tsr/sign-pictograms/png/de-460-20.png",
+        "pictogram_status": "existing_exact",
+        "display_eligible": true,
+        "classifier_labels": [],
+        "classifier_capability": "absent",
+        "classifier_exact_variant_supported": false,
+        "reference_only_aliases": [],
+        "parameter_kind": null,
+        "parameter_value": null,
+        "parameter_unit": null,
+        "notes": [
+          "Do not map to classifier exit; that existing mapping is explicitly unresolved and refers to a different semantic purpose.",
+          "Official SVG/PNG acquired and pinned for the v1.5 implementation; classifier capability remains unchanged. The reference artwork illustrates a detour number; the source supplies no actual detour number."
+        ],
+        "target_label": "exit",
+        "mapping_basis": "The train-crop review places this numbered motorway diversion in the deployed exit family."
+      }
+    }
+  },
+  "synset": {
+    "DE": {
+      "0": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 20",
+        "class_name": "Geschwindigkeit20",
+        "sign_code": "DE:274-20",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:20",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/0.png"
+      },
+      "1": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 30",
+        "class_name": "Geschwindigkeit30",
+        "sign_code": "DE:274-30",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:30",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/1.png"
+      },
+      "2": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 50",
+        "class_name": "Geschwindigkeit50",
+        "sign_code": "DE:274-50",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:50",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/2.png"
+      },
+      "3": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 60",
+        "class_name": "Geschwindigkeit60",
+        "sign_code": "DE:274-60",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:60",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/3.png"
+      },
+      "4": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 70",
+        "class_name": "Geschwindigkeit70",
+        "sign_code": "DE:274-70",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:70",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/4.png"
+      },
+      "5": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 80",
+        "class_name": "Geschwindigkeit80",
+        "sign_code": "DE:274-80",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:80",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/5.png"
+      },
+      "6": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 80",
+        "class_name": "EndeGeschwindigkeit80",
+        "sign_code": "DE:278-80",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/6.png"
+      },
+      "7": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 100",
+        "class_name": "Geschwindigkeit100",
+        "sign_code": "DE:274-100",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:100",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/7.png"
+      },
+      "8": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 120",
+        "class_name": "Geschwindigkeit120",
+        "sign_code": "DE:274-120",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:120",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/8.png"
+      },
+      "9": {
+        "source_name": "Überholverbot für Kraftfahrzeuge aller Art",
+        "class_name": "Ueberholverbot",
+        "sign_code": "DE:276",
+        "sign_code_scope": "sign",
+        "target_label": "no_overtaking",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/9.png"
+      },
+      "10": {
+        "source_name": "Überholverbot für Kraftfahrzeuge über 3,5 t",
+        "class_name": "UeberholverbotKraftfahrzeuge",
+        "sign_code": "DE:277",
+        "sign_code_scope": "sign",
+        "target_label": "no_overtaking:hgv",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/10.png"
+      },
+      "11": {
+        "source_name": "Vorfahrt",
+        "class_name": "Vorfahrt",
+        "sign_code": "DE:301",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:intersection",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/11.png"
+      },
+      "12": {
+        "source_name": "Vorfahrtstraße",
+        "class_name": "Vorfahrtsstrasse",
+        "sign_code": "DE:306",
+        "sign_code_scope": "sign",
+        "target_label": "priority:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/12.png"
+      },
+      "13": {
+        "source_name": "Vorfahrt gewähren",
+        "class_name": "VorfahrtGewaehren",
+        "sign_code": "DE:205",
+        "sign_code_scope": "sign",
+        "target_label": "give_way",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/13.png"
+      },
+      "14": {
+        "source_name": "Halt. Vorfahrt gewähren",
+        "class_name": "Stop",
+        "sign_code": "DE:206",
+        "sign_code_scope": "sign",
+        "target_label": "stop",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/14.png"
+      },
+      "15": {
+        "source_name": "Verbot für Fahrzeuge aller Art",
+        "class_name": "VerbotFahrzeugeAllerArt",
+        "sign_code": "DE:250",
+        "sign_code_scope": "sign",
+        "target_label": "no_way",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/15.png"
+      },
+      "16": {
+        "source_name": "Verbot für Kraftfahrzeuge über 3,5 t",
+        "class_name": "VerbotFuerKraftfahrzeugeUeberDreiKommaFuenfTonnen",
+        "sign_code": "DE:253",
+        "sign_code_scope": "sign",
+        "target_label": "no_hgv",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/16.png"
+      },
+      "17": {
+        "source_name": "Verbot der Einfahrt",
+        "class_name": "VerbotDerEinfahrt",
+        "sign_code": "DE:267",
+        "sign_code_scope": "sign",
+        "target_label": "no_entry",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/17.png"
+      },
+      "18": {
+        "source_name": "Gefahrenstelle",
+        "class_name": "Gefahrenstelle",
+        "sign_code": "DE:101",
+        "sign_code_scope": "sign",
+        "target_label": "hazard",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/18.png"
+      },
+      "19": {
+        "source_name": "Kurve – links",
+        "class_name": "KurveLinks",
+        "sign_code": "DE:103-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:left_turn",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/19.png"
+      },
+      "20": {
+        "source_name": "Kurve – rechts",
+        "class_name": "KurveRechts",
+        "sign_code": "DE:103-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:right_turn",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/20.png"
+      },
+      "21": {
+        "source_name": "Doppelkurve – zunächst links",
+        "class_name": "DoppelkurveZunaechstLinks",
+        "sign_code": "DE:105-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:zigzag:left",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/21.png"
+      },
+      "22": {
+        "source_name": "Unebene Fahrbahn",
+        "class_name": "UnebeneFahrbahn",
+        "sign_code": "DE:112",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:bumps",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/22.png"
+      },
+      "23": {
+        "source_name": "Schleuder- oder Rutschgefahr",
+        "class_name": "SchleuderOderRutschgefahr",
+        "sign_code": "DE:114",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:slippery",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/23.png"
+      },
+      "24": {
+        "source_name": "Einseitig verengte Fahrbahn – Verengung rechts",
+        "class_name": "EinseitigVerengteFahrbahnRechts",
+        "sign_code": "DE:121-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:narrow_right",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/24.png"
+      },
+      "25": {
+        "source_name": "Arbeitsstelle",
+        "class_name": "Arbeitsstelle",
+        "sign_code": "DE:123",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:road_works",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/25.png"
+      },
+      "26": {
+        "source_name": "Lichtzeichenanlage",
+        "class_name": "Lichtzeichenanlage",
+        "sign_code": "DE:131",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:traffic_signal",
+        "mapping_status": "approved",
+        "mapping_basis": "Triangular signal warning, as shown by the source artwork and real target crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/26.png"
+      },
+      "27": {
+        "source_name": "Fußgänger – Aufstellung rechts",
+        "class_name": "FussgaengerRechts",
+        "sign_code": "DE:133-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:pedestrian_crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "The real hazard:pedestrian_crossing crops contain the triangular foot-traffic warning with and without zebra stripes.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/27.png"
+      },
+      "28": {
+        "source_name": "Kinder – Aufstellung rechts",
+        "class_name": "KinderRechts",
+        "sign_code": "DE:136-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:school",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/28.png"
+      },
+      "29": {
+        "source_name": "Radverkehr – Aufstellung rechts",
+        "class_name": "RadverkehrRechts",
+        "sign_code": "DE:138-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:bicycle",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/29.png"
+      },
+      "30": {
+        "source_name": "Schnee- oder Eisglätte",
+        "class_name": "SchneeOderEisglaette",
+        "sign_code": "DE:101-51",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:ice",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/30.png"
+      },
+      "31": {
+        "source_name": "Wildwechsel – Aufstellung rechts",
+        "class_name": "WildwechselRechts",
+        "sign_code": "DE:142-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:wild_animals",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/31.png"
+      },
+      "32": {
+        "source_name": "Ende sämtlicher streckenbezogener Geschwindigkeitsbeschränkungen und Überholverbote",
+        "class_name": "EndeSaemtlicherBegrenzungen",
+        "sign_code": "DE:282",
+        "sign_code_scope": "sign",
+        "target_label": "no:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/32.png"
+      },
+      "33": {
+        "source_name": "Vorgeschriebene Fahrtrichtung – rechts",
+        "class_name": "VorgeschriebeneFahrtrichtungRechts",
+        "sign_code": "DE:209",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_turn_right",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/33.png"
+      },
+      "34": {
+        "source_name": "Vorgeschriebene Fahrtrichtung – links",
+        "class_name": "VorgeschriebeneFahrtrichtungLinks",
+        "sign_code": "DE:209-10",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_turn_left",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/34.png"
+      },
+      "35": {
+        "source_name": "Vorgeschriebene Fahrtrichtung – geradeaus",
+        "class_name": "VorgeschriebeneFahrtrichtungGeradeaus",
+        "sign_code": "DE:209-30",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_through",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/35.png"
+      },
+      "36": {
+        "source_name": "Vorgeschriebene Fahrtrichtung – geradeaus oder rechts",
+        "class_name": "VorgeschriebeneFahrtrichtungGeradeausOderRechts",
+        "sign_code": "DE:214",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_turn_right_through",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/36.png"
+      },
+      "37": {
+        "source_name": "Vorgeschriebene Fahrtrichtung – geradeaus oder links",
+        "class_name": "VorgeschriebeneFahrtrichtungGeradeausOderLinks",
+        "sign_code": "DE:214-10",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_turn_left_through",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/37.png"
+      },
+      "38": {
+        "source_name": "Vorgeschriebene Vorbeifahrt – rechts vorbei",
+        "class_name": "VorgeschriebeneVorbeifahrtRechts",
+        "sign_code": "DE:222",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_right_down",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/38.png"
+      },
+      "39": {
+        "source_name": "Vorgeschriebene Vorbeifahrt – links vorbei",
+        "class_name": "VorgeschriebeneVorbeifahrtLinks",
+        "sign_code": "DE:222-10",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_left_down",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/39.png"
+      },
+      "40": {
+        "source_name": "Kreisverkehr",
+        "class_name": "Kreisverkehr",
+        "sign_code": "DE:215",
+        "sign_code_scope": "sign",
+        "target_label": "roundabout",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/40.png"
+      },
+      "41": {
+        "source_name": "Ende des Überholverbotes für Kraftfahrzeuge aller Art",
+        "class_name": "EndeUeberholverbot",
+        "sign_code": "DE:280",
+        "sign_code_scope": "sign",
+        "target_label": "no_overtaking:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/41.png"
+      },
+      "42": {
+        "source_name": "Ende des Überholverbotes für Kraftfahrzeuge über 3,5 t",
+        "class_name": "EndeUeberholverbotKraftfahrzeuge",
+        "sign_code": "DE:281",
+        "sign_code_scope": "sign",
+        "target_label": "no_overtaking:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Both two-car and lorry/car ends of overtaking bans appear repeatedly in the real broad target class. The more specific truck-end alias is absent from the active taxonomy.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/42.png"
+      },
+      "43": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 5",
+        "class_name": "Geschwindigkeit5",
+        "sign_code": "DE:274-5",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:5",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/43.png"
+      },
+      "44": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 10",
+        "class_name": "Geschwindigkeit10",
+        "sign_code": "DE:274-10",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:10",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/44.png"
+      },
+      "45": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 40",
+        "class_name": "Geschwindigkeit40",
+        "sign_code": "DE:274-40",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:40",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/45.png"
+      },
+      "46": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 90",
+        "class_name": "Geschwindigkeit90",
+        "sign_code": "DE:274-90",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:90",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/46.png"
+      },
+      "47": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 110",
+        "class_name": "Geschwindigkeit110",
+        "sign_code": "DE:274-110",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:110",
+        "mapping_status": "reference_only",
+        "mapping_basis": "The face displays 110. Approved as an OpenSign reference target without a German classifier output.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/47.png"
+      },
+      "48": {
+        "source_name": "Zulässige Höchstgeschwindigkeit 130",
+        "class_name": "Geschwindigkeit130",
+        "sign_code": "DE:274-130",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:130",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/48.png"
+      },
+      "49": {
+        "source_name": "Doppelkurve – zunächst rechts",
+        "class_name": "DoppelkurveRechts",
+        "sign_code": "DE:105-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:zigzag",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/49.png"
+      },
+      "50": {
+        "source_name": "Fußgänger – Aufstellung links",
+        "class_name": "FussgaengerLinks",
+        "sign_code": "DE:133-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:pedestrian_crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "The real hazard:pedestrian_crossing crops contain the triangular foot-traffic warning with and without zebra stripes.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/50.png"
+      },
+      "51": {
+        "source_name": "Kinder – Aufstellung links",
+        "class_name": "KinderLinks",
+        "sign_code": "DE:136-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:school",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/51.png"
+      },
+      "52": {
+        "source_name": "Radverkehr – Aufstellung links",
+        "class_name": "RadverkehrLinks",
+        "sign_code": "DE:138-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:bicycle",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/52.png"
+      },
+      "53": {
+        "source_name": "Wildwechsel – Aufstellung links",
+        "class_name": "WildwechselLinks",
+        "sign_code": "DE:142-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:wild_animals",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/53.png"
+      },
+      "54": {
+        "source_name": "Verengte Fahrbahn",
+        "class_name": "VerengteFahrbahn",
+        "sign_code": "DE:120",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:narrow_both",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/54.png"
+      },
+      "55": {
+        "source_name": "Einseitig verengte Fahrbahn – Verengung links",
+        "class_name": "EinseitigVerengteFahrbahnLinks",
+        "sign_code": "DE:121-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:narrow_left",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/55.png"
+      },
+      "56": {
+        "source_name": "Flugbetrieb – Aufstellung rechts",
+        "class_name": "FlugbetriebRechts",
+        "sign_code": "DE:101-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:airport",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/56.png"
+      },
+      "57": {
+        "source_name": "Flugbetrieb – Aufstellung links",
+        "class_name": "FlugbetriebLinks",
+        "sign_code": "DE:101-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:airport",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/57.png"
+      },
+      "58": {
+        "source_name": "Fußgängerüberweg – Aufstellung rechts",
+        "class_name": "FussgaengerueberwegRechts",
+        "sign_code": "DE:101-11",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:pedestrian_crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/58.png"
+      },
+      "59": {
+        "source_name": "Fußgängerüberweg – Aufstellung links",
+        "class_name": "FussgaengerueberwegLinks",
+        "sign_code": "DE:101-21",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:pedestrian_crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/59.png"
+      },
+      "60": {
+        "source_name": "Viehtrieb – Aufstellung rechts",
+        "class_name": "ViehtriebRechts",
+        "sign_code": "DE:101-12",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:animals",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/60.png"
+      },
+      "61": {
+        "source_name": "Viehtrieb – Aufstellung links",
+        "class_name": "ViehtriebLinks",
+        "sign_code": "DE:101-22",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:animals",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/61.png"
+      },
+      "62": {
+        "source_name": "Reiter – Aufstellung rechts",
+        "class_name": "ReiterRechts",
+        "sign_code": "DE:101-13",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:horse",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/62.png"
+      },
+      "63": {
+        "source_name": "Reiter – Aufstellung links",
+        "class_name": "ReiterLinks",
+        "sign_code": "DE:101-23",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:horse",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/63.png"
+      },
+      "64": {
+        "source_name": "Amphibienwanderung – Aufstellung rechts",
+        "class_name": "AmphibienwanderungRechts",
+        "sign_code": "DE:101-14",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:other",
+        "mapping_status": "approved",
+        "mapping_basis": "Frog warning subtype appears in the real hazard:other crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/64.png"
+      },
+      "65": {
+        "source_name": "Amphibienwanderung – Aufstellung links",
+        "class_name": "AmphibienwanderungLinks",
+        "sign_code": "DE:101-24",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:other",
+        "mapping_status": "approved",
+        "mapping_basis": "Frog warning subtype appears in the real hazard:other crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/65.png"
+      },
+      "66": {
+        "source_name": "Steinschlag – Aufstellung rechts",
+        "class_name": "SteinschlagRechts",
+        "sign_code": "DE:101-15",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:rocks",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/66.png"
+      },
+      "67": {
+        "source_name": "Steinschlag – Aufstellung links",
+        "class_name": "SteinschlagLinks",
+        "sign_code": "DE:101-25",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:rocks",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/67.png"
+      },
+      "68": {
+        "source_name": "Splitt, Schotter",
+        "class_name": "SplittSchotter",
+        "sign_code": "DE:101-52",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:gravel",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/68.png"
+      },
+      "69": {
+        "source_name": "Ufer",
+        "class_name": "Ufer",
+        "sign_code": "DE:101-53",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/69.png"
+      },
+      "70": {
+        "source_name": "Unzureichendes Lichtraumprofil",
+        "class_name": "UnzureichendesLichtraumprofil",
+        "sign_code": "DE:101-54",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:other",
+        "mapping_status": "approved",
+        "mapping_basis": "Lorry and tree clearance-warning subtype appears in the real hazard:other crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/70.png"
+      },
+      "71": {
+        "source_name": "Bewegliche Brücke",
+        "class_name": "BeweglicheBruecke",
+        "sign_code": "DE:101-55",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:moving_bridge",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/71.png"
+      },
+      "72": {
+        "source_name": "Kreuzung oder Einmündung",
+        "class_name": "KreuzungOderEinmuendung",
+        "sign_code": "DE:102",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/72.png"
+      },
+      "73": {
+        "source_name": "Seitenwind von links",
+        "class_name": "SeitenwindVonLinks",
+        "sign_code": "DE:117-20",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:wind",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/73.png"
+      },
+      "74": {
+        "source_name": "Seitenwind von rechts",
+        "class_name": "SeitenwindVonRechts",
+        "sign_code": "DE:117-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:wind",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/74.png"
+      },
+      "75": {
+        "source_name": "Stau",
+        "class_name": "Stau",
+        "sign_code": "DE:124",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:traffic_jam",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/75.png"
+      },
+      "76": {
+        "source_name": "Gegenverkehr",
+        "class_name": "Gegenverkehr",
+        "sign_code": "DE:125",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:bothways",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/76.png"
+      },
+      "77": {
+        "source_name": "Bahnübergang",
+        "class_name": "Bahnuebergang",
+        "sign_code": "DE:151",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:train",
+        "mapping_status": "approved",
+        "mapping_basis": "The electric train artwork matches hazard:train. The real hazard:train2 and hazard:level_crossing crops show a steam train and barrier respectively.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/77.png"
+      },
+      "78": {
+        "source_name": "Vorrang des Gegenverkehrs",
+        "class_name": "VorrangDesGegenverkehrs",
+        "sign_code": "DE:208",
+        "sign_code_scope": "sign",
+        "target_label": "priority:backward",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/78.png"
+      },
+      "79": {
+        "source_name": "Vorgeschriebene Fahrtrichtung — hier rechts",
+        "class_name": "VorgeschriebeneFahrtrichtungHierRechts",
+        "sign_code": "DE:211",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_right",
+        "mapping_status": "approved",
+        "mapping_basis": "The arrow points straight to the right in a blue circle.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/79.png"
+      },
+      "80": {
+        "source_name": "Vorgeschriebene Fahrtrichtung — hier links",
+        "class_name": "VorgeschriebeneFahrtrichtungHierLinks",
+        "sign_code": "DE:211-10",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_left",
+        "mapping_status": "reference_only",
+        "mapping_basis": "The face shows a horizontal left arrow. Approved under the arrow_left reference label. The DE:211-10 national code is retained.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/80.png"
+      },
+      "81": {
+        "source_name": "Vorgeschriebene Fahrtrichtung – rechts oder links",
+        "class_name": "VorgeschriebeneFahrtrichtungRechtsOderLinks",
+        "sign_code": "DE:214-30",
+        "sign_code_scope": "sign",
+        "target_label": "arrow_turn_left_right",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/81.png"
+      },
+      "82": {
+        "source_name": "Einbahnstraße – linksweisend",
+        "class_name": "EinbahnstrasseLinksweisend",
+        "sign_code": "DE:220-10",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "The horizontal text arrow is absent from all 72 frozen real oneway crops, which show upward arrows. The catalog calls DE:220 only the closest family.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/82.png"
+      },
+      "83": {
+        "source_name": "Einbahnstraße – rechtsweisend",
+        "class_name": "EinbahnstrasseRechtsweisend",
+        "sign_code": "DE:220-20",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "The horizontal text arrow is absent from all 72 frozen real oneway crops, which show upward arrows. The catalog calls DE:220 only the closest family.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/83.png"
+      },
+      "84": {
+        "source_name": "Haltestelle",
+        "class_name": "Haltestelle",
+        "sign_code": "DE:224",
+        "sign_code_scope": "sign",
+        "target_label": "bus:stop",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/84.png"
+      },
+      "85": {
+        "source_name": "Radweg",
+        "class_name": "Radweg",
+        "sign_code": "DE:237",
+        "sign_code_scope": "sign",
+        "target_label": "bicycle:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/85.png"
+      },
+      "86": {
+        "source_name": "Reitweg",
+        "class_name": "Reitweg",
+        "sign_code": "DE:238",
+        "sign_code_scope": "sign",
+        "target_label": "horse:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/86.png"
+      },
+      "87": {
+        "source_name": "Gehweg",
+        "class_name": "Gehweg",
+        "sign_code": "DE:239",
+        "sign_code_scope": "sign",
+        "target_label": "pedestrian:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/87.png"
+      },
+      "88": {
+        "source_name": "Gemeinsamer Geh- und Radweg",
+        "class_name": "GemeinsamerGehUndRadweg",
+        "sign_code": "DE:240",
+        "sign_code_scope": "sign",
+        "target_label": "pedestrian_bicycle:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/88.png"
+      },
+      "89": {
+        "source_name": "Getrennter Rad- und Gehweg, Radweg links",
+        "class_name": "GetrennterRadUndGehwegRadwegLinks",
+        "sign_code": "DE:241-30",
+        "sign_code_scope": "sign",
+        "target_label": "pedestrian_bicycle:designated",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/89.png"
+      },
+      "90": {
+        "source_name": "Getrennter Rad- und Gehweg, Radweg rechts",
+        "class_name": "GetrennterRadUndGehwegRadwegRechts",
+        "sign_code": "DE:241-31",
+        "sign_code_scope": "sign",
+        "target_label": "pedestrian_bicycle:designated",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/90.png"
+      },
+      "91": {
+        "source_name": "Beginn einer Fußgängerzone",
+        "class_name": "BeginnFussgaengerzone",
+        "sign_code": "DE:242.1",
+        "sign_code_scope": "sign",
+        "target_label": "zone:pedestrian",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/91.png"
+      },
+      "92": {
+        "source_name": "Ende einer Fußgängerzone",
+        "class_name": "EndeFussgaengerzone",
+        "sign_code": "DE:242.2",
+        "sign_code_scope": "sign",
+        "target_label": "zone:end",
+        "mapping_status": "approved",
+        "mapping_basis": "The crossed-out pedestrian-zone panel matches reviewed zone:end training crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/92.png"
+      },
+      "93": {
+        "source_name": "Beginn einer Fahrradstraße",
+        "class_name": "BeginnFahrradstrasse",
+        "sign_code": "DE:244.1",
+        "sign_code_scope": "sign",
+        "target_label": "bicycle:priority",
+        "mapping_status": "approved",
+        "mapping_basis": "The Fahrradstraße face matches the Core display pictogram for bicycle:priority.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/93.png"
+      },
+      "94": {
+        "source_name": "Ende einer Fahrradstraße",
+        "class_name": "EndeFahrradstrasse",
+        "sign_code": "DE:244.2",
+        "sign_code_scope": "sign",
+        "target_label": "zone:end",
+        "mapping_status": "approved",
+        "mapping_basis": "The crossed-out Fahrradstraße panel matches a labeled zone:end training example.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/94.png"
+      },
+      "95": {
+        "source_name": "Bussonderfahrstreifen",
+        "class_name": "Busssonderstreifen",
+        "sign_code": "DE:245",
+        "sign_code_scope": "sign",
+        "target_label": "bus:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/95.png"
+      },
+      "96": {
+        "source_name": "Verbot für Kraftwagen",
+        "class_name": "VerbotKraftwagen",
+        "sign_code": "DE:251",
+        "sign_code_scope": "sign",
+        "target_label": "no_car",
+        "mapping_status": "approved",
+        "mapping_basis": "Frontal car silhouette in a red circle.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/96.png"
+      },
+      "97": {
+        "source_name": "Verbot für Radverkehr",
+        "class_name": "VerbotRadverkehr",
+        "sign_code": "DE:254",
+        "sign_code_scope": "sign",
+        "target_label": "no_bicycle",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/97.png"
+      },
+      "98": {
+        "source_name": "Verbot für Krafträder",
+        "class_name": "VerbotKraftraeder",
+        "sign_code": "DE:255",
+        "sign_code_scope": "sign",
+        "target_label": "no_motorcycle",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/98.png"
+      },
+      "99": {
+        "source_name": "Verbot für Mofas",
+        "class_name": "VerbotMofas",
+        "sign_code": "DE:257-50",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/99.png"
+      },
+      "100": {
+        "source_name": "Verbot für Reiter",
+        "class_name": "VerbotReiter",
+        "sign_code": "DE:257-51",
+        "sign_code_scope": "sign",
+        "target_label": "no_horse",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/100.png"
+      },
+      "101": {
+        "source_name": "Verbot für Gespannfuhrwerke",
+        "class_name": "VerbotGespannfuhrwerke",
+        "sign_code": "DE:257-52",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/101.png"
+      },
+      "102": {
+        "source_name": "Verbot für Viehtrieb",
+        "class_name": "VerbotViehtrieb",
+        "sign_code": "DE:257-53",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/102.png"
+      },
+      "103": {
+        "source_name": "Verbot für Kraftomnibusse",
+        "class_name": "VerbotKraftomnibusse",
+        "sign_code": "DE:257-54",
+        "sign_code_scope": "sign",
+        "target_label": "no_bus",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/103.png"
+      },
+      "104": {
+        "source_name": "Verbot für Personenkraftwagen",
+        "class_name": "VerbotPersonenkraftwagen",
+        "sign_code": "DE:257-55",
+        "sign_code_scope": "sign",
+        "target_label": "no_car",
+        "mapping_status": "approved",
+        "mapping_basis": "The red-ring passenger-car prohibition matches the no_car class. The Synset face depicts a side-view car.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/104.png"
+      },
+      "105": {
+        "source_name": "Verbot für Personenkraftwagen mit Anhänger",
+        "class_name": "VerbotPersonenkraftwagenMitAnhaenger",
+        "sign_code": "DE:257-56",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/105.png"
+      },
+      "106": {
+        "source_name": "Verbot für Lastkraftwagen mit Anhänger",
+        "class_name": "VerbotLastkraftwagenMitAnhaenger",
+        "sign_code": "DE:257-57",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/106.png"
+      },
+      "107": {
+        "source_name": "Verbot für Kraftfahrzeuge und Züge, die nicht schneller als 25 km/h fahren können oder dürfen",
+        "class_name": "VerbotKraftfahrzeugeZuegeNichtSchneller25",
+        "sign_code": "DE:257-58",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/107.png"
+      },
+      "108": {
+        "source_name": "Verbot für Fußgänger",
+        "class_name": "VerbotFussgaenger",
+        "sign_code": "DE:259",
+        "sign_code_scope": "sign",
+        "target_label": "no_pedestrian",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/108.png"
+      },
+      "109": {
+        "source_name": "Verbot für Kraftfahrzeuge",
+        "class_name": "VerbotKraftfahrzeuge",
+        "sign_code": "DE:260",
+        "sign_code_scope": "sign",
+        "target_label": "no_car_motorcycle",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/109.png"
+      },
+      "110": {
+        "source_name": "Verbot für kennzeichnungspflichtige Kraftfahrzeuge mit gefährlichen Gütern",
+        "class_name": "VerbotKennzeichnungspflichtigeKraftfahrzeugeGefaehrlicheGueter",
+        "sign_code": "DE:261",
+        "sign_code_scope": "sign",
+        "target_label": "no_dangerous",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/110.png"
+      },
+      "111": {
+        "source_name": "Tatsächliche Masse",
+        "class_name": "TatsaechlicheMasse",
+        "sign_code": "DE:262-5,5",
+        "sign_code_scope": "sign",
+        "target_label": "maxweight",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/111.png"
+      },
+      "112": {
+        "source_name": "Tatsächliche Achslast",
+        "class_name": "TatsaechlicheAchslast",
+        "sign_code": "DE:263-8",
+        "sign_code_scope": "sign",
+        "target_label": "maxaxleweight",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/112.png"
+      },
+      "113": {
+        "source_name": "Tatsächliche Breite",
+        "class_name": "TatsaechlicheBreite2",
+        "sign_code": "DE:264-2",
+        "sign_code_scope": "sign",
+        "target_label": "maxwidth",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/113.png"
+      },
+      "114": {
+        "source_name": "Tatsächliche Breite",
+        "class_name": "TatsaechlicheBreite2Komma3",
+        "sign_code": "DE:264-2,3",
+        "sign_code_scope": "sign",
+        "target_label": "maxwidth",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/114.png"
+      },
+      "115": {
+        "source_name": "Tatsächliche Höhe",
+        "class_name": "TatsaechlicheHoehe",
+        "sign_code": "DE:265-3,8",
+        "sign_code_scope": "sign",
+        "target_label": "maxheight",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/115.png"
+      },
+      "116": {
+        "source_name": "Tatsächliche Länge",
+        "class_name": "TatsaechlicheLaenge",
+        "sign_code": "DE:266-10",
+        "sign_code_scope": "sign",
+        "target_label": "maxlength",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/116.png"
+      },
+      "117": {
+        "source_name": "Schneeketten vorgeschrieben",
+        "class_name": "SchneekettenVorgeschrieben",
+        "sign_code": "DE:268",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/117.png"
+      },
+      "118": {
+        "source_name": "Verbot für Fahrzeuge mit wassergefährdender Ladung",
+        "class_name": "VerbotFahrzeugeWassergefaehrdenderLadung",
+        "sign_code": "DE:269",
+        "sign_code_scope": "sign",
+        "target_label": "no_dangerous_liquid",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/118.png"
+      },
+      "119": {
+        "source_name": "Beginn eines Verkehrsverbots zur Verminderung schädlicher Luftverunreinigungen in einer Zone",
+        "class_name": "BeginnUmweltzone",
+        "sign_code": "DE:270.1",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/119.png"
+      },
+      "120": {
+        "source_name": "Ende eines Verkehrsverbots zur Verminderung schädlicher Luftverunreinigungen in einer Zone",
+        "class_name": "EndeUmweltzone",
+        "sign_code": "DE:270.2",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/120.png"
+      },
+      "121": {
+        "source_name": "Verbot des Wendens",
+        "class_name": "VerbotWenden",
+        "sign_code": "DE:272",
+        "sign_code_scope": "sign",
+        "target_label": "no_u_turn",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/121.png"
+      },
+      "122": {
+        "source_name": "Verbot des Unterschreitens des angegebenen Mindestabstandes",
+        "class_name": "VerbotUnterschreitenMindestabstand",
+        "sign_code": "DE:273-70",
+        "sign_code_scope": "sign",
+        "target_label": "min_distance",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/122.png"
+      },
+      "123": {
+        "source_name": "Beginn einer Tempo 30-Zone",
+        "class_name": "BeginnZone30",
+        "sign_code": "DE:274.1",
+        "sign_code_scope": "sign",
+        "target_label": "zone:30",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/123.png"
+      },
+      "124": {
+        "source_name": "Beginn einer Tempo 20-Zone in verkehrsberuhigten Geschäftsbereichen",
+        "class_name": "BeginnZone20",
+        "sign_code": "DE:274.1-20",
+        "sign_code_scope": "sign",
+        "target_label": "zone:20",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/124.png"
+      },
+      "125": {
+        "source_name": "Ende einer Tempo 30-Zone",
+        "class_name": "EndeZone30",
+        "sign_code": "DE:274.2",
+        "sign_code_scope": "sign",
+        "target_label": "zone:30:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/125.png"
+      },
+      "126": {
+        "source_name": "Ende einer Tempo 20-Zone in verkehrsberuhigten Geschäftsbereichen",
+        "class_name": "EndeZone20",
+        "sign_code": "DE:274.2-20",
+        "sign_code_scope": "sign",
+        "target_label": "zone:end",
+        "mapping_status": "approved",
+        "mapping_basis": "End of a Tempo 20 zone occurs in the real generic zone:end crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/126.png"
+      },
+      "127": {
+        "source_name": "Vorgeschriebene Mindestgeschwindigkeit 30",
+        "class_name": "VorgeschriebeneMindestgeschwindigkeit",
+        "sign_code": "DE:275-30",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/127.png"
+      },
+      "128": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 5",
+        "class_name": "EndeGeschwindigkeit5",
+        "sign_code": "DE:278-5",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/128.png"
+      },
+      "129": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 10",
+        "class_name": "EndeGeschwindigkeit10",
+        "sign_code": "DE:278-10",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/129.png"
+      },
+      "130": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 20",
+        "class_name": "EndeGeschwindigkeit20",
+        "sign_code": "DE:278-20",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/130.png"
+      },
+      "131": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 30",
+        "class_name": "EndeGeschwindigkeit30",
+        "sign_code": "DE:278-30",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/131.png"
+      },
+      "132": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 40",
+        "class_name": "EndeGeschwindigkeit40",
+        "sign_code": "DE:278-40",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/132.png"
+      },
+      "133": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 50",
+        "class_name": "EndeGeschwindigkeit50",
+        "sign_code": "DE:278-50",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/133.png"
+      },
+      "134": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 60",
+        "class_name": "EndeGeschwindigkeit60",
+        "sign_code": "DE:278-60",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/134.png"
+      },
+      "135": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 70",
+        "class_name": "EndeGeschwindigkeit70",
+        "sign_code": "DE:278-70",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/135.png"
+      },
+      "136": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 90",
+        "class_name": "EndeGeschwindigkeit90",
+        "sign_code": "DE:278-90",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/136.png"
+      },
+      "137": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 100",
+        "class_name": "EndeGeschwindigkeit100",
+        "sign_code": "DE:278-100",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/137.png"
+      },
+      "138": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 110",
+        "class_name": "EndeGeschwindigkeit110",
+        "sign_code": "DE:278-110",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/138.png"
+      },
+      "139": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 120",
+        "class_name": "EndeGeschwindigkeit120",
+        "sign_code": "DE:278-120",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/139.png"
+      },
+      "140": {
+        "source_name": "Ende der zulässigen Höchstgeschwindigkeit 130",
+        "class_name": "EndeGeschwindigkeit130",
+        "sign_code": "DE:278-130",
+        "sign_code_scope": "sign",
+        "target_label": "maxspeed:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/140.png"
+      },
+      "141": {
+        "source_name": "Ende der vorgeschriebenen Mindestgeschwindigkeit",
+        "class_name": "EndeMindestgeschwindigkeit",
+        "sign_code": "DE:279-30",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/141.png"
+      },
+      "142": {
+        "source_name": "Ende der Vorfahrtstraße",
+        "class_name": "EndeVorfahrtsstrasse",
+        "sign_code": "DE:307",
+        "sign_code_scope": "sign",
+        "target_label": "priority:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/142.png"
+      },
+      "143": {
+        "source_name": "Vorrang vor dem Gegenverkehr",
+        "class_name": "VorrangVorGegenverkehr",
+        "sign_code": "DE:308",
+        "sign_code_scope": "sign",
+        "target_label": "priority:forward",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/143.png"
+      },
+      "144": {
+        "source_name": "Beginn eines verkehrsberuhigten Bereichs",
+        "class_name": "BeginnVerkehrsberuhigterBereich",
+        "sign_code": "DE:325.1",
+        "sign_code_scope": "sign",
+        "target_label": "DE:325.1",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/144.png"
+      },
+      "145": {
+        "source_name": "Ende eines verkehrsberuhigten Bereichs",
+        "class_name": "EndeVerkehrsberuhigterBereich",
+        "sign_code": "DE:325.2",
+        "sign_code_scope": "sign",
+        "target_label": "DE:325.2",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/145.png"
+      },
+      "146": {
+        "source_name": "Tunnel",
+        "class_name": "Tunnel",
+        "sign_code": "DE:327",
+        "sign_code_scope": "sign",
+        "target_label": "tunnel:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/146.png"
+      },
+      "147": {
+        "source_name": "Nothalte- und Pannenbucht",
+        "class_name": "NothalteUndPannenbucht",
+        "sign_code": "DE:328",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/147.png"
+      },
+      "148": {
+        "source_name": "Autobahn",
+        "class_name": "Autobahn",
+        "sign_code": "DE:330.1",
+        "sign_code_scope": "sign",
+        "target_label": "motorway:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/148.png"
+      },
+      "149": {
+        "source_name": "Ende der Autobahn",
+        "class_name": "EndeAutbahn",
+        "sign_code": "DE:330.2",
+        "sign_code_scope": "sign",
+        "target_label": "motorway:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/149.png"
+      },
+      "150": {
+        "source_name": "Kraftfahrstraße",
+        "class_name": "Kraftfahrstrasse",
+        "sign_code": "DE:331.1",
+        "sign_code_scope": "sign",
+        "target_label": "trunk:start",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/150.png"
+      },
+      "151": {
+        "source_name": "Ende der Kraftfahrstraße",
+        "class_name": "EndeKraftfahrstrasse",
+        "sign_code": "DE:331.2",
+        "sign_code_scope": "sign",
+        "target_label": "trunk:end",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/151.png"
+      },
+      "152": {
+        "source_name": "Fußgängerüberweg, Aufstellung rechts",
+        "class_name": "FussgaengerueberwegRechts",
+        "sign_code": "DE:350-10",
+        "sign_code_scope": "sign",
+        "target_label": "pedestrian_crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/152.png"
+      },
+      "153": {
+        "source_name": "Fußgängerüberweg, Aufstellung links",
+        "class_name": "FussgaengerueberwegLinks",
+        "sign_code": "DE:350-20",
+        "sign_code_scope": "sign",
+        "target_label": "pedestrian_crossing",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/153.png"
+      },
+      "154": {
+        "source_name": "Wasserschutzgebiet",
+        "class_name": "Wasserschutzgebiet",
+        "sign_code": "DE:354",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/154.png"
+      },
+      "155": {
+        "source_name": "Verkehrshelfer",
+        "class_name": "Verkehrshelfer",
+        "sign_code": "DE:356",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/155.png"
+      },
+      "156": {
+        "source_name": "Sackgasse",
+        "class_name": "Sackgasse",
+        "sign_code": "DE:357",
+        "sign_code_scope": "sign",
+        "target_label": "no_exit",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/156.png"
+      },
+      "157": {
+        "source_name": "Sackgasse; für Radverkehr und Fußgänger durchlässige Sackgasse",
+        "class_name": "SackgasseRadverkehrFussgaengerDurchlaessig",
+        "sign_code": "DE:357-50",
+        "sign_code_scope": "sign",
+        "target_label": "no_exit:car",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/157.png"
+      },
+      "158": {
+        "source_name": "Sackgasse; für Fußgänger durchlässige Sackgasse",
+        "class_name": "SackgasseFussgaengerDurchlaessig",
+        "sign_code": "DE:357-51",
+        "sign_code_scope": "sign",
+        "target_label": "no_exit:car",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/158.png"
+      },
+      "159": {
+        "source_name": "für Radverkehr durchlässige Sackgasse",
+        "class_name": "SackgasseRadverkehrDurchlaessig",
+        "sign_code": "DE:357-52",
+        "sign_code_scope": "sign",
+        "target_label": "no_exit:car",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/159.png"
+      },
+      "160": {
+        "source_name": "KFZ mit einer zulässigen Gesamtmasse über 3,5 t – ohne Pfeilsymbol",
+        "class_name": "KFZZulaessigeGesamtmasse3Komma5TOhnePfeilsymbol",
+        "sign_code": "DE:442-50",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/160.png"
+      },
+      "161": {
+        "source_name": "Kennzeichnungspflichtige Fahrzeuge mit gefährlichen Gütern – ohne Pfeilsymbol",
+        "class_name": "KennzeichnungspflichtigeFahrzeugeGefaehrlicheGueterOhnePfeilsymbol",
+        "sign_code": "DE:442-51",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/161.png"
+      },
+      "162": {
+        "source_name": "Fahrzeuge mit wassergefährdender Ladung – ohne Pfeilsymbol",
+        "class_name": "FahrzeugeMitWassergefaehrdenderLadungOhnePfeilsymbol",
+        "sign_code": "DE:442-52",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/162.png"
+      },
+      "163": {
+        "source_name": "Radverkehr – ohne Pfeilsymbol",
+        "class_name": "RadverkehrOhnePfeilsymbol",
+        "sign_code": "DE:442-53",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/163.png"
+      },
+      "164": {
+        "source_name": "Ankündigung oder Fortsetzung der Umleitung, ohne Pfeilsymbol",
+        "class_name": "AnkuendigungOderFortsetzungUmleitungOhnePfeilsymbol",
+        "sign_code": "DE:455.1-50",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/164.png"
+      },
+      "165": {
+        "source_name": "Ende der Umleitung",
+        "class_name": "EndeUmleitung",
+        "sign_code": "DE:455.2",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/165.png"
+      },
+      "166": {
+        "source_name": "Umleitungswegweiser, linksweisend",
+        "class_name": "UmleitungswegweiserLinksweisend",
+        "sign_code": "DE:454-10",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/166.png"
+      },
+      "167": {
+        "source_name": "Umleitungswegweiser, rechtsweisend",
+        "class_name": "UmleitungswegweiserRechtsweisend",
+        "sign_code": "DE:454-20",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/167.png"
+      },
+      "168": {
+        "source_name": "Umleitungsankündigung",
+        "class_name": "Umleitungsankuendigung",
+        "sign_code": "DE:457.1",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/168.png"
+      },
+      "169": {
+        "source_name": "Ende der Umleitungsankündigung",
+        "class_name": "EndeDerUmleitungsankuendigung",
+        "sign_code": "DE:457.2",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/169.png"
+      },
+      "170": {
+        "source_name": "Richtungstafel in Kurven (Aufstellung rechts)",
+        "class_name": "RichtungstafelnInKurvenKleinRechts",
+        "sign_code": "DE:625",
+        "sign_code_scope": "family",
+        "target_label": "arrow:red",
+        "mapping_status": "approved",
+        "mapping_basis": "Single or repeated red chevrons in either direction are members of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/170_new.png",
+        "sign_code_note": "The published artwork identifies the chevron board and direction. Its physical dimensions are unspecified."
+      },
+      "171": {
+        "source_name": "Richtungstafel in Kurven (Aufstellung links)",
+        "class_name": "RichtungstafelnInKurvenKleinLinks",
+        "sign_code": "DE:625",
+        "sign_code_scope": "family",
+        "target_label": "arrow:red",
+        "mapping_status": "approved",
+        "mapping_basis": "Single or repeated red chevrons in either direction are members of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/171_new.png",
+        "sign_code_note": "The published artwork identifies the chevron board and direction. Its physical dimensions are unspecified."
+      },
+      "172": {
+        "source_name": "Richtungstafel in Kurven (Aufstellung rechts)",
+        "class_name": "RichtungstafelnInKurvenGrossRechts",
+        "sign_code": "DE:625",
+        "sign_code_scope": "family",
+        "target_label": "arrow:red",
+        "mapping_status": "approved",
+        "mapping_basis": "Single or repeated red chevrons in either direction are members of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/172.png",
+        "sign_code_note": "The published artwork identifies the chevron board and direction. Its physical dimensions are unspecified."
+      },
+      "173": {
+        "source_name": "Richtungstafel in Kurven (Aufstellung links)",
+        "class_name": "RichtungstafelnInKurvenGrossLinks",
+        "sign_code": "DE:625",
+        "sign_code_scope": "family",
+        "target_label": "arrow:red",
+        "mapping_status": "approved",
+        "mapping_basis": "Single or repeated red chevrons in either direction are members of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/173.png",
+        "sign_code_note": "The published artwork identifies the chevron board and direction. Its physical dimensions are unspecified."
+      },
+      "174": {
+        "source_name": "Beginn einer Fahrradzone",
+        "class_name": "BeginnFahrradzone",
+        "sign_code": "DE:244.3",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/174.png"
+      },
+      "175": {
+        "source_name": "Ende einer Fahrradzone",
+        "class_name": "EndeFahrradzone",
+        "sign_code": "DE:244.4",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/175.png"
+      },
+      "176": {
+        "source_name": "Verbot des Überholens von einspurigen Fahrzeugen für mehrspurige Kraftfahrzeuge und Krafträder mit Beiwagen",
+        "class_name": "VerbotUeberholenEinspurigeFahrzeuge",
+        "sign_code": "DE:277.1",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/176.png"
+      },
+      "177": {
+        "source_name": "Ende des Verbots des Überholens von einspurigen Fahrzeugen für mehrspurige Kraftfahrzeuge und Krafträder mit Beiwagen",
+        "class_name": "EndeVerbotUeberholenEinspurigeFahrzeuge",
+        "sign_code": "DE:281.1",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/177.png"
+      },
+      "178": {
+        "source_name": "Carsharingfahrzeuge frei",
+        "class_name": "CarsharingfahrzeugeFrei",
+        "sign_code": "DE:1024-21",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/178.png"
+      },
+      "179": {
+        "source_name": "Mehrfachbesetzte Personenkraftwagen frei",
+        "class_name": "MehrfachbesetzePersonenkraftwagenFrei",
+        "sign_code": "DE:1024-22",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/179.png"
+      },
+      "180": {
+        "source_name": "Bei Nässe",
+        "class_name": "BeiNaesse",
+        "sign_code": "DE:1053-35",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/180.png"
+      },
+      "181": {
+        "source_name": "Parkhaus, Parkgarage",
+        "class_name": "Parkhaus",
+        "sign_code": "DE:314-50",
+        "sign_code_scope": "sign",
+        "target_label": "parking:covered",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/181.png"
+      },
+      "182": {
+        "source_name": "Verlauf der Vorfahrtstraße an Kreuzungen von unten nach links",
+        "class_name": "VerlaufVorfahrtsstrasse1",
+        "sign_code": "DE:1002-10",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/182.png"
+      },
+      "183": {
+        "source_name": "Verlauf der Vorfahrtstraße an Kreuzungen von oben nach links",
+        "class_name": "VerlaufVorfahrtsstrasse2",
+        "sign_code": "DE:1002-11",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/183.png"
+      },
+      "184": {
+        "source_name": "Verlauf der Vorfahrtstraße an Kreuzungen von unten nach rechts",
+        "class_name": "VerlaufVorfahrtsstrasse3",
+        "sign_code": "DE:1002-20",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/184.png"
+      },
+      "185": {
+        "source_name": "Verlauf der Vorfahrtstraße an Kreuzungen von oben nach rechts",
+        "class_name": "VerlaufVorfahrtsstrasse4",
+        "sign_code": "DE:1002-21",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/185.png"
+      },
+      "186": {
+        "source_name": "Verlauf der Vorfahrtstraße von unten nach links, Einmündung von oben",
+        "class_name": "VerlaufVorfahrtsstrasse5",
+        "sign_code": "DE:1002-12",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/186.png"
+      },
+      "187": {
+        "source_name": "Verlauf der Vorfahrtstraße von unten nach links, Einmündung von rechts",
+        "class_name": "VerlaufVorfahrtsstrasse6",
+        "sign_code": "DE:1002-13",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/187.png"
+      },
+      "188": {
+        "source_name": "Verlauf der Vorfahrtstraße von oben nach links, Einmündung von unten",
+        "class_name": "VerlaufVorfahrtsstrasse7",
+        "sign_code": "DE:1002-14",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/188.png"
+      },
+      "189": {
+        "source_name": "Verlauf der Vorfahrtstraße von unten nach rechts, Einmündung von oben",
+        "class_name": "VerlaufVorfahrtsstrasse8",
+        "sign_code": "DE:1002-22",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/189.png"
+      },
+      "190": {
+        "source_name": "Verlauf der Vorfahrtstraße von unten nach rechts, Einmündung von links",
+        "class_name": "VerlaufVorfahrtsstrasse9",
+        "sign_code": "DE:1002-23",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/190.png"
+      },
+      "191": {
+        "source_name": "Verlauf der Vorfahrtstraße von oben nach rechts, Einmündung von unten",
+        "class_name": "VerlaufVorfahrtsstrasse10",
+        "sign_code": "DE:1002-24",
+        "sign_code_scope": "sign",
+        "target_label": "supplementary:plate",
+        "mapping_status": "approved",
+        "mapping_basis": "The labeled central sign is a rectangular supplementary plate, a subtype of the target.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/191.png"
+      },
+      "192": {
+        "source_name": "Taxenstand",
+        "class_name": "Taxenstand",
+        "sign_code": "DE:229",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/192.png"
+      },
+      "193": {
+        "source_name": "Absolutes Haltverbot",
+        "class_name": "AbsolutesHalteverbot",
+        "sign_code": "DE:283",
+        "sign_code_scope": "sign",
+        "target_label": "no_stop",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/193.png"
+      },
+      "194": {
+        "source_name": "Eingeschränktes Haltverbot",
+        "class_name": "EingeschraenktesHalteverbot",
+        "sign_code": "DE:286",
+        "sign_code_scope": "sign",
+        "target_label": "no_parking",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/194.png"
+      },
+      "195": {
+        "source_name": "Beginn eines eingeschränkten Haltverbotes für eine Zone",
+        "class_name": "BeginnEingeschraenktesHalteverbotZone",
+        "sign_code": "DE:290.1",
+        "sign_code_scope": "sign",
+        "target_label": "zone:no_parking",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/195.png"
+      },
+      "196": {
+        "source_name": "Ende eines eingeschränkten Haltverbotes für eine Zone",
+        "class_name": "EndeEingeschraenktesHalteverbotZone",
+        "sign_code": "DE:290.2",
+        "sign_code_scope": "sign",
+        "target_label": "zone:end",
+        "mapping_status": "approved",
+        "mapping_basis": "The same end-of-restricted-parking-zone sign occurs in the real zone:end crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/196.png"
+      },
+      "197": {
+        "source_name": "Parken",
+        "class_name": "Parken",
+        "sign_code": "DE:314",
+        "sign_code_scope": "sign",
+        "target_label": "parking",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/197.png"
+      },
+      "198": {
+        "source_name": "Gefälle 10 %",
+        "class_name": "Gefaelle10",
+        "sign_code": "DE:108-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:decline",
+        "mapping_status": "reference_only",
+        "mapping_basis": "The face shows a 10% downhill gradient. The reviewed decline label has no deployed German classifier output.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/198.png"
+      },
+      "199": {
+        "source_name": "Steigung 10 %",
+        "class_name": "Steigung10",
+        "sign_code": "DE:110-10",
+        "sign_code_scope": "sign",
+        "target_label": "hazard:incline",
+        "mapping_status": "approved",
+        "mapping_basis": "Publisher sign is a member of the target label.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/199.png"
+      },
+      "200": {
+        "source_name": "Andreaskreuz",
+        "class_name": "Andreaskreuz",
+        "sign_code": "DE:201-51",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/200.png"
+      },
+      "201": {
+        "source_name": "Erste Hilfe",
+        "class_name": "ErsteHilfe",
+        "sign_code": "DE:358",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/201.png"
+      },
+      "202": {
+        "source_name": "Zollstelle",
+        "class_name": "Zollstelle",
+        "sign_code": "DE:392",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/202.png"
+      },
+      "203": {
+        "source_name": "Mautpflicht nach dem Bundesfernstraßenmautgesetz",
+        "class_name": "Mautpflicht",
+        "sign_code": "DE:390",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/203.png"
+      },
+      "204": {
+        "source_name": "Ende der Mautpflicht nach dem Bundesfernstraßenmautgesetz",
+        "class_name": "EndeMautpflicht",
+        "sign_code": "DE:390.2",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/204.png"
+      },
+      "205": {
+        "source_name": "Mautpflichtige Strecke",
+        "class_name": "MautflichtigeStrecke",
+        "sign_code": "DE:391",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/205.png"
+      },
+      "206": {
+        "source_name": "Polizei",
+        "class_name": "Polizei",
+        "sign_code": "DE:363",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/206.png"
+      },
+      "207": {
+        "source_name": "Fernsprecher",
+        "class_name": "Fernsprecher",
+        "sign_code": "DE:365-50",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/207.png"
+      },
+      "208": {
+        "source_name": "Tankstelle",
+        "class_name": "Tankstelle",
+        "sign_code": "DE:365-52",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/208.png"
+      },
+      "209": {
+        "source_name": "Ladestation für Elektrofahrzeuge",
+        "class_name": "LadestationFuerElektrofahrzeuge",
+        "sign_code": "DE:365-65",
+        "sign_code_scope": "sign",
+        "target_label": "other:charging",
+        "mapping_status": "approved",
+        "mapping_basis": "Blue electric charging pump and plug icon matches real other:charging crops.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/209.png"
+      },
+      "210": {
+        "source_name": "Informationsstelle",
+        "class_name": "Informationsstelle",
+        "sign_code": "DE:365-61",
+        "sign_code_scope": "sign",
+        "target_label": null,
+        "mapping_status": "unmapped",
+        "mapping_basis": "No verified corresponding target class.",
+        "source_artwork": "https://synset.de/wp-content/uploads/2024/08/210.png"
       }
     }
   }

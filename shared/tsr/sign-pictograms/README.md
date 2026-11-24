@@ -37,7 +37,7 @@ core artwork subset into a runtime pack.
 
 `../prolix-de-class-catalog-v1.json` preserves the 142 ordered labels in the
 bundled Core ML and TensorFlow Lite classifiers. Both exports bind to checkpoint
-`c057107156d7bd4d535ece48f88b492e9c754ba59e951302ebdf77bfd75a2dda`.
+`e10f4a7f8a2d2c3554dc0ef2d0e1f96e98948c7648432ed13098ef05ff6c3299`.
 Its first 134 indices retain the original Panoramax `classify_de_road_signs`
 vocabulary from revision `5360aa6f4ef6c7b1998044b18d00b4d0b1a5a790`.
 Reference catalogs and pictogram aliases do not define additional model outputs.
@@ -86,13 +86,15 @@ Reference catalogs and pictogram aliases do not define additional model outputs.
 - `THIRD_PARTY_NOTICES.txt`: offline credit and licensing notice for packaging
   with the PNG assets.
 
-Verify all bytes and image dimensions offline:
+From the OpenSign Core checkout, verify the artwork bytes and image dimensions.
+The acquisition scripts, report builder and historical reconciled PDF are
+maintained in [the Core pictogram directory](https://github.com/volzinnovation/opensign-core/tree/codex/opensignmap-mvp/core/src/main/assets/tsr/sign-pictograms).
 
 ```sh
 python3 core/src/main/assets/tsr/sign-pictograms/fetch.py
 
 # Recreate one foreign core set (network + ImageMagick required)
-python3 shared/tsr/sign-pictograms/fetch_national.py FR --fetch
+python3 core/src/main/assets/tsr/sign-pictograms/fetch_national.py FR --fetch
 ```
 
 To restore missing assets, use `fetch.py --fetch`. This requires `curl`, network
@@ -110,6 +112,95 @@ complete outline. Its original SVG is unchanged. The manifest records this
 exception in `png_renderer` and `png_renderer_version`; `fetch.py` checks the
 exact version before rendering a missing PNG. Another platform may
 render different bytes and correctly fail that reproducibility check.
+
+## Review the German source labels
+
+Edit [source-crosswalk-v1.json](source-crosswalk-v1.json) in OpenSign Core.
+The `mobidata.DE` keys preserve all 53 literal `Verkehrszeichennummer` values
+in the pinned MobiData BW review, including qualifiers. `normalized_code`
+records the parsed value. `sign_code` records the national identity the
+resolver may report. `classifier_labels`, `classifier_capability` and
+`classifier_exact_variant_supported` describe the 134-output classifier
+named in `source_metadata.mobidata`. The file retains pictogram eligibility
+and references from that review. Additional qualified German sign codes can
+be resolved on input. The source metadata records the audited inventory date.
+
+The `mapillary.DE` keys are native traffic-sign labels. Printable speed limits
+and their end signs use `mapillary_speed_templates.DE`. Panoramax's 134
+classifier IDs, followed by eight Streetshots outputs, come from the ordered
+`class_labels` in [the German model catalog](../prolix-de-class-catalog-v1.json).
+The catalog's other sign entries supply presentation aliases. Model vocabulary
+and artwork are maintained separately so a display change preserves output indices.
+
+Every central Synset label (0–210) has a `synset.DE` entry. Its numeric key
+is the publisher's Parquet `label`. `class_name` is the raw Parquet name,
+`source_name` is the German publisher caption and `source_artwork` links the
+reference diagram. The two crossing-sign families share Parquet names, so
+use the numeric ID for them. `sign_code` follows the federal VzKat designation
+and printed values on the source sign. `sign_code_scope: family` identifies
+chevron boards whose physical dimensions prevent assigning a specific variant.
+`target_label` is the reviewed label. The status `approved` identifies a deployed
+classifier target. The status `reference_only` identifies a label without a model
+output index. A JSON null and `mapping_status: unmapped` record an unresolved ID.
+`mapping_basis` explains the review decision. The metadata pins the dataset
+revision, federal designation reference, attribution and license. The entries
+cover the main sign in each Synset image. Training counts belong to the dataset
+that samples from this mapping. [Publisher sign table](https://synset.de/datasets/synset-signset-ger/) · [Federal sign designations](https://www.verwaltungsvorschriften-im-internet.de/BMVBW-S32-0001-KF10-BS-A008.htm)
+
+Open the [classifier-by-provider CSV](https://github.com/volzinnovation/opensign-core/blob/HEAD/docs/source-labels-de.csv) to
+review the 142 German outputs in model order, followed by approved reference targets
+that have no deployed output index. The Mapillary review marks German-scope exclusions
+as `excluded_de` and reference targets as `reference_only`. Each assignment has its own row.
+The first column repeats the target, and the provider's column contains its native ID.
+Filter by target to see all its assignments. A target with no assignment gets a single row
+with empty provider columns. Synset uses numeric publisher IDs. The Panoramax column
+covers its original 134 outputs. Use `--grouped` for the previous layout with all IDs on one row per target. The final column links a public pictogram. It uses the catalog artwork when it
+represents the target, followed by a reviewed MobiData, Synset or Mapillary
+example. A representative example can show one variant of a broader family.
+A blank means there is no verified pictogram for that output. The [unresolved IDs](https://github.com/volzinnovation/opensign-core/blob/HEAD/docs/source-labels-de-unresolved.csv)
+retain sources with ambiguous or unsupported targets and the reason for each decision.
+The OpenStreetMap column contains accepted German `traffic_sign` notation.
+The [German OSM traffic sign catalogue](https://trafficsigns.osm-verkehrswende.org/DE)
+shows pictograms for the IDs its selector supports. Some accepted IDs have no picture in the selector.
+The MobiData column contains literal IDs observed in the pinned BW inventory.
+
+The [Mapillary pictogram review](https://github.com/volzinnovation/opensign-core/blob/HEAD/docs/mapillary-de.md) places each
+publisher sprite beside its German reference. The scope comprises the 60 labels
+in the Baden-Württemberg inventory dated 2026-11-20, existing German aliases,
+and publisher-supported numbered variants of the two German speed templates.
+The Mapillary section of the JSON records the pinned sprite revision and the
+visual evidence for each source ID. For example, the pitched roof over the P
+distinguishes `information--parking--g2` from the plain P in `information--parking--g1`.
+The MobiData rows retain the historical 134-class capability fields alongside
+the current `target_label` and its review basis.
+
+Regenerate the review files from the Core repository root.
+
+```sh
+python3 scripts/review_sign_crosswalk.py --code DE:206
+python3 scripts/review_sign_crosswalk.py --code DE:274-50
+python3 scripts/review_sign_crosswalk.py --target maxspeed:end
+python3 scripts/review_sign_crosswalk.py > docs/source-labels-de.csv
+python3 scripts/review_sign_crosswalk.py --unresolved > docs/source-labels-de-unresolved.csv
+python3 scripts/review_sign_crosswalk.py --mapillary-markdown > docs/mapillary-de.md
+```
+
+For source-native application lookups, `resolve_sign(source, label, country)`
+returns `SourceSign(source_label, sign_code, image_path)`. For a cross-source
+comparison, `review_source_sign` also returns the reviewed classifier target
+and national-code scope. It can return a Survey-specific artwork hint for
+Mapillary labels that lack a reviewed national code.
+
+| German sign | MobiData BW | Panoramax | Mapillary | Synset |
+|---|---|---|---|---|
+| Stop, `DE:206` | `DE:206` | `stop` | `regulatory--stop--g1` | 14 · `Stop` |
+| 50 km/h, `DE:274-50` | `DE:274-50` | `maxspeed:50` | `regulatory--maximum-speed-limit-50--g1` | 2 · `Geschwindigkeit50` |
+
+Synset 93 is `DE:244.1`, the start of a cycle street. Its classifier target
+is unresolved because inspected `bicycle:priority` training photos show a
+RESPEKT campaign sign. Synset 6 is `DE:278-80`; it belongs to the broader
+classifier class `maxspeed:end`. National identities and model targets can
+therefore be reviewed independently.
 
 ## Display contract
 
@@ -136,11 +227,13 @@ From a committed Core checkout, regenerate them with:
 ```
 python3 core/src/main/assets/tsr/sync_sign_crosswalk.py --profile inspector ../streetshots-inspector
 python3 core/src/main/assets/tsr/sync_sign_crosswalk.py --profile youspeed ../youspeed.de
+python3 core/src/main/assets/tsr/sync_sign_crosswalk.py --profile analytics ../Woladen.de-analytics
 ```
 
 Each snapshot records the Core revision and SHA-256 hashes. Consumers can
 verify their checked-in copy offline with
-`python3 shared/tsr/sync_sign_crosswalk.py --verify-local .`.
+`python3 shared/tsr/sync_sign_crosswalk.py --verify-local .`. Analytics
+uses the same command with the script in `commercial_backend/youspeed/crop_taxonomy`.
 
 Render the PNG alpha directly, without a white card or background outside the
 physical sign outline. White sign faces, lettering and borders remain opaque.
@@ -205,6 +298,18 @@ generic `maxspeed:end` must not display a made-up crossed-out 30. The explicit
 `maxspeed:25` model class is retained but currently has no matching asset from
 the supplied plate. Generic `zone:end` does not identify a zone's number;
 `zone:30:end` has a specific 30-zone-end pictogram.
+
+## Representative Synset pictograms
+
+The German display crosswalk names a reviewed Synset example for selected
+classifier classes without dedicated artwork. Each `synset_id` links to the
+publisher face under `synset.DE`. The local PNG is and remains an example of the
+class. A pictured placement, direction, gradient or zone type is specific to
+that face. Synset 199 illustrates the generic `hazard:incline` output with an
+uphill warning. Synset 198 depicts a downhill warning and maps to the
+`hazard:decline` reference label, which has no classifier output index.
+Synset examples are listed separately from exact German inventory artwork and
+carry their own credit. [Artwork attribution](THIRD_PARTY_NOTICES.txt)
 
 ## Reviewed mapping corrections
 

@@ -5,6 +5,24 @@ and [the Belgium pilot collection guide](../../docs/TSR_APPLICABILITY_BELGIUM_PI
 
 # YouSpeed traffic-sign recognition contracts
 
+## Sign mappings and offline assets
+
+Edit provider labels for MobiData BW, Panoramax, Mapillary and Synset in the
+[OpenSign Core source crosswalk](https://github.com/volzinnovation/opensign-core/blob/HEAD/core/src/main/assets/tsr/sign-pictograms/source-crosswalk-v1.json).
+The five country catalogs and the pictograms here are generated, offline inputs
+for the Android and iPhone builds. Their Core revision and per-file checksums
+are recorded in [the asset lock](sign-assets.lock.json). From a checkout of the
+reviewed Core revision, refresh this repository with
+`python3 -B core/src/main/assets/tsr/sync_sign_crosswalk.py /path/to/youspeed.de --profile youspeed`.
+The artwork fetchers and the historical mapping PDF are available in
+[Core's pictogram directory](https://github.com/volzinnovation/opensign-core/tree/HEAD/core/src/main/assets/tsr/sign-pictograms).
+
+The German app catalog has 142 ordered model outputs. The separate
+[134-output baseline](baselines/de134-expanded-reference-2026-11-09/README.md)
+reproduces earlier model evaluations. [The review ledger](mapping-review-v1.json)
+also records how YouSpeed displays and announces signs. These files serve
+different versions and product decisions.
+
 The [2026-09-10 Prolix alignment review](../../docs/TSR_PROLIX_ALIGNMENT_2026-09-10.md)
 documents the shared 134-class German label catalog, Commons pictograms,
 end-sign mappings and the real-image Zeichen 310 capability experiment.
