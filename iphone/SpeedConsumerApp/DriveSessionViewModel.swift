@@ -1383,6 +1383,7 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         var authorityEligible = false
         var plainEligible = false
         var knownPlate = false
+        var vehiclePlate: String?
         var frames = Set<String>()
         var lastVerdict: ConditionalOCRInterpretation.Verdict?
         var reason = "pixel_verification_pending"
@@ -4398,7 +4399,8 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
         let speed = event.candidate?.value
         let classID = event.candidate?.rawClassId ?? ""
         guard let speed, classID == "maxspeed:\(speed)", !ids.isEmpty else { return }
-        let positivePlate = event.candidate?.conditionState != TrafficSignConditionState.none
+        let vehiclePlate = TrafficSignRestriction.cargoPlate(in: event.candidate?.restrictions ?? [])
+        let positivePlate = vehiclePlate != nil || event.candidate?.conditionState != TrafficSignConditionState.none
             || event.candidate?.restrictions.isEmpty == false
             || actual?.assemblyEvidence?.scan.components.isEmpty == false
             || actual?.rawText?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
@@ -4440,7 +4442,11 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             if positivePlate {
                 entry.knownPlate = true; entry.plain = false
             }
-            if speedReference.voice != nil {
+            if entry.vehiclePlate == nil, let vehiclePlate {
+                entry.vehiclePlate = vehiclePlate
+                appendTSRLog("event=vehicle_speed_sign_suppressed track=\(key) plate=\(vehiclePlate) speed=\(speed)", timestamp: event.frameTimestampUtc)
+            }
+            if entry.vehiclePlate != nil || speedReference.voice != nil {
                 entry.tracker = .init(); entry.record = nil; entry.plain = false
                 entry.freshAfterVoice = conditionalOCRNow; entry.lastVerdict = nil
             } else if let actual, ids.contains(actual.physicalSignID), actual.frameID == event.frameId,
@@ -4535,7 +4541,9 @@ final class DriveSessionViewModel: NSObject, ObservableObject {
             // Auxiliary uncertainty alone never withdraws the independently admitted primary.
             if !entry.knownPlate || entry.plain { conditionalOCRLive[key] = entry; continue }
             let verdict: ConditionalOCRInterpretation.Verdict
-            if entry.authorityEligible, liveConditionalScopeIsCurrent(entry), let record = entry.record {
+            if entry.vehiclePlate != nil {
+                verdict = .inapplicable
+            } else if entry.authorityEligible, liveConditionalScopeIsCurrent(entry), let record = entry.record {
                 verdict = record.verdict(at:now,distanceM:speedReference.traveledMeters,scopeID:entry.scope,
                     generation:trafficSignContextGeneration)
             } else { verdict = .unresolved }

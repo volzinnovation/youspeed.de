@@ -953,7 +953,7 @@ class TrafficSignRecognitionOrchestrator<F : TrafficSignNormalizedFrameHandle>(
                             TrafficSignModelComponentLineage(
                                 role = "semantic_classifier",
                                 artifactSha256 = artifact.sha256,
-                                preprocessingVersion = modelPack.preprocessing.version,
+                                preprocessingVersion = TrafficSignClassifierGeometry.PREPROCESSING_VERSION,
                                 calibrationId = modelPack.calibration.revision,
                             ),
                         )

@@ -8,6 +8,119 @@ import CoreML
 final class TrafficSignDetectorInputTests: XCTestCase {
     private let context = CIContext(options: [.cacheIntermediates: false])
 
+    func testClassifierCropChecksAspectInSourcePixels() {
+        let extent = CGRect(x: 0, y: 0, width: 400, height: 200)
+        let narrow = CGRect(x: 0.25, y: 0.25, width: 79.0 / 400, height: 0.5)
+        XCTAssertNil(TrafficSignClassifierInput.sourceCrop(for: narrow, in: extent))
+        let boundary = CGRect(x: 0.25, y: 0.25, width: 0.2, height: 0.5)
+        XCTAssertEqual(TrafficSignClassifierInput.sourceCrop(for: boundary, in: extent),
+                       CGRect(x: 100, y: 50, width: 80, height: 100))
+    }
+
+    func testClassifierCropFitsNarrowByHeightAndWideByWidth() throws {
+        let extent = CGRect(x: 0, y: 0, width: 400, height: 200)
+        let face = CGRect(x: 100, y: 50, width: 80, height: 100)
+        let green = CIImage(color: CIColor(red: 0, green: 1, blue: 0)).cropped(to: face)
+        let blue = CIImage(color: CIColor(red: 0, green: 0, blue: 1))
+            .cropped(to: CGRect(x: 40, y: 50, width: 20, height: 100))
+        let yellow = CIImage(color: CIColor(red: 1, green: 1, blue: 0))
+            .cropped(to: CGRect(x: 220, y: 50, width: 20, height: 100))
+        let red = CIImage(color: CIColor(red: 1, green: 0, blue: 0)).cropped(to: extent)
+        let source = green.composited(over: blue.composited(over: yellow.composited(over: red)))
+        let padded = try XCTUnwrap(TrafficSignClassifierInput.image(source: source, crop: face, context: context))
+        XCTAssertEqual(padded.width, 224)
+        XCTAssertEqual(padded.height, 224)
+        assertPixel(padded, x: 20, y: 112, rgb: [0, 0, 0])
+        assertPixel(padded, x: 204, y: 112, rgb: [0, 0, 0])
+        assertPixel(padded, x: 112, y: 1, rgb: [0, 255, 0])
+        assertPixel(padded, x: 112, y: 222, rgb: [0, 255, 0])
+
+        let wide = CGRect(x: 40, y: 50, width: 200, height: 100)
+        let fitted = try XCTUnwrap(TrafficSignClassifierInput.image(source: source, crop: wide, context: context))
+        assertPixel(fitted, x: 8, y: 112, rgb: [0, 0, 255])
+        assertPixel(fitted, x: 215, y: 112, rgb: [255, 255, 0])
+        assertPixel(fitted, x: 112, y: 48, rgb: [0, 0, 0])
+        assertPixel(fitted, x: 112, y: 175, rgb: [0, 0, 0])
+        assertPixel(fitted, x: 112, y: 58, rgb: [0, 255, 0])
+        assertPixel(fitted, x: 112, y: 165, rgb: [0, 255, 0])
+    }
+
+    @MainActor
+    func testBundledTownExitRecoveryOnDevice() throws {
+        let packURL = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
+        let original = try TrafficSignModelPackDirectoryLoader.load(from: packURL,
+            runtimeVersion: UIDevice.current.systemVersion, appVersion: "1.5", countryCode: "DE")
+        let (pack, _) = try XCTUnwrap(TrafficSignRuntimeBootstrap.townTrial(original, countryCode: "DE"))
+        XCTAssertEqual(pack.trialDetectorThreshold, 0.70)
+        XCTAssertEqual(pack.detectorArtifact.sha256, "73a2818194be58673ba63fa7c92f6c12f9d0ef046f39649bd97d89e65578c026")
+        XCTAssertEqual(pack.classifierArtifact?.sha256, "9c198e7a9f9e50b686b058a0c74cb93c3db18151bbd0290afa47bf1ec55d3fe2")
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "bad-herrenalb-exit", withExtension: "png",
+                                                           subdirectory: "tsr-town-face"))
+        let exit = try XCTUnwrap(CIImage(contentsOf: url))
+        // Preserve the real pixels while adding a crop margin that suppresses the original gate.
+        let extent = exit.extent.insetBy(dx: 0, dy: -13)
+        let sample = exit.composited(over: CIImage(color: .black).cropped(to: extent))
+        let box = CGRect(x: 0, y: 0, width: 1, height: 1)
+        XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+            source: sample, context: context, box: box, townExit: true))
+        XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.matchesTownFace(
+            source: sample, context: context, box: box, townExit: true, recoverRejectedExit: true))
+    }
+
+    // The road footage stays outside the app bundle. Place reviewed Full HD JPEGs in this test host's Documents.
+    @MainActor
+    func testPhysicalIPhoneTownDriveFrames() throws {
+        let documents = try XCTUnwrap(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first)
+        let directory = documents.appendingPathComponent("TownTrialFrames", isDirectory: true)
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: directory.path), "No staged replay frames")
+        let urls = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension.lowercased() == "jpg" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
+        XCTAssertFalse(urls.isEmpty)
+        let packURL = try DriveSessionViewModel.trafficSignModelPackDirectoryURL(bundle: .main)
+        let baseline = try TrafficSignModelPackDirectoryLoader.load(from: packURL,
+            runtimeVersion: UIDevice.current.systemVersion, appVersion: "1.5", countryCode: "DE")
+        let (pack, backend) = try XCTUnwrap(TrafficSignRuntimeBootstrap.townTrial(baseline, countryCode: "DE"))
+        XCTAssertEqual(pack.trialDetectorThreshold, 0.70)
+        var rows: [[String: Any]] = []
+        for url in urls {
+            try autoreleasepool {
+                let image = try XCTUnwrap(CIImage(contentsOf: url))
+                XCTAssertEqual(image.extent.size, CGSize(width: 1920, height: 1080))
+                let start = ProcessInfo.processInfo.systemUptime
+                let result = try backend.shadowInference(source: image, orientation: .up, context: context)
+                let elapsed = (ProcessInfo.processInfo.systemUptime - start) * 1000
+                let detections: [[String: Any]] = result.legacyDetections.map { sign in
+                    let box = sign.boundingBox
+                    return ["label": sign.rawClassId, "score": sign.rawScore, "classThreshold": sign.classThreshold,
+                            "xywh": [box.x, box.y, box.width, box.height]]
+                }
+                rows.append(["frame": url.deletingPathExtension().lastPathComponent, "detections": detections,
+                             "elapsed_ms": elapsed, "detector_ms": result.detectorLatencyMs,
+                             "classifier_ms": result.classifierLatencyMs])
+            }
+        }
+        try JSONSerialization.data(withJSONObject: rows, options: [.prettyPrinted, .sortedKeys])
+            .write(to: documents.appendingPathComponent("town-trial-results.json"), options: .atomic)
+    }
+
+    func testTownTrialNormalizes4KBeforeApplying32PixelCropGate() {
+        typealias Backend = TrafficSignVisionTwoStageCoreMLBackend
+        let small = CIImage(color: .white).cropped(to: CGRect(x: 0, y: 0, width: 1280, height: 720))
+        let hd = CIImage(color: .white).cropped(to: CGRect(x: 0, y: 0, width: 1920, height: 1080))
+        let ultra = CIImage(color: .white).cropped(to: CGRect(x: 0, y: 0, width: 3840, height: 2160))
+        XCTAssertTrue(Backend.phoneAnalysisSource(small) === small)
+        XCTAssertTrue(Backend.phoneAnalysisSource(hd) === hd)
+        let scaled = Backend.phoneAnalysisSource(ultra)
+        XCTAssertEqual(scaled.extent, hd.extent)
+        let portrait = TrafficSignDetectorInput.upright(source: ultra, orientation: .right)
+        XCTAssertEqual(Backend.phoneAnalysisSource(portrait).extent.size, CGSize(width: 1080, height: 1920))
+        for shortSide in [31.0, 32.0] {
+            let box = CGRect(x: 0.2, y: 0.2, width: 80.0 / 3840, height: (2 * shortSide) / 2160)
+            XCTAssertEqual(Backend.meetsTownTrialMinimumSize(box, sourceSize: scaled.extent.size), shortSide == 32)
+            XCTAssertEqual(Backend.meetsTownTrialMinimumSize(box, sourceSize: hd.extent.size), shortSide == 32)
+        }
+    }
+
     func testPanoramaxTownFaces() throws {
         struct Sample: Decodable { let file: String; let code: Int }
         let bundle = Bundle(for: Self.self)

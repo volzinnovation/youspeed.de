@@ -15,6 +15,38 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class TrafficSignDetectorInputInstrumentedTest {
+    @Test fun classifierCropFitsNarrowByHeightAndWideByWidth() {
+        val source = Bitmap.createBitmap(400, 200, Bitmap.Config.ARGB_8888)
+        Canvas(source).apply {
+            drawColor(Color.RED)
+            drawRect(100f, 50f, 180f, 150f, Paint().apply { color = Color.GREEN })
+            drawRect(40f, 50f, 60f, 150f, Paint().apply { color = Color.BLUE })
+            drawRect(220f, 50f, 240f, 150f, Paint().apply { color = Color.YELLOW })
+        }
+        val face = NormalizedTrafficSignBoundingBox(0.25, 0.25, 0.2, 0.5)
+        try {
+            AndroidTrafficSignClassifierInput().use { input ->
+                val wide = face.copy(x = 0.1, width = 0.5)
+                input.prepare(source, requireNotNull(TrafficSignClassifierGeometry.from(wide, 400, 200)))
+                val tensor = input.bitmap
+                assertEquals(Color.BLUE, tensor.getPixel(8, 112))
+                assertEquals(Color.YELLOW, tensor.getPixel(215, 112))
+                assertEquals(Color.BLACK, tensor.getPixel(112, 48))
+                assertEquals(Color.BLACK, tensor.getPixel(112, 175))
+                assertEquals(Color.GREEN, tensor.getPixel(112, 58))
+                assertEquals(Color.GREEN, tensor.getPixel(112, 165))
+
+                input.prepare(source, requireNotNull(TrafficSignClassifierGeometry.from(face, 400, 200)))
+                assertEquals(224, tensor.width)
+                assertEquals(224, tensor.height)
+                assertEquals(Color.BLACK, tensor.getPixel(20, 112))
+                assertEquals(Color.BLACK, tensor.getPixel(204, 112))
+                assertEquals(Color.GREEN, tensor.getPixel(112, 1))
+                assertEquals(Color.GREEN, tensor.getPixel(112, 222))
+            }
+        } finally { source.recycle() }
+    }
+
     @Test fun collectionCropUsesFullResolutionCoordinates() {
         val source = Bitmap.createBitmap(3840, 2160, Bitmap.Config.ARGB_8888)
         source.eraseColor(Color.GREEN)

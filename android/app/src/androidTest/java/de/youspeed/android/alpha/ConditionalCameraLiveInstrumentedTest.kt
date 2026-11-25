@@ -20,6 +20,46 @@ import org.junit.Test
 
 /** Real bundled detector/OCR pixels are separate from the synthetic road/clock replay below. */
 class ConditionalCameraLiveInstrumentedTest {
+    @Test fun visualCargoPlateWithdrawsOnlyItsCameraTrackWithoutOCR() {
+        Fixture().use { fixture -> fixture.main {
+            val at = fixture.clock.instant()
+            val id = "cargo-30"
+            val candidate = cargoDetection("dobel", NormalizedTrafficSignBoundingBox(31.0/96, 28.0/106, 34.0/96, 35.0/106), 30)
+                .copy(trackId = id, evidenceFrames = 2)
+            assertEquals("DE:1052-31", GermanCargoPlate.codeIn(candidate.restrictions))
+            val event = TrafficSignRecognitionEvent(1, "fixture", "a".repeat(64), "fixture", TrafficSignInputSource.LIVE_FRAME, at,
+                TrafficSignRecognitionState.CONFIRMED, candidate, roadContext = fixture.roadContext, latencyMs = 0.0, thermalState = "nominal",
+                frameId = "cargo-frame", driveSessionId = fixture.session)
+            val base = fixture.runtime.output()?.value?.kmh
+            fixture.runtime.camera(id, SpeedReferenceValue("numeric", 30))
+            fixture.controller.onTrafficSignUnverifiedAssembly(event, fixture.generation)
+            assertEquals(base, fixture.runtime.output()?.value?.kmh)
+            fixture.runtime.camera("unrelated-30", SpeedReferenceValue("numeric", 30))
+            fixture.controller.onTrafficSignUnverifiedAssembly(event, fixture.generation)
+            assertEquals(30, fixture.runtime.output()?.value?.kmh)
+        } }
+    }
+
+    @Test fun visualCargoMatchDistinguishesOtherSupplementarySigns() {
+        val box = NormalizedTrafficSignBoundingBox(44.0/128, 25.0/128, 40.0/128, 40.0/128)
+        assertEquals("DE:1052-30", GermanCargoPlate.codeIn(cargoDetection("stack-30", box, 50).restrictions))
+        assertTrue(cargoDetection("stack-wet", box, 50).restrictions.isEmpty())
+        assertTrue(cargoDetection("stack-30", box, 50, competingPrimary = true).restrictions.isEmpty())
+    }
+
+    private fun cargoDetection(file: String, box: NormalizedTrafficSignBoundingBox, speed: Int,
+                               competingPrimary: Boolean = false): TrafficSignCandidate {
+        val bitmap = instrumentation.context.assets.open("tsr-cargo-plates/$file.png").use { requireNotNull(BitmapFactory.decodeStream(it)) }
+        val primary = TrafficSignDetection(TrafficSignCandidate("maxspeed:$speed", "$speed",
+            TrafficSignSemantic(TrafficSignSemanticKind.MAXIMUM_SPEED, speed, "km/h"), .99, null, box))
+        return try {
+            GermanCargoPlate.Reader().use { reader ->
+                val candidates = if (competingPrimary) listOf(primary, primary) else listOf(primary)
+                reader.attach(bitmap, candidates).first().candidate
+            }
+        } finally { bitmap.recycle() }
+    }
+
     @Test fun matchedBundleScheduleReassessesRecognizedNumberWithoutOCR() {
         Fixture().use { fixture -> fixture.main {
             val at=Instant.parse("2026-10-23T10:00:00Z");fixture.clock.set(at)

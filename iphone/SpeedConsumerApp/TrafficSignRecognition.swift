@@ -768,6 +768,10 @@ struct TrafficSignRestriction: Codable, Equatable, Hashable, Sendable {
     var isValid: Bool {
         !normalizedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
+
+    static func cargoPlate(in restrictions: [Self]) -> String? {
+        restrictions.first { $0.kind == .vehicle && ["DE:1052-30", "DE:1052-31"].contains($0.countrySignCode ?? "") }?.countrySignCode
+    }
 }
 
 struct TrafficSignDetection: Equatable, Sendable {
@@ -816,6 +820,17 @@ struct TrafficSignDetection: Equatable, Sendable {
         self.assemblyId = assemblyId
         self.conditionState = conditionState
         self.restrictions = restrictions
+    }
+
+    func addingCargoPlate(_ suffix: Int32) -> Self {
+        let restriction = TrafficSignRestriction(kind: .vehicle, normalizedValue: suffix == 31 ? "hazmat:water" : "hazmat",
+            rawText: nil, countrySignCode: "DE:1052-\(suffix)")
+        return Self(rawClassId: rawClassId, rawLabel: rawLabel, semantic: semantic, rawScore: rawScore,
+            calibratedConfidence: calibratedConfidence, detectorRawScore: detectorRawScore,
+            detectorCalibratedConfidence: detectorCalibratedConfidence, classifierRawScore: classifierRawScore,
+            classifierCalibratedConfidence: classifierCalibratedConfidence, boundingBox: boundingBox,
+            classThreshold: classThreshold, assemblyId: assemblyId,
+            conditionState: conditionState == .none ? .resolved : conditionState, restrictions: restrictions + [restriction])
     }
 }
 

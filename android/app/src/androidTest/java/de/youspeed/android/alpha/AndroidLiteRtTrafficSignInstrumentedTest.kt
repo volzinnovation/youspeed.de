@@ -23,6 +23,65 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AndroidLiteRtTrafficSignInstrumentedTest {
     @Test
+    fun bundledGermanTrialExitRecoveryDistinguishesFixtureBoards() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val baseline = AndroidTrafficSignModelPackLoader.load(context)
+        val trial = requireNotNull(AndroidTrafficSignModelPackLoader.townTrial(context, baseline))
+        assertEquals(GermanTownTrialOperatingPoint.DETECTOR_FLOOR, trial.trialDetectorThreshold!!, 0.0)
+        assertEquals("9bf554f86b0e8e695430905e97bfd7eabdb713941d94c5ea1dcaaab7cb692041", trial.detectorArtifact.sha256)
+        assertEquals("d33963edc6413b158f60bacae87e7ea6c552d0e9784f2de0bafa364bfd258bf6", trial.classifierArtifact.sha256)
+        val fixtures = mapOf("bad-herrenalb-exit.png" to true, "dobel-entry.png" to false,
+            "wildbader-detour.png" to false)
+        val width = GermanTownSignFace.RESCUE_WIDTH
+        val height = GermanTownSignFace.RESCUE_HEIGHT
+        val pixels = IntArray(width * height)
+        for ((name, expected) in fixtures) {
+            val source = instrumentation.context.assets.open("tsr-town-face/$name").use { stream ->
+                requireNotNull(BitmapFactory.decodeStream(stream))
+            }
+            val sample = Bitmap.createScaledBitmap(source, width, height, true)
+            try {
+                sample.getPixels(pixels, 0, width, 0, 0, width, height)
+                assertEquals(name, expected, GermanTownSignFace.recoverExit(pixels))
+            } finally {
+                if (sample !== source) sample.recycle()
+                source.recycle()
+            }
+        }
+        // A yellow direction board can pass the stand-alone pixel verifier on Android.
+        // Exercise the actual classifier and both field paths as a hard negative.
+        val hardNegative = instrumentation.context.assets.open("tsr-town-face/eyachbruecke-direction.png").use {
+            requireNotNull(BitmapFactory.decodeStream(it))
+        }
+        try {
+            AndroidLiteRtTrafficSignInferenceEngine(trial).use { engine ->
+                val raw = requireNotNull(engine.classifyCropForDiagnostic(hardNegative)).candidate
+                val frame = engine.recognizeAllWithDiagnostics(hardNegative)
+                val towns = setOf("city:start", "city:end")
+                Log.i("YouSpeedTownTest", "Eyachbruecke top1=${raw.rawClassId} classifier=${raw.classifierRawScore} " +
+                    "proposals=${frame.detectorProposalCount} detections=${frame.detections.map { it.candidate.rawClassId }}")
+                assertFalse("Eyachbruecke crop became a town exit", raw.rawClassId == "city:end" &&
+                    (raw.classifierRawScore ?: 0.0) >= GermanTownTrialOperatingPoint.EXIT_CLASSIFIER_FLOOR)
+                assertFalse("Eyachbruecke frame produced a town", frame.detections.any { it.candidate.rawClassId in towns })
+                // Inject a tight detection at each score band into the installed APK's unmodified classifier.
+                val classify = engine.javaClass.getDeclaredMethod("classify", Bitmap::class.java,
+                    AndroidYoloProposal::class.java, Double::class.javaPrimitiveType, Boolean::class.javaPrimitiveType)
+                    .apply { isAccessible = true }
+                val full = NormalizedTrafficSignBoundingBox(0.0, 0.0, 1.0, 1.0)
+                for (score in listOf(.75f, .90f)) {
+                    val result = requireNotNull(classify.invoke(engine, hardNegative, AndroidYoloProposal(score, full),
+                        trial.modelPack.thresholds.unknown, true))
+                    val detection = result.javaClass.getDeclaredMethod("getDetection").apply { isAccessible = true }
+                        .invoke(result) as? TrafficSignDetection
+                    Log.i("YouSpeedTownTest", "Eyachbruecke detector=$score class=${detection?.candidate?.rawClassId}")
+                    assertFalse("Eyachbruecke tight proposal produced a town at $score", detection?.candidate?.rawClassId in towns)
+                }
+            }
+        } finally { hardNegative.recycle() }
+    }
+
+    @Test
     fun panoramaxTownFaces() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val fixtures = instrumentation.context.assets

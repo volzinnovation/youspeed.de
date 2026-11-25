@@ -10,7 +10,9 @@ add_library(youspeed_packed_runtime SHARED
     "${REPO_ROOT}/shared/runtime-storage-prototype/packed_runtime.cpp"
     "${REPO_ROOT}/shared/runtime-storage-prototype/packed_sqlite_vfs.cpp"
     "${REPO_ROOT}/shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp"
-    "${REPO_ROOT}/shared/tsr/german_town_sign_face.cpp")
+    "${REPO_ROOT}/shared/tsr/german_town_sign_face.cpp"
+    "${REPO_ROOT}/shared/tsr/german_town_exit_rescue.cpp"
+    "${REPO_ROOT}/shared/tsr/german_cargo_plate.cpp")
 target_compile_features(youspeed_packed_runtime PRIVATE cxx_std_17)
 # Full regional SQLite scans and block decompression also run in device Debug
 # builds. Keep native code optimized there while retaining the debug symbols;

@@ -13,6 +13,32 @@ internal data class TrafficSignDetectorGeometry(val sourceWidth: Int, val source
     companion object { const val SIZE = 1024 }
 }
 
+/** Tight classifier crop in upright source pixels, centered in the tensor at a uniform scale. */
+internal class TrafficSignClassifierGeometry private constructor(
+    val sourceLeft: Double,
+    val sourceTop: Double,
+    width: Double,
+    height: Double,
+) {
+    val scale = SIZE / maxOf(width, height)
+    val scaledWidth = width * scale
+    val scaledHeight = height * scale
+    val left = (SIZE - scaledWidth) / 2
+    val top = (SIZE - scaledHeight) / 2
+
+    companion object {
+        const val SIZE = 224
+        const val PREPROCESSING_VERSION = "crop-fit-letterbox-rgb-224-min-aspect-0.8-v1"
+
+        fun from(box: NormalizedTrafficSignBoundingBox, sourceWidth: Int, sourceHeight: Int): TrafficSignClassifierGeometry? {
+            val width = box.width * sourceWidth
+            val height = box.height * sourceHeight
+            if (width <= 0 || height <= 0 || width < height * 0.8) return null
+            return TrafficSignClassifierGeometry(box.x * sourceWidth, box.y * sourceHeight, width, height)
+        }
+    }
+}
+
 /** Horizontal source window spanning the full upright frame height. */
 internal data class TrafficSignDetectorWindow(val left: Int, val width: Int, val height: Int) {
     init { require(left >= 0 && width > 0 && height > 0) }

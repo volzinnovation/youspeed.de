@@ -35,11 +35,11 @@
     "artifact_sha256": "9c198e7a9f9e50b686b058a0c74cb93c3db18151bbd0290afa47bf1ec55d3fe2",
     "artifact_format": "coreml",
     "preprocessing": {
-      "version": "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2",
+      "version": "crop-fit-letterbox-rgb-224-min-aspect-0.8-v1",
       "input_width": 224,
       "input_height": 224,
       "color_space": "rgb",
-      "resize": "scale_fill",
+      "resize": "scale_fit_letterbox",
       "orientation": "normalize_exif_and_mirroring"
     },
     "calibration": {

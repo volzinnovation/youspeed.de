@@ -666,6 +666,7 @@ class ConsumerSessionController(
         val tracker=ConditionalOCRInterpretation.Tracker()
         var record:ConditionalOCRInterpretation.Record?=null
         var knownPlate=false
+        var vehiclePlate: String? = null
         var plainFirst:TrafficSignSupplementaryTextAnnotation?=null
         var plainModelKey:String?=null
         var lastFrame:String?=null
@@ -2411,6 +2412,7 @@ class ConsumerSessionController(
     }
 
     private fun conditionalCameraVerdictLocked(track:ConditionalCameraTrack):ConditionalOCRInterpretation.Verdict {
+        if (track.vehiclePlate != null) return ConditionalOCRInterpretation.Verdict.INAPPLICABLE
         if(track.suppressedByVoice || !conditionalCameraScopeCurrentLocked(track)) return ConditionalOCRInterpretation.Verdict.UNRESOLVED
         return track.record?.verdict(clock.instant(),speedReference.traveledMeters,track.scope,track.generation)
             ?: ConditionalOCRInterpretation.Verdict.UNRESOLVED
@@ -2421,12 +2423,20 @@ class ConsumerSessionController(
         if(generation!=trafficSignGeneration.get() || event.driveSessionId!=trafficSignDriveSessionId || event.source!=TrafficSignInputSource.LIVE_FRAME) return
         val candidate=event.candidate ?: return
         val speed=candidate.numericSupplementarySpeed() ?: return
-        var knownPlate=candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty()
+        val vehiclePlate = if (candidate.rawClassId == "maxspeed:$speed")
+            GermanCargoPlate.codeIn(candidate.restrictions) else null
+        var knownPlate=vehiclePlate != null || candidate.conditionState!=TrafficSignConditionState.NONE || candidate.restrictions.isNotEmpty()
         val ids=setOfNotNull(candidate.trackId,event.applicabilityDecision?.trackId)
         if(ids.isEmpty()) return
         synchronized(trafficSignStateLock) {
             val track=conditionalCameraTrackLocked(candidate.trackId ?: ids.first(),event)
             track.speedKmh=speed
+            if (track.vehiclePlate == null && vehiclePlate != null) {
+                track.vehiclePlate = vehiclePlate
+                track.tracker.reset()
+                track.record = null
+                appendRuntimeDiagnosticEvent("vehicle_speed_sign_suppressed", mapOf("track" to track.id, "plate" to vehiclePlate, "speed" to speed))
+            }
             knownPlate=knownPlate || bundleLinksConditionalCamera(track)
             track.aliases.addAll(ids);track.knownPlate=track.knownPlate || knownPlate
             if(speedReference.voice()!=null) {track.suppressedByVoice=true;track.voiceBarrierAt=clock.instant()}
@@ -2457,6 +2467,7 @@ class ConsumerSessionController(
             val existing=conditionalCameraTracks.values.firstOrNull {track -> ids.any {it in track.aliases}}
             if(!knownPlate && existing?.knownPlate != true) return
             val track=conditionalCameraTrackLocked(annotation.physicalSignId,event);track.aliases.addAll(ids)
+            if (track.vehiclePlate != null) return@synchronized
             track.speedKmh=speed
             track.lastOCRStatus=annotation.status.name.lowercase(java.util.Locale.ROOT)
             track.knownPlate=track.knownPlate || knownPlate

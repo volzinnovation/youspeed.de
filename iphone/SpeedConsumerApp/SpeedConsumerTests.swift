@@ -1528,23 +1528,10 @@ final class SpeedConsumerTests: XCTestCase {
         )
     }
 
-    func testTrafficSignTwoStageClassifierRegionExtendsAndClamps() {
-        let region = TrafficSignVisionTwoStageCoreMLBackend.classifierRegion(
-            for: CGRect(x: 0.02, y: 0.01, width: 0.10, height: 0.20)
-        )
-        XCTAssertEqual(region.minX, 0.01, accuracy: 0.000_001)
-        XCTAssertEqual(region.minY, 0, accuracy: 0.000_001)
-        XCTAssertEqual(region.maxX, 0.13, accuracy: 0.000_001)
-        XCTAssertEqual(region.maxY, 0.22, accuracy: 0.000_001)
-
-        let upperRight = TrafficSignVisionTwoStageCoreMLBackend.classifierRegion(
-            for: CGRect(x: 0.92, y: 0.88, width: 0.10, height: 0.15)
-        )
-        XCTAssertLessThanOrEqual(upperRight.maxX, 1)
-        XCTAssertLessThanOrEqual(upperRight.maxY, 1)
-        XCTAssertGreaterThanOrEqual(upperRight.minX, 0)
-        XCTAssertGreaterThanOrEqual(upperRight.minY, 0)
-        XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(region))
+    func testTrafficSignTwoStageValidatesNormalizedBoxes() {
+        XCTAssertTrue(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(
+            CGRect(x: 0, y: 0, width: 1, height: 1)
+        ))
         XCTAssertFalse(TrafficSignVisionTwoStageCoreMLBackend.isValidNormalizedRegion(
             CGRect(x: 0.5, y: 0.5, width: 0, height: 0.1)
         ))

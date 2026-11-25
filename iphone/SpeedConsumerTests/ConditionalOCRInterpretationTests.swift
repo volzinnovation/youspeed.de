@@ -1,7 +1,49 @@
 import XCTest
+import CoreImage
 @testable import SpeedConsumer
 
 final class ConditionalOCRInterpretationTests: XCTestCase {
+    @MainActor func testVisualCargoPlateWithdrawsOnlyItsCameraTrackWithoutOCR() throws {
+        let model = DriveSessionViewModel(), at = Date()
+        let id = "cargo-30"
+        let detection = try cargoDetection(file: "dobel", box: .init(x: 31.0/96, y: 28.0/106, width: 34.0/96, height: 35.0/106), speed: 30)
+        XCTAssertEqual(TrafficSignRestriction.cargoPlate(in: detection.restrictions), "DE:1052-31")
+        let candidate = TrafficSignRecognitionCandidate(rawClassId: detection.rawClassId, rawLabel: detection.rawLabel,
+            semanticKind: detection.semantic.kind.rawValue, value: detection.semantic.value, unit: detection.semantic.unit,
+            rawScore: detection.rawScore, calibratedConfidence: nil, boundingBox: detection.boundingBox,
+            trackId: id, evidenceFrames: 2, conditionState: detection.conditionState, restrictions: detection.restrictions)
+        let event = TrafficSignRecognitionEvent(schemaVersion: 1, packId: "test", artifactSha256: String(repeating: "a", count: 64),
+            preprocessingVersion: "test", source: .liveFrame, frameTimestampUtc: at, state: .confirmed,
+            candidate: candidate, latencyMs: 0, thermalState: "nominal")
+        let emission = TrafficSignRuntimeEmission(event: event, frameContext: nil)
+        model.testSeedConditionalOCRReference(cameraID: id)
+        model.testMaskConditionalOCRParent(emission)
+        XCTAssertEqual(model.speedLimitKmh, 80)
+        XCTAssertTrue(model.testConditionalOCRParentIsBlocked(id))
+        model.testSeedConditionalOCRReference(cameraID: "unrelated-30")
+        model.testMaskConditionalOCRParent(emission)
+        XCTAssertEqual(model.speedLimitKmh, 30)
+    }
+
+    func testVisualCargoMatchDistinguishesOtherSupplementarySigns() throws {
+        let box = TrafficSignNormalizedRect(x: 44.0/128, y: 25.0/128, width: 40.0/128, height: 40.0/128)
+        let cargo = try cargoDetection(file: "stack-30", box: box, speed: 50)
+        XCTAssertEqual(TrafficSignRestriction.cargoPlate(in: cargo.restrictions), "DE:1052-30")
+        XCTAssertTrue(try cargoDetection(file: "stack-wet", box: box, speed: 50).restrictions.isEmpty)
+        XCTAssertTrue(try cargoDetection(file: "stack-30", box: box, speed: 50, competingPrimary: true).restrictions.isEmpty)
+    }
+
+    private func cargoDetection(file: String, box: TrafficSignNormalizedRect, speed: Int,
+                                competingPrimary: Bool = false) throws -> TrafficSignDetection {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: file, withExtension: "png", subdirectory: "tsr-cargo-plates"))
+        let source = try XCTUnwrap(CIImage(contentsOf: url))
+        let primary = TrafficSignDetection(rawClassId: "maxspeed:\(speed)", rawLabel: "\(speed)",
+            semantic: .init(kind: .maximumSpeed, value: speed, unit: "km/h"), rawScore: 0.99, calibratedConfidence: nil,
+            boundingBox: box, classThreshold: 0.90)
+        let candidates = competingPrimary ? [primary, primary] : [primary]
+        return try XCTUnwrap(TrafficSignVisionTwoStageCoreMLBackend.withCargoPlates(candidates, source: source, context: CIContext()).first)
+    }
+
     @MainActor func testControllerWithdrawsPositivePlateButEmptyReadRetainsNumericMapVoiceAndUnrelatedCamera() {
         let model = DriveSessionViewModel()
         let at = Date()

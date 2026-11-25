@@ -97,10 +97,12 @@
 		531DE6851EAC87D7B3333A86 /* RoadworksService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3715EFE4A0C476E5AB71675 /* RoadworksService.swift */; };
 		53CB2B5D00D0E0C2957A22B7 /* SignCollectionPhoneRoadMatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6EEEAFF297193102102D2F0 /* SignCollectionPhoneRoadMatch.swift */; };
 		53E2BD717B450B13A347F61F /* MatcherCoreModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B71350FBD2ED0C58C43D3F /* MatcherCoreModels.swift */; };
+		54133C45F606BD34F6E4B12A /* tsr-cargo-plates in Resources */ = {isa = PBXBuildFile; fileRef = 3E7CBCF9B9CAE7F6D9A66FBC /* tsr-cargo-plates */; };
 		54222E35567EDE1CE54A5F6F /* schleswig-holstein.poly in Resources */ = {isa = PBXBuildFile; fileRef = CBBB56D0019B23F961E03090 /* schleswig-holstein.poly */; };
 		54227A836007BA17237C2BD6 /* packed_sqlite_vfs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8447705C5FA7CF41514434BE /* packed_sqlite_vfs.cpp */; };
 		548B98D7421B783B3A752FFA /* SpeedDBBenchUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1519C4C82CCE22AD1E51AFC /* SpeedDBBenchUITests.swift */; };
 		56EDC931449F89E37BEB08C3 /* LUX-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = B85E99993DEBDDC898B866D6 /* LUX-rules.json */; };
+		57D6FCB0405C9E1B68133588 /* german_town_exit_rescue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9D0BAF10ED4B7A0CBAC0A83 /* german_town_exit_rescue.cpp */; };
 		5B2973B8013DAE2F9D693F15 /* CHE-rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 82823F6A353E868BAD5A5096 /* CHE-rules.json */; };
 		5D1CD363DA0827B1B41B087B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 734BE1C063C1A673E23AE2B7 /* Assets.xcassets */; };
 		5D215790D2426739FD94BA5D /* InventorySignSourcePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22DE91E8E3C972D21C411366 /* InventorySignSourcePresentation.swift */; };
@@ -245,6 +247,7 @@
 		E0C47E1887A900EBE4EEFC4B /* LatestPendingLookupWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5EFF252BA4CDEC5C67298CB /* LatestPendingLookupWorker.swift */; };
 		E1803D4F9CFFED13769C0CE3 /* PackedBundleRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D8F4F2E27174A61DB39470 /* PackedBundleRuntimeTests.swift */; };
 		E1EF1BCA331FB98A572431EC /* RoadBoundaryDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596FBCF04865A5176FFDE2A3 /* RoadBoundaryDetector.swift */; };
+		E38ABA29C957CBA95627E64C /* TrafficSignClassifierInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D80E53AC5C88B662E3423DF5 /* TrafficSignClassifierInput.swift */; };
 		E59DF7E1FC536928DBF4394F /* RoadPathEvidenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C21A9ACAE299BC122BBC183E /* RoadPathEvidenceTests.swift */; };
 		E79B104C239ECE5204DB66F2 /* RoadBoundaryMotionHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38532CE100FF815E74A1BB2F /* RoadBoundaryMotionHint.swift */; };
 		EAE9069C576C781C2FF7F806 /* ConsumerTestHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0666C48A5CBB5499F30B5F03 /* ConsumerTestHost.swift */; };
@@ -253,6 +256,7 @@
 		EE2B86AC7A530911AB8F68C5 /* conditional-ocr in Resources */ = {isa = PBXBuildFile; fileRef = DF842DA15A5D2241BA324109 /* conditional-ocr */; };
 		EE34AF79955C15D89CF73057 /* InventorySignRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09D11F15BE94BE98CEE272AA /* InventorySignRuntime.swift */; };
 		F165DD25454B37CA0C0D0156 /* collection-contract-v1 in Resources */ = {isa = PBXBuildFile; fileRef = A10A47E6F78B1DFA38EBE5F7 /* collection-contract-v1 */; };
+		F17E50D7A7FAA33967FDAF28 /* german_cargo_plate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7AF0661C07B441BBC66CED1A /* german_cargo_plate.cpp */; };
 		F182D704EE2DDF591CC20D0C /* LaneSemanticHint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49AA1302CBD06A724146AD4E /* LaneSemanticHint.swift */; };
 		F4619697F0D218CA52A31C65 /* GravityAlignment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E65A06FABB9BD2F9609312D6 /* GravityAlignment.swift */; };
 		F4B34C3BA2DFAA8D971C9D4F /* RegionalPackDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC4FBAA4D4D2DDF2468DB698 /* RegionalPackDiscovery.swift */; };
@@ -362,6 +366,7 @@
 		398708E44785CB6E7940FA43 /* golden-vectors-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "golden-vectors-v1.json"; sourceTree = "<group>"; };
 		3A57B9B03806BEA21D71472E /* SignCollectionInterestTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionInterestTransport.swift; sourceTree = "<group>"; };
 		3A73CDF8C3D4A7F7690153AA /* luxembourg.poly */ = {isa = PBXFileReference; path = luxembourg.poly; sourceTree = "<group>"; };
+		3E7CBCF9B9CAE7F6D9A66FBC /* tsr-cargo-plates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "tsr-cargo-plates"; path = "../tests/fixtures/tsr-cargo-plates"; sourceTree = SOURCE_ROOT; };
 		3F9C534BBF22F8C6B5DB1D10 /* SignCollectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignCollectionStore.swift; sourceTree = "<group>"; };
 		414061DF5847B08592B3C7D2 /* SpeedConsumerUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SpeedConsumerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		414763A09BE57A810C9A1F9A /* TrafficSignCameraReferenceOfferTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignCameraReferenceOfferTests.swift; sourceTree = "<group>"; };
@@ -426,6 +431,7 @@
 		76774992A7C4395E5293E658 /* ConditionalSpeedRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionalSpeedRules.swift; sourceTree = "<group>"; };
 		79C2D110B24BE6D8D2F745AD /* TrafficSignPlateRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignPlateRegressionTests.swift; sourceTree = "<group>"; };
 		79F0418939FABF44F497ECE0 /* PackedGenericSpeedSigns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackedGenericSpeedSigns.swift; sourceTree = "<group>"; };
+		7AF0661C07B441BBC66CED1A /* german_cargo_plate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = german_cargo_plate.cpp; sourceTree = "<group>"; };
 		7AFD1E3971781FBA2D203E7C /* SpeedConsumerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeedConsumerTests.swift; sourceTree = "<group>"; };
 		7B7A2C14162BEF390A9A2BC0 /* TrafficSignOCRLanguageContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignOCRLanguageContextTests.swift; sourceTree = "<group>"; };
 		7C2852AAC198B12080D601DB /* LIE-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LIE-rules.json"; sourceTree = "<group>"; };
@@ -486,6 +492,7 @@
 		B83509F2089AF4F1D5E797AD /* ConditionalOCRInterpretation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConditionalOCRInterpretation.swift; sourceTree = "<group>"; };
 		B85E99993DEBDDC898B866D6 /* LUX-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "LUX-rules.json"; sourceTree = "<group>"; };
 		B861A0672E9AAF8937C5A085 /* BEL-rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "BEL-rules.json"; sourceTree = "<group>"; };
+		B9D0BAF10ED4B7A0CBAC0A83 /* german_town_exit_rescue.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = german_town_exit_rescue.cpp; sourceTree = "<group>"; };
 		BC4FBAA4D4D2DDF2468DB698 /* RegionalPackDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalPackDiscovery.swift; sourceTree = "<group>"; };
 		BCE83EC19C3249E6BEB88E3D /* DriveSessionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveSessionViewModel.swift; sourceTree = "<group>"; };
 		BD84B2421DA4C65088856AD3 /* PackedBundleRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PackedBundleRuntime.swift; sourceTree = "<group>"; };
@@ -513,6 +520,7 @@
 		D5EFF252BA4CDEC5C67298CB /* LatestPendingLookupWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LatestPendingLookupWorker.swift; sourceTree = "<group>"; };
 		D659B9FF4F2C0286F4FEABBE /* traffic-sign-documentation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "traffic-sign-documentation"; path = "../shared/traffic-sign-documentation"; sourceTree = SOURCE_ROOT; };
 		D7CE995B17B323A34DE8F7AB /* StartupLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartupLogStore.swift; sourceTree = "<group>"; };
+		D80E53AC5C88B662E3423DF5 /* TrafficSignClassifierInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficSignClassifierInput.swift; sourceTree = "<group>"; };
 		D8DFC5BD5228D3BD65AEC1F7 /* BenchmarkModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BenchmarkModels.swift; sourceTree = "<group>"; };
 		D90286AF9D5D3E5CE8B04DA9 /* AppReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppReviewPrompt.swift; sourceTree = "<group>"; };
 		D9C66D2A672060D95BF1EC4E /* PenaltyDocumentationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PenaltyDocumentationView.swift; sourceTree = "<group>"; };
@@ -638,6 +646,7 @@
 				D47016AE8D9C7439ECD7E708 /* TrafficSignApplicabilityIntegration.swift */,
 				382CA3BE7926270EDA4C3180 /* TrafficSignApplicabilityTests.swift */,
 				CD9F614E4A6B119690935E9F /* TrafficSignCameraReferenceOffer.swift */,
+				D80E53AC5C88B662E3423DF5 /* TrafficSignClassifierInput.swift */,
 				451AB91452C045D0505BEBD1 /* TrafficSignCountryPackRegistry.swift */,
 				6D7F1F47CD5C183CE78C513A /* TrafficSignDetectorInput.swift */,
 				191791D7FE8882C94B6118FF /* TrafficSignDocumentationView.swift */,
@@ -817,6 +826,8 @@
 			children = (
 				A10A47E6F78B1DFA38EBE5F7 /* collection-contract-v1 */,
 				5EA55E7167CE2EF7F6A46FB3 /* country-pack-registry-v1.json */,
+				7AF0661C07B441BBC66CED1A /* german_cargo_plate.cpp */,
+				B9D0BAF10ED4B7A0CBAC0A83 /* german_town_exit_rescue.cpp */,
 				945F1E6CBA8EA72AF868ED29 /* german_town_sign_face.cpp */,
 				309E97F1DBD1520586110FA8 /* prolix-be-class-catalog-v1.json */,
 				19061D4394196CBC45064188 /* prolix-ch-class-catalog-v1.json */,
@@ -953,6 +964,7 @@
 		FB275BC73BA0D06D74100887 /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				3E7CBCF9B9CAE7F6D9A66FBC /* tsr-cargo-plates */,
 				D251CFDDFEAD599EF3D19C22 /* tsr-ocr-32 */,
 				675C582BD38028DA172FA8C8 /* tsr-town-face */,
 			);
@@ -1148,6 +1160,7 @@
 				63A1FDBA6F50BAF6E0D5A450 /* replay_track.kml in Resources */,
 				D867BFECAEF4C706323A2AF4 /* sequence-v1.json in Resources */,
 				9B0956EBD9D07FE1E8EAE96F /* suppression-v1.json in Resources */,
+				54133C45F606BD34F6E4B12A /* tsr-cargo-plates in Resources */,
 				CD94F53A9AD2D2538DDFBB9E /* tsr-ocr-32 in Resources */,
 				B361E0C91048B627E117297B /* tsr-panoramax-0906fc23.jpg in Resources */,
 				4F74D049C1C2FDBE21F4558D /* tsr-panoramax-49e25e66.jpg in Resources */,
@@ -1361,6 +1374,7 @@
 				940E0787DE8F2C217D4DAB26 /* TrafficSignApplicability.swift in Sources */,
 				185DD4DEB201DCA2D9AB13F3 /* TrafficSignApplicabilityIntegration.swift in Sources */,
 				66277AAC091B83E4E5FD144C /* TrafficSignCameraReferenceOffer.swift in Sources */,
+				E38ABA29C957CBA95627E64C /* TrafficSignClassifierInput.swift in Sources */,
 				EB295A5EF92B103765FD9F12 /* TrafficSignCountryPackRegistry.swift in Sources */,
 				3A57DEFC44BB1BA4F1F0EE72 /* TrafficSignDetectorInput.swift in Sources */,
 				5251B59580E44D7B457DEE32 /* TrafficSignDocumentationView.swift in Sources */,
@@ -1385,6 +1399,8 @@
 				FD62AB20C68AC0EB6376D543 /* VisionDismissalVoice.swift in Sources */,
 				38A23CFD1A1F18CBE2616222 /* VisualRoadCalibration.swift in Sources */,
 				7D2D9A46045098111BF3C9C1 /* VisualRoadCalibrationView.swift in Sources */,
+				F17E50D7A7FAA33967FDAF28 /* german_cargo_plate.cpp in Sources */,
+				57D6FCB0405C9E1B68133588 /* german_town_exit_rescue.cpp in Sources */,
 				5021D049B28E42CC09D4244E /* german_town_sign_face.cpp in Sources */,
 				65AE338D121F30F208779311 /* packed_runtime.cpp in Sources */,
 				54227A836007BA17237C2BD6 /* packed_sqlite_vfs.cpp in Sources */,

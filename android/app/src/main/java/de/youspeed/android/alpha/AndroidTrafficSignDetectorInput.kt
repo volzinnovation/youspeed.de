@@ -3,6 +3,7 @@ package de.youspeed.android.alpha
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
@@ -37,6 +38,29 @@ internal class AndroidTrafficSignDetectorInput : AutoCloseable {
         sourceBounds.set(window.left, 0, window.left + window.width, window.height)
         destinationBounds.set(left.toFloat(), top.toFloat(), (left + width).toFloat(), (top + height).toFloat())
         canvas.drawBitmap(source, sourceBounds, destinationBounds, paint)
+    }
+
+    override fun close() { bitmap.recycle() }
+}
+
+internal class AndroidTrafficSignClassifierInput : AutoCloseable {
+    private val size = TrafficSignClassifierGeometry.SIZE
+    val bitmap: Bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    private val canvas = Canvas(bitmap)
+    private val paint = Paint(Paint.FILTER_BITMAP_FLAG)
+    private val transform = Matrix()
+
+    fun prepare(source: Bitmap, crop: TrafficSignClassifierGeometry) {
+        val scale = crop.scale.toFloat()
+        transform.setScale(scale, scale)
+        transform.postTranslate((crop.left - crop.sourceLeft * crop.scale).toFloat(),
+            (crop.top - crop.sourceTop * crop.scale).toFloat())
+        canvas.drawColor(Color.BLACK)
+        val saveCount = canvas.save()
+        canvas.clipRect(crop.left.toFloat(), crop.top.toFloat(),
+            (crop.left + crop.scaledWidth).toFloat(), (crop.top + crop.scaledHeight).toFloat())
+        canvas.drawBitmap(source, transform, paint)
+        canvas.restoreToCount(saveCount)
     }
 
     override fun close() { bitmap.recycle() }

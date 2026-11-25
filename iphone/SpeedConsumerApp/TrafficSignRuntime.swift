@@ -11,6 +11,11 @@ import UniformTypeIdentifiers
 @_silgen_name("ysp_german_town_sign_face")
 private func germanTownSignFace(_ rgba: UnsafePointer<UInt8>, _ width: Double,
                                 _ height: Double, _ townExit: Int32) -> Int32
+@_silgen_name("ysp_german_town_exit_rescue")
+private func germanTownExitRescue(_ rgba: UnsafePointer<UInt8>) -> Int32
+@_silgen_name("ysp_german_cargo_plate")
+private func germanCargoPlate(_ rgba: UnsafePointer<UInt8>, _ primaryWidth: Double,
+                             _ bounds: UnsafeMutablePointer<Int32>) -> Int32
 @preconcurrency import Vision
 
 #if TRAFFIC_SIGN_RUNTIME_STANDALONE_TYPECHECK
@@ -652,6 +657,9 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private let mappingsByClassID: [String: TrafficSignModelPackManifest.ClassMapping]
     private let unknownThreshold: Double
     private let detectorThreshold: Double
+    private let usesGermanTownTrial: Bool
+    static let generalTrialProposalThreshold = 0.840783
+    static let townExitProposalThreshold = 0.70
     private let usesTwoDetectorWindows: Bool
     private let verifiesGermanTownFaces: Bool
     private let detectorContext = CIContext(options: [.cacheIntermediates: false])
@@ -679,7 +687,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             guard shadow.detector.preprocessingVersion
                     == "vision-scale-fit-letterbox-rgb-1024-v2",
                   shadow.classifier.preprocessingVersion
-                    == "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2" else {
+                    == TrafficSignClassifierInput.preprocessingVersion else {
                 throw TrafficSignRuntimeUnavailability(
                     code: .manifestInvalid,
                     detail: "The TSR v2 stage preprocessing does not match the installed Vision pipeline."
@@ -701,6 +709,7 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             uniqueKeysWithValues: verifiedPack.manifest.classMapping.map { ($0.classId, $0) }
         )
         unknownThreshold = verifiedPack.manifest.thresholds.unknown
+        usesGermanTownTrial = verifiedPack.trialDetectorThreshold != nil && verifiedPack.manifest.countries == ["DE"]
         detectorThreshold = verifiedPack.trialDetectorThreshold ?? unknownThreshold
         usesTwoDetectorWindows = useTwoDetectorWindows ?? (verifiedPack.trialDetectorThreshold != nil)
         verifiesGermanTownFaces = verifiedPack.manifest.countries == ["DE"]
@@ -737,11 +746,10 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     }
 
     func shadowInference(in input: TrafficSignDetectorInput) throws -> TrafficSignTwoStageInferenceResultV2 {
-        if usesTwoDetectorWindows {
+        if usesTwoDetectorWindows || usesGermanTownTrial {
             return try shadowInference(source: input.uprightSource, orientation: .up, context: detectorContext)
         }
         return try perform(
-            VNImageRequestHandler(ciImage: input.uprightSource, options: [:]),
             source: input.uprightSource, context: detectorContext,
             detectorPasses: [DetectorPass(handler: VNImageRequestHandler(cgImage: input.image, options: [:]),
                                           sourceRegion: input.geometry.sourceRegion(for:))]
@@ -750,7 +758,8 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 
     func shadowInference(source: CIImage, orientation: CGImagePropertyOrientation,
                          context: CIContext) throws -> TrafficSignTwoStageInferenceResultV2 {
-        let upright = TrafficSignDetectorInput.upright(source: source, orientation: orientation)
+        let oriented = TrafficSignDetectorInput.upright(source: source, orientation: orientation)
+        let upright = usesGermanTownTrial ? Self.phoneAnalysisSource(oriented) : oriented
         let width = Int(upright.extent.width), height = Int(upright.extent.height)
         guard width > 0, height > 0 else { throw TrafficSignInferenceBackendError.incompatibleOutput }
         let windows = usesTwoDetectorWindows
@@ -759,15 +768,29 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         let inputs = try windows.map { window in
             try TrafficSignDetectorInput(source: upright, orientation: .up, context: context, window: window)
         }
-        return try perform(VNImageRequestHandler(ciImage: upright, options: [:]), source: upright, context: context,
+        return try perform(source: upright, context: context,
             detectorPasses: inputs.map { input in
                 DetectorPass(handler: VNImageRequestHandler(cgImage: input.image, options: [:]),
                              sourceRegion: input.geometry.sourceRegion(for:))
             })
     }
 
+    // The combined camera can deliver a 4K image to Panoramax. Size only the independent TSR view.
+    static func phoneAnalysisSource(_ upright: CIImage) -> CIImage {
+        let size = upright.extent.size
+        let scale = min(1920 / max(size.width, size.height), 1080 / min(size.width, size.height))
+        guard scale < 1 else { return upright }
+        let bounds = CGRect(x: 0, y: 0, width: (size.width * scale).rounded(.down),
+                            height: (size.height * scale).rounded(.down))
+        return upright.transformed(by: CGAffineTransform(scaleX: scale, y: scale), highQualityDownsample: true)
+            .cropped(to: bounds)
+    }
+
+    static func meetsTownTrialMinimumSize(_ box: CGRect, sourceSize: CGSize) -> Bool {
+        min(box.width * sourceSize.width, box.height * sourceSize.height) >= 32
+    }
+
     private func perform(
-        _ handler: VNImageRequestHandler,
         source: CIImage,
         context: CIContext,
         detectorPasses: [DetectorPass]
@@ -801,32 +824,32 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
             0,
             (ProcessInfo.processInfo.systemUptime - detectorStartedAt) * 1_000
         )
-        let signObjects = Self.mergedProposals(admittedProposals)
+        let signObjects = Self.mergedProposals(admittedProposals).filter { proposal in
+            !usesGermanTownTrial || Self.meetsTownTrialMinimumSize(proposal.box, sourceSize: source.extent.size)
+        }
         var classified: [TrafficSignSpatialAssembly.ClassifiedDetection] = []
         classified.reserveCapacity(signObjects.count)
-        var classifierLatencyMs: Double = 0
+        var classifierLatencyMs: Double?
         for object in signObjects {
-            let classifierStartedAt = ProcessInfo.processInfo.systemUptime
             let result = try classify(
                 object.box,
                 detectorConfidence: Double(object.confidence),
-                using: handler, source: source, context: context
-            )
-            classifierLatencyMs += max(
-                0,
-                (ProcessInfo.processInfo.systemUptime - classifierStartedAt) * 1_000
+                source: source, context: context, classifierLatencyMs: &classifierLatencyMs
             )
             guard let result else { continue }
             classified.append(result)
         }
 
         let grouped = TrafficSignSpatialAssembly.assembleWithMembers(classified)
+        let primaryDetections = grouped.map(\.detection)
+        let detections = verifiesGermanTownFaces
+            ? Self.withCargoPlates(primaryDetections, source: source, context: context) : primaryDetections
         return TrafficSignTwoStageInferenceResultV2(
-            legacyDetections: grouped.map(\.detection),
+            legacyDetections: detections,
             assemblies: grouped.compactMap(Self.shadowAssembly),
             detectorLatencyMs: detectorLatencyMs,
-            classifierInvoked: !signObjects.isEmpty,
-            classifierLatencyMs: classifierLatencyMs,
+            classifierInvoked: classifierLatencyMs != nil,
+            classifierLatencyMs: classifierLatencyMs ?? 0,
             proposalsTruncated: proposalsTruncated
         )
     }
@@ -847,16 +870,25 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
     private func classify(
         _ visionBox: CGRect,
         detectorConfidence: Double,
-        using handler: VNImageRequestHandler,
         source: CIImage,
-        context: CIContext
+        context: CIContext,
+        classifierLatencyMs: inout Double?
     ) throws -> TrafficSignSpatialAssembly.ClassifiedDetection? {
-        let classifierRegion = Self.classifierRegion(for: visionBox)
-        guard Self.isValidNormalizedRegion(classifierRegion) else { return nil }
+        guard let crop = TrafficSignClassifierInput.sourceCrop(for: visionBox, in: source.extent) else { return nil }
+        let exitOnly = usesGermanTownTrial && detectorConfidence < Self.generalTrialProposalThreshold
+        if exitOnly && !Self.matchesTownFace(source: source, context: context, box: visionBox,
+                                            townExit: true, recoverRejectedExit: true) {
+            return nil
+        }
+        guard let image = TrafficSignClassifierInput.image(source: source, crop: crop, context: context) else {
+            throw TrafficSignInferenceBackendError.incompatibleOutput
+        }
         let request = VNCoreMLRequest(model: classifierModel)
         request.imageCropAndScaleOption = .scaleFill
-        request.regionOfInterest = classifierRegion
-        try handler.perform([request])
+        let classifierStartedAt = ProcessInfo.processInfo.systemUptime
+        try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+        classifierLatencyMs = (classifierLatencyMs ?? 0)
+            + max(0, (ProcessInfo.processInfo.systemUptime - classifierStartedAt) * 1_000)
         guard let classification = request.results?
             .compactMap({ $0 as? VNClassificationObservation })
             .first else {
@@ -865,9 +897,12 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
 
         guard let contractBox = Self.contractBox(from: visionBox) else { return nil }
         let classID = classification.identifier
-        if verifiesGermanTownFaces && (classID == "city:start" || classID == "city:end") {
+        if exitOnly {
+            guard classID == "city:end", classification.confidence >= 0.45 else { return nil }
+        } else if verifiesGermanTownFaces && (classID == "city:start" || classID == "city:end") {
             guard Self.matchesTownFace(source: source, context: context, box: visionBox,
-                                       townExit: classID == "city:end") else { return nil }
+                                       townExit: classID == "city:end",
+                                       recoverRejectedExit: usesGermanTownTrial && classification.confidence >= 0.45) else { return nil }
         }
         let mapping = mappingsByClassID[classification.identifier]
         let score = min(detectorConfidence, Double(classification.confidence))
@@ -894,27 +929,80 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         )
     }
 
-    static func matchesTownFace(source: CIImage, context: CIContext, box: CGRect, townExit: Bool) -> Bool {
+    static func withCargoPlates(_ detections: [TrafficSignDetection], source: CIImage, context: CIContext) -> [TrafficSignDetection] {
+        detections.enumerated().map { index, detection in
+            let primary = detection.boundingBox
+            guard detection.semantic.kind == .maximumSpeed,
+                  TrafficSignRestriction.cargoPlate(in: detection.restrictions) == nil,
+                  let result = classifyCargoPlate(source: source, context: context, primary: primary) else { return detection }
+            let plate = result.box
+            let middle = plate.x + plate.width / 2
+            // Another credible primary above the same plate makes the stack ambiguous.
+            let competing = detections.enumerated().contains { otherIndex, other in
+                guard index != otherIndex, other.semantic.kind != .unknown else { return false }
+                let box = other.boundingBox
+                let gap = plate.y - box.y - box.height
+                return abs(box.x + box.width / 2 - middle) <= box.width * 0.25
+                    && (-0.25...0.35).contains(gap / box.height)
+            }
+            return competing ? detection : detection.addingCargoPlate(result.code)
+        }
+    }
+
+    static func classifyCargoPlate(source: CIImage, context: CIContext,
+                                   primary: TrafficSignNormalizedRect) -> (code: Int32, box: TrafficSignNormalizedRect)? {
+        let extent = source.extent
+        let width = primary.width * extent.width
+        guard primary.isValid, width >= 24 else { return nil }
+        let side = 1.5 * width
+        let left = primary.x * extent.width - 0.25 * width
+        let top = (primary.y + primary.height) * extent.height - 0.25 * width
+        let crop = CGRect(x: extent.minX + left, y: extent.maxY - top - side, width: side, height: side)
+        guard extent.contains(crop) else { return nil }
+        var bounds: [Int32] = [0, 0, 0, 0]
+        let size = 96
+        let code = withFacePixels(source: source, context: context, crop: crop, width: size, height: size) { pixels in
+            germanCargoPlate(pixels, width, &bounds)
+        }
+        guard let code, code == 30 || code == 31 else { return nil }
+        let step = side / Double(size)
+        return (code, .init(x: (left + Double(bounds[0]) * step) / extent.width,
+            y: (top + Double(bounds[1]) * step) / extent.height, width: Double(bounds[2]) * step / extent.width,
+            height: Double(bounds[3]) * step / extent.height))
+    }
+
+    static func matchesTownFace(source: CIImage, context: CIContext, box: CGRect, townExit: Bool,
+                                recoverRejectedExit: Bool = false) -> Bool {
         let extent = source.extent
         let crop = CGRect(x: extent.minX + box.minX * extent.width, y: extent.minY + box.minY * extent.height,
                           width: box.width * extent.width, height: box.height * extent.height)
         guard !crop.isEmpty else { return false }
-        let width = 80, height = 64
+        let accepted = withFacePixels(source: source, context: context, crop: crop, width: 80, height: 64) {
+            germanTownSignFace($0, Double(crop.width), Double(crop.height), townExit ? 1 : 0) != 0
+        } ?? false
+        guard !accepted, townExit, recoverRejectedExit else { return accepted }
+        return withFacePixels(source: source, context: context, crop: crop, width: 96, height: 72) {
+            germanTownExitRescue($0) != 0
+        } ?? false
+    }
+
+    private static func withFacePixels<T>(source: CIImage, context: CIContext, crop: CGRect,
+                                          width: Int, height: Int, match: (UnsafePointer<UInt8>) -> T) -> T? {
         let size = CGRect(x: 0, y: 0, width: width, height: height)
         let scaled = source.cropped(to: crop)
             .transformed(by: CGAffineTransform(translationX: -crop.minX, y: -crop.minY))
             .transformed(by: CGAffineTransform(scaleX: size.width / crop.width, y: size.height / crop.height))
         guard let rgb = CGColorSpace(name: CGColorSpace.sRGB),
-              let image = context.createCGImage(scaled, from: size, format: .RGBA8, colorSpace: rgb) else { return false }
+              let image = context.createCGImage(scaled, from: size, format: .RGBA8, colorSpace: rgb) else { return nil }
         // Drawing the CGImage gives the native check top-down sRGB rows.
         var pixels = [UInt8](repeating: 0, count: width * height * 4)
         return pixels.withUnsafeMutableBufferPointer { buffer in
             guard let base = buffer.baseAddress,
                   let bitmap = CGContext(data: base, width: width, height: height, bitsPerComponent: 8,
                                          bytesPerRow: width * 4, space: rgb,
-                                         bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return false }
+                                         bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return nil }
             bitmap.draw(image, in: size)
-            return germanTownSignFace(base, Double(crop.width), Double(crop.height), townExit ? 1 : 0) != 0
+            return match(base)
         }
     }
 
@@ -1034,22 +1122,6 @@ final class TrafficSignVisionTwoStageCoreMLBackend: TrafficSignShadowInferenceBa
         case .unknown:
             return "other_or_unknown_primary"
         }
-    }
-
-    static func classifierRegion(for signBox: CGRect) -> CGRect {
-        let horizontalPadding = signBox.width * 0.10
-        let lowerExtension = signBox.height * 0.35
-        let upperPadding = signBox.height * 0.05
-        let minX = max(0, signBox.minX - horizontalPadding)
-        let minY = max(0, signBox.minY - lowerExtension)
-        let maxX = min(1, signBox.maxX + horizontalPadding)
-        let maxY = min(1, signBox.maxY + upperPadding)
-        return CGRect(
-            x: minX,
-            y: minY,
-            width: max(0, maxX - minX),
-            height: max(0, maxY - minY)
-        )
     }
 
     static func isValidNormalizedRegion(_ region: CGRect) -> Bool {
@@ -1451,7 +1523,7 @@ final class TrafficSignRuntime: DriveVideoFrameConsumer, @unchecked Sendable {
             components.append(TrafficSignModelComponentLineage(
                 role: "semantic_classifier",
                 artifactSHA256: classifier.sha256,
-                preprocessingVersion: preprocessing,
+                preprocessingVersion: TrafficSignClassifierInput.preprocessingVersion,
                 calibrationID: calibration
             ))
         }
@@ -2632,7 +2704,9 @@ enum TrafficSignRuntimeBootstrap {
         let sha = "73a2818194be58673ba63fa7c92f6c12f9d0ef046f39649bd97d89e65578c026"
         guard countryCode.uppercased() == "DE", baseline.manifest.pipeline == .proposalClassification,
               let directory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
-        let stagedModel = directory.appendingPathComponent(name, isDirectory: true)
+        let bundled = baseline.directoryURL.appendingPathComponent(name, isDirectory: true)
+        let stagedModel = fileManager.fileExists(atPath: bundled.path)
+            ? bundled : directory.appendingPathComponent(name, isDirectory: true)
         guard fileManager.fileExists(atPath: stagedModel.path) else { return nil }
         // iOS can return /var for Documents and /private/var for enumerated URLs.
         // Enumerate relative names; the aliases can be bind mounts, not symlinks.
@@ -2690,10 +2764,11 @@ enum TrafficSignRuntimeBootstrap {
                 directoryURL: baseline.directoryURL, manifest: baseline.manifest,
                 detectorArtifact: artifact, detectorArtifactURL: model, classifierArtifact: baseline.classifierArtifact,
                 classifierArtifactURL: baseline.classifierArtifactURL, shadowRuntimeConfigurationV2: shadow,
-                manifestSHA256: baseline.manifestSHA256, trialDetectorThreshold: 0.840783)
+                manifestSHA256: baseline.manifestSHA256,
+                trialDetectorThreshold: TrafficSignVisionTwoStageCoreMLBackend.townExitProposalThreshold)
             let backend = try TrafficSignVisionTwoStageCoreMLBackend(verifiedPack: pack,
                 useTwoDetectorWindows: useTwoDetectorWindows)
-            NSLog("YouSpeedTSR town YOLO26n active at 0.840783 with CPU and Neural Engine enabled")
+            NSLog("YouSpeedTSR town YOLO26n active, minimum 32 px; exit threshold 0.70, other classes 0.840783")
             return (pack, backend)
         } catch {
             NSLog("YouSpeedTSR town detector failed startup. Using SGBlur. %@", error.localizedDescription)

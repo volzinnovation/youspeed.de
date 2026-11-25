@@ -1,9 +1,58 @@
 package de.youspeed.android.alpha
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class TrafficSignDetectorGeometryTests {
+    @Test fun classifierCropChecksAspectInSourcePixelsAndCentersContent() {
+        val boundary = NormalizedTrafficSignBoundingBox(0.25, 0.25, 0.2, 0.5)
+        assertNull(TrafficSignClassifierGeometry.from(boundary.copy(width = 79.0 / 400), 400, 200))
+        val accepted = requireNotNull(TrafficSignClassifierGeometry.from(boundary, 400, 200))
+        assertEquals(100.0, accepted.sourceLeft, 1e-9)
+        assertEquals(50.0, accepted.sourceTop, 1e-9)
+        assertEquals(2.24, accepted.scale, 1e-9)
+        assertEquals(179.2, accepted.scaledWidth, 1e-9)
+        assertEquals(224.0, accepted.scaledHeight, 1e-9)
+        assertEquals(22.4, accepted.left, 1e-9)
+        assertEquals(0.0, accepted.top, 1e-9)
+
+        val wide = requireNotNull(TrafficSignClassifierGeometry.from(boundary.copy(width = 0.5), 400, 200))
+        assertEquals(1.12, wide.scale, 1e-9)
+        assertEquals(224.0, wide.scaledWidth, 1e-9)
+        assertEquals(112.0, wide.scaledHeight, 1e-9)
+        assertEquals(0.0, wide.left, 1e-9)
+        assertEquals(56.0, wide.top, 1e-9)
+    }
+
+    @Test fun townTrialSkipsUndersizedCropsBeforeClassification() {
+        val atLeast32 = NormalizedTrafficSignBoundingBox(0.2, 0.3, 64.0 / 1920, 32.0 / 1080)
+        assertEquals(true, GermanTownTrialOperatingPoint.readable(atLeast32, 1920, 1080))
+        assertEquals(false, GermanTownTrialOperatingPoint.readable(atLeast32.copy(height = 31.0 / 1080), 1920, 1080))
+        assertEquals(false, GermanTownTrialOperatingPoint.readable(atLeast32.copy(width = 31.0 / 1920), 1920, 1080))
+    }
+
+    @Test fun earlyExitFaceCheckIsLimitedToTheNewDetectorBand() {
+        with(GermanTownTrialOperatingPoint) {
+            assertEquals(false, requiresExitFaceFirst(0.699999))
+            assertEquals(true, requiresExitFaceFirst(0.70))
+            assertEquals(true, requiresExitFaceFirst(0.840782))
+            assertEquals(false, requiresExitFaceFirst(0.840783))
+            assertEquals(false, requiresExitFaceFirst(1.0))
+        }
+    }
+
+    @Test fun onlyTownExitCanUseTheLowerDetectorFloor() {
+        with(GermanTownTrialOperatingPoint) {
+            assertEquals(true, admit(0.70, "city:end", 0.45))
+            assertEquals(false, admit(0.699, "city:end", 0.99))
+            assertEquals(false, admit(0.75, "city:end", 0.449))
+            assertEquals(false, admit(0.839, "city:start", 0.99))
+            assertEquals(false, admit(0.839, "maxspeed:50", 0.99))
+            assertEquals(true, admit(0.840783, "city:start", 0.99))
+        }
+    }
+
     @Test fun twoEdgeWindowsMapOverlapToOneSourceBox() {
         val windows = TrafficSignDetectorWindow.twoEdges(1920, 1080)
         assertEquals(listOf(0, 840), windows.map { it.left })

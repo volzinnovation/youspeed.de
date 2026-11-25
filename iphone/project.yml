@@ -23,6 +23,8 @@ targets:
       - path: ../shared/runtime-storage-prototype/zstd_decoder.c
       - path: ../shared/runtime-sign-nodes-prototype/runtime_sign_nodes.cpp
       - path: ../shared/tsr/german_town_sign_face.cpp
+      - path: ../shared/tsr/german_town_exit_rescue.cpp
+      - path: ../shared/tsr/german_cargo_plate.cpp
       - path: SpeedConsumerApp
         includes:
           - "*.swift"
@@ -179,6 +181,9 @@ targets:
         type: folder
         buildPhase: resources
       - path: ../tests/fixtures/tsr-ocr-32
+        type: folder
+        buildPhase: resources
+      - path: ../tests/fixtures/tsr-cargo-plates
         type: folder
         buildPhase: resources
       - path: SpeedConsumerApp/SpeedConsumerTests.swift

@@ -170,6 +170,8 @@ struct TrafficSignShadowStageIdentityV2: Codable, Equatable, Sendable {
 /// artifacts and the two preprocessing/calibration contracts needed to emit
 /// honest event-v2 shadow evidence.
 struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
+    private static let legacyClassifierPreprocessing = "vision-roi-xpad10-lower35-upper5-scale-fill-rgb-224-v2"
+
     struct ExecutionPolicy: Codable, Equatable, Sendable {
         let mode: TrafficSignExecutionModeV2
         let overrideEligible: Bool
@@ -245,6 +247,7 @@ struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
         detectorArtifact: TrafficSignModelPackManifest.Artifact,
         classifierArtifact: TrafficSignModelPackManifest.Artifact
     ) throws -> TrafficSignShadowRuntimeConfigurationV2 {
+        let usesLegacyClassifierPreprocessing = classifier.preprocessing.version == Self.legacyClassifierPreprocessing
         guard schemaVersion == 2,
               sourcePackId == sourceManifest.packId,
               sourceManifest.pipeline == .proposalClassification,
@@ -258,11 +261,13 @@ struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
                   expectedResize: "scale_fit_letterbox"
               ),
               let sourceClassifier = sourceManifest.classifier,
+              usesLegacyClassifierPreprocessing
+                || classifier.preprocessing.version == TrafficSignClassifierInput.preprocessingVersion,
               stage(
                   classifier,
                   binds: sourceClassifier,
                   artifact: classifierArtifact,
-                  expectedResize: "scale_fill"
+                  expectedResize: usesLegacyClassifierPreprocessing ? "scale_fill" : TrafficSignClassifierInput.resizeMode
               ),
               detector.artifactId != classifier.artifactId,
               detector.artifactSha256 != classifier.artifactSha256,
@@ -279,7 +284,7 @@ struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
             initialMode: executionPolicy.mode,
             overrideEligible: executionPolicy.overrideEligible,
             detector: identity(for: detector),
-            classifier: identity(for: classifier),
+            classifier: identity(for: classifier, replacingLegacyPreprocessing: usesLegacyClassifierPreprocessing),
             classifierConfirmedThreshold: thresholds.classifierConfirmed,
             confirmationFrames: thresholds.confirmationFrames,
             minimumTrackIou: thresholds.minimumTrackIou,
@@ -322,15 +327,15 @@ struct TrafficSignShadowPackProjectionV2: Codable, Equatable, Sendable {
             && stage.calibration.isValid
     }
 
-    private func identity(for stage: Stage) -> TrafficSignShadowStageIdentityV2 {
+    private func identity(for stage: Stage, replacingLegacyPreprocessing: Bool = false) -> TrafficSignShadowStageIdentityV2 {
         TrafficSignShadowStageIdentityV2(
             componentId: stage.componentId,
             artifactId: stage.artifactId,
             artifactSha256: stage.artifactSha256,
             artifactFormat: stage.artifactFormat,
-            preprocessingVersion: stage.preprocessing.version,
+            preprocessingVersion: replacingLegacyPreprocessing ? TrafficSignClassifierInput.preprocessingVersion : stage.preprocessing.version,
             calibrationId: stage.calibration.id,
-            calibrationPassed: stage.calibration.passed
+            calibrationPassed: !replacingLegacyPreprocessing && stage.calibration.passed
         )
     }
 }
