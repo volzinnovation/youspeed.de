@@ -75,7 +75,8 @@ def prepare(report_path, pack, anchor):
         actual_hash = artifact_hash(pack / artifact["path"])
         artifact_provenance.append(dict(role=role, actual_sha256=actual_hash, declared_sha256=artifact["sha256"]))
         components.append(dict(role="proposal_detector" if role == "detector" else "semantic_classifier", artifact_sha256=actual_hash,
-            preprocessing_version=manifest["preprocessing"]["version"] if role == "detector" else "vision-scale-fill-xpad10-lower35-upper5-v1",
+            preprocessing_version=manifest["preprocessing"]["version"] if role == "detector" else report.get(
+                "classifier_preprocessing_version", "vision-scale-fill-xpad10-lower35-upper5-v1"),
             calibration_id=None, calibration_sha256=None))
     mapping = {m["class_id"]: m for m in manifest["class_mapping"]}
     model = dict(pack_id=report["pack_id"], pack_version="manifest-schema-1", pack_sha256=report["manifest_sha256"], components=components)

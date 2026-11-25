@@ -3,6 +3,7 @@ import AVFoundation
 import Vision
 import CoreML
 import CoreGraphics
+import CoreImage
 import CryptoKit
 import Darwin
 
@@ -55,6 +56,7 @@ struct DashcamCropReplay {
         generator.appliesPreferredTrackTransform = true
         generator.requestedTimeToleranceBefore = .zero; generator.requestedTimeToleranceAfter = .zero
         let observer = SignCollectionObserver(), color = CGColorSpace(name: CGColorSpace.sRGB)!
+        let classifierContext = CIContext(options: [.cacheIntermediates: false])
         var crops = [[String: Any]](), sightings = [[String: Any]](), labels = [String: String](), frameCount = 0
         let replayStarted = ProcessInfo.processInfo.systemUptime
         for tick in 0..<Int(ceil((end - start) / interval)) {
@@ -62,6 +64,7 @@ struct DashcamCropReplay {
             let pts = generated.actualTime.seconds
             try autoreleasepool {
                 let image = generated.image
+                let source = CIImage(cgImage: image)
                 let handler = VNImageRequestHandler(cgImage: image, orientation: .up)
                 let began = ProcessInfo.processInfo.systemUptime
                 let request = VNCoreMLRequest(model: detector); request.imageCropAndScaleOption = .scaleFit
@@ -73,14 +76,13 @@ struct DashcamCropReplay {
                 }.sorted { $0.confidence > $1.confidence }.prefix(12)
                 var detections = [SignCollectionObserver.Detection](), traceDetections = [[String: Any]]()
                 for proposal in proposals {
+                    let b = proposal.boundingBox
+                    guard let crop = TrafficSignClassifierInput.sourceCrop(for: b, in: source.extent) else { continue }
+                    guard let classifierImage = TrafficSignClassifierInput.image(source: source, crop: crop, context: classifierContext)
+                    else { throw ReplayError.invalidFrame }
                     let classifierRequest = VNCoreMLRequest(model: classifier)
                     classifierRequest.imageCropAndScaleOption = .scaleFill
-                    // Identical xpad10/lower35/upper5 ROI to the iPhone backend.
-                    let b = proposal.boundingBox
-                    let left = max(0, b.minX - b.width * 0.10), right = min(1, b.maxX + b.width * 0.10)
-                    let bottom = max(0, b.minY - b.height * 0.35), top = min(1, b.maxY + b.height * 0.05)
-                    classifierRequest.regionOfInterest = CGRect(x: left, y: bottom, width: right - left, height: top - bottom)
-                    try handler.perform([classifierRequest])
+                    try VNImageRequestHandler(cgImage: classifierImage, options: [:]).perform([classifierRequest])
                     guard let classification = (classifierRequest.results as? [VNClassificationObservation])?.first else { throw ReplayError.incompatibleModel }
                     let entry = mapping[classification.identifier]
                     let score = min(Double(proposal.confidence), Double(classification.confidence))
@@ -144,6 +146,7 @@ struct DashcamCropReplay {
         let report: [String: Any] = ["video": video.lastPathComponent, "duration_seconds": duration, "start_seconds": start, "end_seconds": end,
             "interval_seconds": interval, "frames": frameCount, "country": (manifest["countries"] as! [String])[0],
             "pack_id": manifest["pack_id"]!, "manifest_sha256": manifestHash, "wall_seconds": ProcessInfo.processInfo.systemUptime - replayStarted,
+            "classifier_preprocessing_version": TrafficSignClassifierInput.preprocessingVersion,
             "sightings": sightings, "crops": crops, "limitations": [
                 "Recorded video, not original live analysis/Panoramax pixels; no GPS or saved visual calibration reconstruction.",
                 "Fresh Core ML inference on Mac with iPhone Vision preprocessing; not an Android inference benchmark.",
