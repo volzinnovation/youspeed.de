@@ -18,6 +18,8 @@ from pathlib import Path
 import sqlite3
 
 from build_mobidata_v1_5_pilot import normalize_sign, project_polyline as project_local, EARTH_RADIUS_M
+from conditional_speed_rules import key_scope
+from vehicle_speed_signs import restricted_inventory_signs, suppress_inventory_rules
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = '1'
@@ -306,7 +308,11 @@ def has_conflicting_lanes(db,way_id,direction):
 
 def has_conditional_speed(db,way_id):
     row=db.execute('SELECT lane_tags_json FROM traffic_sign_way_direction WHERE way_id=?',(way_id,)).fetchone()
-    return bool(row and any(k.startswith('maxspeed') and 'conditional' in k for k in json.loads(row[0])))
+    if not row:
+        return False
+    return any(scope.get('role') == 'speed' and scope.get('conditional')
+               and scope.get('vehicle') in ('all', 'vehicle', 'motor_vehicle', 'motorcar')
+               for scope in map(key_scope, json.loads(row[0])))
 
 
 def materialize_osm_towns(db,graph,mapping,road_sha):
@@ -571,6 +577,7 @@ def build_runtime(db,meta,audit_path=None):
         db.row_factory=None
         osm_towns=materialize_osm_towns(db,graph,mapping,road_sha)
         source=dict(db.execute('SELECT source_id,snapshot_sha256 FROM traffic_sign_source'))
+        suppress_inventory_rules(db, restricted_inventory_signs(db))
         rules=emit_intervals(db,graph)
         counts=dict(db.execute('SELECT status,count(*) FROM traffic_sign_association GROUP BY status'))
         report={'format':'youspeed.traffic-sign-runtime.v1','version':VERSION,'signs':signs+osm_towns,'mobidata_signs':signs,'osm_town_fallbacks':osm_towns,'rules':rules,

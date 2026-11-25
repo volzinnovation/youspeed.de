@@ -71,6 +71,23 @@ class RuntimeTests(unittest.TestCase):
 
     def build(self):return runtime.build_runtime(self.db,self.meta)
 
+    def test_cargo_plates_only_remove_their_own_speed_signs_from_intervals(self):
+        self.db.execute('DELETE FROM traffic_sign_inventory')
+        for index, code in enumerate(('DE:274-30', 'DE:1052-31', 'DE:274-40', 'DE:1052-30', 'DE:274-50'), 1):
+            self.sign(index, code, lon=8.0008 + index * 0.0001)
+        for column in ('group_id TEXT', 'group_order INTEGER', 'location_id TEXT'):
+            self.db.execute(f'ALTER TABLE traffic_sign_inventory ADD COLUMN {column}')
+        self.db.execute('''UPDATE traffic_sign_inventory SET group_id=(row_id+1)/2,
+                            location_id='shared support', group_order=(row_id+1)/2''')
+        self.write_meta({'maxspeed:hazmat:water:conditional': '30 @ wet'})
+        self.build()
+        self.assertEqual(self.db.execute('SELECT speed_kmh,lane_scope FROM traffic_sign_way_rule').fetchall(), [(50, 'all')])
+        self.assertEqual(self.db.execute('''SELECT s.sign_code, json_extract(a.evidence_json, '$.vehicle_plate')
+            FROM traffic_sign_runtime s JOIN traffic_sign_association a USING(sign_id)
+            WHERE a.status='vehicle_restricted' ORDER BY s.sign_code''').fetchall(),
+            [('DE:274-30', 'DE:1052-31'), ('DE:274-40', 'DE:1052-30')])
+        self.assertTrue(validate(self.db)['ready'])
+
     def test_numeric_end_artwork_does_not_depend_on_snapshot_audit_or_camera_labels(self):
         speeds=(5,10,20,30,40,50,60,70,80,90,100,110,120,130)
         self.db.execute('DELETE FROM traffic_sign_inventory')

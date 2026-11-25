@@ -9,6 +9,21 @@ import org.junit.Test
 import java.time.Instant
 
 class ConditionalSpeedRulesInstrumentedTest {
+    @Test fun cargoScopesPreservePassengerCarLimit() {
+        val rules = nightRules()
+        val tags = rules.getJSONArray("tags")
+        val tag = tags.getJSONObject(0).put("vehicle", "hazmat").put("direction", -1)
+        tags.put(JSONObject(tag.toString()).put("vehicle", "hazmat:water").put("status", "unsupported"))
+        val raw = "30 @ (hazmat:water AND wet)"
+        tags.put(JSONObject("""{"role":"speed","vehicle":"all","direction":-1,"conditional":true,"priority":1,"status":"supported","raw":"$raw","clauses":[{"limit":{"kind":"numeric","kmh":30},"source_span":[0,${raw.length}],"condition":{"kind":"all","items":[{"kind":"context","field":"vehicle_hazmat_water"},{"kind":"context","field":"road_surface_wet"}]}}]}"""))
+        val rule = ConditionalSpeedRules.Reevaluation(rules.toString(), 100, false, -1, "DE")
+        val result = rule.evaluate(0)
+        assertEquals(100, result.kmh)
+        assertFalse(result.unresolved)
+        assertEquals(null, result.inactivePreview)
+        assertFalse(rule.containsConditionalLimit(30, 0))
+    }
+
     private fun nightRules()=JSONObject("""{"version":1,"grammar":"youspeed-osm-speed-1","tags":[{"role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported","raw":"30 @ (22:00-06:00)","clauses":[{"limit":{"kind":"numeric","kmh":30},"source_span":[0,18],"condition":{"kind":"schedule","windows":[[1320,360]],"weekdays":[],"holidays":[]}}]}]}""")
     @Test fun drivingWetRuleKeepsNormalReferenceAndTranslatedPreview() {
         val rules=nightRules()

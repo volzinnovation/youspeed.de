@@ -22,6 +22,7 @@ from pack_sign_nodes import pack as pack_nodes
 from packed_runtime import Reader, build_context, build_geometry, digest, require, zstd_library
 from plan_packed_releases import download_asset
 import approved_sign_groups
+import vehicle_speed_signs
 
 
 class Joined(io.RawIOBase):
@@ -228,7 +229,7 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     source_manifest=old_manifest
     builder_files={'scripts/map/'+name:digest(Path(__file__).parent/name) for name in
                    ['build_packed_release.py','packed_runtime.py','extract_packed_sign_nodes.py','pack_sign_nodes.py',
-                    'approved_sign_groups.py']}
+                    'approved_sign_groups.py','vehicle_speed_signs.py']}
     source_override=False
     local_root=Path('mapdata/bundles/v3/baden-wuerttemberg/2026-10-23-v1.5-journal-conditional')
     if prefer_local_bw and region=='baden-wuerttemberg' and (local_root/'baden-wuerttemberg_speeds.sqlite.gz').exists():
@@ -263,22 +264,22 @@ def build_one(plan, entry, workspace, *, prefer_local_bw=True, retain_work=False
     else:
         paths=[download_asset(repo,a,work/a['name']) for a in entry['database_assets']]
     source=materialize(paths,source_manifest['db'],work/'source.sqlite')
-    if approvals is not None:
-        with closing(sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True)) as original:
-            has_previous = approved_sign_groups.already_imported(original)
-        if approvals or has_previous:
-            poly = None
-            if approvals:
-                item = entry['extras']['poly']
-                poly = download_asset(repo, item, work/item['name'])
-            approved_source = work/'source-with-approved-sign-groups.sqlite'
-            with tempfile.TemporaryDirectory(prefix='approved-source-', dir=work) as directory:
-                staged = Path(directory)/'source.sqlite'
-                shutil.copyfile(source, staged)
-                with closing(sqlite3.connect(staged)) as db, db:
+    with closing(sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True)) as original:
+        import_approvals = approvals is not None and (bool(approvals) or approved_sign_groups.already_imported(original))
+        restricted = vehicle_speed_signs.restricted_inventory_signs(original) if original.execute(
+            "SELECT 1 FROM sqlite_schema WHERE name='traffic_sign_way_rule'").fetchone() else {}
+    if import_approvals or restricted:
+        poly = download_asset(repo, entry['extras']['poly'], work/entry['extras']['poly']['name']) if approvals else None
+        reviewed_source = work/'source-with-sign-reviews.sqlite'
+        with tempfile.TemporaryDirectory(prefix='reviewed-source-', dir=work) as directory:
+            staged = Path(directory)/'source.sqlite'
+            shutil.copyfile(source, staged)
+            with closing(sqlite3.connect(staged)) as db, db:
+                if import_approvals:
                     approved_sign_groups.import_approved(db, approvals, poly)
-                staged.replace(approved_source)
-            source = approved_source
+                vehicle_speed_signs.suppress_inventory_rules(db, restricted)
+            staged.replace(reviewed_source)
+        source = reviewed_source
     source_sha=digest(source)
     prefix=f'{region}_{entry["bundle_version"]}'
     geometry=output/(prefix+'.ways.yspg');context=output/(prefix+'.context.yspc');nodes=output/(prefix+'.nodes.yspn')

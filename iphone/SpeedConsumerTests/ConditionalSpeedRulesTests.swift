@@ -5,6 +5,28 @@ import CoreLocation
 @testable import SpeedConsumer
 
 final class ConditionalSpeedRulesTests: XCTestCase {
+    func testCargoScopesPreservePassengerCarLimit() throws {
+        var rules = nightRules()
+        var tags = try XCTUnwrap(rules["tags"] as? [[String: Any]])
+        tags[0]["vehicle"] = "hazmat"; tags[0]["direction"] = -1
+        tags.append(tags[0].merging(["vehicle": "hazmat:water", "status": "unsupported"]) { _, new in new })
+        let raw = "30 @ (hazmat:water AND wet)"
+        tags.append(["role": "speed", "vehicle": "all", "direction": -1, "priority": 1,
+            "conditional": true, "status": "supported", "raw": raw, "clauses": [[
+                "limit": ["kind": "numeric", "kmh": 30], "source_span": [0, raw.count],
+                "condition": ["kind": "all", "items": [["kind": "context", "field": "vehicle_hazmat_water"],
+                    ["kind": "context", "field": "road_surface_wet"]]]]]])
+        rules["tags"] = tags
+        let json = String(decoding: try JSONSerialization.data(withJSONObject: rules), as: UTF8.self)
+        let rule = ConditionalSpeedRules.Reevaluation(rulesJSON: json, baseKmh: 100, baseUnlimited: false,
+            direction: -1, countryCode: "DE")
+        let result = rule.evaluate(at: Date())
+        XCTAssertEqual(result.kmh, 100)
+        XCTAssertFalse(result.unresolved)
+        XCTAssertNil(result.inactivePreview)
+        XCTAssertFalse(rule.containsConditionalLimit(30, at: Date()))
+    }
+
     private func nightRules() -> [String: Any] {
         ["version":1,"grammar":"youspeed-osm-speed-1","tags":[[
             "role":"speed","vehicle":"all","direction":0,"conditional":true,"priority":0,"status":"supported",

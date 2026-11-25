@@ -16,7 +16,25 @@ object ConditionalSpeedRules {
         ConsumerUiStrings.text("When wet", "Bei Nässe", "Par temps de pluie", "Bij nat wegdek") else text
     // Until wetness can be detected, use the independent normal-road reference
     // and retain the wet alternative in the conditional preview.
-    val drivingFacts = mapOf("road_surface_wet" to false)
+    val drivingFacts = mapOf("road_surface_wet" to false, "vehicle_hazmat" to false,
+        "vehicle_hazmat_water" to false, "vehicle_agricultural" to false)
+
+    fun isOtherVehicleSpeedKey(key: String): Boolean = key.startsWith("maxspeed:") &&
+        key.substringAfter(':').substringBefore(':') in setOf("hgv", "bus", "motorcycle", "hazmat", "bicycle",
+            "agricultural", "emergency", "taxi", "psv", "foot", "train", "tilting")
+
+    private fun excludedByVehicle(condition: JSONObject, facts: Map<String, Boolean>, depth: Int = 0): Boolean {
+        if (depth >= 20) return false
+        return when (condition.optString("kind")) {
+            "context" -> condition.optString("field").let { it.startsWith("vehicle_") && facts[it] == false }
+            "all", "any" -> {
+                val items = condition.optJSONArray("items")?.objects().orEmpty()
+                val excluded = items.map { excludedByVehicle(it, facts, depth + 1) }
+                if (condition.optString("kind") == "all") excluded.any { it } else excluded.isNotEmpty() && excluded.all { it }
+            }
+            else -> false
+        }
+    }
     data class Result(val kmh: Int?, val unlimited: Boolean, val unresolved: Boolean, val reason: String,
         val reevaluation: Reevaluation? = null, val inactivePreview: ConditionalSpeedPreview? = null,
         val activeRestrictionText: String? = null)
@@ -37,9 +55,11 @@ object ConditionalSpeedRules {
                         tag.optString("vehicle") in setOf("all", "vehicle", "motor_vehicle", "motorcar") &&
                         (tag.optInt("direction") == 0 || tag.optInt("direction") == direction) &&
                         tag.optJSONArray("clauses")?.objects().orEmpty().any { clause ->
+                            val vehicleExcluded = clause.optJSONObject("condition")?.let { excludedByVehicle(it, drivingFacts) } == true
                             val limit = clause.optJSONObject("limit")
                             val value = limit?.optDouble("kmh", Double.NaN) ?: Double.NaN
-                            limit?.optString("kind") == "numeric" && value > 0 && value <= 400 && kotlin.math.floor(value + 0.5).toInt() == speedKmh
+                            !vehicleExcluded && limit?.optString("kind") == "numeric" && value > 0 && value <= 400 &&
+                                kotlin.math.floor(value + 0.5).toInt() == speedKmh
                         }
                 }
             } catch (_: Exception) { false }
@@ -141,7 +161,7 @@ object ConditionalSpeedRules {
         for (key in tags.keys()) {
             if (!key.startsWith("maxspeed")) continue
             val parts = key.split(':')
-            if (parts.any { it in setOf("hgv", "bus", "motorcycle", "reason", "type") }) continue
+            if (isOtherVehicleSpeedKey(key) || parts.any { it in setOf("reason", "type") }) continue
             if ("forward" in parts && direction == -1 || "backward" in parts && direction == 1) continue
             if ("conditional" in parts || "variable" in parts && tags.optString(key) != "no") return unknown("legacy_conditional_rules_not_compiled")
         }
@@ -243,7 +263,7 @@ object ConditionalSpeedRules {
         val selections = assignments.map(::outcome).toList()
         val outcomes = selections.map { it.first }.toSet()
         val selected = outcomes.singleOrNull()
-        val preview = inactivePreview(tags.asReversed(), context.direction, selected) { condition ->
+        val preview = inactivePreview(tags.asReversed(), context.direction, selected, context.facts) { condition ->
             assignments.all { truth(condition, it) }
         }
         if (selected == null || selected == "unsupported" || selected == "unknown") {
@@ -262,7 +282,7 @@ object ConditionalSpeedRules {
         return source.substringAfter('@', "").trim().removeSurrounding("(", ")").trim().takeIf { it.isNotEmpty() }
     }
 
-    private fun inactivePreview(tags: List<JSONObject>, direction: Int?, selected: String?,
+    private fun inactivePreview(tags: List<JSONObject>, direction: Int?, selected: String?, facts: Map<String, Boolean>,
                                 alwaysApplies: (JSONObject) -> Boolean): ConditionalSpeedPreview? {
         for (tag in tags) {
             val scopedDirection = tag.optInt("direction")
@@ -276,7 +296,7 @@ object ConditionalSpeedRules {
                 val speed = kotlin.math.floor(number + 0.5).toInt()
                 if ("numeric:$speed" == selected) continue
                 val condition = clause.optJSONObject("condition") ?: continue
-                if (alwaysApplies(condition)) continue
+                if (alwaysApplies(condition) || excludedByVehicle(condition, facts)) continue
                 val span = clause.optJSONArray("source_span")?.ints() ?: continue
                 if (span.size != 2 || span[0] < 0 || span[0] >= span[1] || span[1] > length) continue
                 val source = raw.substring(raw.offsetByCodePoints(0, span[0]), raw.offsetByCodePoints(0, span[1]))

@@ -351,7 +351,8 @@ enum UpcomingSpeedLimitBundle {
             if let key=string(q,0),let value=string(q,1) {values[key]=value;snapshots[key]=string(q,2)}
         })
         let allowed:Set<String>=["maxspeed","maxspeed:forward","maxspeed:backward","maxspeed:type","maxspeed:source"]
-        guard !values.keys.contains(where:{$0.contains("conditional") || ($0.hasPrefix("maxspeed:") && !allowed.contains($0))}) else {return nil}
+        guard !values.keys.contains(where:{ !ConditionalSpeedRules.isOtherVehicleSpeedKey($0) &&
+            ($0.contains("conditional") || ($0.hasPrefix("maxspeed:") && !allowed.contains($0))) }) else {return nil}
         let directional=segment.direction==1 ? "maxspeed:forward" : "maxspeed:backward"
         let key=values[directional] == nil ? "maxspeed" : directional
         guard let raw=values[key],let sha=snapshots[key],sha.count==64,sha.allSatisfy({$0.isHexDigit}),let value=Int(raw.trimmingCharacters(in:.whitespacesAndNewlines)),(1...300).contains(value) else {return nil}
@@ -435,6 +436,7 @@ enum UpcomingSpeedLimitBundle {
                 SELECT a.sign_id,a.status,a.station_chainage_m,s.kind,s.sign_code,s.numeric_value,s.unit,s.parameter_status,s.source_id,s.snapshot_sha256
                 FROM traffic_sign_association a JOIN traffic_sign_runtime s ON s.sign_id=a.sign_id
                 WHERE a.way_id=? AND a.direction=? AND a.station_chainage_m \(comparison) ? AND a.station_chainage_m \(upper) ?
+                  AND a.status <> 'vehicle_restricted'
                   \(allowMobiData ? "" : "AND s.source_id <> 'mobidata-bw-vzk'")
                 ORDER BY a.station_chainage_m \(order),a.sign_id LIMIT 257
                 """

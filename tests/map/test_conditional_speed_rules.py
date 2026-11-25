@@ -48,6 +48,27 @@ class ConditionalSpeedRulesTests(unittest.TestCase):
             if row["key"] == "maxspeed:bicycle": self.assertEqual(row["vehicle"], "bicycle")
             else: self.assertEqual(row["role"], "metadata")
 
+    def test_water_hazardous_cargo_scope_preserves_direction_and_conditions(self):
+        tags = {"maxspeed:backward": "100", "maxspeed:hazmat": "40",
+                "maxspeed:hazmat:water:backward": "30",
+                "maxspeed:hazmat:water:forward:conditional": "50 @ wet"}
+        compiled = {row["key"]: row for row in rules.compile_tags(tags)["tags"]}
+        backward = compiled["maxspeed:hazmat:water:backward"]
+        self.assertEqual((backward["vehicle"], backward["direction"], backward["status"]),
+                         ("hazmat:water", -1, "supported"))
+        self.assertEqual(backward["clauses"][0]["limit"]["kmh"], 30)
+        forward = compiled["maxspeed:hazmat:water:forward:conditional"]
+        self.assertEqual((forward["vehicle"], forward["direction"], forward["conditional"]),
+                         ("hazmat:water", 1, True))
+        self.assertEqual(forward["clauses"][0]["condition"]["field"], "road_surface_wet")
+
+    def test_scoped_unsupported_limit_from_osm_way_822226813(self):
+        tag = rules.compile_tags({"maxspeed:conditional": "no @ (agricultural AND hazmat:water)"})["tags"][0]
+        self.assertEqual(tag["clauses"][0]["limit"], {"kind": "unsupported"})
+        self.assertEqual(tag["clauses"][0]["condition"], {"kind": "all", "items": [
+            {"kind": "context", "field": "vehicle_agricultural"},
+            {"kind": "context", "field": "vehicle_hazmat_water"}]})
+
     def test_database_rebuild_removes_stale_rules_and_retains_64_bit_ids(self):
         with tempfile.TemporaryDirectory() as folder, sqlite3.connect(":memory:") as db:
             path = Path(folder) / "ways.meta"

@@ -61,6 +61,8 @@ enum ConditionalSpeedRules {
                       ["all", "vehicle", "motor_vehicle", "motorcar"].contains(tag["vehicle"] as? String ?? ""),
                       scoped == 0 || scoped == direction else { return false }
                 return (tag["clauses"] as? [[String: Any]] ?? []).contains { clause in
+                    if let condition = clause["condition"] as? [String: Any],
+                       excludedByVehicle(condition, facts: drivingFacts) { return false }
                     guard let limit = clause["limit"] as? [String: Any], limit["kind"] as? String == "numeric",
                           let value = limit["kmh"] as? Double, value.isFinite, value > 0, value <= 400 else { return false }
                     return Int(value.rounded()) == speedKmh
@@ -115,7 +117,28 @@ enum ConditionalSpeedRules {
 
     // Product choice while wetness detection is unavailable: retain the independent
     // normal-road reference and expose the wet alternative as a conditional preview.
-    static let drivingFacts = ["road_surface_wet": false]
+    static let drivingFacts = ["road_surface_wet": false, "vehicle_hazmat": false,
+                               "vehicle_hazmat_water": false, "vehicle_agricultural": false]
+
+    static func isOtherVehicleSpeedKey(_ key: String) -> Bool {
+        let parts = key.split(separator: ":")
+        guard parts.count > 1, parts[0] == "maxspeed" else { return false }
+        return ["hgv", "bus", "motorcycle", "hazmat", "bicycle", "agricultural", "emergency", "taxi", "psv", "foot", "train", "tilting"].contains(parts[1])
+    }
+
+    private static func excludedByVehicle(_ condition: [String: Any], facts: [String: Bool], depth: Int = 0) -> Bool {
+        guard depth < 20 else { return false }
+        switch condition["kind"] as? String {
+        case "context":
+            guard let field = condition["field"] as? String, field.hasPrefix("vehicle_") else { return false }
+            return facts[field] == false
+        case "all", "any":
+            guard let items = condition["items"] as? [[String: Any]], !items.isEmpty else { return false }
+            let excluded = items.map { excludedByVehicle($0, facts: facts, depth: depth + 1) }
+            return condition["kind"] as? String == "all" ? excluded.contains(true) : excluded.allSatisfy { $0 }
+        default: return false
+        }
+    }
 
     static func resolve(db: OpaquePointer, wayID: String, direction: Int?, baseKmh: Int?, baseUnlimited: Bool,
                         at: Date = Date(), timeZoneID: String? = nil, countryCode: String? = nil,
@@ -203,7 +226,7 @@ enum ConditionalSpeedRules {
               let tags = try? JSONSerialization.jsonObject(with: data) as? [String: String] else { return nil }
         for (key, value) in tags where key.hasPrefix("maxspeed") {
             let parts = key.split(separator: ":").map(String.init)
-            if parts.contains("hgv") || parts.contains("bus") || parts.contains("motorcycle") { continue }
+            if isOtherVehicleSpeedKey(key) { continue }
             if parts.contains("forward"), direction == -1 { continue }
             if parts.contains("backward"), direction == 1 { continue }
             if parts.contains("reason") || parts.contains("type") { continue }
@@ -326,7 +349,7 @@ enum ConditionalSpeedRules {
             assignments.append(assignment)
         }
         let preview = inactivePreview(tags: tags.reversed(), direction: context.direction,
-                                      selected: outcomes.count == 1 ? outcomes.first : nil) { condition in
+                                      selected: outcomes.count == 1 ? outcomes.first : nil, facts: context.facts) { condition in
             assignments.allSatisfy { truth(condition, $0) }
         }
         guard outcomes.count == 1, let selected = outcomes.first, selected != "unsupported", selected != "unknown" else {
@@ -354,7 +377,7 @@ enum ConditionalSpeedRules {
     }
 
     private static func inactivePreview(tags: ReversedCollection<[[String: Any]]>, direction: Int?,
-                                        selected: String?, alwaysApplies: ([String: Any]) -> Bool) -> ConditionalSpeedPreview? {
+                                        selected: String?, facts: [String: Bool], alwaysApplies: ([String: Any]) -> Bool) -> ConditionalSpeedPreview? {
         for tag in tags {
             let scopedDirection = tag["direction"] as? Int ?? 0
             guard tag["conditional"] as? Bool == true, tag["status"] as? String == "supported",
@@ -365,6 +388,7 @@ enum ConditionalSpeedRules {
                 guard let number = (clause["limit"] as? [String: Any])?["kmh"] as? NSNumber,
                       number.doubleValue.isFinite, (1...400).contains(number.doubleValue),
                       let condition = clause["condition"] as? [String: Any], !alwaysApplies(condition),
+                      !excludedByVehicle(condition, facts: facts),
                       let span = clause["source_span"] as? [Int], span.count == 2,
                       span[0] >= 0, span[0] < span[1], span[1] <= source.count else { continue }
                 let speed = Int(number.doubleValue.rounded())

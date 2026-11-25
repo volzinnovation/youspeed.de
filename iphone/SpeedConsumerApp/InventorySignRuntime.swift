@@ -460,6 +460,7 @@ enum InventorySignBundle {
                        a.way_id,a.direction,a.status,a.local_heading_deg,\(metadata)
                 FROM traffic_sign_runtime s LEFT JOIN traffic_sign_association a ON a.sign_id=s.sign_id
                 WHERE s.lat BETWEEN ? AND ? AND s.lon BETWEEN ? AND ?
+                  AND a.status IS NOT 'vehicle_restricted'
                   \(allowMobiData ? "" : "AND s.source_id <> 'mobidata-bw-vzk'")
                 ORDER BY s.sign_id LIMIT 256
                 """

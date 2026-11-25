@@ -19,7 +19,7 @@ GRAMMAR = "youspeed-osm-speed-1"
 DAYS = {v: i + 1 for i, v in enumerate(("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"))}
 MONTHS = {v: i for i, v in enumerate(calendar.month_abbr) if v}
 MODES = {"vehicle": 1, "motor_vehicle": 2, "motorcar": 3, "hgv": 3, "bus": 3,
-         "motorcycle": 3, "hazmat": 4, "bicycle": 3, "agricultural": 3,
+         "motorcycle": 3, "hazmat": 4, "hazmat:water": 5, "bicycle": 3, "agricultural": 3,
          "emergency": 3, "taxi": 3, "psv": 3, "foot": 3, "train": 3, "tilting": 3}
 
 
@@ -106,6 +106,10 @@ def condition(raw, depth=0):
             return {"kind": kind, "items": items}
     if raw in ("wet", "snow", "ice"):
         return {"kind": "context", "field": "road_surface_" + raw}
+    vehicle_facts = {"hazmat": "vehicle_hazmat", "hazmat:water": "vehicle_hazmat_water",
+                     "agricultural": "vehicle_agricultural"}
+    if raw in vehicle_facts:
+        return {"kind": "context", "field": vehicle_facts[raw]}
     if raw == "24/7":
         return {"kind": "true"}
     # Opening-hours off rules are ordered exclusions, not a union with holidays.
@@ -164,6 +168,8 @@ def key_scope(key):
     if not key.startswith("maxspeed"):
         return {"role": "metadata"}
     parts = key.split(":")[1:]
+    if parts[:2] == ["hazmat", "water"]:
+        parts = ["hazmat:water", *parts[2:]]
     if parts and parts[0] == "variable":
         return {"role": "variable"}
     result = {"role": "speed", "vehicle": "all", "direction": 0, "lane": False, "conditional": False}
@@ -201,7 +207,12 @@ def compile_tags(tags):
                             raise ValueError("invalid_conditional_pair")
                         start = str(raw).find(clause, source_cursor)
                         source_cursor = start + len(clause)
-                        row["clauses"].append({"index": i, "limit": limit(pairs[0]), "condition": condition(pairs[1]), "source_span": [start, source_cursor]})
+                        predicate = condition(pairs[1])
+                        # OSM carries `no @ (...)` in some maxspeed tags. A speed
+                        # evaluator must only consider this unsupported value if
+                        # its separately parsed condition actually applies.
+                        value = {"kind": "unsupported"} if pairs[0] == "no" else limit(pairs[0])
+                        row["clauses"].append({"index": i, "limit": value, "condition": predicate, "source_span": [start, source_cursor]})
                 else:
                     row["clauses"] = [{"index": 0, "limit": limit(str(raw)), "condition": {"kind": "true"}, "source_span": [0, len(str(raw))]}]
         except ValueError as error:

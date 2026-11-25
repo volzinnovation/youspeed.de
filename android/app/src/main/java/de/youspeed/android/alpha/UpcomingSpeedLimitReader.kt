@@ -157,7 +157,8 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
         val snapshots=mutableMapOf<String,String>()
         val tags=db.rawQuery("SELECT key,raw_value,source_snapshot FROM road_speed_source_tag WHERE way_id=?",arrayOf(segment.way)).use {c->buildMap {while(c.moveToNext()){put(c.getString(0),c.getString(1));if(!c.isNull(2))snapshots[c.getString(0)]=c.getString(2)}}}
         val allowed=setOf("maxspeed","maxspeed:forward","maxspeed:backward","maxspeed:type","maxspeed:source")
-        if(tags.keys.any {it.contains("conditional") || (it.startsWith("maxspeed:") && it !in allowed)}) return null
+        if(tags.keys.any {!ConditionalSpeedRules.isOtherVehicleSpeedKey(it) &&
+                (it.contains("conditional") || (it.startsWith("maxspeed:") && it !in allowed))}) return null
         val directional=if(segment.direction>0)"maxspeed:forward" else "maxspeed:backward"
         val key=if(tags.containsKey(directional))directional else "maxspeed"
         val snapshot=snapshots[key]?.takeIf {it.matches(Regex("[0-9a-fA-F]{64}"))} ?: return null
@@ -171,7 +172,7 @@ internal class UpcomingSpeedLimitReader(private val db: RuntimeSqlDatabase, priv
         val entry = if(segment.direction>0) segment.start else segment.end
         val first = entry + segment.direction * max(0.0,-entryDistance)
         val last = entry + segment.direction * min(segment.length,lookaheadDistanceM-entryDistance)
-        val result = db.rawQuery("SELECT s.sign_id,s.source_id,s.snapshot_sha256,s.kind,a.status,s.parameter_status,a.station_chainage_m,s.numeric_value,a.direction,s.unit,s.sign_code FROM traffic_sign_association a JOIN traffic_sign_runtime s USING(sign_id) WHERE a.way_id=? AND a.direction=? AND a.station_chainage_m>=? AND a.station_chainage_m<=? AND (s.kind IN ('speed_limit','settlement_boundary','speed_limit_end') OR s.sign_code='DE:282') ${if (allowMobiData) "" else " AND s.source_id <> 'mobidata-bw-vzk'"} ORDER BY a.station_chainage_m LIMIT 257", arrayOf(segment.way,"${segment.direction}","${min(first,last)}","${max(first,last)}")).use { c -> buildList {
+        val result = db.rawQuery("SELECT s.sign_id,s.source_id,s.snapshot_sha256,s.kind,a.status,s.parameter_status,a.station_chainage_m,s.numeric_value,a.direction,s.unit,s.sign_code FROM traffic_sign_association a JOIN traffic_sign_runtime s USING(sign_id) WHERE a.way_id=? AND a.direction=? AND a.station_chainage_m>=? AND a.station_chainage_m<=? AND a.status <> 'vehicle_restricted' AND (s.kind IN ('speed_limit','settlement_boundary','speed_limit_end') OR s.sign_code='DE:282') ${if (allowMobiData) "" else " AND s.source_id <> 'mobidata-bw-vzk'"} ORDER BY a.station_chainage_m LIMIT 257", arrayOf(segment.way,"${segment.direction}","${min(first,last)}","${max(first,last)}")).use { c -> buildList {
             while(c.moveToNext()) { budget(); check(number(c,6) && c.getType(8)==android.database.Cursor.FIELD_TYPE_INTEGER); add(Event(c.getString(0),c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getDouble(6),if(!number(c,7)) null else c.getDouble(7),c.getInt(8),if(c.isNull(9)) null else c.getString(9),c.getString(10))) }
         } }
         check(result.size <= 256) { "upcoming_preview_event_cap" }
