@@ -55,7 +55,13 @@ struct VisualRoadCalibrationView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft: VisualRoadCalibration?
     @State private var step = 0
-    private let stepKeys = ["horizon", "left_bottom", "left_top", "right_bottom", "right_top"]
+    private let stepTitles: [LocalizedStringKey] = [
+        "calibration.horizon",
+        "calibration.left_bottom",
+        "calibration.left_top",
+        "calibration.right_bottom",
+        "calibration.right_top"
+    ]
 
     var body: some View {
         GeometryReader { geometry in
@@ -120,7 +126,7 @@ struct VisualRoadCalibrationView: View {
     private var controls: some View {
         VStack(spacing: 10) {
             Text(String(format: NSLocalizedString("calibration.step", comment: ""), step + 1)).font(.caption)
-            Text(LocalizedStringKey("calibration.\(stepKeys[step])")).font(.headline).multilineTextAlignment(.center)
+            Text(stepTitles[step]).font(.headline).multilineTextAlignment(.center)
             Text("calibration.crop_note").font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
             VStack(spacing: 5) {
                 if step == 0 || step == 1 || step == 3 { arrow("arrow.up", dx: 0, dy: -0.005, label: "calibration.up") }
