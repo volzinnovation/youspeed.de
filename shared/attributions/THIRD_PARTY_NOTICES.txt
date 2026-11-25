@@ -2735,6 +2735,15 @@ Changes: Unmodified original SVG; locally rasterized to fit 256 × 256 pixels, p
 
 ================================================================================
 
+DE:101-11 · Zeichen 101-11 - Fußgängerüberweg, StVO 2017.svg
+Mediatus; https://www.bmv.de/SharedDocs/DE/Anlage/Gesetze/Gesetze-20/zwoelfte-allgemeine-vwv-zur-aenderung-vwv-stvo.pdf?__blob=publicationFile
+Public domain · German official-work rendition; § 5(1) UrhG
+Source: https://commons.wikimedia.org/wiki/Special:PermanentLink/1038341267
+Licence / legal basis: https://www.gesetze-im-internet.de/urhg/__5.html
+Changes: Unmodified original SVG; rasterized to fit 256 × 256 pixels, preserving transparency.
+
+================================================================================
+
 German sign images and Prolix mapping
 
 GERMAN TRAFFIC-SIGN PICTOGRAMS
@@ -2767,6 +2776,10 @@ Image metadata was stripped. Original and rendition hashes are in manifest.json.
 
 The licenses of the models, datasets, software and Wikipedia article text are
 separate from the image status stated here. No endorsement is implied.
+
+The Inspector reference schematic de-262.png represents an unknown weight
+limit. Its editable artwork is sources/de-262.svg. It is outside the
+official mobile sign-artwork catalog.
 
 ================================================================================
 
@@ -2965,6 +2978,18 @@ incorrectly imply content that this visual-family classifier cannot establish.
   Unmodified SVG; transparent PNG conversion with ImageMagick 7.1.2-31.
   Current official meaning: right-pointing curve direction board, 500 × 500 mm.
   The historical filename describes left-side placement, not arrow direction.
+
+SYNSET SIGNSET GERMANY DISPLAY EXAMPLES
+
+The images named png/synset-*.png are adapted from Synset Signset Germany
+© 2024 Fraunhofer IOSB, Fraunhofer IPA and Karlsruhe Institute of Technology.
+Authors: Anne Sielemann, Lena Loercher, Max-Lion Schumacher, Stefan Wolf,
+Masoud Roschani, Jens Ziehn and Juergen Beyerer.
+Source: https://synset.de/datasets/synset-signset-ger/
+License: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
+Included source IDs: 56, 60, 62, 64, 66, 89, 92, 157, 170, 180, 198, 199, 209.
+Individual image URLs are recorded in source-crosswalk-v1.json under synset.DE.
+Images were cropped to their visible bounds, resized and saved as transparent PNGs.
 
 
 ================================================================================

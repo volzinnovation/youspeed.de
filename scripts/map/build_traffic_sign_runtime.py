@@ -513,12 +513,17 @@ def inventory_pictogram(literal, mapping, artworks):
     return mapping.get(literal, {})
 
 
-def build_runtime(db,meta,audit_path=ROOT/'docs/MOBIDATA_BW_PICTOGRAM_AUDIT_V1_5.json'):
+def build_runtime(db,meta,audit_path=None):
     import openlr
     if not callable(openlr.binary_decode):
         raise ImportError('A pinned OpenLR decoder is required before replacing runtime data')
-    audit=json.loads(Path(audit_path).read_text())
-    mapping={r['source_code']:r for r in audit['entries']}
+    if audit_path is None:
+        crosswalk = ROOT / 'shared/tsr/sign-pictograms/source-crosswalk-v1.json'
+        mapping = json.loads(crosswalk.read_text(encoding='utf-8'))['mobidata']['DE']
+    else:
+        # Explicitly supplied historical audits reproduce their original bundle.
+        audit = json.loads(Path(audit_path).read_text(encoding='utf-8'))
+        mapping = {row['source_code']: row for row in audit['entries']}
     artwork_manifest=json.loads((ROOT/'shared/tsr/sign-pictograms/manifest.json').read_text())
     artworks={r['sign_code']:r for r in artwork_manifest['artworks']}
     road_sha=None

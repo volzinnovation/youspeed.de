@@ -209,7 +209,11 @@ country catalogs, sign artwork, and JSON source crosswalk used by YouSpeed,
 [Streetshots Inspector](https://github.com/volzinnovation/streetshots-inspector)
 and [Street Shots Survey](https://github.com/volzinnovation/streetshots-survey).
 Both YouSpeed app builds verify the offline snapshot in `shared/tsr` against
-[`sign-assets.lock.json`](shared/tsr/sign-assets.lock.json).
+[`sign-assets.lock.json`](shared/tsr/sign-assets.lock.json). Review MobiData BW
+literals, Mapillary classes and Synset publisher IDs in the
+[shared source crosswalk](shared/tsr/sign-pictograms/source-crosswalk-v1.json).
+The Panoramax classifier labels and official display references are linked
+through the adjacent country catalogs. Source mapping changes belong in Core.
 
 To update the pin, check out the reviewed Core revision and run this command
 from the YouSpeed root:
